@@ -10,22 +10,22 @@ import (
 	"github.com/cpunion/llgo-dylib/abi"
 )
 
-func TestBoundLifetime(t *testing.T) {
+func TestResolvedSymbolLifetime(t *testing.T) {
 	needNative(t)
 	p := compile(t, "testdata/add.c", filepath.Join(t.TempDir(), "add.o"))
 	s := New(Options{})
 	defer s.Close()
 	load(t, s, p)
-	f, e := s.BindInt32("add")
+	f, e := s.Resolve("add")
 	if e != nil {
 		t.Fatal(e)
 	}
-	v, e := f.Call(20, 22)
+	v, e := callSymbolInt32(f, 20, 22)
 	if e != nil || v != 42 {
 		t.Fatalf("%d %v", v, e)
 	}
 	s.Close()
-	if _, e = f.Call(20, 22); !errors.Is(e, ErrClosed) {
+	if _, e = callSymbolInt32(f, 20, 22); !errors.Is(e, ErrClosed) {
 		t.Fatalf("call after close: %v", e)
 	}
 }

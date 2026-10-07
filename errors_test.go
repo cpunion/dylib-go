@@ -155,7 +155,7 @@ func TestNativeBackendBoundary(t *testing.T) {
 	for _, run := range []func() error{
 		func() error { return s.Link("unavailable") },
 		func() error { _, e := s.Lookup("unavailable"); return e },
-		func() error { _, e := s.CallInt32("unavailable", 1, 2); return e },
+		func() error { _, e := s.Resolve("unavailable"); return e },
 	} {
 		if e := run(); e == nil || !strings.Contains(e.Error(), "native execution requires cgo or llgo") {
 			t.Fatalf("no-cgo execution boundary: %v", e)

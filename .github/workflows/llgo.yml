@@ -79,6 +79,11 @@ jobs:
         run: llgo test -count=1 -v -tags libffi ./...
       - name: Build CLI with llgo
         run: llgo build -o ddlgo ./cmd/ddlgo
+      - name: Execute caller-defined llgo C signature example
+        run: bash scripts/verify-examples.sh llgo
+      - name: Execute caller-defined Go signature on Windows ARM64
+        if: matrix.mode == 'shared'
+        run: bash scripts/verify-examples.sh go
       - name: Record setup-llgo 386 boundary
         if: matrix.target == 'linux-amd64'
         run: echo 'setup-llgo v0.2.0 installs amd64/arm64 only; 386 runtime is not claimed by this workflow.' >> "$GITHUB_STEP_SUMMARY"

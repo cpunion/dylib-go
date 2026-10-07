@@ -11,6 +11,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/cpunion/llgo-dylib/internal/examplecall"
 	"github.com/cpunion/llgo-dylib/internal/native"
 )
 
@@ -83,10 +84,30 @@ func load(t *testing.T, s *Session, paths ...string) {
 }
 func call(t *testing.T, s *Session, n string, a, b, want int32) {
 	t.Helper()
-	v, e := s.CallInt32(n, a, b)
+	v, e := callInt32(s, n, a, b)
 	if e != nil || v != want {
 		t.Fatalf("%s(%d,%d) = %d, %v; want %d", n, a, b, v, e, want)
 	}
+}
+
+// Only the test adapter knows this fixed signature; the loader resolves a
+// generic symbol and keeps its address alive during the adapter invocation.
+func callInt32(s *Session, name string, a, b int32) (int32, error) {
+	symbol, err := s.Resolve(name)
+	if err != nil {
+		return 0, err
+	}
+	return callSymbolInt32(symbol, a, b)
+}
+
+func callSymbolInt32(symbol *Symbol, a, b int32) (int32, error) {
+	var result int32
+	err := symbol.WithAddress(func(address uintptr) error {
+		var err error
+		result, err = examplecall.Int32(address, a, b)
+		return err
+	})
+	return result, err
 }
 
 func TestNativeObjects(t *testing.T) {
@@ -260,7 +281,7 @@ func TestConcurrentCallsAndClose(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := 0; j < 100; j++ {
-				v, e := s.CallInt32("add", 20, 22)
+				v, e := callInt32(s, "add", 20, 22)
 				if e != nil && !errors.Is(e, ErrClosed) {
 					t.Error(e)
 				}
