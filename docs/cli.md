@@ -1,5 +1,7 @@
 # CLI declarations and dynamic calls
 
+Use `examples/run.sh <go|llgo> inspect FILE` or `examples/run.sh <go|llgo> call ARGS...` to build and run the CLI automatically. Calls build with `-tags libffi`; inspection uses the default build and can run with `CGO_ENABLED=0`. The runner preserves the caller's working directory, argument boundaries, output, and exit status.
+
 `ddlgo inspect FILE` reads metadata without loading native code. `ddlgo call` loads the supplied files into a session, resolves a named entry, and invokes it with an explicit C ABI signature. Options `-process` and `-keep-libraries` precede the declaration or invocation. Inputs must match the host's architecture and operating-system ABI.
 
 ## Input forms
@@ -13,7 +15,7 @@
 | Struct pointer | `"sum_pair_ptr(&{a:20,b:22}:*struct{a,b int32})int32"` | Follow with `FILE...` |
 | Original demonstration | `add` | Follow with `20 22 FILE...`; exact `int32(int32,int32)` signature |
 
-Quote declarations and invocations as a single shell argument. Unquoted parentheses may be interpreted or rejected by the shell before the CLI runs. The executable README scripts for [scalar calls](../examples/readme/dynamic.sh) and [struct calls](../examples/readme/structs.sh) demonstrate exact build/call commands and check their results.
+Quote declarations and invocations as a single shell argument. Unquoted parentheses may be interpreted or rejected by the shell before the CLI runs. Run `bash examples/run.sh go dynamic` or `bash examples/run.sh go structs` to build and check the examples; replace `go` with `llgo` as needed. The scripts for [scalar calls](../examples/readme/dynamic.sh) and [struct calls](../examples/readme/structs.sh) demonstrate exact build/call commands and check their results.
 
 Dynamic forms require a CLI compiled with `go build -tags libffi` or `llgo build -tags libffi`, plus libffi development files and pkg-config. Without the optional backend, the original demonstration still uses its typed cgo/llgo adapter; dynamic forms report a build instruction before loading any files. With libffi enabled, every form uses `Session.Bind` and `Function.Call`.
 
@@ -58,4 +60,4 @@ Results print decimal integers, `true`/`false`, round-trip precision floats, hex
 
 `scripts/verify-cli.sh go|llgo` builds a real C library and a separate CLI executable. Both hosts run on the six Linux/macOS/Windows amd64/arm64 targets. Native Go also runs in Linux/Windows 386 processes, with 32-bit C libraries and Go c-shared producers. Tests cover both dynamic forms, the original form, mixed integer/floating-point registers, integer boundaries, small scalars, booleans, null/temporary pointers, zero arguments, and void results. Struct tests cover arguments/results, nested padding, large returns, floating-point records, pointer fields, in/out mutation, alias identity, signature metadata copying, and temporary pointer lifetime errors. Raw scalar and struct object/archive calls run on all eight supported raw targets, including Windows ARM64 and Linux/Windows 386.
 
-Parser and literal tests run in all Go CI jobs, including no-cgo Linux/Windows 386 processes, and in llgo jobs. Separate cgo-enabled 386 jobs execute native objects and libraries; parsing alone is not execution evidence. The embedded struct script runs on six amd64/arm64 targets with both compilers and on both 386 targets with Go; the raw-object dynamic script runs on Linux/macOS. Embedme verifies that README commands match their executed source.
+Parser and literal tests run in all Go CI jobs, including no-cgo Linux/Windows 386 processes, and in llgo jobs. Separate cgo-enabled 386 jobs execute native objects and libraries; parsing alone is not execution evidence. The struct example script runs on six amd64/arm64 targets with both compilers and on both 386 targets with Go; the raw-object dynamic script runs on Linux/macOS. CI executes the compiler-first fixture commands and direct `call` runner forms shown in the README, including relative library paths with spaces; embedme verifies the library Go snippets.

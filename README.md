@@ -170,7 +170,7 @@ func main() {
 
 ```
 
-Neither typed adapter enables the optional dynamic ABI backend. CI compiles and runs these programs against a real C shared library with Go on eight targets and llgo on the six amd64/arm64 targets. Run `bash scripts/verify-examples.sh go` or `bash scripts/verify-examples.sh llgo` to reproduce the typed and dynamic examples; libffi development files are required for the dynamic example.
+Neither typed adapter enables the optional dynamic ABI backend. CI compiles and runs these programs against a real C shared library with Go on eight targets and llgo on the six amd64/arm64 targets. Run `bash examples/run.sh go library` or `bash examples/run.sh llgo library` to reproduce the typed and dynamic examples; libffi development files are required for the dynamic example.
 
 `Load` may be called repeatedly before the first `Link`, `Lookup`, `Resolve`, or `Bind`. Add all dependencies before linking. A failed link can be retried after adding dependencies. A successful link seals the session; create a new session for another plugin set.
 
@@ -263,7 +263,8 @@ The former experimental `BindInt32`, `CallInt32`, and `Int32Func` APIs have been
 | `internal/native/` | OS memory, instruction cache, and shared-library operations |
 | `examples/call/` | Fixed-signature adapter used only by the CLI and tests |
 | `examples/cgo/`, `examples/llgo/`, `examples/bind/` | Executable README examples |
-| `examples/readme/` | Executable README test CLI scripts |
+| `examples/run.sh` | Build and run the test CLI or example checks with Go or llgo |
+| `examples/readme/` | Build and check the CLI examples |
 | `cmd/ddlgo/` | Test CLI for inspection and native calls |
 | `testdata/` | Native compiler inputs for language probes |
 | `docs/` | Design, compatibility, comparisons, CI, and evidence |
@@ -276,126 +277,18 @@ See the [design and DDL mapping](docs/design.md), [ABIBridge / llcppg comparison
 
 ## Test CLI
 
-`cmd/ddlgo` is a testing tool for metadata inspection and native calls using the library API. Its `-keep-libraries` flag corresponds to `Options.KeepLibraries`, and `-process` to `Options.ProcessSymbols`.
+[examples/run.sh](examples/run.sh) builds the CLI with the selected compiler and passes the command and arguments through. `call` enables libffi; install its development files and pkg-config. Supply an object, archive, or shared library matching the host:
 
-### Object and archive smoke test
+| Example | Command |
+| --- | --- |
+| Inspect | `examples/run.sh go inspect <library>` |
+| Scalar declaration | `examples/run.sh go call "func add(int32,int32)int32" 20 22 <library>` |
+| Typed invocation | `examples/run.sh go call "add(20:int32 22:int32)int32" <library>` |
+| Struct value | `examples/run.sh go call "func sum_pair(struct{a,b int32})int32" "{a:20,b:22}" <library>` |
+| Struct pointer | `examples/run.sh go call "sum_pair_ptr(&{a:20,b:22}:*struct{a,b int32})int32" <library>` |
 
-On Linux amd64/arm64/386 or macOS amd64/arm64, run `bash examples/readme/quickstart.sh` from a checkout. Pass `llgo` as its argument to build the CLI with llgo. CI executes both variants and checks that the object and archive calls return 42:
+Replace `go` with `llgo` to use that compiler. Quote each declaration or invocation as a single shell argument. File paths remain relative to your working directory. Use Bash, including Git Bash/MSYS2 on Windows. CI checks struct declarations and typed pointers through this runner with both compilers.
 
-<!-- embedme examples/readme/quickstart.sh -->
+To build and verify the included fixtures, run `examples/run.sh go quickstart`, `examples/run.sh go dynamic`, or `examples/run.sh go structs`. The first two run on Linux/macOS; `structs` runs on all supported native targets and produces `build/structs.so`, `build/structs.dylib`, or `build/structs.dll` for further calls. `examples/run.sh go library` checks the typed and dynamic library API examples.
 
-```sh
-#!/usr/bin/env bash
-set -euo pipefail
-cd "$(dirname "$0")/../.."
-compiler=${1:-go} # Pass llgo to build the CLI with its direct C-call adapter.
-case "$compiler" in
-  go|llgo) ;;
-  *) echo 'usage: quickstart.sh [go|llgo]' >&2; exit 1 ;;
-esac
-
-mkdir -p build
-source scripts/native-cflags.sh
-"${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -fPIC -c testdata/add.c -o build/add.o
-"$compiler" build -o build/ddlgo ./cmd/ddlgo
-build/ddlgo inspect build/add.o
-result=$(build/ddlgo call add 20 22 build/add.o)
-test "$result" = 42
-echo "object result: $result"
-
-"${AR:-ar}" rcs build/add.a build/add.o
-result=$(build/ddlgo call add 20 22 build/add.a)
-test "$result" = 42
-echo "archive result: $result"
-
-# Metadata inspection also works without cgo.
-CGO_ENABLED=0 go run ./cmd/ddlgo inspect build/add.o
-
-```
-
-The CLI's plain `call add 20 22 FILE` form retains the original `int32_t(int32_t,int32_t)` demonstration. Caller-supplied signatures use the dynamic CLI below. The loader API has no signature-specific binding methods. Windows object/archive calls are also exercised by the CLI tests; see the [platform matrix](docs/support.md) for relocation and runtime limits.
-
-### Dynamic CLI signatures
-
-Build the CLI with `-tags libffi` and install libffi development files and pkg-config. It accepts a Go-style declaration followed by positional values, or a compact invocation containing typed values. Quote the whole declaration or invocation so the shell passes parentheses and spaces unchanged. Both forms below return 42; CI executes this script with Go and llgo on Linux/macOS amd64/arm64, and with Go on Linux 386:
-
-<!-- embedme examples/readme/dynamic.sh -->
-
-```sh
-#!/usr/bin/env bash
-set -euo pipefail
-cd "$(dirname "$0")/../.."
-compiler=${1:-go} # Pass llgo to build the same dynamic CLI with llgo.
-
-mkdir -p build
-source scripts/native-cflags.sh
-"${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -fPIC -c testdata/add.c -o build/add.o
-"$compiler" build -tags libffi -o build/ddlgo ./cmd/ddlgo
-
-result=$(build/ddlgo call "func add(int32,int32)int32" 20 22 build/add.o)
-test "$result" = 42
-echo "declaration result: $result"
-
-# Quote the whole invocation so parentheses and spaces reach the CLI.
-result=$(build/ddlgo call "add(20:int32 22:int32)int32" build/add.o)
-test "$result" = 42
-echo "typed invocation result: $result"
-
-```
-
-The `abi/signature` package parses declarations with Go's standard `go/parser`. Supported spellings are fixed-width integers from `int8`/`uint8` through `int64`/`uint64`, `byte`, `rune`, `bool`, `float32`, `float64`, `uintptr`, `unsafe.Pointer`, `*T`, and inline ordinary C structs. Omit the result for a C `void` return. Calls support up to 32 fixed arguments and one result. `int`, `uint`, strings, slices, arrays, unions, packed structs, variadic parameters, and multiple results are rejected. Parameter names and grouped parameters such as `a, b int32` are accepted in declarations.
-
-Integer values accept Go literal bases and underscores. Pointer values accept native addresses or `nil`; known pointee types also accept temporary literals, as shown below. Float results retain their precision, unsigned results retain all high bits, and void calls print `void`. The declaration must match the actual native C ABI; parsing does not infer or verify prototypes from object symbols. See the [CLI reference](docs/cli.md) for complete rules and verification coverage.
-
-
-#### Struct values and pointers
-
-Inline `struct{...}` descriptions support ordinary C structs as arguments and results, nested fields, and pointer fields. A known pointee type accepts a temporary literal such as `&40` or `&{a:20,b:22}`. The backend allocates native storage, copies fields in, and copies mutations back after the call. Layout, padding, and register classification come from libffi rather than Go's struct layout.
-
-This script runs with both Go and llgo on Linux/macOS/Windows amd64 and arm64, and with Go on Linux/Windows 386. Its source is embedded by embedme:
-
-<!-- embedme examples/readme/structs.sh -->
-```sh
-#!/usr/bin/env bash
-set -euo pipefail
-cd "$(dirname "$0")/../.."
-compiler=${1:-go} # Pass llgo to build with llgo instead.
-source scripts/native-cflags.sh
-mkdir -p build
-binary=build/ddlgo
-case "$(uname -s)" in
-  Darwin)
-    library=build/structs.dylib
-    "${CLANG:-clang}" -dynamiclib testdata/cli.c -o "$library"
-    ;;
-  Linux)
-    library=build/structs.so
-    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared -fPIC testdata/cli.c -o "$library"
-    ;;
-  MINGW*|MSYS*)
-    binary=build/ddlgo.exe
-    library=build/structs.dll
-    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared testdata/cli.c -Wl,--export-all-symbols -o "$library"
-    ;;
-  *) echo 'unsupported example host' >&2; exit 1 ;;
-esac
-"$compiler" build -tags libffi -o "$binary" ./cmd/ddlgo
-
-# Pass an ordinary C struct by value using a Go-style declaration.
-result=$("$binary" call "func sum_pair(struct{a,b int32})int32" "{a:20,b:22}" "$library")
-test "$result" = 42
-echo "struct value result: $result"
-
-# The known pointee type allows a temporary native copy of this literal.
-result=$("$binary" call "sum_pair_ptr(&{a:20,b:22}:*struct{a,b int32})int32" "$library")
-test "$result" = 42
-echo "struct pointer result: $result"
-
-# Mutations are copied back; a returned temporary pointer becomes a snapshot.
-result=$("$binary" call "mutate_pair(&{20,22}:*struct{a,b int32})*struct{a,b int32}" "$library")
-test "$result" = '&{a:22,b:20}'
-echo "modified struct result: $result"
-
-```
-
-Native code must not retain a temporary pointer beyond the call. See [literal and lifetime rules](docs/cli.md) for details and remaining limits.
+See the [CLI reference](docs/cli.md) for complete syntax, supported types, and lifetime rules. Options such as `-keep-libraries` and `-process` follow `call` and precede the signature, just as with `ddlgo`.

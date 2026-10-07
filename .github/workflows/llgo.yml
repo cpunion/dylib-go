@@ -80,22 +80,22 @@ jobs:
       - name: Build CLI with llgo
         run: llgo build -o ddlgo ./cmd/ddlgo
       - name: Execute README llgo and dynamic libffi examples
-        run: bash scripts/verify-examples.sh llgo
+        run: bash examples/run.sh llgo library
       - name: Execute dynamic CLI signatures, values, objects and libraries
         run: |
           bash scripts/verify-cli.sh llgo
-          bash examples/readme/structs.sh llgo
+          bash examples/run.sh llgo structs
       - name: Execute README object/archive quick start with llgo
         if: runner.os != 'Windows'
         run: |
-          bash examples/readme/quickstart.sh llgo
-          bash examples/readme/dynamic.sh llgo
+          bash examples/run.sh llgo quickstart
+          bash examples/run.sh llgo dynamic
       - name: Execute README Go examples on Windows ARM64
         if: matrix.target == 'windows-arm64'
         run: |
-          bash scripts/verify-examples.sh go
+          bash examples/run.sh go library
           bash scripts/verify-cli.sh go
-          bash examples/readme/structs.sh go
+          bash examples/run.sh go structs
       - name: Record setup-llgo 386 boundary
         if: matrix.target == 'linux-amd64'
         run: echo 'setup-llgo v0.2.0 installs amd64/arm64 only; 386 runtime is not claimed by this workflow.' >> "$GITHUB_STEP_SUMMARY"

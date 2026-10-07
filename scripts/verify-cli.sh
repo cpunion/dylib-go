@@ -86,3 +86,20 @@ expect 42 'add(20:int32 22:int32)int32' "$cli_dir/add.a"
 expect 42 'sum_pair({20,22}:struct{a,b int32})int32' "$cli_dir/pair.o"
 expect '{a:20,b:22}' 'echo_pair({20,22}:struct{a,b int32})struct{a,b int32}' "$cli_dir/pair.a"
 expect '&{a:22,b:20}' 'mutate_pair(&{20,22}:*struct{a,b int32})*struct{a,b int32}' "$cli_dir/pair.o"
+
+# The README runner builds the CLI and forwards arbitrary caller arguments.
+# Relative inputs must stay relative to the caller, including paths with spaces.
+runner="$(pwd)/examples/run.sh"
+caller_dir="$cli_dir/caller with spaces"
+mkdir -p "$caller_dir"
+caller_library="fixture library.${library##*.}"
+cp "$library" "$caller_dir/$caller_library"
+result=$(
+  cd "$caller_dir"
+  bash "$runner" "$compiler" call "func sum_pair(struct{a,b int32})int32" "{a:20,b:22}" "./$caller_library"
+)
+test "$result" = 42
+echo "$compiler runner struct declaration with relative library: $result"
+result=$(bash "$runner" "$compiler" call "mutate_pair(&{a:20,b:22}:*struct{a,b int32})*struct{a,b int32}" "$cli_dir/pair.a")
+test "$result" = '&{a:22,b:20}'
+echo "$compiler runner typed struct pointer from archive: $result"
