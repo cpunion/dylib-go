@@ -2,6 +2,12 @@
 
 日期：2026-10-07。记录本次实际运行结果；后续不同工具链/主机需要重新执行。
 
+## GitHub 原生 runner 验证
+
+独立 Go / llgo 工作流和精确覆盖范围见 [CI 矩阵](ci.md)。在 [PR #1](https://github.com/cpunion/llgo-dylib/pull/1) 的 `001f665` 提交上，llgo 六个原生 runner 作业全部通过：Linux/macOS 双架构、Windows amd64 的对象/归档/动态库执行，以及 Windows arm64 的 DLL、标量 ABI、Go/llgo 共享库调用。Windows arm64 原始 COFF 重定位仍拒绝。
+
+同一提交的 Go 五个原生作业的功能、语言接口和 race 测试全部通过，八个无 cgo 检查作业全部通过（包含实际运行的 Linux/Windows 386 测试进程）；Windows 的 `go vet` 另发现 `VirtualAlloc` 地址转换告警，后续提交已明确使用 OS 地址位重解释。最终结果以 PR 的最新提交检查为准。下面保留首次本地验证的环境和证据。
+
 ## 测试环境与结果
 
 | 环境 | 编译器/运行方式 | 结果 |

@@ -70,7 +70,7 @@ v, err := f.Call(abi.Int32(10), abi.Float64(20.5), abi.Float32(1.5), abi.Uint64(
 
 此路径需系统 libffi 开发文件和 pkg-config，使用 `go test -tags libffi ./...` 或 `llgo test -tags libffi ./...`。普通 Go 默认构建不需要 libffi；llgo 编译器自身运行时仍有其 GC/libffi 等依赖，独立于本包是否开启动态签名后端。当前不支持动态结构体、变参、回调、C++ `this` 调整或 Swift 调用约定。函数原型必须由调用方提供；符号名不构成原型验证。
 
-Linux 使用 llgo v1.0.6 时，先设置 `export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1`，避免该版本把空的 pkg-config C 编译参数误解析为 `-`；CI 已设置此兼容选项，普通 Go 不需要。
+Linux 使用 llgo v1.0.6 时，先设置 `export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1`，避免该版本把空的 pkg-config C 编译参数误解析为 `-`（[上游 issue #2749](https://github.com/xgo-dev/llgo/issues/2749)）；CI 已设置此兼容选项，普通 Go 不需要。
 
 ## 生命周期与边界
 

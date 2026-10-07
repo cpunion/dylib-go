@@ -39,6 +39,6 @@
 
 [setup-llgo v0.2.0](https://github.com/xgo-dev/setup-llgo/tree/v0.2.0) 的 [平台校验](https://github.com/xgo-dev/setup-llgo/blob/v0.2.0/src/platform.ts) 只接受 amd64/arm64，虽然 llgo 编译器本身已有部分 386 能力。本项目尚无 32 位重定位后端，不能把安装或交叉构建成功等同于动态对象执行支持。
 
-llgo v1.0.6 在 Linux 上会把只有换行的 `pkg-config --cflags libffi` 输出误解析为 `-`，导致 Clang 读取额外标准输入、产生两份 AST JSON 并使 cgo 构建失败。llgo 作业设置 `PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` 保留系统 include 参数作为临时兼容措施；它不关闭任何测试。
+llgo v1.0.6 在 Linux 上会把只有换行的 `pkg-config --cflags libffi` 输出误解析为 `-`，导致 Clang 读取额外标准输入、产生两份 AST JSON 并使 cgo 构建失败（[上游 issue #2749](https://github.com/xgo-dev/llgo/issues/2749)）。llgo 作业设置 `PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` 保留系统 include 参数作为临时兼容措施；它不关闭任何测试。
 
 Runner 标签依据 [GitHub 官方列表](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)，固定使用 ubuntu-24.04、ubuntu-24.04-arm、macos-15-intel、macos-15、windows-2022、windows-11-arm。
