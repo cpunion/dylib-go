@@ -239,6 +239,33 @@ Ordinary Go's default build does not require libffi. The llgo compiler's own run
 
 On Linux with llgo v1.0.6, set `export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` before enabling libffi. This avoids that version's newline-only pkg-config CFLAGS parsing bug ([upstream issue #2749](https://github.com/xgo-dev/llgo/issues/2749)). CI sets the workaround; ordinary Go does not require it.
 
+## Language interfaces and calling conventions
+
+Dynamic `Bind` uses the host's default C ABI (`FFI_DEFAULT_ABI`). Language C exports and native language ABIs have different support levels:
+
+| Language / interface | Calling convention / ABI | Current support | Verified coverage / limits |
+| --- | --- | --- | --- |
+| C | Host default C ABI | Supported subset | Eight Go targets; six llgo targets. Fixed-width scalars, pointers, ordinary structs, and struct pointers |
+| C with non-default conventions | x86 stdcall / fastcall; vectorcall | Not implemented in `Bind` | No calling-convention selector; use a compiled adapter matching the convention |
+| C++ C exports | `extern "C"`, host C ABI | Verified subset | Simple functions on native targets; raw fixtures disable exceptions and RTTI |
+| C++ free functions | C-compatible representation, exact mangled symbol | Conditional | Caller supplies the exact symbol and signature; direct mangled entry calls are not separately tested in CI |
+| C++ methods and objects | Compiler-specific C++ object ABI | Not implemented | No automatic `this` adjustment, virtual dispatch, construction/destruction, or exception adaptation |
+| Rust C exports | `extern "C"` | Verified subset | Linux/macOS amd64 and arm64; `no_std` leaf objects, `panic=abort` |
+| Rust native functions | Rust ABI | Not implemented | Use C exports; Rust-specific values and panic unwinding are not adapted |
+| Zig C exports | `export fn`, C calling convention | Verified subset | Linux/macOS amd64 and arm64; C-compatible exported functions |
+| Fortran C exports | `bind(C)`, `iso_c_binding` | Verified subset | Linux/macOS amd64 and arm64; `VALUE` for by-value arguments; native descriptors and hidden arguments are not adapted |
+| Go gc C exports | `c-shared` + `//export`, generated C entries | Verified subset | All eight Go targets; retain runtime libraries with `KeepLibraries` |
+| Go gc native functions | ABIInternal / ABI0 | Not implemented | Ordinary Go functions, strings, slices, and GC-managed values are not supported plugin interfaces |
+| llgo C interfaces | C exports / `c-shared`; typed C-pointer adapters | Verified subset | Six amd64/arm64 targets; 386 is unqualified; runtime initialization and ownership still apply |
+| Swift C exports | `@_cdecl`, C-compatible types | Verified subset | Shared libraries on macOS amd64 and arm64; raw runtime-registration objects are rejected |
+| Swift native functions | Swift calling convention and runtime ABI | Not implemented | No native generics, async, throws, or Swift value lifetime adaptation |
+| Objective-C / ObjC++ methods | Objective-C runtime dispatch | Not implemented | No built-in message-dispatch or ARC adapter; C facades are unverified |
+| Other native languages | Explicit C-compatible exports | Unverified | No compiler-producer execution tests or current support claim |
+
+The [language producer probes](languages_test.go) primarily test `int32` addition through C exports. Mixed scalar, struct, and pointer coverage comes from C fixtures; it does not establish every language's native value representation. On Windows 386, stdcall differs from cdecl, so Rust `extern "system"` is not covered by the default dynamic backend. On Windows amd64/arm64, an ignored `__stdcall` annotation does not by itself select a different ABI. Caller-defined cgo/llgo adapters can cover additional contracts, but that is not built-in dynamic ABI support.
+
+See the [DDL and ABIBridge comparison](docs/comparison.md#remaining-gaps) for missing loader features, native language adaptation, and proposed integration with llcppg.
+
 ## Lifetime and execution boundaries
 
 Inputs must be trusted native code. The parser and execution layer provide no security sandbox. Target ISA, object format, OS ABI, CPU features, and dependencies must match the host. Relocation does not emulate a different CPU or operating system.
