@@ -3,7 +3,7 @@
 Go and llgo use independent workflows and separately compiled test processes:
 
 - [Go workflow](../.github/workflows/go.yml): `actions/setup-go@v7`, Go 1.27.x.
-- [llgo workflow](../.github/workflows/llgo.yml): `xgo-dev/setup-llgo@v0.2.0`, llgo revision `c9cb76563511e774b819191e5a3ac93d32176ac9`, built from source, Go 1.27.x, LLVM 22; Windows uses the MinGW profile.
+- [llgo workflow](../.github/workflows/llgo.yml): `xgo-dev/setup-llgo@v0.2.0`, llgo revision `fd60172d4ee2808a13900bf9b61605bdf8b52448`, built from source, Go 1.27.x, LLVM 22; Windows uses the MinGW profile.
 - [README workflow](../.github/workflows/readme.yml): `actions/setup-node@v7`, Node 24, and lockfile-pinned embedme 1.22.1; verifies embedded source matches the README.
 
 Workflows run on pushes to main, pull requests, and manual dispatch. Pure Go jobs set `CGO_ENABLED=0` and run parser, error, and execution-refusal tests in a process compiled for the target architecture.
