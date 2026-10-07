@@ -25,13 +25,17 @@ jobs:
           - {os: macos-15-intel, target: darwin-amd64, arch: amd64, mode: native, languages: 'rust,zig,fortran,swift,go,llgo'}
           - {os: macos-15, target: darwin-arm64, arch: arm64, mode: native, languages: 'rust,zig,fortran,swift,go,llgo'}
           - {os: windows-2022, target: windows-amd64, arch: amd64, mode: native, languages: 'go,llgo'}
-          - {os: windows-11-arm, target: windows-arm64, arch: arm64, mode: boundary, languages: ''}
+          - {os: windows-11-arm, target: windows-arm64, arch: arm64, mode: shared, languages: 'go,llgo'}
     defaults:
       run:
         shell: bash
     env:
       CGO_ENABLED: '1'
+      # llgo v1.0.6 misparses newline-only pkg-config CFLAGS as a '-' input.
+      # Keep the system include flag until the upstream parser is fixed.
+      PKG_CONFIG_ALLOW_SYSTEM_CFLAGS: '1'
       DYLIB_TEST_REQUIRE_NATIVE: ${{ matrix.mode == 'native' && '1' || '0' }}
+      DYLIB_TEST_REQUIRE_SHARED: '1'
       DYLIB_TEST_REQUIRE_TOOLS: '1'
       DYLIB_TEST_LANGUAGES: ${{ matrix.languages }}
     steps:
@@ -65,7 +69,6 @@ jobs:
       - name: Execute direct llgo function-pointer path
         run: llgo test -count=1 -v ./...
       - name: Execute optional scalar libffi ABI
-        if: matrix.mode == 'native'
         env:
           DYLIB_TEST_LANGUAGES: ''
         run: llgo test -count=1 -v -tags libffi ./...

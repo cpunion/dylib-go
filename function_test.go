@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/cpunion/llgo-dylib/abi"
@@ -33,8 +34,18 @@ func TestScalarABI(t *testing.T) {
 	if !abi.Available() {
 		t.Skip("requires -tags libffi")
 	}
-	needNative(t)
-	p := compile(t, "testdata/scalars.c", filepath.Join(t.TempDir(), "scalars.o"))
+	needShared(t)
+	dir := t.TempDir()
+	var p string
+	if runtime.GOOS == "windows" {
+		// Floating-point constant pools can require COFF COMDAT selection.
+		// Test the scalar call ABI through the OS linker on Windows, including
+		// ARM64 where raw COFF relocation is not implemented yet.
+		p = filepath.Join(dir, "scalars.dll")
+		command(t, compiler(), "-shared", "testdata/scalars.c", "-Wl,--export-all-symbols", "-o", p)
+	} else {
+		p = compile(t, "testdata/scalars.c", filepath.Join(dir, "scalars.o"))
+	}
 	s := New(Options{})
 	defer s.Close()
 	load(t, s, p)

@@ -12,12 +12,12 @@
 | Linux amd64 / arm64 | 各自原生 runner | 各自原生 runner | 原生执行 |
 | macOS amd64 / arm64 | Intel / Apple Silicon runner | 同左 | 原生执行 |
 | Windows amd64 | 原生 runner，Clang/MinGW | 原生 runner | 原生执行，MinGW |
-| Windows arm64 | 暂不提供原始对象执行 | ARM64 runner | 编译、检查与 ARM64 COFF 拒绝测试 |
+| Windows arm64 | 暂不提供原始对象执行 | ARM64 runner | 系统 DLL 调用、标量 ABI、Go/llgo 共享库；ARM64 COFF 拒绝测试 |
 | Linux 386 | 暂不提供 32 位对象执行 | amd64 Linux 上运行 32 位 Go 测试进程 | setup-llgo 当前不能安装 386 |
 | Windows 386 | 暂不提供 32 位对象执行 | amd64 Windows 上运行 32 位 Go 测试进程 | setup-llgo 当前不能安装 386 |
 | macOS 386 | 不适用 | Go 已无 darwin/386 port；CI 验证此边界 | 不适用 |
 
-原生作业设置 `DYLIB_TEST_REQUIRE_NATIVE=1` 和 `DYLIB_TEST_REQUIRE_TOOLS=1`。缺少执行后端或必需工具时直接失败。Windows ARM64 作业明确命名为 `boundary`，不是执行覆盖。386 与 ARM64 COFF 测试由 clang 实际生成对象，再断言解析结果与加载拒绝。
+原生对象作业设置 `DYLIB_TEST_REQUIRE_NATIVE=1` 和 `DYLIB_TEST_REQUIRE_TOOLS=1`。缺少执行后端或必需工具时直接失败。Windows ARM64 作业命名为 `shared`，用 `DYLIB_TEST_REQUIRE_SHARED=1` 强制验证系统 DLL 调用，不宣称支持原始 ARM64 COFF 重定位。386 与 ARM64 COFF 测试由 clang 实际生成对象，再断言解析结果与加载拒绝。
 
 ## 语言与 ABI
 
@@ -25,11 +25,11 @@
 | --- | --- | --- |
 | C、无异常/RTTI 的 C++ 对象、归档、动态库 | 五个原生执行目标 | 五个原生执行目标 |
 | 固定 `int32(int32,int32)` | cgo 桥 | llgo 直接 C ABI 函数指针 |
-| libffi 混合整数/浮点标量接口 | 五个目标，另有 race 检查 | 五个目标 |
+| libffi 混合整数/浮点标量接口 | 五个目标，另有 race 检查 | 六个目标；Windows 用系统 DLL 处理常量池 COMDAT |
 | Rust `extern C`、Zig `export`、Fortran `bind(C)` | Linux/macOS 两架构 | Linux/macOS 两架构 |
 | Swift C 导出动态库、原始元数据对象拒绝 | macOS 两架构 | macOS 两架构 |
-| Go `c-shared` | 五个原生执行目标 | 五个原生执行目标 |
-| llgo `c-shared` | 本地已验证；CI 使用 llgo 宿主 | 五个原生执行目标 |
+| Go `c-shared` | 五个原生执行目标 | 六个目标，含 Windows arm64 DLL |
+| llgo `c-shared` | 本地已验证；CI 使用 llgo 宿主 | 六个目标，含 Windows arm64 DLL |
 
 这些是工作流的测试要求，成功与否应查看 [Go](https://github.com/cpunion/llgo-dylib/actions/workflows/go.yml) / [llgo](https://github.com/cpunion/llgo-dylib/actions/workflows/llgo.yml) 对应提交的结果。接口覆盖只代表样例中的 C ABI 子集；Windows Rust/Zig/Fortran、Linux Swift、ObjC 原生 ABI 等没有在本矩阵中验证。
 
@@ -38,5 +38,7 @@
 ## 上游边界
 
 [setup-llgo v0.2.0](https://github.com/xgo-dev/setup-llgo/tree/v0.2.0) 的 [平台校验](https://github.com/xgo-dev/setup-llgo/blob/v0.2.0/src/platform.ts) 只接受 amd64/arm64，虽然 llgo 编译器本身已有部分 386 能力。本项目尚无 32 位重定位后端，不能把安装或交叉构建成功等同于动态对象执行支持。
+
+llgo v1.0.6 在 Linux 上会把只有换行的 `pkg-config --cflags libffi` 输出误解析为 `-`，导致 Clang 读取额外标准输入、产生两份 AST JSON 并使 cgo 构建失败。llgo 作业设置 `PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` 保留系统 include 参数作为临时兼容措施；它不关闭任何测试。
 
 Runner 标签依据 [GitHub 官方列表](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)，固定使用 ubuntu-24.04、ubuntu-24.04-arm、macos-15-intel、macos-15、windows-2022、windows-11-arm。
