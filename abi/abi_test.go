@@ -15,3 +15,18 @@ func TestSignatureValidation(t *testing.T) {
 		t.Fatal("type mismatch accepted")
 	}
 }
+
+func TestVariadicValidation(t *testing.T) {
+	for _, s := range []Signature{
+		{Convention: 99}, {FixedArgs: 1}, {Variadic: true},
+		{Variadic: true, FixedArgs: 2, Args: []Type{I32}},
+		{Variadic: true, FixedArgs: 1, Convention: StdCall, Args: []Type{I32}},
+	} {
+		if err := s.Validate(); err == nil {
+			t.Fatalf("accepted %+v", s)
+		}
+	}
+	if err := (Signature{Variadic: true, FixedArgs: 1, Args: []Type{I32, F32, U8}}).Validate(); err != nil {
+		t.Fatal(err)
+	}
+}

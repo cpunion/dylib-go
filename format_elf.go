@@ -90,9 +90,6 @@ func parseELF(name string, b []byte) (*file, error) {
 	}
 	o.sections = make([]*section, len(f.Sections))
 	for i, s := range f.Sections {
-		if s.Type == elf.SHT_GROUP {
-			o.unsupported("ELF section groups/COMDAT")
-		}
 		if s.Flags&elf.SHF_TLS != 0 {
 			o.unsupported("TLS section " + s.Name)
 		}
@@ -113,6 +110,40 @@ func parseELF(name string, b []byte) (*file, error) {
 			}
 		}
 		o.sections[i] = v
+	}
+	grouped := make(map[int]bool)
+	for _, s := range f.Sections {
+		if s.Type != elf.SHT_GROUP {
+			continue
+		}
+		if uint64(s.Link) >= uint64(len(f.Sections)) || f.Sections[s.Link].Type != elf.SHT_SYMTAB || uint64(s.Info) >= uint64(len(o.symbols)) {
+			return nil, fmt.Errorf("invalid ELF group symbol table or signature")
+		}
+		data, err := s.Data()
+		if err != nil {
+			return nil, err
+		}
+		if len(data) < 8 || len(data)%4 != 0 || f.ByteOrder.Uint32(data) != 1 {
+			return nil, fmt.Errorf("only nonempty ELF GRP_COMDAT groups are supported")
+		}
+		g := sectionGroup{key: o.symbols[s.Info].name, selection: 2}
+		if g.key == "" {
+			return nil, fmt.Errorf("empty ELF COMDAT signature")
+		}
+		for offset := 4; offset < len(data); offset += 4 {
+			index := int(f.ByteOrder.Uint32(data[offset:]))
+			if index <= 0 || index >= len(f.Sections) || f.Sections[index].Type == elf.SHT_GROUP || grouped[index] || f.Sections[index].Flags&elf.SHF_GROUP == 0 {
+				return nil, fmt.Errorf("invalid or duplicate ELF COMDAT member")
+			}
+			grouped[index] = true
+			g.sections = append(g.sections, index)
+		}
+		o.groups = append(o.groups, g)
+	}
+	for i, s := range f.Sections {
+		if s.Flags&elf.SHF_GROUP != 0 && !grouped[i] {
+			return nil, fmt.Errorf("ELF grouped section has no group")
+		}
 	}
 	for _, s := range f.Sections {
 		if s.Type != elf.SHT_RELA && s.Type != elf.SHT_REL {

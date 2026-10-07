@@ -35,16 +35,18 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 Implemented relocation families:
 
 - ELF i386: NONE, 32, PC32, PLT32, GOT32/GOT32X, GOTOFF, GOTPC; implicit REL and explicit RELA addends. GOT slots are 4 bytes, and relative arithmetic wraps within the 32-bit address space.
-- COFF i386: ABSOLUTE, DIR32, DIR32NB, REL32. Leading C linker underscores are normalized; stdcall suffixes remain, and the dynamic backend currently uses C cdecl only.
-- COFF ARM64: ABSOLUTE, ADDR32/ADDR32NB/ADDR64, BRANCH26, PAGEBASE_REL21, REL21, PAGEOFFSET_12A/12L, BRANCH19/14, REL32. Conditional branches must fit their architectural displacement; SECREL/SECTION are unimplemented.
+- COFF i386: ABSOLUTE, DIR32, DIR32NB, REL32, SECTION, SECREL. Leading C linker underscores are normalized; stdcall/fastcall decorations remain. Dynamic calls support explicit cdecl, stdcall, and fastcall on Windows 386.
+- COFF ARM64: ABSOLUTE, ADDR32/ADDR32NB/ADDR64, BRANCH26, PAGEBASE_REL21, REL21, PAGEOFFSET_12A/12L, BRANCH19/14, REL32, SECTION, SECREL, SECREL_LOW12A/HIGH12A/LOW12L. Conditional branches must fit their architectural displacement.
 
 - ELF x86-64: NONE, 64, PC32, PLT32, GOTPCREL/GOTPCRELX/REX_GOTPCRELX, 32/32S, PC64.
 - ELF AArch64: NONE, ABS64/ABS32, PREL64/PREL32, ADRP page, ADD/LDST8/16/32/64/128 low12, CALL26/JUMP26, GOT page/load64.
 - Mach-O x86-64: UNSIGNED, SIGNED, BRANCH, GOT_LOAD/GOT, external SUBTRACTOR+UNSIGNED, SIGNED_1/2/4.
 - Mach-O arm64: UNSIGNED, external SUBTRACTOR+UNSIGNED, BRANCH26, PAGE21/PAGEOFF12, GOT page/offset, POINTER_TO_GOT, paired ADDEND. Local section-ordinal instruction relocations remain unsupported.
-- COFF AMD64: ABSOLUTE, ADDR64, ADDR32, ADDR32NB, REL32 through REL32_5. `__imp_` names use GOT slots for explicit DLL symbols. SECTION/SECREL, weak external auxiliary aliases, and COMDAT are unimplemented.
+- COFF AMD64: ABSOLUTE, ADDR64, ADDR32, ADDR32NB, REL32 through REL32_5. SECTION/SECREL encode logical image-section ordinals and offsets. `__imp_` names use GOT slots for explicit DLL symbols; weak external auxiliary aliases are unimplemented.
 
-Unknown relocations, overflow, writes outside sections, incompatible targets, and duplicate strong symbols fail without publishing a partial executable image. Exception metadata is skipped without registering an unwinder: the raw object path therefore does not support throwing exceptions or stack unwinding. Objects with recognized TLS, automatic constructors/destructors, COMDAT, or Swift/ObjC registration requirements are rejected.
+Unknown relocations, overflow, writes outside sections, incompatible targets, and duplicate non-COMDAT strong symbols fail without publishing a partial executable image. Exception metadata is skipped without registering an unwinder: the raw object path therefore does not support throwing exceptions or stack unwinding. Objects with recognized TLS, automatic constructors/destructors, unsupported COMDAT selections, or Swift/ObjC registration requirements are rejected.
+
+ELF `GRP_COMDAT` groups retain the first signature-matched group. COFF supports NODUPLICATES, ANY, SAME_SIZE, ASSOCIATIVE, and LARGEST; EXACT_MATCH/NEWEST remain unsupported. Selection drops whole groups and their relocation dependencies before archive extraction, follows associative chains, and snapshots inputs for retry. Conflicting rules, size mismatches, and association cycles fail. Cross-group references to discarded local symbols fail rather than guessing a corresponding symbol. Mach-O coalesced sections remain unsupported. COFF SECTION ordinals describe this loader's separate input sections, not a generated PE section table.
 
 ## Language outputs
 
@@ -65,7 +67,7 @@ File format support alone does not establish language support. A callable entry 
 | D | Independent C ABI boundary can be attempted as native input | No DDL-specific D compatibility or D compiler/runtime verification |
 | Odin, Nim, Pascal, other native compilers | C exports with complete runtimes or standalone computation objects | Possible extensions, but no execution evidence and no current support claim |
 
-`Resolve` and `Symbol.WithAddress` support caller-defined adapters for any compatible native signature or data layout. llgo can compile known C signatures into direct calls; ordinary Go can use typed cgo bridges. The loader does not infer or validate those signatures. Optional dynamic `Bind` uses libffi for fixed-width 8/16/32/64-bit integers, C `bool`, `f32/f64`, pointers, and ordinary C structs, with at most 32 fixed arguments and the host's default C ABI. Struct arguments/results, nesting, and temporary pointers are tested; arrays, unions, packed records, and bitfields remain unsupported. It does not supply C++/Swift or cross-OS ABI adaptation.
+`Resolve` and `Symbol.WithAddress` support caller-defined adapters for any compatible native signature or data layout. llgo can compile known C signatures into direct calls; ordinary Go can use typed cgo bridges. The loader does not infer or validate those signatures. Optional dynamic `Bind` uses libffi for fixed-width 8/16/32/64-bit integers, C `bool`, `f32/f64`, pointers, and ordinary C structs, with at most 32 total arguments and the host C ABI, plus fixed stdcall/fastcall calls on Windows 386. Variadic signatures specify a fixed-prefix count and one concrete tail; small scalar tail types receive C default argument promotions. Bindings retain reusable CIFs and record layouts until session close. Standalone `abi.Prepare` plans require explicit close and external code ownership. Struct arguments/results, nesting, and temporary pointers are tested; arrays, unions, packed records, and bitfields remain unsupported. It does not supply C++/Swift or cross-OS ABI adaptation.
 
 ## Other execution domains
 

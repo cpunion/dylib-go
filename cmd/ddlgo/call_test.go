@@ -35,6 +35,11 @@ func TestInputErrorsBeforeLoading(t *testing.T) {
 		{"call", "func add(string)int32", "20", "input.o"},
 		{"call", "func add(uint32)uint32", "-1", "input.o"},
 		{"call", "add", "2147483648", "22", "input.o"},
+		{"call", "-abi=unknown", "func f()", "input.o"},
+		{"call", "-variadic-from=0", "func f(int32)", "1", "input.o"},
+		{"call", "-variadic-from=2", "func f(int32)", "1", "input.o"},
+		{"call", "-variadic-from=-2", "func f()", "input.o"},
+		{"call", "-abi=stdcall", "-variadic-from=1", "func f(int32)", "1", "input.o"},
 	} {
 		var output bytes.Buffer
 		err := run(args, &output)

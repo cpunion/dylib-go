@@ -84,7 +84,9 @@ func (s Signature) ReturnType() TypeDesc {
 
 // Clone copies a signature that has passed Validate.
 func (s Signature) Clone() Signature {
-	c := Signature{Result: s.Result, Args: append([]Type(nil), s.Args...)}
+	c := s
+	c.Args = append([]Type(nil), s.Args...)
+	c.ArgTypes = nil
 	for _, d := range s.ArgTypes {
 		c.ArgTypes = append(c.ArgTypes, d.Clone())
 	}

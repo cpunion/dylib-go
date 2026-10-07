@@ -36,6 +36,7 @@ func parseCOFF(name string, b []byte) (*file, error) {
 		}
 	}
 	o.symbols = make([]symbol, len(f.COFFSymbols))
+	comdats := make(map[int]sectionGroup)
 	for i := 0; i < len(f.COFFSymbols); {
 		s := f.COFFSymbols[i]
 		n, e := s.FullName(f.StringTable)
@@ -62,6 +63,26 @@ func parseCOFF(name string, b []byte) (*file, error) {
 			o.unsupported("COFF weak externals/alias auxiliary records")
 		}
 		o.symbols[i] = v
+		if o.info.Kind == "object" && s.StorageClass == 3 && s.Value == 0 && s.Type == 0 && s.NumberOfAuxSymbols != 0 && s.SectionNumber > 0 {
+			sectionIndex := int(s.SectionNumber)
+			if sectionIndex > len(f.Sections) {
+				return nil, fmt.Errorf("invalid COFF section definition")
+			}
+			if f.Sections[sectionIndex-1].Characteristics&0x1000 != 0 {
+				aux, err := f.COFFSymbolReadSectionDefAux(i)
+				if err != nil {
+					return nil, err
+				}
+				if _, exists := comdats[sectionIndex]; exists {
+					return nil, fmt.Errorf("duplicate COFF COMDAT section definition")
+				}
+				g := sectionGroup{sections: []int{sectionIndex}, selection: aux.Selection}
+				if aux.Selection == 5 {
+					g.parent = int(aux.SecNum)
+				}
+				comdats[sectionIndex] = g
+			}
+		}
 		if i+int(s.NumberOfAuxSymbols) >= len(f.COFFSymbols) {
 			return nil, fmt.Errorf("invalid COFF auxiliary symbol count")
 		}
@@ -80,7 +101,33 @@ func parseCOFF(name string, b []byte) (*file, error) {
 			continue
 		}
 		if flags&0x1000 != 0 {
-			o.unsupported("COFF COMDAT section " + s.Name)
+			g, ok := comdats[i+1]
+			if !ok {
+				return nil, fmt.Errorf("missing COFF COMDAT auxiliary record")
+			}
+			switch g.selection {
+			case 1, 2, 3, 6:
+				// The external definition identifies the COMDAT, not the section name.
+				for _, sym := range o.symbols {
+					if sym.global && sym.section == i+1 && sym.value == 0 {
+						g.key = sym.name
+						break
+					}
+				}
+				if g.key == "" {
+					return nil, fmt.Errorf("COFF COMDAT has no external key")
+				}
+			case 5:
+				if g.parent == i+1 || g.parent <= 0 || g.parent > len(f.Sections) {
+					return nil, fmt.Errorf("invalid associative COFF COMDAT parent")
+				}
+				if _, exists := comdats[g.parent]; !exists {
+					return nil, fmt.Errorf("associative COFF parent is not COMDAT")
+				}
+			default:
+				o.unsupported(fmt.Sprintf("COFF COMDAT selection %d in %s", g.selection, s.Name))
+			}
+			o.groups = append(o.groups, g)
 		}
 		if strings.HasPrefix(s.Name, ".tls") {
 			o.unsupported("TLS section " + s.Name)

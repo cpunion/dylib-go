@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/cpunion/dylib-go/abi"
@@ -36,15 +35,9 @@ func TestScalarABI(t *testing.T) {
 	}
 	needShared(t)
 	dir := t.TempDir()
-	var p string
-	if runtime.GOOS == "windows" {
-		// Floating-point constant pools can require COFF COMDAT selection.
-		// Test the scalar call ABI through the OS linker on all Windows targets.
-		p = filepath.Join(dir, "scalars.dll")
-		command(t, compiler(), "-shared", "testdata/scalars.c", "-Wl,--export-all-symbols", "-o", p)
-	} else {
-		p = compile(t, "testdata/scalars.c", filepath.Join(dir, "scalars.o"))
-	}
+	// Raw COFF constant pools now use the same COMDAT selection as C++ inline
+	// definitions; this call exercises both object linking and the call ABI.
+	p := compile(t, "testdata/scalars.c", filepath.Join(dir, "scalars.o"))
 	s := New(Options{})
 	defer s.Close()
 	load(t, s, p)

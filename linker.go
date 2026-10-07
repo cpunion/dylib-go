@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/cpunion/dylib-go/abi"
 	"github.com/cpunion/dylib-go/internal/native"
 	"os"
 	"path/filepath"
@@ -39,6 +40,7 @@ type Session struct {
 	defined map[string]uintptr
 	image   *image
 	closed  bool
+	plans   []*abi.CallPlan
 }
 
 func New(opts Options) *Session {
@@ -242,12 +244,16 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 	}
 	used := map[*object]bool{}
 	for {
-		defs, err := definitions(objs)
+		selected, err := coalesceObjects(objs)
+		if err != nil {
+			return nil, err
+		}
+		defs, err := definitions(selected)
 		if err != nil {
 			return nil, err
 		}
 		wanted := append([]string{}, roots...)
-		for _, o := range objs {
+		for _, o := range selected {
 			refs, e := references(o)
 			if e != nil {
 				return nil, e
@@ -293,7 +299,7 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 			}
 		}
 		if !changed {
-			return objs, nil
+			return selected, nil
 		}
 	}
 }
@@ -326,20 +332,7 @@ func (s *Session) link(roots []string) error {
 	if err != nil {
 		return err
 	}
-	// Offsets belong to this link attempt, so failed links can be retried.
-	clones := make([]*object, len(objs))
-	for i, o := range objs {
-		c := *o
-		c.sections = make([]*section, len(o.sections))
-		for j, v := range o.sections {
-			if v != nil {
-				n := *v
-				c.sections[j] = &n
-			}
-		}
-		clones[i] = &c
-	}
-	objs = clones
+	// Selection returns private snapshots, including COMDAT discard decisions.
 	defs, err := definitions(objs)
 	if err != nil {
 		return err
@@ -388,6 +381,10 @@ func (s *Session) Close() error {
 	}
 	s.closed = true
 	var err error
+	for _, plan := range s.plans {
+		plan.Close()
+	}
+	s.plans = nil
 	if s.image != nil {
 		err = s.image.close()
 		s.image = nil

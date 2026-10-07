@@ -50,12 +50,24 @@ func (im *image) relocate(o *object, r relocation) error {
 		if o.info.Arch == "amd64" && r.typ == 1 || o.info.Arch == "arm64" && r.typ == 14 {
 			w = 8
 		}
+		if o.info.Arch == "amd64" && r.typ == 10 || o.info.Arch == "arm64" && r.typ == 13 || o.info.Arch == "386" && r.typ == 10 {
+			w = 2
+		}
 	}
 	if r.offset > sec.size || uint64(w) > sec.size-r.offset {
 		return fmt.Errorf("relocation writes outside section")
 	}
 	b := im.mem[sec.offset+r.offset : sec.offset+r.offset+uint64(w)]
 	p := im.base + uintptr(sec.offset+r.offset)
+	if o.info.Format == "COFF" {
+		sectionRelocation := r.typ == 10 || r.typ == 11
+		if o.info.Arch == "arm64" {
+			sectionRelocation = r.typ == 8 || r.typ == 9 || r.typ == 10 || r.typ == 11 || r.typ == 13
+		}
+		if sectionRelocation {
+			return im.relocCOFFSection(o, r, b)
+		}
+	}
 	s, e := im.symbol(o, r.symbol, r.local)
 	if e != nil {
 		return e
@@ -83,6 +95,87 @@ func (im *image) relocate(o *object, r relocation) error {
 		return im.relocCOFF(o, r, b, s, p)
 	}
 	return fmt.Errorf("no relocation backend")
+}
+
+// COFF SECTION and SECREL encode a section ordinal or an offset in that
+// section, not a process address. This image keeps each input section separate.
+func (im *image) relocCOFFSection(o *object, r relocation, b []byte) error {
+	if r.symbol < 0 || r.symbol >= len(o.symbols) {
+		return fmt.Errorf("invalid section-relative symbol")
+	}
+	s := o.symbols[r.symbol]
+	if s.global {
+		if d, ok := im.defs[s.name]; ok {
+			o, s = d.o, d.sym()
+		}
+	}
+	if s.section <= 0 || s.section >= len(o.sections) || o.sections[s.section] == nil || s.value > o.sections[s.section].size {
+		return fmt.Errorf("section-relative relocation requires a symbol in a loaded object section")
+	}
+	if len(b) == 2 {
+		ordinal := uint64(0)
+		found := false
+		for _, object := range im.objects {
+			for i, section := range object.sections {
+				if section == nil {
+					continue
+				}
+				ordinal++
+				if object == o && i == s.section {
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+		ordinal += uint64(le.Uint16(b))
+		if !found || ordinal > math.MaxUint16 {
+			return fmt.Errorf("COFF section ordinal overflow or missing section")
+		}
+		le.PutUint16(b, uint16(ordinal))
+		return nil
+	}
+	value := s.value
+	if o.info.Arch != "arm64" || r.typ == 8 {
+		if value+uint64(le.Uint32(b)) > math.MaxUint32 {
+			return fmt.Errorf("COFF section-relative offset overflow")
+		}
+		le.PutUint32(b, uint32(value)+le.Uint32(b))
+		return nil
+	}
+	ins := le.Uint32(b)
+	if r.typ == 11 {
+		scale, err := armOffsetScale(ins)
+		if err != nil || ins&0x3b000000 != 0x39000000 {
+			return fmt.Errorf("SECREL_LOW12L requires an unsigned-offset load/store")
+		}
+		value += uint64((ins>>10)&0xfff) << scale
+		return armPageOff(b, uintptr(value), scale)
+	}
+	if ins&0x5f000000 != 0x11000000 {
+		return fmt.Errorf("SECREL ADD relocation requires ADD/ADDS")
+	}
+	shift := uint(0)
+	if r.typ == 10 {
+		shift = 12
+	}
+	if (ins>>22)&1 != uint32(shift/12) {
+		return fmt.Errorf("SECREL ADD shift mismatch")
+	}
+	// COFF HIGH12A's encoded immediate is a byte addend before extracting
+	// bits 12..23, even though the final ADD executes with a 12-bit shift.
+	value += uint64((ins >> 10) & 0xfff)
+	if value > math.MaxUint32 {
+		return fmt.Errorf("COFF section-relative offset overflow")
+	}
+	if shift == 12 && value >= 1<<24 {
+		return fmt.Errorf("SECREL_HIGH12A offset overflow")
+	}
+	field := uint32(value>>shift) & 0xfff
+	le.PutUint32(b, (ins&^uint32(0xfff<<10))|field<<10)
+	return nil
 }
 
 func (im *image) relocELF(o *object, r relocation, b []byte, s, p uintptr) error {

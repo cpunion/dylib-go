@@ -44,7 +44,7 @@ dylib-go implements the general object-loading path: identify content, model sec
 
 Source anchors: [default registry](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/DefaultRegistry.d), [ELF limits](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/elf/ELFBinary.d), [loader registry](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/LoaderRegistry.d), [path library](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/PathLibrary.d), [lazy linker](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/xf/linker/LazyLinker.d), [compiler/provider setup](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/xf/linker/DefaultLinker.d), [typed library access](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/DynamicLibrary.d), and [module initialization](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/Linker.d).
 
-Separately, broader raw-object compatibility still needs COMDAT/weak aliases, remaining relocations, TLS, import-library/bigobj handling, and native unwind registration. These are current dylib-go gaps, not a claim that DDL completely implemented them. The host OS supplies initialization, TLS, dependencies, and unwind metadata for complete shared libraries; it does not adapt an incompatible call signature or language value.
+Separately, broader raw-object compatibility still needs additional COMDAT rules/weak aliases, remaining relocations, TLS, import-library/bigobj handling, and native unwind registration. These are current dylib-go gaps, not a claim that DDL completely implemented them. The host OS supplies initialization, TLS, dependencies, and unwind metadata for complete shared libraries; it does not adapt an incompatible call signature or language value.
 
 ### Compared with ABIBridge
 
@@ -52,7 +52,7 @@ ABIBridge provides native language calls and runtime interpretation above Apple 
 
 | Area | ABIBridge in the inspected snapshot | dylib-go today / remaining work |
 | --- | --- | --- |
-| Dynamic C calls | Explicit signatures, variadic tails with C promotions, and reusable prepared call interfaces; no fixed argument-count limit | Host-default C ABI, scalars and ordinary C structs, at most 32 fixed arguments. Variadic calls, additional aggregate forms, ABI selection, and reusable prepared CIFs remain |
+| Dynamic C calls | Explicit signatures, variadic tails with C promotions, and reusable prepared call interfaces; no fixed argument-count limit | Host C ABI plus Windows 386 stdcall/fastcall; scalars, ordinary C structs, concrete variadic shapes, and owned reusable CIFs. At most 32 total arguments; additional aggregate forms and conventions remain |
 | Declaration resolution | Source-level Swift/C++ declarations, overload selection, image scopes, and shared metadata indexes | Exact linkage names; Go-style parsing supplies types but does not discover native prototypes. Header/declaration manifests or generated adapters can add validation |
 | C++ receivers and virtual entries | Direct methods, owned/borrowed receiver storage, explicit base views, and adapter-described virtual tables/authentication | No built-in method/object ABI. Callers need C facades or compiled adapters; nontrivial C++ values also require compiler adapters in ABIBridge |
 | Swift native ABI | Supported native values, metadata/witnesses, generic binding, direct/indirect results, async/throws, and explicit value operations | Only tested C exports from complete libraries. Native Swift signatures, managed values, generics, tasks, and errors need a dedicated runtime adapter |
@@ -67,8 +67,8 @@ ABIBridge reports routine runtime tests on macOS and iOS Simulator with selected
 
 ### Priorities for this project
 
-1. Broaden general raw-object use: COMDAT/import libraries and remaining relocations, initialization/cleanup, unwind registration, then explicit TLS models. Keep parsing and linking in Go.
-2. Broaden dynamic C interfaces: calling-convention selection, variadic promotion, native callbacks with explicit retirement, and reusable call plans. Use llgo or small native bridges where Go cannot emit the required ABI entry points.
+1. Broaden general raw-object use: Additional COMDAT rules/import libraries and remaining relocations, initialization/cleanup, unwind registration, then explicit TLS models. Keep parsing and linking in Go.
+2. Broaden dynamic C interfaces: additional calling conventions and native callbacks with explicit retirement. Variadic promotion and reusable call plans are implemented. Use llgo or small native bridges where Go cannot emit the required ABI entry points.
 3. Add optional declaration/provider packages: generated C/C++ adapters using llcppg or Clang information, dependency manifests, and a lifecycle model before module replacement. Preserve the current explicit core API.
 4. Evaluate an optional Apple C facade backed by ABIBridge for Swift/ObjC/C++ runtime values, using opaque handles and explicit retain/release. Add platform/runtime/device tests before claiming support.
 
@@ -92,7 +92,7 @@ Headers / Clang / llcppg                 Apple runtime / ABIBridge adapter
 The following integrations remain proposals:
 
 1. Add an optional dynamic mode to llcppg. Preserve its generated types, names, and layouts, and generate binding fields owned by a session. Known signatures can use caller-defined `//llgo:type C` function types through `Symbol.WithAddress`. The loader need not duplicate header parsing.
-2. Define a declaration manifest with target triple, C/C++ ABI, linkage name, arguments/results, record size/alignment, `this` and hidden result parameters, ownership, and exception boundaries. Existing `abi.Signature` covers fixed scalar and ordinary C struct signatures with the host's default C ABI; it does not express these additional language contracts.
+2. Define a declaration manifest with target triple, C/C++ ABI, linkage name, arguments/results, record size/alignment, `this` and hidden result parameters, ownership, and exception boundaries. Existing `abi.Signature` covers concrete fixed/variadic scalar and ordinary C struct signatures with supported native C conventions; it does not express these additional language contracts.
 3. Generate small `extern "C"` facades for complex C++ classes. A matching compiler handles construction, destruction, inheritance, results, and conversion of exceptions into error codes. Load the resulting objects or libraries through this project.
 4. Use ABIBridge on a Swift/ObjC++ side of an Apple-specific adapter and expose a small C API. Go stores opaque handles with explicit retain/release and main-thread requirements. Such adapters and runtime dependencies are not currently included.
 5. Future native callbacks require explicit lifetimes for the native entry, Go closure, library, and registration. A temporary function address is insufficient, and language exceptions must not cross ABI boundaries.

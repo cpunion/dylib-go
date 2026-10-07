@@ -13,16 +13,16 @@ binary="$cli_dir/ddlgo"
 case "$(uname -s)" in
   Darwin)
     library="$cli_dir/calls.dylib"
-    "${CLANG:-clang}" -dynamiclib testdata/add.c testdata/scalars.c testdata/cli.c -o "$library"
+    "${CLANG:-clang}" -dynamiclib testdata/add.c testdata/scalars.c testdata/cli.c testdata/variadic.c -o "$library"
     ;;
   Linux)
     library="$cli_dir/calls.so"
-    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared -fPIC testdata/add.c testdata/scalars.c testdata/cli.c -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared -fPIC testdata/add.c testdata/scalars.c testdata/cli.c testdata/variadic.c -o "$library"
     ;;
   MINGW*|MSYS*)
     binary="$cli_dir/ddlgo.exe"
     library="$cli_dir/calls.dll"
-    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared testdata/add.c testdata/scalars.c testdata/cli.c -Wl,--export-all-symbols -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared testdata/add.c testdata/scalars.c testdata/cli.c testdata/variadic.c -Wl,--export-all-symbols -o "$library"
     ;;
   *) echo 'unsupported CLI test host' >&2; exit 1 ;;
 esac
@@ -48,6 +48,12 @@ expect 18446744073709551615 'echo_u64(18446744073709551615:uint64)uint64' "$libr
 expect 20.5 'echo_f32(20.5:float32)float32' "$library"
 expect 0x0 'echo_ptr(nil:unsafe.Pointer)unsafe.Pointer' "$library"
 expect 42 'func answer()int32' "$library"
+expect 42 -abi=cdecl -symbol=add 'func placeholder(int32,int32)int32' 20 22 "$library"
+expect 42 -variadic-from=1 'var_promotions(-65500:int32,-5:int8,65535:uint16,true:bool,10.5:float32,0.5:float64)float64' "$library"
+expect 42 -variadic-from=2 'func var_fixed(float32,int32,float32)float64' 20.5 1 21.5 "$library"
+expect 42 -variadic-from=1 'var_empty(42:int32)int32' "$library"
+expect 42 -variadic-from=1 'var_pair(2:int32,{a:20,b:20}:struct{a,b int32})int32' "$library"
+expect 42 -variadic-from=1 'var_pointer(0:int32,&40:*int32)int32' "$library"
 expect void 'no_result()' "$library"
 expect -128 'echo_i8(-128:int8)int8' "$library"
 expect 255 'echo_u8(255:uint8)uint8' "$library"
