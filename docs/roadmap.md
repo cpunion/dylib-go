@@ -2,6 +2,28 @@
 
 The current implementation is a standalone Go native object loader with real call tests: content identification, a shared object model, archive extraction, local/global/weak/common symbols, an explicit relocation subset, adjacent GOT/branch stubs, W^X memory, rollback, generic symbol lifetime guards, OS libraries, caller-defined gc/llgo adapters, and optional dynamic scalar signatures.
 
+The CLI now accepts Go-style signature declarations and typed invocations through the independent `abi/signature` package. This exposes the existing scalar backend dynamically; it does not broaden object relocation, aggregate ABI, or language runtime coverage.
+
+## What complete coverage would require
+
+"Complete" needs a bounded target, object format, ABI, toolchain, and runtime feature set. More parser cases or signature spellings cannot establish arbitrary native execution.
+
+| Coverage area | Work still required |
+| --- | --- |
+| Current 64-bit raw targets | Remaining relocations, COMDAT/weak aliases, initialization, TLS, and unwinder registration |
+| Windows ARM64 raw objects | ARM64 COFF relocation, memory layout, branch stubs, and native execution tests |
+| 386 and additional ISAs | Width-specific linker/layout and ABI backends, C toolchains, and native runner tests |
+| BSD and Apple mobile hosts | Native OS backend, ABI/runtime integration, platform policy compatibility, and device tests |
+| Additional containers | Import libraries, bigobj, thin archives, universal target selection; optional IR compilation |
+| Full dynamic C/C++ interfaces | Small scalar types, aggregate classification/layout, variadic calls, callbacks, and generated declaration validation |
+| Swift, ObjC, and other language ABIs | Dedicated metadata, ownership, calling-convention, initialization, and runtime adapters |
+| Foreign CPU or OS execution | An appropriate emulator/system process plus RPC; native relocation cannot supply OS services |
+| Wasm, GPU, eBPF | Separate executors, drivers, or kernel loaders, with independent interfaces and tests |
+
+Complete shared libraries already use the host OS loader for their dependency, initialization, TLS, and native unwind metadata. Calls still require correct ABI adapters, language runtime contracts, and lifetimes. There is no current claim that every language feature works merely because its image loads.
+
+## Implementation priorities
+
 Future extensions need explicit implementation and tests:
 
 1. **Windows object coverage:** native Go and llgo execution is verified for AMD64, and DLL calls for ARM64. Further work includes import libraries, COMDAT, SECREL/SECTION, unwind registration, and ARM64 COFF relocation.

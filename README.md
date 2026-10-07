@@ -46,7 +46,38 @@ CGO_ENABLED=0 go run ./cmd/ddlgo inspect build/add.o
 
 ```
 
-The CLI's `call` command is a demonstration of the known signature `int32_t(int32_t,int32_t)`. The loader API has no signature-specific binding methods. Windows users can run the shared-library examples below; see the [platform matrix](docs/support.md) for object execution limits.
+The CLI's plain `call add 20 22 FILE` form retains the original `int32_t(int32_t,int32_t)` demonstration. Caller-supplied signatures use the dynamic CLI below. The loader API has no signature-specific binding methods. Windows users can run the shared-library examples below; see the [platform matrix](docs/support.md) for object execution limits.
+
+## Dynamic CLI signatures
+
+Build the CLI with `-tags libffi` and install libffi development files and pkg-config. It accepts a Go-style declaration followed by positional values, or a compact invocation containing typed values. Quote the whole declaration or invocation so the shell passes parentheses and spaces unchanged. Both forms below return 42; CI executes this script with Go and llgo on Linux/macOS amd64/arm64:
+
+<!-- embedme examples/readme/dynamic.sh -->
+
+```sh
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/../.."
+compiler=${1:-go} # Pass llgo to build the same dynamic CLI with llgo.
+
+mkdir -p build
+"${CLANG:-clang}" -fPIC -c testdata/add.c -o build/add.o
+"$compiler" build -tags libffi -o build/ddlgo ./cmd/ddlgo
+
+result=$(build/ddlgo call "func add(int32,int32)int32" 20 22 build/add.o)
+test "$result" = 42
+echo "declaration result: $result"
+
+# Quote the whole invocation so parentheses and spaces reach the CLI.
+result=$(build/ddlgo call "add(20:int32 22:int32)int32" build/add.o)
+test "$result" = 42
+echo "typed invocation result: $result"
+
+```
+
+The `abi/signature` package parses declarations with Go's standard `go/parser`. Supported spellings are `int32`, `uint32`, `int64`, `uint64`, `float32`, `float64`, `uintptr`, `unsafe.Pointer`, and `*T` for opaque native pointers. Omit the result for a C `void` return. Calls support up to 32 fixed arguments and one result. `int`, `uint`, strings, slices, structures, variadic parameters, and multiple results are rejected. Parameter names and grouped parameters such as `a, b int32` are accepted in declarations.
+
+Integer values accept Go literal bases and underscores. Pointer values are native addresses or `nil`; the CLI does not allocate or marshal pointee storage. Float results retain their precision, unsigned results retain all high bits, and void calls print `void`. The declaration must match the actual native C ABI; parsing does not infer or verify prototypes from object symbols. See the [CLI reference](docs/cli.md) for complete rules and verification coverage.
 
 ## Generic symbols and caller-defined adapters
 
@@ -270,10 +301,11 @@ The former experimental `BindInt32`, `CallInt32`, and `Int32Func` APIs have been
 | `linker.go`, `relocate.go` | Symbol selection, archive extraction, layout, relocation |
 | `symbol.go`, `function.go` | Generic symbol handles and dynamic signature bindings |
 | `abi/` | Go signature descriptions and optional scalar libffi calls |
+| `abi/signature/` | Pure Go declaration, typed-invocation, and scalar literal parsing |
 | `internal/native/` | OS memory, instruction cache, and shared-library operations |
 | `examples/call/` | Fixed-signature adapter used only by the CLI and tests |
 | `examples/cgo/`, `examples/llgo/`, `examples/bind/` | Executable README examples |
-| `examples/readme/` | Executable README quick-start script |
+| `examples/readme/` | Executable README quick-start and dynamic CLI scripts |
 | `cmd/ddlgo/` | Inspection and demonstration CLI |
 | `testdata/` | Native compiler inputs for language probes |
 | `docs/` | Design, compatibility, comparisons, CI, and evidence |

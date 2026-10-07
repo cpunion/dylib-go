@@ -41,6 +41,8 @@ These are workflow requirements; inspect [Go](https://github.com/cpunion/dylib-g
 
 `examples/readme/quickstart.sh` is the README's Linux/macOS object/archive quick start. Both compiler workflows execute it on both architectures, checking object and archive results and exercising no-cgo inspection. It is not a Windows ARM64 object-execution claim.
 
+`scripts/verify-cli.sh go|llgo` independently compiles the dynamic CLI with `-tags libffi`. All six native library targets execute Go-style declarations and typed invocations with mixed scalars, integer boundaries, pointers, zero arguments, and void returns. Five raw targets also execute object/archive calls. `examples/readme/dynamic.sh` runs the README's exact two requested input forms on Linux/macOS with both hosts. Pure Go parser tests cover all eight inspection jobs, including 386.
+
 Every fenced code block in `README.md` is embedded from one of these executed source files with an `<!-- embedme ... -->` marker. The separate README job checks freshness with `npm ci --ignore-scripts` and `npm run readme:verify`; compilation and result checks remain in the native Go and llgo jobs. To update a snippet, edit its source and run `npm run readme` before committing.
 
 ## Toolchain limits

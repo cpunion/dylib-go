@@ -40,6 +40,8 @@ Lookup does not infer types. Raw addresses from `Lookup` are valid only while th
 
 `Bind(name, abi.Signature)` builds a `Function` on the same symbol lifetime guard. It validates and copies the caller's signature, then uses the optional libffi backend to arrange scalar arguments and results. Neither API infers types from names or demangled strings.
 
+The independent `abi/signature` package converts Go-style declarations and typed scalar invocations into explicit `abi.Signature` and `abi.Value` descriptions using Go's standard parser. It has no native backend dependency. The CLI consumes that metadata through `Bind`; syntax parsing does not replace native prototype or calling-convention knowledge. See the [CLI reference](cli.md).
+
 Signature-specific methods do not belong to the loader's core contract. The experimental `BindInt32` / `CallInt32` methods and `Int32Func` type were removed. Their small adapter now lives in `examples/call`, used by the demonstration CLI and compiler probes. Applications can write their own adapters, and generators such as llcppg can emit them from declarations.
 
 ## Go first, with llgo for native calls
