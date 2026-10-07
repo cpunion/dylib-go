@@ -10,6 +10,26 @@ The project reimplements the general loading and linking mechanisms of early [DD
 
 This is an experimental implementation with native execution tests. See the [platform and language matrix](docs/support.md) for its supported subset and limitations.
 
+## Platform, architecture, and format support
+
+The execution columns describe native loading and calls on the listed host. Inspection only reads metadata and does not execute code.
+
+| Platform | Architecture | Object execution | Archive execution | Shared library execution | CI coverage |
+| --- | --- | --- | --- | --- | --- |
+| Linux | amd64 | ELF64 little-endian RELA `.o` | Ordinary GNU/BSD ar `.a` | ELF `.so` | Go and llgo native calls |
+| Linux | arm64 | ELF64 little-endian RELA `.o` | Ordinary GNU/BSD ar `.a` | ELF `.so` | Go and llgo native calls |
+| macOS | amd64 | Mach-O 64 `.o` | Ordinary GNU/BSD ar `.a` | Mach-O `.dylib` | Go and llgo native calls |
+| macOS | arm64 | Mach-O 64 `.o` | Ordinary GNU/BSD ar `.a` | Mach-O `.dylib` | Go and llgo native calls |
+| Windows | amd64 | AMD64 COFF `.obj` / `.o` | Ordinary COFF ar `.lib` / `.a` | PE `.dll` | Go and llgo native calls |
+| Windows | arm64 | Unsupported; COFF inspection only | Inspection only | PE `.dll` | Go and llgo DLL calls |
+| Linux | 386 | Unsupported; ELF inspection only | Inspection only | Unsupported | 32-bit Go inspection and refusal tests |
+| Windows | 386 | Unsupported; COFF inspection only | Inspection only | Unsupported | 32-bit Go inspection and refusal tests |
+| macOS | 386 | Unsupported | Unsupported | Unsupported | No Go `darwin/386` port |
+
+All six native library targets test scalar and struct calls with both Go and llgo. Ordinary Go execution requires cgo; metadata inspection does not. Raw objects and archives support the implemented relocation subset; TLS, automatic constructors/destructors, COMDAT, and exception unwinding are not supported on that path. Shared libraries use the host OS loader. Inputs and call signatures must match the host architecture and OS ABI; this table does not imply cross-CPU or cross-OS execution.
+
+Metadata inspection uses pure Go and can read ELF, Mach-O, COFF/PE, and ordinary ar files independently of the file's CPU architecture. Thin archives, fat Mach-O, COFF import libraries/bigobj, OMF, D `.ddl`, Go gc `.a`, and LLVM IR/bitcode are not directly supported library inputs. See the [detailed format limits and language matrix](docs/support.md) for other platforms and unsupported features.
+
 ## Quick start
 
 Use Go 1.23+ and a C compiler. The module path is `github.com/cpunion/dylib-go`; its Go package name is `dylib`. Clang is used below to produce sample inputs; the loader does not require Clang at runtime.
@@ -77,7 +97,7 @@ echo "typed invocation result: $result"
 
 The `abi/signature` package parses declarations with Go's standard `go/parser`. Supported spellings are fixed-width integers from `int8`/`uint8` through `int64`/`uint64`, `byte`, `rune`, `bool`, `float32`, `float64`, `uintptr`, `unsafe.Pointer`, `*T`, and inline ordinary C structs. Omit the result for a C `void` return. Calls support up to 32 fixed arguments and one result. `int`, `uint`, strings, slices, arrays, unions, packed structs, variadic parameters, and multiple results are rejected. Parameter names and grouped parameters such as `a, b int32` are accepted in declarations.
 
-Integer values accept Go literal bases and underscores. Pointer values are native addresses or `nil`; the CLI does not allocate or marshal pointee storage. Float results retain their precision, unsigned results retain all high bits, and void calls print `void`. The declaration must match the actual native C ABI; parsing does not infer or verify prototypes from object symbols. See the [CLI reference](docs/cli.md) for complete rules and verification coverage.
+Integer values accept Go literal bases and underscores. Pointer values accept native addresses or `nil`; known pointee types also accept temporary literals, as shown below. Float results retain their precision, unsigned results retain all high bits, and void calls print `void`. The declaration must match the actual native C ABI; parsing does not infer or verify prototypes from object symbols. See the [CLI reference](docs/cli.md) for complete rules and verification coverage.
 
 
 ### Struct values and pointers
