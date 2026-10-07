@@ -456,7 +456,6 @@ type ffiCallbackBackend struct {
 }
 
 func prepareCallback(state *callbackState) (callbackBackend, error) {
-	initializeCallbackThreads()
 	backend, err := prepare(state.signature)
 	if err != nil {
 		return nil, err

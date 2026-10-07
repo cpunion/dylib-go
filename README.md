@@ -242,7 +242,7 @@ Run `go test -tags libffi ./...` or `llgo test -tags libffi ./...` to exercise t
 
 Ordinary Go's default build does not require libffi. The llgo compiler's own runtime dependencies, including its GC and libffi, are separate from this optional backend.
 
-On Linux with llgo v1.0.6, set `export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` before enabling libffi. This avoids that version's newline-only pkg-config CFLAGS parsing bug ([upstream issue #2749](https://github.com/xgo-dev/llgo/issues/2749)). CI sets the workaround; ordinary Go does not require it.
+On Linux with llgo v1.0.6, set `export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` before enabling libffi. This avoids that version's newline-only pkg-config CFLAGS parsing bug ([upstream issue #2749](https://github.com/xgo-dev/llgo/issues/2749)). The qualified CI compiler includes the upstream fix; ordinary Go does not require this workaround.
 
 ## Dynamic C callbacks
 
@@ -319,7 +319,7 @@ func main() {
 
 Use `Callback.WithAddress` for synchronous calls. For a stored registration, hold an `Acquire` lease until native code has unregistered the entry and all callers have finished; release the lease, then close the callback. Handler errors, panics, and invalid results produce a zero native result and are retained by `Callback.Err`. Incoming pointers are borrowed native addresses; returned pointers must have caller-managed native storage. Variadic callbacks and temporary pointee results are unsupported.
 
-C-created threads may invoke the entry concurrently; captures need appropriate synchronization. A handler must not re-enter the calling session's locking methods or close its own callback. With llgo, the backend uses the v1.0.6 runtime's foreign-thread registration hooks before manipulating Go values. See [callback ownership and thread integration](docs/callbacks.md). Run `bash examples/run.sh go library` or `bash examples/run.sh llgo library` to execute the README examples, including this callback.
+C-created threads may invoke the entry concurrently; captures need appropriate synchronization. A handler must not re-enter the calling session's locking methods or close its own callback. With llgo, the public `//export` entry relies on compiler-generated foreign-thread protection; use the [qualified compiler revision](docs/ci.md). llgo v1.0.6 does not protect dependency-package or executable exports on this path. See [callback ownership and thread integration](docs/callbacks.md). Run `bash examples/run.sh go library` or `bash examples/run.sh llgo library` to execute the README examples, including this callback.
 
 ## Language interfaces and calling conventions
 

@@ -1,5 +1,5 @@
 // Package abi describes C ABI signatures independently of object-file
-// formats. Dynamic calls are optional: build with -tags libffi. For statically
+// formats. Dynamic calls and C callbacks are optional: build with -tags libffi. For statically
 // known signatures llgo can call a typed C function pointer directly.
 package abi
 
@@ -125,7 +125,7 @@ func Boolean(v bool) Value {
 	return Value{Type: Bool}
 }
 
-var ErrUnavailable = errors.New("dynamic C ABI calls require cgo and -tags libffi (plus libffi development files)")
+var ErrUnavailable = errors.New("dynamic C ABI calls and callbacks require cgo and -tags libffi (plus libffi development files)")
 
 // Call invokes a native function with a caller-supplied exact signature. It
 // neither infers types from names nor adapts between operating-system ABIs.

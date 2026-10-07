@@ -15,8 +15,6 @@ import (
 
 //export dylibgo_dispatch_callback
 func dylibgo_dispatch_callback(handle C.uintptr_t, result, arguments unsafe.Pointer) {
-	registered := enterCallbackThread()
-	defer exitCallbackThread(registered)
 	state := cgo.Handle(handle).Value().(*callbackState)
 	// Every panic stays inside this exported C boundary, including failures
 	// while decoding arguments or validating a handler's returned values.

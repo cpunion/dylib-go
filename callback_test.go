@@ -49,6 +49,10 @@ func callbackLibrary(t *testing.T, input string) *Session {
 		command(t, compiler(), args...)
 	}
 	s := New(Options{})
+	if runtime.GOOS == "windows" && runtime.GOARCH == "386" && input != "library" {
+		// MSVC's large struct copies require the host CRT's memcpy entry.
+		load(t, s, "msvcrt.dll")
+	}
 	load(t, s, path)
 	t.Cleanup(func() { s.Close() })
 	return s

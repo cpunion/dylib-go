@@ -5,7 +5,7 @@
 - [DDL `3bf531e`](https://github.com/Marenz/ddl/tree/3bf531e9701469ccecd5c3c698036ef4ef72362b): model, registry, linker, and ELF/OMF/COFF/archive components.
 - [ABIBridge `4dfbda2`](https://github.com/lynnswap/ABIBridge/tree/4dfbda22afb9a1492e1c5c99933a9defbc5437a4): README, RuntimeArchitecture, CFunctionInvocation, CXXObjectInvocation, Architectures, and source responsibilities.
 - [llcppg `6098773`](https://github.com/goplus/llcppg/tree/6098773c3116609e61c26968b83eec83e32a976c): configuration, Clang/mangling entry points, function/class generation, and sample output.
-- Local llgo reference `8ac217053d0337b7261cebc923bb6b17955bf49a`; the original local compiler was a devel build. See the validation record; CI separately pins llgo v1.0.6.
+- Local llgo reference `8ac217053d0337b7261cebc923bb6b17955bf49a`; the original local compiler was a devel build. See the validation record; CI separately pins the [qualified compiler revision](ci.md), including public C-export thread guards.
 
 ## Responsibilities
 
