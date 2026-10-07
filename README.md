@@ -24,7 +24,6 @@ The execution columns describe native loading and calls on the listed host. Insp
 | Windows | arm64 | ARM64 COFF `.obj` / `.o` | Ordinary COFF ar `.lib` / `.a` | PE `.dll` | Go and llgo native calls |
 | Linux | 386 | ELF32 little-endian REL/RELA `.o` | Ordinary GNU/BSD ar `.a` | ELF32 `.so` | Native 32-bit Go calls on amd64 runners |
 | Windows | 386 | i386 COFF `.obj` / `.o` | Ordinary COFF ar `.lib` / `.a` | PE32 `.dll` | Native 32-bit Go calls under WoW64 |
-| macOS | 386 | Unsupported | Unsupported | Unsupported | No Go `darwin/386` port |
 
 The six amd64/arm64 targets test scalar and struct calls with both Go and llgo; Linux/Windows 386 use native 32-bit Go processes. The current setup-llgo installer accepts only amd64/arm64, so no llgo 386 execution is claimed. Ordinary Go execution requires cgo; metadata inspection does not. Raw objects and archives support the implemented relocation subset; TLS, automatic constructors/destructors, COMDAT, and exception unwinding are not supported on that path. Shared libraries use the host OS loader. Inputs and call signatures must match the host architecture and OS ABI; this table does not imply cross-CPU or cross-OS execution.
 

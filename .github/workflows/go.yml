@@ -142,11 +142,3 @@ jobs:
           go env GOOS GOARCH CGO_ENABLED
           go test -count=1 -v ./...
           go build ./cmd/ddlgo
-      - name: Record unavailable macOS 386 toolchain port
-        if: matrix.target == 'darwin-arm64'
-        shell: bash
-        run: |
-          if go tool dist list | grep -qx darwin/386; then
-            echo 'darwin/386 now exists: add its execution job'; exit 1
-          fi
-          echo 'darwin/386: unsupported by the Go toolchain; no execution claim' >> "$GITHUB_STEP_SUMMARY"

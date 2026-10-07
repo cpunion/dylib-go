@@ -16,7 +16,6 @@ Workflows run on pushes to main, pull requests, and manual dispatch. Pure Go job
 | Windows arm64 | Independent gc process tests objects/archives/DLLs and scalar/struct ABI; reuses llgo job's setup-go and C tools | Native ARM64 runner | Objects/archives/DLLs, scalar/struct ABI, and Go/llgo producers |
 | Linux 386 | Objects/archives/ELF32 libraries, scalar/struct ABI, and gc c-shared producer; multilib Clang and i386 libffi | 32-bit Go process on amd64 Linux | Not qualified; setup-llgo does not install 386 |
 | Windows 386 | Objects/archives/PE32 DLLs, scalar/struct C cdecl ABI, and gc c-shared producer; i386 toolchain and libffi under WoW64 | 32-bit Go process on amd64 Windows | Not qualified; setup-llgo does not install 386 |
-| macOS 386 | Not applicable | Go has no darwin/386 port; CI checks that boundary | Not applicable |
 
 All eight Go execution targets and six llgo targets set `DYLIB_TEST_REQUIRE_NATIVE=1`, `DYLIB_TEST_REQUIRE_SHARED=1`, and `DYLIB_TEST_REQUIRE_TOOLS=1`, failing if a required backend or tool is missing. Windows ARM64 runs independent Go and llgo object/archive/DLL suites. Clang generates i386 ELF/COFF and ARM64 COFF fixtures for target-boundary tests: matching hosts accept them, foreign hosts reject execution, and unsupported 32-bit Mach-O is rejected.
 
