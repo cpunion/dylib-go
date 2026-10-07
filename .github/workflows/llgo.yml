@@ -41,7 +41,7 @@ jobs:
         id: llgo
         with:
           # Public C-export thread guards; upstream contribution: https://github.com/xgo-dev/llgo/pull/2752
-          llgo-version: 6afa00e65561a1662bb2308c9157e487ddd95316
+          llgo-version: c9cb76563511e774b819191e5a3ac93d32176ac9
           install-method: source
           go-version: '1.27.x'
           llvm-version: '22'
