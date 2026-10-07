@@ -170,7 +170,7 @@ func main() {
 
 ```
 
-Neither typed adapter enables the optional dynamic ABI backend. CI compiles and runs these programs against a real C shared library with Go on eight targets and llgo on the six amd64/arm64 targets. Run `bash examples/run.sh library go` or `bash examples/run.sh library llgo` to reproduce the typed and dynamic examples; libffi development files are required for the dynamic example.
+Neither typed adapter enables the optional dynamic ABI backend. CI compiles and runs these programs against a real C shared library with Go on eight targets and llgo on the six amd64/arm64 targets. Run `bash examples/run.sh go library` or `bash examples/run.sh llgo library` to reproduce the typed and dynamic examples; libffi development files are required for the dynamic example.
 
 `Load` may be called repeatedly before the first `Link`, `Lookup`, `Resolve`, or `Bind`. Add all dependencies before linking. A failed link can be retried after adding dependencies. A successful link seals the session; create a new session for another plugin set.
 
@@ -263,7 +263,7 @@ The former experimental `BindInt32`, `CallInt32`, and `Int32Func` APIs have been
 | `internal/native/` | OS memory, instruction cache, and shared-library operations |
 | `examples/call/` | Fixed-signature adapter used only by the CLI and tests |
 | `examples/cgo/`, `examples/llgo/`, `examples/bind/` | Executable README examples |
-| `examples/run.sh` | Run library and CLI examples with Go or llgo |
+| `examples/run.sh` | Build and run the test CLI or example checks with Go or llgo |
 | `examples/readme/` | Build and check the CLI examples |
 | `cmd/ddlgo/` | Test CLI for inspection and native calls |
 | `testdata/` | Native compiler inputs for language probes |
@@ -277,16 +277,18 @@ See the [design and DDL mapping](docs/design.md), [ABIBridge / llcppg comparison
 
 ## Test CLI
 
-`cmd/ddlgo` is a testing tool for the library API. From a checkout, run an example through [examples/run.sh](examples/run.sh); compilation and result checks stay in the scripts:
+[examples/run.sh](examples/run.sh) builds the CLI with the selected compiler and passes the command and arguments through. `call` enables libffi; install its development files and pkg-config. Supply an object, archive, or shared library matching the host:
 
-| Example | Command | Result |
-| --- | --- | --- |
-| Objects and archives | `bash examples/run.sh quickstart go` | Inspect an object and call `add(20,22)` from an object and archive; both return 42 |
-| Dynamic signatures | `bash examples/run.sh dynamic go` | Go-style declarations and typed invocations both return 42 |
-| Structs and pointers | `bash examples/run.sh structs go` | Struct value/pointer calls return 42; mutations are copied back |
+| Example | Command |
+| --- | --- |
+| Inspect | `examples/run.sh go inspect <library>` |
+| Scalar declaration | `examples/run.sh go call "func add(int32,int32)int32" 20 22 <library>` |
+| Typed invocation | `examples/run.sh go call "add(20:int32 22:int32)int32" <library>` |
+| Struct value | `examples/run.sh go call "func sum_pair(struct{a,b int32})int32" "{a:20,b:22}" <library>` |
+| Struct pointer | `examples/run.sh go call "sum_pair_ptr(&{a:20,b:22}:*struct{a,b int32})int32" <library>` |
 
-Replace `go` with `llgo` to use that compiler; omitting it defaults to Go. Use Bash, including Git Bash/MSYS2 on Windows. `quickstart` and `dynamic` run on Linux/macOS; `structs` runs on all eight Go targets and six llgo targets. Dynamic and struct examples require libffi development files and pkg-config. CI runs these same commands.
+Replace `go` with `llgo` to use that compiler. Quote each declaration or invocation as a single shell argument. File paths remain relative to your working directory. Use Bash, including Git Bash/MSYS2 on Windows. CI checks struct declarations and typed pointers through this runner with both compilers.
 
-The dynamic CLI accepts `"func add(int32,int32)int32" 20 22 FILE` or `"add(20:int32 22:int32)int32" FILE`. Quote declarations and invocations as one shell argument. Struct values use literals such as `{a:20,b:22}` and pointers such as `&{a:20,b:22}`. See the [CLI reference](docs/cli.md) for complete syntax, supported types, and lifetime rules.
+To build and verify the included fixtures, run `examples/run.sh go quickstart`, `examples/run.sh go dynamic`, or `examples/run.sh go structs`. The first two run on Linux/macOS; `structs` runs on all supported native targets and produces `build/structs.so`, `build/structs.dylib`, or `build/structs.dll` for further calls. `examples/run.sh go library` checks the typed and dynamic library API examples.
 
-`-keep-libraries` corresponds to `Options.KeepLibraries`, and `-process` to `Options.ProcessSymbols`.
+See the [CLI reference](docs/cli.md) for complete syntax, supported types, and lifetime rules. Options such as `-keep-libraries` and `-process` follow `call` and precede the signature, just as with `ddlgo`.
