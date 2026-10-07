@@ -18,12 +18,12 @@ case "$(uname -s)" in
     ;;
   Linux)
     library="$example_dir/scalars.so"
-    "${CLANG:-clang}" "${native_cflags[@]}" -shared -fPIC testdata/scalars.c -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared -fPIC testdata/scalars.c -o "$library"
     ;;
   MINGW*|MSYS*)
     binary="$example_dir/mixed.exe"
     library="$example_dir/scalars.dll"
-    "${CLANG:-clang}" "${native_cflags[@]}" -shared testdata/scalars.c -Wl,--export-all-symbols -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared testdata/scalars.c -Wl,--export-all-symbols -o "$library"
     ;;
   *) echo 'unsupported example host' >&2; exit 1 ;;
 esac

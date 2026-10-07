@@ -297,7 +297,7 @@ esac
 
 mkdir -p build
 source scripts/native-cflags.sh
-"${CLANG:-clang}" "${native_cflags[@]}" -fPIC -c testdata/add.c -o build/add.o
+"${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -fPIC -c testdata/add.c -o build/add.o
 "$compiler" build -o build/ddlgo ./cmd/ddlgo
 build/ddlgo inspect build/add.o
 result=$(build/ddlgo call add 20 22 build/add.o)
@@ -330,7 +330,7 @@ compiler=${1:-go} # Pass llgo to build the same dynamic CLI with llgo.
 
 mkdir -p build
 source scripts/native-cflags.sh
-"${CLANG:-clang}" "${native_cflags[@]}" -fPIC -c testdata/add.c -o build/add.o
+"${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -fPIC -c testdata/add.c -o build/add.o
 "$compiler" build -tags libffi -o build/ddlgo ./cmd/ddlgo
 
 result=$(build/ddlgo call "func add(int32,int32)int32" 20 22 build/add.o)
@@ -371,12 +371,12 @@ case "$(uname -s)" in
     ;;
   Linux)
     library=build/structs.so
-    "${CLANG:-clang}" "${native_cflags[@]}" -shared -fPIC testdata/cli.c -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared -fPIC testdata/cli.c -o "$library"
     ;;
   MINGW*|MSYS*)
     binary=build/ddlgo.exe
     library=build/structs.dll
-    "${CLANG:-clang}" "${native_cflags[@]}" -shared testdata/cli.c -Wl,--export-all-symbols -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared testdata/cli.c -Wl,--export-all-symbols -o "$library"
     ;;
   *) echo 'unsupported example host' >&2; exit 1 ;;
 esac

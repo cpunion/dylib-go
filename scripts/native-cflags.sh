@@ -1,4 +1,6 @@
 # Source this file from the repository root before compiling native fixtures.
+# Bash 3.2 treats an empty array as unset with nounset. Callers use
+# ${native_cflags[@]+"${native_cflags[@]}"} to preserve zero or more flags.
 native_cflags=()
 case "$(go env GOOS)/$(go env GOARCH)" in
   linux/386) native_cflags=(-m32) ;;

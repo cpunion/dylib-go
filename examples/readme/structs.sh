@@ -12,12 +12,12 @@ case "$(uname -s)" in
     ;;
   Linux)
     library=build/structs.so
-    "${CLANG:-clang}" "${native_cflags[@]}" -shared -fPIC testdata/cli.c -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared -fPIC testdata/cli.c -o "$library"
     ;;
   MINGW*|MSYS*)
     binary=build/ddlgo.exe
     library=build/structs.dll
-    "${CLANG:-clang}" "${native_cflags[@]}" -shared testdata/cli.c -Wl,--export-all-symbols -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared testdata/cli.c -Wl,--export-all-symbols -o "$library"
     ;;
   *) echo 'unsupported example host' >&2; exit 1 ;;
 esac

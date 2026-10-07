@@ -17,12 +17,12 @@ case "$(uname -s)" in
     ;;
   Linux)
     library="$cli_dir/calls.so"
-    "${CLANG:-clang}" "${native_cflags[@]}" -shared -fPIC testdata/add.c testdata/scalars.c testdata/cli.c -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared -fPIC testdata/add.c testdata/scalars.c testdata/cli.c -o "$library"
     ;;
   MINGW*|MSYS*)
     binary="$cli_dir/ddlgo.exe"
     library="$cli_dir/calls.dll"
-    "${CLANG:-clang}" "${native_cflags[@]}" -shared testdata/add.c testdata/scalars.c testdata/cli.c -Wl,--export-all-symbols -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared testdata/add.c testdata/scalars.c testdata/cli.c -Wl,--export-all-symbols -o "$library"
     ;;
   *) echo 'unsupported CLI test host' >&2; exit 1 ;;
 esac
@@ -76,8 +76,8 @@ if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ]]; then
   "${CLANG:-clang}" --target="$triple" -ffreestanding -c testdata/add.c -o "$cli_dir/add.o"
   "${CLANG:-clang}" --target="$triple" -ffreestanding -c testdata/pair.c -o "$cli_dir/pair.o"
 else
-  "${CLANG:-clang}" "${native_cflags[@]}" -fPIC -c testdata/add.c -o "$cli_dir/add.o"
-  "${CLANG:-clang}" "${native_cflags[@]}" -fPIC -c testdata/pair.c -o "$cli_dir/pair.o"
+  "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -fPIC -c testdata/add.c -o "$cli_dir/add.o"
+  "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -fPIC -c testdata/pair.c -o "$cli_dir/pair.o"
 fi
 "${AR:-ar}" rcs "$cli_dir/add.a" "$cli_dir/add.o"
 "${AR:-ar}" rcs "$cli_dir/pair.a" "$cli_dir/pair.o"
