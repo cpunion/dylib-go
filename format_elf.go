@@ -96,10 +96,23 @@ func parseELF(name string, b []byte) (*file, error) {
 		if s.Flags&elf.SHF_ALLOC == 0 || strings.HasPrefix(s.Name, ".eh_frame") || s.Name == ".gcc_except_table" {
 			continue
 		}
-		if s.Type == elf.SHT_INIT_ARRAY || s.Type == elf.SHT_FINI_ARRAY || s.Type == elf.SHT_PREINIT_ARRAY || s.Name == ".ctors" || s.Name == ".dtors" || s.Name == ".init" || s.Name == ".fini" {
+		if strings.HasPrefix(s.Name, ".ctors") || strings.HasPrefix(s.Name, ".dtors") || s.Name == ".init" || s.Name == ".fini" {
 			o.unsupported("automatic initialization/finalization: " + s.Name)
 		}
 		v := &section{name: s.Name, size: s.Size, align: s.Addralign, write: s.Flags&elf.SHF_WRITE != 0, exec: s.Flags&elf.SHF_EXECINSTR != 0}
+		switch s.Type {
+		case elf.SHT_PREINIT_ARRAY:
+			v.lifecycle = lifecyclePreinit
+		case elf.SHT_INIT_ARRAY:
+			v.lifecycle = lifecycleInit
+		case elf.SHT_FINI_ARRAY:
+			v.lifecycle = lifecycleFini
+		}
+		if v.lifecycle != 0 {
+			if err := configureLifecycle(v, o.info.Bits); err != nil {
+				return nil, err
+			}
+		}
 		if err := validSection(v); err != nil {
 			return nil, err
 		}

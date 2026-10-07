@@ -103,7 +103,7 @@ func parseMachO(name string, b []byte) (*file, error) {
 		if t >= 0x11 && t <= 0x15 {
 			o.unsupported("TLS section " + s.Name)
 		}
-		if t == 9 || t == 10 || t == 0x16 {
+		if t == 0x16 {
 			o.unsupported("automatic initialization/finalization: " + s.Name)
 		}
 		if t == 0xb {
@@ -116,6 +116,16 @@ func parseMachO(name string, b []byte) (*file, error) {
 			return nil, fmt.Errorf("section alignment too large")
 		}
 		v := &section{name: s.Name, size: s.Size, align: uint64(1) << s.Align, original: s.Addr, exec: s.Flags&(0x80000000|0x400) != 0, write: s.Seg == "__DATA" || s.Seg == "__DATA_CONST"}
+		if t == 9 {
+			v.lifecycle = lifecycleInit
+		} else if t == 10 {
+			v.lifecycle = lifecycleFini
+		}
+		if v.lifecycle != 0 {
+			if err := configureLifecycle(v, o.info.Bits); err != nil {
+				return nil, err
+			}
+		}
 		if err := validSection(v); err != nil {
 			return nil, err
 		}

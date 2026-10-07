@@ -339,10 +339,10 @@ func TestInspectForeignTargets(t *testing.T) {
 	}
 }
 
-func TestRejectTLSAndConstructors(t *testing.T) {
+func TestRejectTLS(t *testing.T) {
 	needNative(t)
 	dir := t.TempDir()
-	for _, src := range []string{"_Thread_local int x; int f(int a,int b){return x+a+b;}", "static int x; __attribute__((constructor)) static void init(void){x=7;} int f(int a,int b){return x+a+b;}"} {
+	for _, src := range []string{"_Thread_local int x; int f(int a,int b){return x+a+b;}"} {
 		p := filepath.Join(dir, "unsupported.c")
 		os.WriteFile(p, []byte(src), 0600)
 		obj := compile(t, p, filepath.Join(dir, "unsupported.o"))

@@ -132,7 +132,12 @@ func parseCOFF(name string, b []byte) (*file, error) {
 		if strings.HasPrefix(s.Name, ".tls") {
 			o.unsupported("TLS section " + s.Name)
 		}
-		if strings.HasPrefix(s.Name, ".CRT") {
+		kind := lifecycleKind(0)
+		if strings.HasPrefix(s.Name, ".CRT$XC") {
+			kind = lifecycleInit
+		} else if strings.HasPrefix(s.Name, ".CRT$XP") || strings.HasPrefix(s.Name, ".CRT$XT") {
+			kind = lifecycleFini
+		} else if strings.HasPrefix(s.Name, ".CRT") {
 			o.unsupported("automatic initialization/finalization: " + s.Name)
 		}
 		align := uint64(16)
@@ -141,6 +146,12 @@ func parseCOFF(name string, b []byte) (*file, error) {
 			align = uint64(1) << (a - 1)
 		}
 		v := &section{name: s.Name, size: uint64(s.Size), align: align, exec: flags&0x20000000 != 0, write: flags&0x80000000 != 0}
+		v.lifecycle = kind
+		if kind != 0 {
+			if err := configureLifecycle(v, o.info.Bits); err != nil {
+				return nil, err
+			}
+		}
 		if err := validSection(v); err != nil {
 			return nil, err
 		}
