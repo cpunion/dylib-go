@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
 	examplecall "github.com/cpunion/dylib-go/examples/call"
@@ -68,8 +67,8 @@ func TestNativeObjectConstructionAndExitRegistration(t *testing.T) {
 	unused := compile(t, "testdata/lifecycle_unused.cpp", filepath.Join(dir, "unused.o"), "-std=c++17", "-fno-exceptions", "-fno-rtti")
 	archive := filepath.Join(dir, "providers.a")
 	command(t, "ar", "rcs", archive, unused, provider)
-	for _, inputs := range [][]string{{consumer, provider}, {provider, consumer}, {consumer, archive}} {
-		t.Run(strings.Join(inputs, "+"), func(t *testing.T) {
+	for i, inputs := range [][]string{{consumer, provider}, {provider, consumer}, {consumer, archive}} {
+		t.Run([]string{"consumer-first", "provider-first", "archive"}[i], func(t *testing.T) {
 			host, _, read := lifecycleObserver(t, t.TempDir())
 			s := New(Options{})
 			defer s.Close()
@@ -251,6 +250,7 @@ func TestNativeScopedAndRecursiveFinalization(t *testing.T) {
 	for _, s := range []*Session{a, b} {
 		load(t, s, host, obj)
 		call(t, s, "register_selective", 20, 22, 42)
+		call(t, s, "dso_self", 20, 22, 42)
 	}
 	call(t, a, "finalize_tag", 20, 22, 42)
 	expectEvents(t, read, 11)

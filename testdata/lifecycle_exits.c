@@ -2,6 +2,7 @@ extern void record_event(int);
 extern int atexit(void (*)(void));
 extern int __cxa_atexit(void (*)(void *), void *, void *);
 extern void __cxa_finalize(void *);
+extern void *__dso_handle;
 static int tag1, tag2;
 static int eleven = 11, twelve = 12, fourteen = 14;
 static void tagged(void *value) { record_event(*(int *)value); }
@@ -19,3 +20,4 @@ int register_selective(int a, int b) {
 }
 int finalize_tag(int a, int b) { __cxa_finalize(&tag1); return a+b; }
 int finalize_all(int a, int b) { __cxa_finalize((void *)0); return a+b; }
+int dso_self(int a, int b) { return __dso_handle == (void *)&__dso_handle ? a+b : -1; }

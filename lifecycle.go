@@ -300,7 +300,14 @@ func (im *image) prepareRuntimeHelpers() error {
 			continue
 		}
 		if name == "__dso_handle" {
-			im.hooks[name] = im.lifecycle.Context()
+			// Keep this data symbol next to the image, rather than relying on
+			// the native allocator to satisfy Mach-O's direct ADRP range.
+			// Its value is its own address, as for a normal CRT DSO handle.
+			address, err := im.gotSlot(im.base + uintptr(im.gotNext))
+			if err != nil {
+				return err
+			}
+			im.hooks[name] = address
 			continue
 		}
 		args := 1

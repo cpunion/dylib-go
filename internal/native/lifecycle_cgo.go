@@ -16,8 +16,6 @@ typedef struct dylib_exit_entry {
 } dylib_exit_entry;
 
 typedef struct dylib_lifecycle {
-    // __dso_handle has a unique address and stores its own address.
-    uintptr_t dso_handle;
     atomic_flag lock;
     dylib_exit_entry *entries;
 } dylib_lifecycle;
@@ -31,7 +29,6 @@ static void dylib_exit_unlock(dylib_lifecycle *ctx) {
 static dylib_lifecycle *dylib_lifecycle_new(void) {
     dylib_lifecycle *ctx = (dylib_lifecycle *)calloc(1, sizeof(*ctx));
     if (ctx) {
-        ctx->dso_handle = (uintptr_t)ctx;
         atomic_flag_clear(&ctx->lock);
     }
     return ctx;
