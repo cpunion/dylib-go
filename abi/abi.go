@@ -1,4 +1,4 @@
-// Package abi describes C ABI scalar signatures independently of object-file
+// Package abi describes C ABI signatures independently of object-file
 // formats. Dynamic calls are optional: build with -tags libffi. For statically
 // known signatures llgo can call a typed C function pointer directly.
 package abi
@@ -20,44 +20,83 @@ const (
 	F32
 	F64
 	Pointer
+	I8
+	U8
+	I16
+	U16
+	Bool
+	Struct
 )
 
 // Signature uses the current host's default C calling convention. It does not
-// describe variadic functions, aggregate values, C++ methods or Swift ABI calls.
+// describe variadic functions, C++ methods or Swift ABI calls.
 type Signature struct {
 	Result Type
 	Args   []Type
+	// ArgTypes and ResultType describe struct fields and optional pointee types.
+	// Scalar-only signatures may omit them.
+	ArgTypes   []TypeDesc
+	ResultType *TypeDesc
 }
 
 func (s Signature) Validate() error {
-	if s.Result > Pointer {
+	if s.Result > Struct {
 		return fmt.Errorf("invalid result type %d", s.Result)
 	}
 	if len(s.Args) > 32 {
 		return fmt.Errorf("at most 32 arguments supported")
 	}
-	for _, t := range s.Args {
-		if t == Void || t > Pointer {
+	if len(s.ArgTypes) != 0 && len(s.ArgTypes) != len(s.Args) {
+		return fmt.Errorf("argument descriptor count mismatch")
+	}
+	for i, t := range s.Args {
+		if t == Void || t > Struct {
 			return fmt.Errorf("invalid argument type %d", t)
 		}
+		d := s.ArgumentType(i)
+		if d.Type != t {
+			return fmt.Errorf("argument %d descriptor type mismatch", i+1)
+		}
+		if err := d.Validate(); err != nil {
+			return fmt.Errorf("argument %d: %w", i+1, err)
+		}
 	}
-	return nil
+	d := s.ReturnType()
+	if d.Type != s.Result {
+		return fmt.Errorf("result descriptor type mismatch")
+	}
+	return d.Validate()
 }
 
-// Value carries a scalar's exact bit pattern. Pointer values must refer to
-// native-owned storage; this API does not pin Go objects or transfer ownership.
+// Value carries scalar bits, logical struct fields, or a temporary pointee.
+// Numeric pointers refer to caller-managed native storage. Go objects are
+// described field by field, never pinned or passed as raw Go memory.
 type Value struct {
-	Type Type
-	Bits uint64
+	Type      Type
+	Bits      uint64
+	Aggregate *Aggregate
+	// Pointee is copied to native memory for the call and copied back afterward.
+	// That memory must not escape the native call; Bits must be zero here.
+	Pointee *Value
 }
 
-func Int32(v int32) Value     { return Value{I32, uint64(uint32(v))} }
-func Uint32(v uint32) Value   { return Value{U32, uint64(v)} }
-func Int64(v int64) Value     { return Value{I64, uint64(v)} }
-func Uint64(v uint64) Value   { return Value{U64, v} }
-func Float32(v float32) Value { return Value{F32, uint64(math.Float32bits(v))} }
-func Float64(v float64) Value { return Value{F64, math.Float64bits(v)} }
-func Ptr(v uintptr) Value     { return Value{Pointer, uint64(v)} }
+func Int8(v int8) Value       { return Value{Type: I8, Bits: uint64(uint8(v))} }
+func Uint8(v uint8) Value     { return Value{Type: U8, Bits: uint64(v)} }
+func Int16(v int16) Value     { return Value{Type: I16, Bits: uint64(uint16(v))} }
+func Uint16(v uint16) Value   { return Value{Type: U16, Bits: uint64(v)} }
+func Int32(v int32) Value     { return Value{Type: I32, Bits: uint64(uint32(v))} }
+func Uint32(v uint32) Value   { return Value{Type: U32, Bits: uint64(v)} }
+func Int64(v int64) Value     { return Value{Type: I64, Bits: uint64(v)} }
+func Uint64(v uint64) Value   { return Value{Type: U64, Bits: v} }
+func Float32(v float32) Value { return Value{Type: F32, Bits: uint64(math.Float32bits(v))} }
+func Float64(v float64) Value { return Value{Type: F64, Bits: math.Float64bits(v)} }
+func Ptr(v uintptr) Value     { return Value{Type: Pointer, Bits: uint64(v)} }
+func Boolean(v bool) Value {
+	if v {
+		return Value{Type: Bool, Bits: 1}
+	}
+	return Value{Type: Bool}
+}
 
 var ErrUnavailable = errors.New("dynamic C ABI calls require cgo and -tags libffi (plus libffi development files)")
 
@@ -75,10 +114,9 @@ func Call(address uintptr, s Signature, args ...Value) (Value, error) {
 		return Value{}, fmt.Errorf("argument count mismatch")
 	}
 	for i, v := range args {
-		if v.Type != s.Args[i] {
-			return Value{}, fmt.Errorf("argument %d type mismatch", i)
+		if err := v.Validate(s.ArgumentType(i)); err != nil {
+			return Value{}, fmt.Errorf("argument %d: %w", i+1, err)
 		}
 	}
-	bits, err := invoke(address, s, args)
-	return Value{Type: s.Result, Bits: bits}, err
+	return invoke(address, s, args)
 }

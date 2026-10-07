@@ -21,7 +21,7 @@ func (s *Session) Bind(name string, signature abi.Signature) (*Function, error) 
 	if err != nil {
 		return nil, err
 	}
-	signature.Args = append([]abi.Type(nil), signature.Args...)
+	signature = signature.Clone()
 	return &Function{symbol: symbol, signature: signature}, nil
 }
 func (f *Function) Call(args ...abi.Value) (abi.Value, error) {

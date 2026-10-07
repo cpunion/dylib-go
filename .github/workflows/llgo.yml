@@ -73,7 +73,7 @@ jobs:
         run: go test -count=1 -v -tags libffi ./...
       - name: Execute direct llgo function-pointer path
         run: llgo test -count=1 -v ./...
-      - name: Execute optional scalar libffi ABI
+      - name: Execute optional scalar and struct libffi ABI
         env:
           DYLIB_TEST_LANGUAGES: ''
         run: llgo test -count=1 -v -tags libffi ./...
@@ -81,12 +81,21 @@ jobs:
         run: llgo build -o ddlgo ./cmd/ddlgo
       - name: Execute README llgo and dynamic libffi examples
         run: bash scripts/verify-examples.sh llgo
+      - name: Execute dynamic CLI signatures, values, objects and libraries
+        run: |
+          bash scripts/verify-cli.sh llgo
+          bash examples/readme/structs.sh llgo
       - name: Execute README object/archive quick start with llgo
         if: runner.os != 'Windows'
-        run: bash examples/readme/quickstart.sh llgo
+        run: |
+          bash examples/readme/quickstart.sh llgo
+          bash examples/readme/dynamic.sh llgo
       - name: Execute README Go examples on Windows ARM64
         if: matrix.mode == 'shared'
-        run: bash scripts/verify-examples.sh go
+        run: |
+          bash scripts/verify-examples.sh go
+          bash scripts/verify-cli.sh go
+          bash examples/readme/structs.sh go
       - name: Record setup-llgo 386 boundary
         if: matrix.target == 'linux-amd64'
         run: echo 'setup-llgo v0.2.0 installs amd64/arm64 only; 386 runtime is not claimed by this workflow.' >> "$GITHUB_STEP_SUMMARY"

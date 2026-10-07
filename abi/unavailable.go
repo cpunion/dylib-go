@@ -2,5 +2,5 @@
 
 package abi
 
-func invoke(uintptr, Signature, []Value) (uint64, error) { return 0, ErrUnavailable }
-func Available() bool                                    { return false }
+func invoke(uintptr, Signature, []Value) (Value, error) { return Value{}, ErrUnavailable }
+func Available() bool                                   { return false }

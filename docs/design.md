@@ -38,7 +38,11 @@ Lookup does not infer types. Raw addresses from `Lookup` are valid only while th
 
 `Resolve(name)` returns an untyped `Symbol` associated with its owning session. `Symbol.WithAddress` invokes a Go adapter while holding the session lock, so `Close` cannot release code or libraries during address use. The adapter may invoke a native function with a known signature or access native data with a known layout. It must finish all address use before returning and must not re-enter the session's locking methods.
 
-`Bind(name, abi.Signature)` builds a `Function` on the same symbol lifetime guard. It validates and copies the caller's signature, then uses the optional libffi backend to arrange scalar arguments and results. Neither API infers types from names or demangled strings.
+`Bind(name, abi.Signature)` builds a `Function` on the same symbol lifetime guard. It validates and copies the caller's signature, then uses the optional libffi backend to arrange scalar and ordinary C struct arguments and results. Neither API infers types from names or demangled strings.
+
+The independent `abi/signature` package converts Go-style declarations and typed invocations into explicit `abi.Signature` and `abi.Value` descriptions using Go's standard parser. It has no native backend dependency. The CLI consumes that metadata through `Bind`; syntax parsing does not replace native prototype or calling-convention knowledge. See the [CLI reference](cli.md).
+
+Struct metadata is deep-copied when binding. The backend asks libffi for native field offsets and alignment and marshals individual values into C-owned memory. Temporary pointees preserve alias identity within one call and are copied back afterward. Returned pointers to a whole temporary pointee become logical snapshots; interior temporary pointers fail instead of exposing freed addresses. Numeric native pointers retain caller-managed ownership. Scalar-only calls retain their existing bridge without struct marshaling.
 
 Signature-specific methods do not belong to the loader's core contract. The experimental `BindInt32` / `CallInt32` methods and `Int32Func` type were removed. Their small adapter now lives in `examples/call`, used by the demonstration CLI and compiler probes. Applications can write their own adapters, and generators such as llcppg can emit them from declarations.
 
@@ -50,7 +54,7 @@ POSIX mappings and protections use Go `syscall`; Windows uses `VirtualAlloc`, `V
 
 Ordinary gc callers use a typed cgo bridge to enter the C ABI correctly. The [cgo example](../examples/cgo/main.go) supplies a mixed integer/floating-point signature. A Go `func` value's representation cannot be treated as a C pointer.
 
-The [llgo example](../examples/llgo/main.go) defines a caller-owned `//llgo:type C` function type and invokes a native pointer directly. Known signatures can therefore use compiler-generated calls without the optional dynamic ABI backend. Unknown-at-build-time scalar signatures can use `abi` with libffi; libffi arranges registers and stack arguments, but does not parse or link binaries.
+The [llgo example](../examples/llgo/main.go) defines a caller-owned `//llgo:type C` function type and invokes a native pointer directly. Known signatures can therefore use compiler-generated calls without the optional dynamic ABI backend. Unknown-at-build-time signatures can use `abi` with libffi; libffi arranges registers and stack arguments, but does not parse or link binaries.
 
 ## Format references
 
