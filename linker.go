@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/cpunion/llgo-dylib/internal/native"
+	"github.com/cpunion/dylib-go/internal/native"
 	"os"
 	"path/filepath"
 	"runtime"

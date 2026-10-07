@@ -8,8 +8,8 @@ import (
 	"os"
 	"strconv"
 
-	dylib "github.com/cpunion/llgo-dylib"
-	examplecall "github.com/cpunion/llgo-dylib/examples/call"
+	dylib "github.com/cpunion/dylib-go"
+	examplecall "github.com/cpunion/dylib-go/examples/call"
 )
 
 func run(args []string) error {

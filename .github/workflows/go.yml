@@ -70,8 +70,11 @@ jobs:
           pkg-config --modversion libffi
       - name: Execute C/C++, archives, shared libraries and selected language interfaces
         run: go test -count=1 -v -tags libffi ./...
-      - name: Execute caller-defined cgo signature example
+      - name: Execute README cgo and dynamic libffi examples
         run: bash scripts/verify-examples.sh go
+      - name: Execute README object/archive quick start
+        if: runner.os != 'Windows'
+        run: bash examples/readme/quickstart.sh go
       - name: Race and lifetime checks
         env:
           DYLIB_TEST_LANGUAGES: ''

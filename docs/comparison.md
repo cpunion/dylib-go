@@ -9,7 +9,7 @@
 
 ## Responsibilities
 
-| Task | DDL | llgo-dylib | ABIBridge | llcppg |
+| Task | DDL | dylib-go | ABIBridge | llcppg |
 | --- | --- | --- | --- | --- |
 | Load `.o/.a` and fix addresses | Core responsibility | Core Go implementation | Primarily loaded/system-loaded Apple images, rather than a general object linker | Outside scope |
 | Resolve exported symbols from declarations | D-specific mangling, templates, reflection | Exact linkage names; no general demangler | Swift/C++ source-level names and candidate selection | Generate actual mangled bindings from headers and Clang |
@@ -32,7 +32,7 @@ Headers / Clang / llcppg                 Apple runtime / ABIBridge adapter
                   \                       /
                  explicit declarations and ownership
                               |
-             llgo-dylib Session + Resolve + Bind
+             dylib-go Session + Resolve + Bind
                  /                         \
          Go object linker                OS library loader
                  \                         /

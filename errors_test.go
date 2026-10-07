@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/llgo-dylib/internal/native"
+	"github.com/cpunion/dylib-go/internal/native"
 )
 
 func TestDuplicateAndUnknownSymbol(t *testing.T) {

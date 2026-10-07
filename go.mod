@@ -1,3 +1,3 @@
-module github.com/cpunion/llgo-dylib
+module github.com/cpunion/dylib-go
 
 go 1.23

@@ -11,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	examplecall "github.com/cpunion/llgo-dylib/examples/call"
-	"github.com/cpunion/llgo-dylib/internal/native"
+	examplecall "github.com/cpunion/dylib-go/examples/call"
+	"github.com/cpunion/dylib-go/internal/native"
 )
 
 func command(t *testing.T, name string, args ...string) {

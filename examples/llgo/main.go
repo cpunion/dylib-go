@@ -8,7 +8,7 @@ import (
 	"os"
 	"unsafe"
 
-	dylib "github.com/cpunion/llgo-dylib"
+	dylib "github.com/cpunion/dylib-go"
 )
 
 // llgo emits the indirect call using the native C calling convention.
