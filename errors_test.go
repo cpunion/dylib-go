@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/cpunion/llgo-dylib/internal/native"
 )
 
 func TestDuplicateAndUnknownSymbol(t *testing.T) {
@@ -93,5 +96,72 @@ func TestApplePlatformBoundary(t *testing.T) {
 	defer s.Close()
 	if e = s.Load(p); e == nil {
 		t.Fatal("iOS object accepted by desktop host")
+	}
+}
+
+// These are metadata/refusal tests, not claims that these targets can execute.
+// They run on the 386 and Windows ARM64 CI hosts as well as supported hosts.
+func TestUnsupportedObjectTargets(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "unsupported.c")
+	if e := os.WriteFile(src, []byte("int add(int a, int b) { return a+b; }"), 0600); e != nil {
+		t.Fatal(e)
+	}
+	for _, tc := range []struct {
+		triple, format, reason string
+		bits                   int
+	}{
+		{"i686-linux-gnu", "ELF", "ELF32 relocation", 32},
+		{"i386-apple-macosx10.13", "Mach-O", "32-bit Mach-O", 32},
+		{"i686-windows-msvc", "COFF", "32-bit COFF relocation", 32},
+		{"aarch64-windows-msvc", "COFF", "ARM64 COFF relocation", 64},
+	} {
+		t.Run(tc.triple, func(t *testing.T) {
+			p := compile(t, src, filepath.Join(dir, tc.triple+".o"), "--target="+tc.triple)
+			i, e := Inspect(p)
+			if e != nil {
+				t.Fatal(e)
+			}
+			if i.Format != tc.format || i.Bits != tc.bits || !strings.Contains(strings.Join(i.Unsupported, ","), tc.reason) {
+				t.Fatalf("unsupported target metadata: %+v; want %s/%d with %q", i, tc.format, tc.bits, tc.reason)
+			}
+			s := New(Options{})
+			defer s.Close()
+			if e := s.Load(p); e == nil {
+				t.Fatalf("unsupported target %s accepted for execution on %s/%s", tc.triple, runtime.GOOS, runtime.GOARCH)
+			}
+			if s.image != nil || len(s.files) != 0 {
+				t.Fatal("rejected object published session state")
+			}
+		})
+	}
+}
+
+func TestNativeBackendBoundary(t *testing.T) {
+	if os.Getenv("DYLIB_TEST_REQUIRE_NATIVE") == "1" {
+		needNative(t)
+	}
+	if native.Available() {
+		t.Logf("native bridge available on %s/%s", runtime.GOOS, runtime.GOARCH)
+		return
+	}
+	s := New(Options{})
+	defer s.Close()
+	// A definition requires no object parser or compiler. It must still never
+	// let a no-cgo build produce an executable session or enter a native call.
+	if e := s.Define("unavailable", 1); e != nil {
+		t.Fatal(e)
+	}
+	for _, run := range []func() error{
+		func() error { return s.Link("unavailable") },
+		func() error { _, e := s.Lookup("unavailable"); return e },
+		func() error { _, e := s.CallInt32("unavailable", 1, 2); return e },
+	} {
+		if e := run(); e == nil || !strings.Contains(e.Error(), "native execution requires cgo or llgo") {
+			t.Fatalf("no-cgo execution boundary: %v", e)
+		}
+	}
+	if s.image != nil {
+		t.Fatal("no-cgo execution published an image")
 	}
 }

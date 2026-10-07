@@ -1,5 +1,8 @@
 # llgo-dylib
 
+[![Go](https://github.com/cpunion/llgo-dylib/actions/workflows/go.yml/badge.svg)](https://github.com/cpunion/llgo-dylib/actions/workflows/go.yml)
+[![llgo](https://github.com/cpunion/llgo-dylib/actions/workflows/llgo.yml/badge.svg)](https://github.com/cpunion/llgo-dylib/actions/workflows/llgo.yml)
+
 用 Go 实现的运行时对象加载器：直接加载 `.o/.obj`、按需链接 `.a/.lib`，解析符号和重定位后在当前进程执行；`.so/.dylib/.dll` 由所在系统加载。
 
 这是对早期 [DDL](https://github.com/Marenz/ddl) 通用加载机制的 Go 移植与重构，**不兼容 D ABI、ModuleInfo 或 D 运行时**。主体使用 Go 标准库 `debug/elf`、`debug/macho`、`debug/pe`；不依赖 LLVM C++、ORC 或 JITLink。普通 Go 用小型 cgo 桥调用 C 函数，llgo 用直接 C ABI 函数指针调用。
@@ -95,8 +98,10 @@ go test ./...
 CGO_ENABLED=0 go test ./...
 go test -race -tags libffi ./...
 llgo test -tags libffi ./...
-# 可选编译器探针，未安装的工具会显式 SKIP
+# 显式选择需要验证的编译器；缺少所选工具会失败
+DYLIB_TEST_LANGUAGES=rust,zig,fortran,go go test -v ./...
+# macOS 上验证全部语言，包括 Swift 和 llgo 插件
 DYLIB_TEST_LANGUAGES=1 DYLIB_TEST_LLGO=1 go test -v ./...
 ```
 
-参阅 [设计与移植对应关系](docs/design.md)、[ABIBridge / llcppg 对比](docs/comparison.md)、[测试证据](docs/validation.md) 和 [已知限制与后续路线](docs/roadmap.md)。
+参阅 [设计与移植对应关系](docs/design.md)、[ABIBridge / llcppg 对比](docs/comparison.md)、[CI 矩阵](docs/ci.md)、[测试证据](docs/validation.md) 和 [已知限制与后续路线](docs/roadmap.md)。

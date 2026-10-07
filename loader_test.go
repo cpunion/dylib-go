@@ -3,7 +3,6 @@ package dylib
 import (
 	"encoding/binary"
 	"errors"
-	"github.com/cpunion/llgo-dylib/internal/native"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,11 +10,16 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/cpunion/llgo-dylib/internal/native"
 )
 
 func command(t *testing.T, name string, args ...string) {
 	t.Helper()
 	if _, e := exec.LookPath(name); e != nil {
+		if os.Getenv("DYLIB_TEST_REQUIRE_TOOLS") == "1" {
+			t.Fatalf("required test tool %s unavailable: %v", name, e)
+		}
 		t.Skipf("%s unavailable", name)
 	}
 	c := exec.Command(name, args...)
@@ -35,6 +39,12 @@ func compile(t *testing.T, src, out string, flags ...string) string {
 	if runtime.GOOS == "darwin" && runtime.GOARCH == "amd64" {
 		args = append(args, "--target=x86_64-apple-macosx11")
 	}
+	if runtime.GOOS == "windows" && runtime.GOARCH == "amd64" {
+		// Select the MSVC object ABI even when clang comes from MSYS2. MinGW
+		// can introduce COMDAT import-pointer helpers, which are unsupported.
+		// These fixtures need only clang's freestanding stdint.h, not an SDK.
+		args = append(args, "--target=x86_64-pc-windows-msvc", "-ffreestanding")
+	}
 	windows := runtime.GOOS == "windows"
 	for _, flag := range flags {
 		if strings.HasPrefix(flag, "--target=") {
@@ -51,7 +61,16 @@ func compile(t *testing.T, src, out string, flags ...string) string {
 func needNative(t *testing.T) {
 	t.Helper()
 	if !native.Available() || (runtime.GOARCH != "arm64" && runtime.GOARCH != "amd64") {
+		if os.Getenv("DYLIB_TEST_REQUIRE_NATIVE") == "1" {
+			t.Fatal("required native object execution unavailable")
+		}
 		t.Skip("native calls unavailable")
+	}
+	if runtime.GOOS == "windows" && runtime.GOARCH == "arm64" {
+		if os.Getenv("DYLIB_TEST_REQUIRE_NATIVE") == "1" {
+			t.Fatal("ARM64 COFF object relocation is unsupported")
+		}
+		t.Skip("ARM64 COFF object relocation is unsupported; covered by TestUnsupportedObjectTargets")
 	}
 }
 func load(t *testing.T, s *Session, paths ...string) {
@@ -159,6 +178,13 @@ func TestSharedAndHostSymbols(t *testing.T) {
 		if runtime.GOARCH == "amd64" {
 			flags = append(flags, "-arch", "x86_64")
 		}
+	} else if runtime.GOOS == "windows" {
+		lib = filepath.Join(dir, "plugin.dll")
+		src := filepath.Join(dir, "plugin.c")
+		if e := os.WriteFile(src, []byte("__declspec(dllexport) int add(int a, int b) { return a+b; }"), 0600); e != nil {
+			t.Fatal(e)
+		}
+		flags = []string{"-shared", src, "-o", lib}
 	}
 	command(t, compiler(), flags...)
 	caller := compile(t, "testdata/caller.c", filepath.Join(dir, "caller.o"))

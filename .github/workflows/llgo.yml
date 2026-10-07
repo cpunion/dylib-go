@@ -1,0 +1,76 @@
+name: llgo
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: llgo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: llgo / ${{ matrix.target }} / ${{ matrix.mode }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-24.04, target: linux-amd64, arch: amd64, mode: native, languages: 'rust,zig,fortran,go,llgo'}
+          - {os: ubuntu-24.04-arm, target: linux-arm64, arch: arm64, mode: native, languages: 'rust,zig,fortran,go,llgo'}
+          - {os: macos-15-intel, target: darwin-amd64, arch: amd64, mode: native, languages: 'rust,zig,fortran,swift,go,llgo'}
+          - {os: macos-15, target: darwin-arm64, arch: arm64, mode: native, languages: 'rust,zig,fortran,swift,go,llgo'}
+          - {os: windows-2022, target: windows-amd64, arch: amd64, mode: native, languages: 'go,llgo'}
+          - {os: windows-11-arm, target: windows-arm64, arch: arm64, mode: boundary, languages: ''}
+    defaults:
+      run:
+        shell: bash
+    env:
+      CGO_ENABLED: '1'
+      DYLIB_TEST_REQUIRE_NATIVE: ${{ matrix.mode == 'native' && '1' || '0' }}
+      DYLIB_TEST_REQUIRE_TOOLS: '1'
+      DYLIB_TEST_LANGUAGES: ${{ matrix.languages }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: xgo-dev/setup-llgo@v0.2.0
+        id: llgo
+        with:
+          llgo-version: v1.0.6
+          go-version: '1.27.x'
+          llvm-version: '22'
+          architecture: ${{ matrix.arch }}
+          windows-abi: mingw
+          cache-dependency-path: go.mod
+      - if: runner.os != 'Windows'
+        run: bash scripts/ci-unix-deps.sh
+      - if: runner.os != 'Windows'
+        uses: dtolnay/rust-toolchain@stable
+      - if: runner.os != 'Windows'
+        uses: mlugg/setup-zig@v2
+        with:
+          version: '0.15.2'
+      - name: Toolchain identity
+        env:
+          LLGO_REVISION: ${{ steps.llgo.outputs.llgo-revision }}
+        run: |
+          llgo version
+          go version
+          go env GOOS GOARCH CGO_ENABLED CC
+          clang --version
+          echo "LLGo revision: $LLGO_REVISION" >> "$GITHUB_STEP_SUMMARY"
+      - name: Execute direct llgo function-pointer path
+        run: llgo test -count=1 -v ./...
+      - name: Execute optional scalar libffi ABI
+        if: matrix.mode == 'native'
+        env:
+          DYLIB_TEST_LANGUAGES: ''
+        run: llgo test -count=1 -v -tags libffi ./...
+      - name: Build CLI with llgo
+        run: llgo build -o ddlgo ./cmd/ddlgo
+      - name: Record setup-llgo 386 boundary
+        if: matrix.target == 'linux-amd64'
+        run: echo 'setup-llgo v0.2.0 installs amd64/arm64 only; 386 runtime is not claimed by this workflow.' >> "$GITHUB_STEP_SUMMARY"
