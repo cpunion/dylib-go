@@ -1,0 +1,307 @@
+package dylib
+
+import (
+	"encoding/binary"
+	"errors"
+	"github.com/cpunion/llgo-dylib/internal/native"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"sync"
+	"testing"
+)
+
+func command(t *testing.T, name string, args ...string) {
+	t.Helper()
+	if _, e := exec.LookPath(name); e != nil {
+		t.Skipf("%s unavailable", name)
+	}
+	c := exec.Command(name, args...)
+	if b, e := c.CombinedOutput(); e != nil {
+		t.Fatalf("%s %v: %v\n%s", name, args, e, b)
+	}
+}
+func compiler() string {
+	if p := os.Getenv("CLANG"); p != "" {
+		return p
+	}
+	return "clang"
+}
+func compile(t *testing.T, src, out string, flags ...string) string {
+	t.Helper()
+	args := []string{"-O0", "-fno-stack-protector", "-c", src, "-o", out}
+	if runtime.GOOS == "darwin" && runtime.GOARCH == "amd64" {
+		args = append(args, "--target=x86_64-apple-macosx11")
+	}
+	windows := runtime.GOOS == "windows"
+	for _, flag := range flags {
+		if strings.HasPrefix(flag, "--target=") {
+			windows = strings.Contains(flag, "windows")
+		}
+	}
+	if !windows {
+		args = append(args, "-fPIC")
+	}
+	args = append(args, flags...)
+	command(t, compiler(), args...)
+	return out
+}
+func needNative(t *testing.T) {
+	t.Helper()
+	if !native.Available() || (runtime.GOARCH != "arm64" && runtime.GOARCH != "amd64") {
+		t.Skip("native calls unavailable")
+	}
+}
+func load(t *testing.T, s *Session, paths ...string) {
+	t.Helper()
+	for _, p := range paths {
+		if e := s.Load(p); e != nil {
+			t.Fatal(e)
+		}
+	}
+}
+func call(t *testing.T, s *Session, n string, a, b, want int32) {
+	t.Helper()
+	v, e := s.CallInt32(n, a, b)
+	if e != nil || v != want {
+		t.Fatalf("%s(%d,%d) = %d, %v; want %d", n, a, b, v, e, want)
+	}
+}
+
+func TestNativeObjects(t *testing.T) {
+	needNative(t)
+	dir := t.TempDir()
+	for _, tc := range []struct {
+		file, name string
+		a, b, want int32
+		flags      []string
+	}{
+		{"add.c", "add", 20, 22, 42, nil}, {"state.c", "state", 20, 22, 49, nil}, {"pointers.c", "pointers", 20, 22, 49, nil}, {"common.c", "common", 20, 22, 42, []string{"-fcommon"}}, {"exception_free.cpp", "cpp_add", 20, 22, 42, []string{"-fno-exceptions", "-fno-rtti"}},
+		{"pcbias.c", "pcbias", 20, 22, 49, nil},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p := compile(t, "testdata/"+tc.file, filepath.Join(dir, tc.name+".o"), tc.flags...)
+			s := New(Options{})
+			defer s.Close()
+			load(t, s, p)
+			call(t, s, tc.name, tc.a, tc.b, tc.want)
+		})
+	}
+}
+
+func TestArchiveExtractionAndCrossObjectCall(t *testing.T) {
+	needNative(t)
+	dir := t.TempDir()
+	add := compile(t, "testdata/add.c", filepath.Join(dir, "a_very_long_member_name_for_archive.o"))
+	unused := compile(t, "testdata/missing.c", filepath.Join(dir, "unused.o"))
+	caller := compile(t, "testdata/caller.c", filepath.Join(dir, "caller.o"))
+	ar := filepath.Join(dir, "plugins.a")
+	command(t, "ar", "rcs", ar, add, unused)
+	for _, root := range []string{"add", "caller"} {
+		s := New(Options{})
+		load(t, s, ar)
+		if root == "caller" {
+			load(t, s, caller)
+		}
+		want := int32(42)
+		if root == "caller" {
+			want++
+		}
+		call(t, s, root, 20, 22, want)
+		if e := s.Close(); e != nil {
+			t.Fatal(e)
+		}
+	}
+	s := New(Options{})
+	defer s.Close()
+	load(t, s, ar)
+	if _, e := s.Lookup("unused"); e == nil || !strings.Contains(e.Error(), "missing_dependency") {
+		t.Fatalf("missing dependency: %v", e)
+	}
+}
+
+func TestRetryAndLifecycle(t *testing.T) {
+	needNative(t)
+	dir := t.TempDir()
+	caller := compile(t, "testdata/caller.c", filepath.Join(dir, "caller.o"))
+	add := compile(t, "testdata/add.c", filepath.Join(dir, "add.o"))
+	s := New(Options{})
+	load(t, s, caller)
+	if _, e := s.Lookup("caller"); e == nil {
+		t.Fatal("missing dependency accepted")
+	}
+	load(t, s, add)
+	call(t, s, "caller", 20, 22, 43)
+	if e := s.Load(add); !errors.Is(e, ErrLinked) {
+		t.Fatalf("load after link: %v", e)
+	}
+	if e := s.Close(); e != nil {
+		t.Fatal(e)
+	}
+	if e := s.Close(); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := s.Lookup("caller"); !errors.Is(e, ErrClosed) {
+		t.Fatalf("lookup after close: %v", e)
+	}
+}
+
+func TestSharedAndHostSymbols(t *testing.T) {
+	needNative(t)
+	dir := t.TempDir()
+	lib := filepath.Join(dir, "plugin.so")
+	flags := []string{"-shared", "-fPIC", "testdata/add.c", "-o", lib}
+	if runtime.GOOS == "darwin" {
+		lib = filepath.Join(dir, "plugin.dylib")
+		flags = []string{"-dynamiclib", "testdata/add.c", "-o", lib}
+		if runtime.GOARCH == "amd64" {
+			flags = append(flags, "-arch", "x86_64")
+		}
+	}
+	command(t, compiler(), flags...)
+	caller := compile(t, "testdata/caller.c", filepath.Join(dir, "caller.o"))
+	s := New(Options{})
+	defer s.Close()
+	load(t, s, lib, caller)
+	call(t, s, "caller", 20, 22, 43)
+	call(t, s, "add", 20, 22, 42)
+	if runtime.GOOS != "windows" {
+		h := New(Options{ProcessSymbols: true})
+		defer h.Close()
+		host := compile(t, "testdata/host.c", filepath.Join(dir, "host.o"), "-fno-builtin")
+		load(t, h, host)
+		call(t, h, "host_abs", -20, 22, 42)
+	}
+	// Explicit host definitions are sufficient even without process lookup.
+	h := New(Options{})
+	defer h.Close()
+	p, e := s.Lookup("add")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = h.Define("add", p); e != nil {
+		t.Fatal(e)
+	}
+	load(t, h, caller)
+	call(t, h, "caller", 20, 22, 43)
+}
+
+func TestConcurrentCallsAndClose(t *testing.T) {
+	needNative(t)
+	dir := t.TempDir()
+	p := compile(t, "testdata/add.c", filepath.Join(dir, "add.o"))
+	s := New(Options{})
+	load(t, s, p)
+	if _, e := s.Lookup("add"); e != nil {
+		t.Fatal(e)
+	}
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 100; j++ {
+				v, e := s.CallInt32("add", 20, 22)
+				if e != nil && !errors.Is(e, ErrClosed) {
+					t.Error(e)
+				}
+				if e == nil && v != 42 {
+					t.Errorf("got %d", v)
+				}
+			}
+		}()
+	}
+	if e := s.Close(); e != nil {
+		t.Fatal(e)
+	}
+	wg.Wait()
+}
+
+func TestInspectForeignTargets(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "source.c")
+	os.WriteFile(src, []byte("int add(int a,int b){return a+b;}"), 0600)
+	for _, tc := range []struct{ triple, format, arch string }{
+		{"x86_64-linux-gnu", "ELF", "amd64"}, {"aarch64-linux-gnu", "ELF", "arm64"}, {"x86_64-apple-macosx11", "Mach-O", "amd64"}, {"arm64-apple-macosx11", "Mach-O", "arm64"}, {"x86_64-windows-msvc", "COFF", "amd64"}, {"aarch64-windows-msvc", "COFF", "arm64"},
+	} {
+		t.Run(tc.triple, func(t *testing.T) {
+			p := compile(t, src, filepath.Join(dir, tc.triple+".o"), "--target="+tc.triple)
+			i, e := Inspect(p)
+			if e != nil {
+				t.Fatal(e)
+			}
+			if i.Format != tc.format || i.Arch != tc.arch {
+				t.Fatalf("info: %+v", i)
+			}
+			if checkHost(i) != nil {
+				s := New(Options{})
+				defer s.Close()
+				if e := s.Load(p); e == nil {
+					t.Fatal("foreign object accepted for execution")
+				}
+			}
+		})
+	}
+}
+
+func TestRejectTLSAndConstructors(t *testing.T) {
+	needNative(t)
+	dir := t.TempDir()
+	for _, src := range []string{"_Thread_local int x; int f(int a,int b){return x+a+b;}", "static int x; __attribute__((constructor)) static void init(void){x=7;} int f(int a,int b){return x+a+b;}"} {
+		p := filepath.Join(dir, "unsupported.c")
+		os.WriteFile(p, []byte(src), 0600)
+		obj := compile(t, p, filepath.Join(dir, "unsupported.o"))
+		i, e := Inspect(obj)
+		if e != nil || len(i.Unsupported) == 0 {
+			t.Fatalf("metadata: %+v %v", i, e)
+		}
+		s := New(Options{})
+		if e = s.Load(obj); e == nil {
+			t.Fatal("runtime requirement silently accepted")
+		}
+		s.Close()
+	}
+}
+
+func TestForeignPointerRelocations(t *testing.T) {
+	needNative(t)
+	dir := t.TempDir()
+	src := filepath.Join(dir, "p.c")
+	os.WriteFile(src, []byte("int value=7; int *pointer=&value;"), 0600)
+	for _, triple := range []string{"x86_64-linux-gnu", "aarch64-linux-gnu", "x86_64-apple-macosx11", "arm64-apple-macosx11", "x86_64-windows-msvc"} {
+		t.Run(triple, func(t *testing.T) {
+			p := compile(t, src, filepath.Join(dir, triple+".o"), "--target="+triple)
+			b, e := readFile(p)
+			if e != nil {
+				t.Fatal(e)
+			}
+			f, e := parse(p, b)
+			if e != nil {
+				t.Fatal(e)
+			}
+			defs, e := definitions([]*object{f.obj})
+			if e != nil {
+				t.Fatal(e)
+			}
+			im, e := newImage([]*object{f.obj}, defs, func(string) uintptr { return 0 })
+			if e != nil {
+				t.Fatal(e)
+			}
+			defer im.close()
+			ptr, e := im.lookup("pointer")
+			if e != nil {
+				t.Fatal(e)
+			}
+			value, e := im.lookup("value")
+			if e != nil {
+				t.Fatal(e)
+			}
+			got := binary.LittleEndian.Uint64(im.mem[ptr-im.base:])
+			if got != uint64(value) {
+				t.Fatalf("pointer=%#x; want %#x", got, value)
+			}
+		})
+	}
+}
