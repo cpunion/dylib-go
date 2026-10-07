@@ -48,7 +48,7 @@ Tests compile real inputs in temporary directories and check actual results:
 - GNU and COFF long archive names are checked with real objects, later offsets, and malformed references.
 - Optional libffi tests cover mixed integer/floating-point registers, negative results, 64-bit high bits, argument mismatches, and closed calls.
 - Caller-defined cgo and llgo examples invoke `double(int32_t,double,float,uint64_t)` through `Symbol.WithAddress` and return 42.
-- The dynamic `examples/bind` program invokes the same mixed signature through libffi with both Go and llgo. `examples/readme/quickstart.sh` checks object/archive calls and no-cgo inspection on Linux/macOS. All four README snippets are embedded from these source files, with a separate freshness check.
+- The dynamic `examples/bind` program invokes the same mixed signature through libffi with both Go and llgo. `examples/run.sh` dispatches the library, object/archive, dynamic-signature, and struct examples; CI uses the same commands shown in the README. Library Go snippets are embedded from their executed source files, with a separate freshness check.
 
 ## Original language producers
 

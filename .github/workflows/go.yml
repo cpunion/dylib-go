@@ -93,16 +93,16 @@ jobs:
       - name: Execute C/C++, archives, shared libraries and selected language interfaces
         run: go test -count=1 -v -tags libffi ./...
       - name: Execute README cgo and dynamic libffi examples
-        run: bash scripts/verify-examples.sh go
+        run: bash examples/run.sh library go
       - name: Execute dynamic CLI signatures, values, objects and libraries
         run: |
           bash scripts/verify-cli.sh go
-          bash examples/readme/structs.sh go
+          bash examples/run.sh structs go
       - name: Execute README object/archive quick start
         if: runner.os != 'Windows'
         run: |
-          bash examples/readme/quickstart.sh go
-          bash examples/readme/dynamic.sh go
+          bash examples/run.sh quickstart go
+          bash examples/run.sh dynamic go
       - name: Race and lifetime checks
         if: matrix.arch != '386'
         env:
