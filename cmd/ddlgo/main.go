@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/cpunion/dylib-go/abi"
 	"io"
 	"os"
 
@@ -32,11 +33,36 @@ func run(args []string, output io.Writer) error {
 		fs.SetOutput(output)
 		process := fs.Bool("process", false, "resolve exported host symbols")
 		keep := fs.Bool("keep-libraries", false, "retain runtime-bearing OS libraries until process exit")
+		convention := fs.String("abi", "default", "C calling convention: default, cdecl, stdcall, fastcall")
+		variadicFrom := fs.Int("variadic-from", -1, "number of fixed parameters for a concrete variadic call shape")
+		linkageName := fs.String("symbol", "", "exact linkage name, overriding the Go declaration name")
 		if e := fs.Parse(args[1:]); e != nil {
 			return e
 		}
 		input, err := parseCallInput(fs.Args())
 		if err != nil {
+			return err
+		}
+		conventions := map[string]abi.Convention{"default": abi.Default, "cdecl": abi.CDecl, "stdcall": abi.StdCall, "fastcall": abi.FastCall}
+		selected, ok := conventions[*convention]
+		if !ok {
+			return fmt.Errorf("unknown calling convention %q", *convention)
+		}
+		input.Signature.Convention = selected
+		if *variadicFrom < -1 {
+			return fmt.Errorf("variadic-from must be -1 or a positive fixed parameter count")
+		}
+		if *variadicFrom != -1 {
+			input.Signature.Variadic = true
+			input.Signature.FixedArgs = *variadicFrom
+		}
+		if *linkageName != "" {
+			input.Name = *linkageName
+		}
+		if selected != abi.Default || input.Signature.Variadic {
+			input.legacy = false
+		}
+		if err := input.Signature.Validate(); err != nil {
 			return err
 		}
 		return executeCall(input, dylib.Options{ProcessSymbols: *process, KeepLibraries: *keep}, output)

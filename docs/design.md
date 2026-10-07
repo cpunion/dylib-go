@@ -25,7 +25,7 @@ This is a functional reimplementation rather than a line-by-line syntax translat
 ## Loading sequence
 
 1. `Load` parses objects and stages archives. Shared libraries are opened immediately by the OS, so `Load(shared)` may execute library constructors.
-2. The first `Link(roots...)`, `Lookup`, `Resolve`, or `Bind` selects all explicit objects and required archive members. The definition index is rebuilt after each extracted member until dependency closure stabilizes.
+2. The first `Link(roots...)`, `Lookup`, `Resolve`, or `Bind` selects all explicit objects and required archive members. COMDAT groups are selected before discovering their references, so discarded groups do not introduce dependencies. The definition index is rebuilt after each extracted member until dependency closure stabilizes.
 3. Global strong definitions take precedence over weak/common. Multiple strong definitions fail. Common symbols use the maximum size and alignment. Local symbols retain object scope.
 4. One contiguous mapping contains sections, common storage, GOT, and branch stubs. Each section occupies its own pages to separate writable and executable permissions. Images are limited to 64 MiB and files to 256 MiB. Section alignment larger than a host page is rejected.
 5. Go applies relocations and validates ranges. Nearby stubs can reach distant native function addresses; arbitrary data references cannot be replaced by branch stubs. GOT slots hold addresses for indirect references.
@@ -38,7 +38,7 @@ Lookup does not infer types. Raw addresses from `Lookup` are valid only while th
 
 `Resolve(name)` returns an untyped `Symbol` associated with its owning session. `Symbol.WithAddress` invokes a Go adapter while holding the session lock, so `Close` cannot release code or libraries during address use. The adapter may invoke a native function with a known signature or access native data with a known layout. It must finish all address use before returning and must not re-enter the session's locking methods.
 
-`Bind(name, abi.Signature)` builds a `Function` on the same symbol lifetime guard. It validates and copies the caller's signature, then uses the optional libffi backend to arrange scalar and ordinary C struct arguments and results. Neither API infers types from names or demangled strings.
+`Bind(name, abi.Signature)` builds a `Function` on the same symbol lifetime guard. It validates and copies the caller's signature and owns a prepared libffi CIF/type graph for repeated scalar and ordinary C struct calls. Variadic tails receive default C promotions; fixed Windows 386 stdcall/fastcall signatures select an explicit native convention. Session close frees plans before releasing code. Standalone `abi.Prepare` plans require explicit close and do not own code. Neither API infers types from names or demangled strings.
 
 The independent `abi/signature` package converts Go-style declarations and typed invocations into explicit `abi.Signature` and `abi.Value` descriptions using Go's standard parser. It has no native backend dependency. The CLI consumes that metadata through `Bind`; syntax parsing does not replace native prototype or calling-convention knowledge. See the [CLI reference](cli.md).
 

@@ -2,7 +2,7 @@
 
 Use `examples/run.sh <go|llgo> inspect FILE` or `examples/run.sh <go|llgo> call ARGS...` to build and run the CLI automatically. Calls build with `-tags libffi`; inspection uses the default build and can run with `CGO_ENABLED=0`. The runner preserves the caller's working directory, argument boundaries, output, and exit status.
 
-`ddlgo inspect FILE` reads metadata without loading native code. `ddlgo call` loads the supplied files into a session, resolves a named entry, and invokes it with an explicit C ABI signature. Options `-process` and `-keep-libraries` precede the declaration or invocation. Inputs must match the host's architecture and operating-system ABI.
+`ddlgo inspect FILE` reads metadata without loading native code. `ddlgo call` loads the supplied files into a session, resolves a named entry, and invokes it with an explicit C ABI signature. Options precede the declaration or invocation: `-process`, `-keep-libraries`, `-abi=default|cdecl|stdcall|fastcall`, `-variadic-from=N`, and `-symbol=EXACT_LINKAGE_NAME`. stdcall/fastcall are fixed-call conventions available only on Windows 386. `-symbol` lets a Go-style declaration describe a decorated/mangled native entry with a different name. Inputs must match the host's architecture and operating-system ABI.
 
 ## Input forms
 
@@ -13,6 +13,8 @@ Use `examples/run.sh <go|llgo> inspect FILE` or `examples/run.sh <go|llgo> call 
 | Typed invocation with commas | `"add(20:int32,22:int32)int32"` | Follow with `FILE...` |
 | Struct by value | `"func sum_pair(struct{a,b int32})int32"` | Follow with `"{a:20,b:22}" FILE...` |
 | Struct pointer | `"sum_pair_ptr(&{a:20,b:22}:*struct{a,b int32})int32"` | Follow with `FILE...` |
+| Concrete C varargs | `-variadic-from=2 "func var_fixed(float32,int32,float32)float64"` | Follow with `20.5 1 21.5 FILE...`; only the final float32 promotes to double |
+| Decorated x86 entry | `-abi=stdcall -symbol='stdcall_add@8' "func add(int32,int32)int32"` | Follow with `20 22 FILE...`; Windows 386 only |
 | Original demonstration | `add` | Follow with `20 22 FILE...`; exact `int32(int32,int32)` signature |
 
 Quote declarations and invocations as a single shell argument. Unquoted parentheses may be interpreted or rejected by the shell before the CLI runs. Run `bash examples/run.sh go dynamic` or `bash examples/run.sh go structs` to build and check the examples; replace `go` with `llgo` as needed. The scripts for [scalar calls](../examples/readme/dynamic.sh) and [struct calls](../examples/readme/structs.sh) demonstrate exact build/call commands and check their results.
@@ -21,7 +23,7 @@ Dynamic forms require a CLI compiled with `go build -tags libffi` or `llgo build
 
 ## Declaration grammar
 
-The standalone `abi/signature` package uses `go/parser` and `go/ast` to parse one named function declaration without a body. Named or unnamed parameters, grouped names, an optional single named result, and Go whitespace are supported. An absent result denotes C `void`. A symbol name must be a Go identifier; an Itanium C++ mangled name can be used if it is a valid identifier. The parser neither demangles nor inspects a function's actual prototype.
+The standalone `abi/signature` package uses `go/parser` and `go/ast` to parse one named function declaration without a body. Named or unnamed parameters, grouped names, an optional single named result, and Go whitespace are supported. An absent result denotes C `void`. A declaration name must be a Go identifier; `-symbol` supplies any exact native linkage name independently. The parser neither demangles nor inspects a function's actual prototype.
 
 | Go spelling | ABI type | Input / output |
 | --- | --- | --- |
@@ -36,7 +38,7 @@ The standalone `abi/signature` package uses `go/parser` and `go/ast` to parse on
 | `struct{a,b int32}` | `abi.Struct` plus `abi.TypeDesc` | Ordinary C struct with fields in declaration order |
 | Omitted result | `abi.Void` | No result; CLI prints `void` |
 
-Explicit-width integers avoid assuming a C `int`, `long`, or `size_t` width from a Go type name. C `bool` is different from Windows `BOOL`, which requires the matching integer type. `int`, `uint`, strings, slices, maps, interfaces, function values, receivers, generic parameters, variadic functions, and multiple results are rejected.
+Explicit-width integers avoid assuming a C `int`, `long`, or `size_t` width from a Go type name. C `bool` is different from Windows `BOOL`, which requires the matching integer type. `int`, `uint`, strings, slices, maps, interfaces, function values, receivers, generic parameters, Go `...T` declarations, and multiple results are rejected. C variadic calls instead describe one complete concrete call shape and use `-variadic-from=N` to mark its fixed prefix. The backend promotes anonymous small integers/bool to C int and float32 to double; fixed arguments keep their declared types. An empty tail still uses a variadic CIF, and at least one fixed argument is required.
 
 Struct fields must be explicitly named. Grouped fields, nested structs, and pointer fields are supported, with 1–32 fields per struct, at most eight nesting levels, and native storage limited to 64 KiB per value. Layout and padding follow the host's default C ABI through libffi, not Go's memory layout. Struct arguments and results use libffi's native register/stack classification. Arrays, unions, packed structs, bitfields, embedded fields, and empty structs are not supported. Named external struct types cannot be resolved by value; describe them inline. `*UnknownName` remains an opaque pointer accepting only an address or `nil`.
 

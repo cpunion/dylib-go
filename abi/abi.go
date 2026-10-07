@@ -28,11 +28,25 @@ const (
 	Struct
 )
 
-// Signature uses the current host's default C calling convention. It does not
-// describe variadic functions, C++ methods or Swift ABI calls.
+// Convention selects a native C calling convention, not a language object ABI.
+type Convention uint8
+
+const (
+	Default Convention = iota
+	CDecl
+	StdCall  // Windows 386 only.
+	FastCall // Windows 386 only.
+)
+
+// Signature describes one concrete call shape, including a variadic tail when
+// Variadic is true. Args includes both the fixed prefix and this call's tail.
+// It does not describe C++ object semantics or Swift ABI calls.
 type Signature struct {
-	Result Type
-	Args   []Type
+	Result     Type
+	Args       []Type
+	Convention Convention
+	Variadic   bool
+	FixedArgs  int
 	// ArgTypes and ResultType describe struct fields and optional pointee types.
 	// Scalar-only signatures may omit them.
 	ArgTypes   []TypeDesc
@@ -40,11 +54,24 @@ type Signature struct {
 }
 
 func (s Signature) Validate() error {
+	if s.Convention > FastCall {
+		return fmt.Errorf("invalid calling convention %d", s.Convention)
+	}
+	if s.Variadic {
+		if s.FixedArgs < 1 || s.FixedArgs > len(s.Args) {
+			return fmt.Errorf("variadic calls require 1 to len(Args) fixed arguments")
+		}
+		if s.Convention != Default && s.Convention != CDecl {
+			return fmt.Errorf("variadic calls require the default C or cdecl convention")
+		}
+	} else if s.FixedArgs != 0 {
+		return fmt.Errorf("FixedArgs requires a variadic signature")
+	}
 	if s.Result > Struct {
 		return fmt.Errorf("invalid result type %d", s.Result)
 	}
 	if len(s.Args) > 32 {
-		return fmt.Errorf("at most 32 arguments supported")
+		return fmt.Errorf("at most 32 total arguments supported")
 	}
 	if len(s.ArgTypes) != 0 && len(s.ArgTypes) != len(s.Args) {
 		return fmt.Errorf("argument descriptor count mismatch")
@@ -107,16 +134,10 @@ func Call(address uintptr, s Signature, args ...Value) (Value, error) {
 	if address == 0 {
 		return Value{}, fmt.Errorf("null function address")
 	}
-	if err := s.Validate(); err != nil {
+	p, err := Prepare(s)
+	if err != nil {
 		return Value{}, err
 	}
-	if len(args) != len(s.Args) {
-		return Value{}, fmt.Errorf("argument count mismatch")
-	}
-	for i, v := range args {
-		if err := v.Validate(s.ArgumentType(i)); err != nil {
-			return Value{}, fmt.Errorf("argument %d: %w", i+1, err)
-		}
-	}
-	return invoke(address, s, args)
+	defer p.Close()
+	return p.Call(address, args...)
 }

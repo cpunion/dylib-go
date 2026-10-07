@@ -75,6 +75,16 @@ type object struct {
 	sections []*section // Original section indices (zero reserved).
 	symbols  []symbol   // Original symbol table indices.
 	relocs   []relocation
+	groups   []sectionGroup
+}
+
+// ELF COMDAT groups and COFF COMDAT sections share selection and discard rules.
+// COFF association is an original section index within the same object.
+type sectionGroup struct {
+	key       string
+	sections  []int
+	selection uint8 // COFF NODUPLICATES=1, ANY=2, SAME_SIZE=3, ASSOCIATIVE=5, LARGEST=6.
+	parent    int
 }
 type section struct {
 	name                  string

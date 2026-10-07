@@ -4,25 +4,29 @@ import "github.com/cpunion/dylib-go/abi"
 
 // Function couples an explicit ABI signature with the lifetime of its code.
 type Function struct {
-	symbol    *Symbol
-	signature abi.Signature
+	symbol *Symbol
+	plan   *abi.CallPlan
 }
 
 // Bind validates the signature and resolves the symbol once. No demangling or
 // type guessing occurs; a header generator such as llcppg can supply metadata.
 func (s *Session) Bind(name string, signature abi.Signature) (*Function, error) {
-	if err := signature.Validate(); err != nil {
-		return nil, err
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.closed {
+		return nil, ErrClosed
 	}
-	if !abi.Available() {
-		return nil, abi.ErrUnavailable
-	}
-	symbol, err := s.Resolve(name)
+	plan, err := abi.Prepare(signature)
 	if err != nil {
 		return nil, err
 	}
-	signature = signature.Clone()
-	return &Function{symbol: symbol, signature: signature}, nil
+	address, err := s.lookup(name)
+	if err != nil {
+		plan.Close()
+		return nil, err
+	}
+	s.plans = append(s.plans, plan)
+	return &Function{symbol: &Symbol{owner: s, address: address}, plan: plan}, nil
 }
 func (f *Function) Call(args ...abi.Value) (abi.Value, error) {
 	if f == nil {
@@ -31,7 +35,7 @@ func (f *Function) Call(args ...abi.Value) (abi.Value, error) {
 	var result abi.Value
 	err := f.symbol.WithAddress(func(address uintptr) error {
 		var err error
-		result, err = abi.Call(address, f.signature, args...)
+		result, err = f.plan.Call(address, args...)
 		return err
 	})
 	return result, err

@@ -26,7 +26,10 @@ All eight Go execution targets and six llgo targets set `DYLIB_TEST_REQUIRE_NATI
 | C, C++ without exceptions/RTTI, archives, libraries | Eight raw-object targets | Six raw-object targets |
 | CLI/compiler-probe example `int32(int32,int32)` | `examples/call` cgo adapter | `examples/call` direct C function-pointer adapter |
 | Caller-defined `double(int32,double,float,uint64)` | `examples/cgo` on all eight library targets | `examples/llgo` on all six library targets |
-| libffi mixed integer/floating-point signatures | Eight Go targets; race checks on the five Go native amd64/arm64 jobs (Go race does not support 386) | Six targets; Windows DLLs let the OS linker handle constant-pool COMDAT |
+| libffi mixed integer/floating-point signatures, variadic promotions/records/pointers, reusable plan lifetime | Eight Go targets; race checks on the five Go native amd64/arm64 jobs (Go race does not support 386) | Six targets; raw COFF constant-pool COMDAT exercised |
+| C++ inline COMDAT/shared state from objects and archives | Eight targets | Six targets |
+| Windows 386 stdcall/fastcall fixed calls | Native Windows 386 C fixtures | Not qualified |
+| Foreign ELF/COFF COMDAT discard; COFF SECTION/SECREL | Parser/relocation fixtures independent of host | Same fixtures |
 | Rust `extern C`, Zig `export`, Fortran `bind(C)` | Both Linux/macOS architectures | Both Linux/macOS architectures |
 | Swift C-exported library and raw metadata refusal | Both macOS architectures | Both macOS architectures |
 | Go c-shared | Eight library targets, including both 386 hosts | Six library targets |
@@ -36,7 +39,7 @@ These are workflow requirements; inspect [Go](https://github.com/cpunion/dylib-g
 
 `DYLIB_TEST_LANGUAGES=rust,zig,fortran,swift,go,llgo` selects producers explicitly. A selected compiler that is missing or inappropriate for the host fails. Override executable paths with `DYLIB_RUSTC`, `DYLIB_ZIG`, `DYLIB_FC`, `DYLIB_SWIFTC`, `DYLIB_GO`, and `DYLIB_LLGO`. Go/llgo library calls run in child processes that retain their runtime library references until exit, allowing Windows to remove DLL files afterward.
 
-`bash examples/run.sh go library|llgo` delegates to `scripts/verify-examples.sh`, which builds a complete C library, independently compiles and executes the appropriate typed adapter (`examples/cgo` or `examples/llgo`), and then runs `examples/bind` with `-tags libffi`. Each program must print exactly 42. Windows uses a DLL to handle COMDAT through the OS linker. The six amd64/arm64 targets execute both a typed adapter and the dynamic example with each host compiler; both 386 targets also execute them with Go; the Go Windows ARM64 examples run in the llgo workflow's independent Go step.
+`bash examples/run.sh go library|llgo` delegates to `scripts/verify-examples.sh`, which builds a complete C library, independently compiles and executes the appropriate typed adapter (`examples/cgo` or `examples/llgo`), and then runs `examples/bind` with `-tags libffi`. Each program must print exactly 42. The examples use complete C libraries; separate native tests exercise raw COMDAT selection. The six amd64/arm64 targets execute both a typed adapter and the dynamic example with each host compiler; both 386 targets also execute them with Go; the Go Windows ARM64 examples run in the llgo workflow's independent Go step.
 
 `bash examples/run.sh go quickstart|llgo` runs the Linux/macOS object/archive smoke test in `examples/readme/quickstart.sh`. Both compiler workflows execute it on amd64/arm64, and Go also executes it on Linux 386, checking object and archive results and exercising no-cgo inspection. Windows raw-object execution is verified separately by the native test suite and CLI script.
 

@@ -2,5 +2,5 @@
 
 package abi
 
-func invoke(uintptr, Signature, []Value) (Value, error) { return Value{}, ErrUnavailable }
-func Available() bool                                   { return false }
+func prepare(Signature) (callBackend, error) { return nil, ErrUnavailable }
+func Available() bool                        { return false }

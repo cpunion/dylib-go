@@ -25,7 +25,7 @@ The execution columns describe native loading and calls on the listed host. Insp
 | Linux | 386 | ELF32 little-endian REL/RELA `.o` | Ordinary GNU/BSD ar `.a` | ELF32 `.so` | Native 32-bit Go calls on amd64 runners |
 | Windows | 386 | i386 COFF `.obj` / `.o` | Ordinary COFF ar `.lib` / `.a` | PE32 `.dll` | Native 32-bit Go calls under WoW64 |
 
-The six amd64/arm64 targets test scalar and struct calls with both Go and llgo; Linux/Windows 386 use native 32-bit Go processes. The current setup-llgo installer accepts only amd64/arm64, so no llgo 386 execution is claimed. Ordinary Go execution requires cgo; metadata inspection does not. Raw objects and archives support the implemented relocation subset; TLS, automatic constructors/destructors, COMDAT, and exception unwinding are not supported on that path. Shared libraries use the host OS loader. Inputs and call signatures must match the host architecture and OS ABI; this table does not imply cross-CPU or cross-OS execution.
+The six amd64/arm64 targets test scalar and struct calls with both Go and llgo; Linux/Windows 386 use native 32-bit Go processes. The current setup-llgo installer accepts only amd64/arm64, so no llgo 386 execution is claimed. Ordinary Go execution requires cgo; metadata inspection does not. Raw objects and archives support the implemented relocation subset; ELF COMDAT and common COFF COMDAT selections are supported; TLS, automatic constructors/destructors, and exception unwinding are not supported on that path. Shared libraries use the host OS loader. Inputs and call signatures must match the host architecture and OS ABI; this table does not imply cross-CPU or cross-OS execution.
 
 Metadata inspection uses pure Go and can read ELF, Mach-O, COFF/PE, and ordinary ar files independently of the file's CPU architecture. Thin archives, fat Mach-O, COFF import libraries/bigobj, OMF, D `.ddl`, Go gc `.a`, and LLVM IR/bitcode are not directly supported library inputs. See the [detailed format limits and language matrix](docs/support.md) for other platforms and unsupported features.
 
@@ -46,7 +46,7 @@ Known native signatures can use caller-defined cgo or llgo adapters. For dynamic
 - `Bind(name, abi.Signature)` / `Function.Call`: bind and invoke an explicit dynamic signature with libffi.
 - `Close()`: free the object image and release system library references; subsequent symbol access and bound calls return `ErrClosed`.
 
-Mach-O and i386 COFF C names omit one leading linker underscore. i386 stdcall suffixes remain; the dynamic backend uses C cdecl. C++ names still require their exact mangled linkage name.
+Mach-O and i386 COFF C names omit one leading linker underscore. i386 stdcall/fastcall decorations remain; select the matching convention explicitly when binding. C++ names still require their exact mangled linkage name.
 
 ## Library usage with typed adapters
 
@@ -229,7 +229,11 @@ func main() {
 
 ```
 
-Supported scalar types are signed/unsigned 8/16/32/64-bit integers, C `bool`, `f32/f64`, and pointers. Ordinary C structs support arguments, results, nesting, and pointer fields through `abi.TypeDesc`. Use `abi.StructValue` for fields, `abi.AddressOf` for temporary native copies of scalars or structs, and `abi.Ptr` for caller-managed native addresses. Temporary mutations are copied back; native code must not retain those pointers. Layout and register classification come from libffi. Calls allow `void` results and up to 32 fixed arguments. Arrays, unions, packed structs, bitfields, variadic calls, native callbacks, C++ `this` adjustment, and Swift calling conventions are not implemented.
+Supported scalar types are signed/unsigned 8/16/32/64-bit integers, C `bool`, `f32/f64`, and pointers. Ordinary C structs support arguments, results, nesting, and pointer fields through `abi.TypeDesc`. Use `abi.StructValue` for fields, `abi.AddressOf` for temporary native copies of scalars or structs, and `abi.Ptr` for caller-managed native addresses. Temporary mutations are copied back; native code must not retain those pointers. Layout and register classification come from libffi. Calls allow `void` results and up to 32 total arguments. Arrays, unions, packed structs, bitfields, native callbacks, C++ `this` adjustment, and Swift calling conventions are not implemented.
+
+For a variadic call shape, set `Signature.Variadic = true` and `FixedArgs` to the fixed-prefix count. `Args` includes every concrete tail argument. The backend promotes tail `float32` to `float64` and small integers / C bool to `int32`; fixed arguments retain their declared types. Prepare another binding for a different tail shape. `Convention` accepts `abi.Default` / `abi.CDecl` on supported hosts and `abi.StdCall` / `abi.FastCall` for fixed calls on Windows 386; unsupported host/convention combinations fail during preparation.
+
+`Bind` prepares and owns a reusable native call plan; repeated calls reuse its CIF and struct layouts, with separate value storage. `Session.Close` releases these plans. For independently managed native addresses, use `abi.Prepare(signature)`, `CallPlan.Call(address, values...)`, and explicit `CallPlan.Close`; the plan does not own the target code.
 
 `abi/signature.Parse` converts a Go-style declaration into a symbol name and `abi.Signature`, ready for `Bind`; `ParseCall` also parses typed values for dynamic tests. The parser uses Go's standard `go/parser` and does not infer prototypes from symbols.
 
@@ -241,12 +245,13 @@ On Linux with llgo v1.0.6, set `export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` before 
 
 ## Language interfaces and calling conventions
 
-Dynamic `Bind` uses the host's default C ABI (`FFI_DEFAULT_ABI`). Language C exports and native language ABIs have different support levels:
+Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cdecl and Windows 386 stdcall/fastcall selection. Language C exports and native language ABIs have different support levels:
 
 | Language / interface | Calling convention / ABI | Current support | Verified coverage / limits |
 | --- | --- | --- | --- |
-| C | Host default C ABI | Supported subset | Eight Go targets; six llgo targets. Fixed-width scalars, pointers, ordinary structs, and struct pointers |
-| C with non-default conventions | x86 stdcall / fastcall; vectorcall | Not implemented in `Bind` | No calling-convention selector; use a compiled adapter matching the convention |
+| C | Host default C ABI | Supported subset | Eight Go targets; six llgo targets. Fixed-width scalars, pointers, ordinary structs, struct pointers, and concrete variadic shapes |
+| C with x86 conventions | Windows 386 stdcall / fastcall | Supported subset | Explicit `Convention`; fixed calls, exact decorated symbol names; tested with C fixtures |
+| C with other conventions | vectorcall and other non-default ABIs | Not implemented | Use a compiled adapter matching the convention |
 | C++ C exports | `extern "C"`, host C ABI | Verified subset | Simple functions on native targets; raw fixtures disable exceptions and RTTI |
 | C++ free functions | C-compatible representation, exact mangled symbol | Conditional | Caller supplies the exact symbol and signature; direct mangled entry calls are not separately tested in CI |
 | C++ methods and objects | Compiler-specific C++ object ABI | Not implemented | No automatic `this` adjustment, virtual dispatch, construction/destruction, or exception adaptation |
@@ -262,7 +267,7 @@ Dynamic `Bind` uses the host's default C ABI (`FFI_DEFAULT_ABI`). Language C exp
 | Objective-C / ObjC++ methods | Objective-C runtime dispatch | Not implemented | No built-in message-dispatch or ARC adapter; C facades are unverified |
 | Other native languages | Explicit C-compatible exports | Unverified | No compiler-producer execution tests or current support claim |
 
-The [language producer probes](languages_test.go) primarily test `int32` addition through C exports. Mixed scalar, struct, and pointer coverage comes from C fixtures; it does not establish every language's native value representation. On Windows 386, stdcall differs from cdecl, so Rust `extern "system"` is not covered by the default dynamic backend. On Windows amd64/arm64, an ignored `__stdcall` annotation does not by itself select a different ABI. Caller-defined cgo/llgo adapters can cover additional contracts, but that is not built-in dynamic ABI support.
+The [language producer probes](languages_test.go) primarily test `int32` addition through C exports. Mixed scalar, struct, and pointer coverage comes from C fixtures; it does not establish every language's native value representation. On Windows 386, stdcall differs from cdecl, so a C-compatible Rust `extern "system"` entry needs explicit `abi.StdCall`; the Rust producer itself is not tested on Windows. On Windows amd64/arm64, an ignored `__stdcall` annotation does not by itself select a different ABI. Caller-defined cgo/llgo adapters can cover additional contracts, but that is not built-in dynamic ABI support.
 
 See the [DDL and ABIBridge comparison](docs/comparison.md#remaining-gaps) for missing loader features, native language adaptation, and proposed integration with llcppg.
 
@@ -270,7 +275,7 @@ See the [DDL and ABIBridge comparison](docs/comparison.md#remaining-gaps) for mi
 
 Inputs must be trusted native code. The parser and execution layer provide no security sandbox. Target ISA, object format, OS ABI, CPU features, and dependencies must match the host. Relocation does not emulate a different CPU or operating system.
 
-Objects are allocated RW, relocated in Go, flushed from the instruction cache, and protected as RX/R/RW per section. No pages are RWX. The raw object path rejects recognized TLS, automatic constructors/destructors, COMDAT, and language runtime registration requirements. It does not register exception unwind information. Use complete shared libraries when these services are needed; the OS handles their dependencies, TLS, and initialization. Exceptions must still remain within the native call boundary.
+Objects are allocated RW, relocated in Go, flushed from the instruction cache, and protected as RX/R/RW per section. No pages are RWX. The raw object path rejects recognized TLS, automatic constructors/destructors, unsupported COMDAT selections, and language runtime registration requirements. It does not register exception unwind information. Use complete shared libraries when these services are needed; the OS handles their dependencies, TLS, and initialization. Exceptions must still remain within the native call boundary.
 
 `Symbol.WithAddress`, `Function.Call`, and `Close` are serialized. An adapter must finish using its address before returning, and must not re-enter locking methods of the same session. Raw addresses, asynchronous native threads, and native callbacks require caller-managed lifetimes. `WithAddress` is a Go-side lifetime guard, not a native callback facility. Go function values cannot be cast into C function pointers; `Define` requires a native function or data address.
 
@@ -284,7 +289,8 @@ The former experimental `BindInt32`, `CallInt32`, and `Int32Func` APIs have been
 | --- | --- |
 | `format_*.go`, `archive.go` | Go parsers and the unified object model |
 | `linker.go`, `relocate*.go` | Symbol selection, archive extraction, layout, relocation |
-| `symbol.go`, `function.go` | Generic symbol handles and dynamic signature bindings |
+| `symbol.go`, `function.go` | Generic symbol handles and owned dynamic call plans |
+| `comdat.go` | COMDAT selection before dependency discovery |
 | `abi/` | Go signature descriptions and optional scalar/struct libffi calls |
 | `abi/signature/` | Pure Go declaration, typed-invocation, and typed literal parsing |
 | `internal/native/` | OS memory, instruction cache, and shared-library operations |
@@ -313,9 +319,10 @@ See the [design and DDL mapping](docs/design.md), [ABIBridge / llcppg comparison
 | Typed invocation | `examples/run.sh go call "add(20:int32 22:int32)int32" <library>` |
 | Struct value | `examples/run.sh go call "func sum_pair(struct{a,b int32})int32" "{a:20,b:22}" <library>` |
 | Struct pointer | `examples/run.sh go call "sum_pair_ptr(&{a:20,b:22}:*struct{a,b int32})int32" <library>` |
+| Concrete variadic call | `examples/run.sh go call -variadic-from=2 "func var_fixed(float32,int32,float32)float64" 20.5 1 21.5 <library>` |
 
 Replace `go` with `llgo` to use that compiler. Quote each declaration or invocation as a single shell argument. File paths remain relative to your working directory. Use Bash, including Git Bash/MSYS2 on Windows. CI checks struct declarations and typed pointers through this runner with both compilers.
 
 To build and verify the included fixtures, run `examples/run.sh go quickstart`, `examples/run.sh go dynamic`, or `examples/run.sh go structs`. The first two run on Linux/macOS; `structs` runs on all supported native targets and produces `build/structs.so`, `build/structs.dylib`, or `build/structs.dll` for further calls. `examples/run.sh go library` checks the typed and dynamic library API examples.
 
-See the [CLI reference](docs/cli.md) for complete syntax, supported types, and lifetime rules. Options such as `-keep-libraries` and `-process` follow `call` and precede the signature, just as with `ddlgo`.
+See the [CLI reference](docs/cli.md) for complete syntax, supported types, and lifetime rules. Options such as `-keep-libraries`, `-process`, `-abi`, `-symbol`, and `-variadic-from` follow `call` and precede the signature, just as with `ddlgo`.
