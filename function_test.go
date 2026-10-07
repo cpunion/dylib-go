@@ -39,8 +39,7 @@ func TestScalarABI(t *testing.T) {
 	var p string
 	if runtime.GOOS == "windows" {
 		// Floating-point constant pools can require COFF COMDAT selection.
-		// Test the scalar call ABI through the OS linker on Windows, including
-		// ARM64 where raw COFF relocation is not implemented yet.
+		// Test the scalar call ABI through the OS linker on all Windows targets.
 		p = filepath.Join(dir, "scalars.dll")
 		command(t, compiler(), "-shared", "testdata/scalars.c", "-Wl,--export-all-symbols", "-o", p)
 	} else {

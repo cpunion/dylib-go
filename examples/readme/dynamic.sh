@@ -4,7 +4,8 @@ cd "$(dirname "$0")/../.."
 compiler=${1:-go} # Pass llgo to build the same dynamic CLI with llgo.
 
 mkdir -p build
-"${CLANG:-clang}" -fPIC -c testdata/add.c -o build/add.o
+source scripts/native-cflags.sh
+"${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -fPIC -c testdata/add.c -o build/add.o
 "$compiler" build -tags libffi -o build/ddlgo ./cmd/ddlgo
 
 result=$(build/ddlgo call "func add(int32,int32)int32" 20 22 build/add.o)

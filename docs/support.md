@@ -11,8 +11,9 @@ The tables distinguish file inspection, implemented relocations, and actual exec
 | Linux arm64 | ELF64 LE RELA `.o` / `.a` | `.so` | Go and llgo on GitHub ARM64 runners |
 | Linux amd64 | ELF64 LE RELA `.o` / `.a` | `.so` | Go and llgo on GitHub AMD64 runners |
 | Windows amd64 | AMD64 COFF `.obj` / ordinary `.lib` archives | PE `.dll` | Native Go and llgo objects, archives, DLLs, and scalar/struct ABI calls |
-| Windows arm64 | COFF inspection; raw object execution rejected | PE `.dll` | Independent Go and llgo hosts, DLL/libffi calls, and Go/llgo c-shared producers; ARM64 COFF relocation unimplemented |
-| Linux / Windows 386 | Inspection; 32-bit object execution rejected | No execution support in this project | CI runs 32-bit Go parser/refusal tests; setup-llgo does not install 386 |
+| Windows arm64 | ARM64 COFF `.obj` / ordinary `.lib` archives | PE `.dll` | Independent Go and llgo object/archive/DLL calls and c-shared producers |
+| Linux 386 | ELF32 little-endian REL/RELA `.o` / `.a` | ELF32 `.so` | Native 32-bit Go objects, archives, libraries, scalar/struct calls, and c-shared producer on an amd64 runner |
+| Windows 386 | i386 COFF `.obj` / ordinary `.lib` archives | PE32 `.dll` | Native 32-bit Go under WoW64; C cdecl calls and Go c-shared producer. setup-llgo does not install 386 |
 | Linux RISC-V, LoongArch, PPC, s390x, ARM32 | Standard parsers can inspect some ELF inputs | No execution support in this project | No matching relocation backend or execution tests |
 | FreeBSD and other BSD systems | Pure Go inspection can be built | No native backend | Needs OS operations, ABI validation, and execution tests |
 | iOS / tvOS / watchOS / visionOS | Some Mach-O metadata can be inspected | No host integration | Mobile objects are identified and rejected as macOS plugins; execution policies also apply |
@@ -24,7 +25,7 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 
 | Input | Current behavior |
 | --- | --- |
-| Supported ELF/Mach-O/COFF 64-bit relocatable objects | Go links implemented relocations directly without first producing an OS shared library |
+| Supported ELF/Mach-O/COFF 64-bit objects and i386 ELF32/COFF relocatable objects | Go links implemented relocations directly without first producing an OS shared library |
 | Ordinary GNU/BSD ar (`.a`, ordinary COFF `.lib`) | Inspect all members, but map only needed members; unresolved dependencies in unused members do not affect linking |
 | `.so`, `.dylib`, PE DLL | Host OS loads complete images, dependencies, TLS, and initialization |
 | PE EXE, ELF EXEC/PIE, Mach-O EXEC | Identified and rejected as library inputs |
@@ -32,6 +33,10 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 | OMF, D `.ddl`, Go gc `.a`, LLVM bitcode, raw LLVM IR | Not directly loaded; matching toolchains can first compile IR/bitcode to native `.o` |
 
 Implemented relocation families:
+
+- ELF i386: NONE, 32, PC32, PLT32, GOT32/GOT32X, GOTOFF, GOTPC; implicit REL and explicit RELA addends. GOT slots are 4 bytes, and relative arithmetic wraps within the 32-bit address space.
+- COFF i386: ABSOLUTE, DIR32, DIR32NB, REL32. Leading C linker underscores are normalized; stdcall suffixes remain, and the dynamic backend currently uses C cdecl only.
+- COFF ARM64: ABSOLUTE, ADDR32/ADDR32NB/ADDR64, BRANCH26, PAGEBASE_REL21, REL21, PAGEOFFSET_12A/12L, BRANCH19/14, REL32. Conditional branches must fit their architectural displacement; SECREL/SECTION are unimplemented.
 
 - ELF x86-64: NONE, 64, PC32, PLT32, GOTPCREL/GOTPCRELX/REX_GOTPCRELX, 32/32S, PC64.
 - ELF AArch64: NONE, ABS64/ABS32, PREL64/PREL32, ADRP page, ADD/LDST8/16/32/64/128 low12, CALL26/JUMP26, GOT page/load64.
@@ -53,8 +58,8 @@ File format support alone does not establish language support. A callable entry 
 | Rust | `extern "C"`, stable exported names, `panic=abort` | `no_std` leaf objects on both Linux/macOS architectures; Rust ABI, trait objects, and panic unwinding unsupported |
 | Zig | `export fn`, C-compatible arguments | Objects on both Linux/macOS architectures; internal Zig ABI and complex layouts are not adapted |
 | Fortran | `bind(C)`, `iso_c_binding`, explicit `value` arguments | gfortran objects on both Linux/macOS architectures; I/O/descriptors need runtime libraries and wrappers |
-| Go gc | `go build -buildmode=c-shared`, `//export` | Libraries on both architectures of Linux/macOS/Windows; Go `.a`, ordinary Go ABI, and GC-managed layouts are not C ABI inputs |
-| llgo | Compile the host with llgo; plugins export C ABI / c-shared | Both host and producer tested; LLVM output still requires correct GC, initialization, and metadata |
+| Go gc | `go build -buildmode=c-shared`, `//export` | Libraries on all six amd64/arm64 targets and both Linux/Windows 386 hosts; Go `.a`, ordinary Go ABI, and GC-managed layouts are not C ABI inputs |
+| llgo | Compile the host with llgo; plugins export C ABI / c-shared | Host and producer tested on six amd64/arm64 targets; setup-llgo does not provide a 386 installation, so 386 is unqualified; LLVM output still requires correct GC, initialization, and metadata |
 | Swift | Complete library with C exports | C-exported dylibs on both macOS architectures; raw registration objects rejected; native generics/async/throws unsupported |
 | Objective-C / ObjC++ | OS-loaded framework/dylib with C facade or explicit adapter | Raw registration sections rejected; no objc_msgSend signature or ARC management |
 | D | Independent C ABI boundary can be attempted as native input | No DDL-specific D compatibility or D compiler/runtime verification |

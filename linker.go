@@ -140,10 +140,14 @@ func checkHost(i Info) error {
 	if i.Format == "PE" && runtime.GOOS == "windows" {
 		format = "PE"
 	}
-	if i.Bits != 64 || i.Arch != runtime.GOARCH || i.Format != format {
+	bits := 64
+	if runtime.GOARCH == "386" {
+		bits = 32
+	}
+	if i.Bits != bits || i.Arch != runtime.GOARCH || i.Format != format {
 		return fmt.Errorf("%s: target %s/%s/%d is incompatible with host %s/%s", i.Name, i.Format, i.Arch, i.Bits, runtime.GOOS, runtime.GOARCH)
 	}
-	if i.Arch != "amd64" && i.Arch != "arm64" {
+	if i.Arch != "amd64" && i.Arch != "arm64" && i.Arch != "386" {
 		return fmt.Errorf("unsupported execution architecture %s", i.Arch)
 	}
 	return nil
@@ -408,6 +412,7 @@ type image struct {
 	got, stubs                             map[uintptr]uintptr
 	gotStart, stubStart, gotNext, stubNext uint64
 	page                                   uint64
+	pointerSize                            uint64
 }
 
 func alignUp(n, a uint64) uint64 {
@@ -418,6 +423,10 @@ func alignUp(n, a uint64) uint64 {
 }
 func newImage(objs []*object, defs map[string]definition, external func(string) uintptr) (*image, error) {
 	im := &image{objects: objs, defs: defs, external: external, common: map[string]uint64{}, resolved: map[string]uintptr{}, got: map[uintptr]uintptr{}, stubs: map[uintptr]uintptr{}, page: uint64(os.Getpagesize())}
+	im.pointerSize = uint64(unsafe.Sizeof(uintptr(0)))
+	if len(objs) != 0 && (objs[0].info.Bits == 32 || objs[0].info.Bits == 64) {
+		im.pointerSize = uint64(objs[0].info.Bits / 8)
+	}
 	var size, count uint64
 	for _, o := range objs {
 		count += uint64(len(o.relocs))
@@ -477,7 +486,7 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	size = alignUp(size, im.page)
 	im.gotStart = size
 	im.gotNext = size
-	size += alignUp((count+1)*8, im.page)
+	size += alignUp((count+1)*im.pointerSize, im.page)
 	im.stubStart = size
 	im.stubNext = size
 	size += alignUp((count+1)*16, im.page)
@@ -567,6 +576,9 @@ func (im *image) symbol(o *object, index int, local bool) (uintptr, error) {
 	}
 	switch s.section {
 	case 0:
+		if o.info.Format == "ELF" && o.info.Arch == "386" && s.name == "_GLOBAL_OFFSET_TABLE_" {
+			return im.base + uintptr(im.gotStart), nil
+		}
 		if p, ok := im.resolved[s.name]; ok {
 			return p, nil
 		}
@@ -611,12 +623,19 @@ func (im *image) gotSlot(target uintptr) (uintptr, error) {
 	if p, ok := im.got[target]; ok {
 		return p, nil
 	}
-	if im.gotNext+8 > im.stubStart {
+	if im.gotNext+im.pointerSize > im.stubStart {
 		return 0, fmt.Errorf("GOT capacity exceeded")
 	}
 	off := im.gotNext
-	im.gotNext += 8
-	binary.LittleEndian.PutUint64(im.mem[off:], uint64(target))
+	if im.pointerSize == 4 {
+		if uint64(target) > 0xffffffff {
+			return 0, fmt.Errorf("32-bit GOT address overflow")
+		}
+		binary.LittleEndian.PutUint32(im.mem[off:], uint32(target))
+	} else {
+		binary.LittleEndian.PutUint64(im.mem[off:], uint64(target))
+	}
+	im.gotNext += im.pointerSize
 	p := im.base + uintptr(off)
 	im.got[target] = p
 	return p, nil

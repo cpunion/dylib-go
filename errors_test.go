@@ -99,22 +99,22 @@ func TestApplePlatformBoundary(t *testing.T) {
 	}
 }
 
-// These are metadata/refusal tests, not claims that these targets can execute.
-// They run on the 386 and Windows ARM64 CI hosts as well as supported hosts.
-func TestUnsupportedObjectTargets(t *testing.T) {
+// Metadata inspection is portable; only a matching implemented host target
+// can stage an object for linking. This also runs in no-cgo inspection jobs.
+func TestObjectTargetBoundaries(t *testing.T) {
 	dir := t.TempDir()
 	src := filepath.Join(dir, "unsupported.c")
 	if e := os.WriteFile(src, []byte("int add(int a, int b) { return a+b; }"), 0600); e != nil {
 		t.Fatal(e)
 	}
 	for _, tc := range []struct {
-		triple, format, reason string
-		bits                   int
+		triple, format, arch, reason string
+		bits                         int
 	}{
-		{"i686-linux-gnu", "ELF", "ELF32 relocation", 32},
-		{"i386-apple-macosx10.13", "Mach-O", "32-bit Mach-O", 32},
-		{"i686-windows-msvc", "COFF", "32-bit COFF relocation", 32},
-		{"aarch64-windows-msvc", "COFF", "ARM64 COFF relocation", 64},
+		{"i686-linux-gnu", "ELF", "386", "", 32},
+		{"i386-apple-macosx10.13", "Mach-O", "", "32-bit Mach-O", 32},
+		{"i686-windows-msvc", "COFF", "386", "", 32},
+		{"aarch64-windows-msvc", "COFF", "arm64", "", 64},
 	} {
 		t.Run(tc.triple, func(t *testing.T) {
 			p := compile(t, src, filepath.Join(dir, tc.triple+".o"), "--target="+tc.triple)
@@ -122,15 +122,17 @@ func TestUnsupportedObjectTargets(t *testing.T) {
 			if e != nil {
 				t.Fatal(e)
 			}
-			if i.Format != tc.format || i.Bits != tc.bits || !strings.Contains(strings.Join(i.Unsupported, ","), tc.reason) {
+			if i.Format != tc.format || i.Bits != tc.bits || tc.arch != "" && i.Arch != tc.arch || tc.reason != "" && !strings.Contains(strings.Join(i.Unsupported, ","), tc.reason) || tc.reason == "" && len(i.Unsupported) != 0 {
 				t.Fatalf("unsupported target metadata: %+v; want %s/%d with %q", i, tc.format, tc.bits, tc.reason)
 			}
 			s := New(Options{})
 			defer s.Close()
-			if e := s.Load(p); e == nil {
-				t.Fatalf("unsupported target %s accepted for execution on %s/%s", tc.triple, runtime.GOOS, runtime.GOARCH)
+			compatible := tc.reason == "" && checkHost(i) == nil
+			err := s.Load(p)
+			if compatible != (err == nil) {
+				t.Fatalf("target %s on %s/%s: compatible=%v, load=%v", tc.triple, runtime.GOOS, runtime.GOARCH, compatible, err)
 			}
-			if s.image != nil || len(s.files) != 0 {
+			if s.image != nil || !compatible && len(s.files) != 0 {
 				t.Fatal("rejected object published session state")
 			}
 		})

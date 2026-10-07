@@ -13,42 +13,42 @@ Workflows run on pushes to main, pull requests, and manual dispatch. Pure Go job
 | Linux amd64 / arm64 | Native runners | Native runners | Native objects and libraries |
 | macOS amd64 / arm64 | Intel / Apple Silicon runners | Same runners | Native objects and libraries |
 | Windows amd64 | Native runner, Clang/MinGW | Native runner | Native objects and DLLs, MinGW |
-| Windows arm64 | Independent gc process tests DLL/scalar/struct ABI; reuses llgo job's setup-go and C tools | Native ARM64 runner | DLL/scalar/struct ABI and Go/llgo producers; raw COFF refusal |
-| Linux 386 | No 32-bit object execution backend | 32-bit Go process on amd64 Linux | setup-llgo cannot install 386 |
-| Windows 386 | No 32-bit object execution backend | 32-bit Go process on amd64 Windows | setup-llgo cannot install 386 |
+| Windows arm64 | Independent gc process tests objects/archives/DLLs and scalar/struct ABI; reuses llgo job's setup-go and C tools | Native ARM64 runner | Objects/archives/DLLs, scalar/struct ABI, and Go/llgo producers |
+| Linux 386 | Objects/archives/ELF32 libraries, scalar/struct ABI, and gc c-shared producer; multilib Clang and i386 libffi | 32-bit Go process on amd64 Linux | Not qualified; setup-llgo does not install 386 |
+| Windows 386 | Objects/archives/PE32 DLLs, scalar/struct C cdecl ABI, and gc c-shared producer; i386 toolchain and libffi under WoW64 | 32-bit Go process on amd64 Windows | Not qualified; setup-llgo does not install 386 |
 | macOS 386 | Not applicable | Go has no darwin/386 port; CI checks that boundary | Not applicable |
 
-Raw-object jobs set `DYLIB_TEST_REQUIRE_NATIVE=1` and `DYLIB_TEST_REQUIRE_TOOLS=1`, failing if a required backend or tool is missing. Windows ARM64 is explicitly named `shared` and sets `DYLIB_TEST_REQUIRE_SHARED=1`. Its DLL calls do not imply raw ARM64 COFF relocation support. Clang actually generates 386 and ARM64 COFF objects for metadata and rejection tests.
+All eight Go execution targets and six llgo targets set `DYLIB_TEST_REQUIRE_NATIVE=1`, `DYLIB_TEST_REQUIRE_SHARED=1`, and `DYLIB_TEST_REQUIRE_TOOLS=1`, failing if a required backend or tool is missing. Windows ARM64 runs independent Go and llgo object/archive/DLL suites. Clang generates i386 ELF/COFF and ARM64 COFF fixtures for target-boundary tests: matching hosts accept them, foreign hosts reject execution, and unsupported 32-bit Mach-O is rejected.
 
 ## Languages and calling adapters
 
 | Interface / producer | Go host | llgo host |
 | --- | --- | --- |
-| C, C++ without exceptions/RTTI, archives, libraries | Five raw-object targets | Five raw-object targets |
+| C, C++ without exceptions/RTTI, archives, libraries | Eight raw-object targets | Six raw-object targets |
 | CLI/compiler-probe example `int32(int32,int32)` | `examples/call` cgo adapter | `examples/call` direct C function-pointer adapter |
-| Caller-defined `double(int32,double,float,uint64)` | `examples/cgo` on all six library targets | `examples/llgo` on all six library targets |
-| libffi mixed integer/floating-point signatures | Six targets; five raw-object targets also have race checks | Six targets; Windows DLLs let the OS linker handle constant-pool COMDAT |
+| Caller-defined `double(int32,double,float,uint64)` | `examples/cgo` on all eight library targets | `examples/llgo` on all six library targets |
+| libffi mixed integer/floating-point signatures | Eight Go targets; race checks on the five Go native amd64/arm64 jobs (Go race does not support 386) | Six targets; Windows DLLs let the OS linker handle constant-pool COMDAT |
 | Rust `extern C`, Zig `export`, Fortran `bind(C)` | Both Linux/macOS architectures | Both Linux/macOS architectures |
 | Swift C-exported library and raw metadata refusal | Both macOS architectures | Both macOS architectures |
-| Go c-shared | Six library targets, including Windows ARM64 | Six library targets |
+| Go c-shared | Eight library targets, including both 386 hosts | Six library targets |
 | llgo c-shared | Local macOS and CI Windows ARM64; other targets use llgo hosts | Six library targets |
 
 These are workflow requirements; inspect [Go](https://github.com/cpunion/dylib-go/actions/workflows/go.yml) / [llgo](https://github.com/cpunion/dylib-go/actions/workflows/llgo.yml) checks for the relevant commit's results. Each producer validates a sample C ABI subset. Windows Rust/Zig/Fortran, Linux Swift, and native ObjC ABI are outside this matrix.
 
 `DYLIB_TEST_LANGUAGES=rust,zig,fortran,swift,go,llgo` selects producers explicitly. A selected compiler that is missing or inappropriate for the host fails. Override executable paths with `DYLIB_RUSTC`, `DYLIB_ZIG`, `DYLIB_FC`, `DYLIB_SWIFTC`, `DYLIB_GO`, and `DYLIB_LLGO`. Go/llgo library calls run in child processes that retain their runtime library references until exit, allowing Windows to remove DLL files afterward.
 
-`bash scripts/verify-examples.sh go|llgo` builds a complete C library, independently compiles and executes the appropriate typed adapter (`examples/cgo` or `examples/llgo`), and then runs `examples/bind` with `-tags libffi`. Each program must print exactly 42. Windows uses a DLL to handle COMDAT through the OS linker. All six library targets execute both a typed adapter and the dynamic example with each host compiler; the Go Windows ARM64 examples run in the llgo workflow's independent Go step.
+`bash scripts/verify-examples.sh go|llgo` builds a complete C library, independently compiles and executes the appropriate typed adapter (`examples/cgo` or `examples/llgo`), and then runs `examples/bind` with `-tags libffi`. Each program must print exactly 42. Windows uses a DLL to handle COMDAT through the OS linker. The six amd64/arm64 targets execute both a typed adapter and the dynamic example with each host compiler; both 386 targets also execute them with Go; the Go Windows ARM64 examples run in the llgo workflow's independent Go step.
 
-`examples/readme/quickstart.sh` is the README's Linux/macOS object/archive quick start. Both compiler workflows execute it on both architectures, checking object and archive results and exercising no-cgo inspection. It is not a Windows ARM64 object-execution claim.
+`examples/readme/quickstart.sh` is the README's Linux/macOS object/archive quick start. Both compiler workflows execute it on amd64/arm64, and Go also executes it on Linux 386, checking object and archive results and exercising no-cgo inspection. Windows raw-object execution is verified separately by the native test suite and CLI script.
 
-`scripts/verify-cli.sh go|llgo` independently compiles the dynamic CLI with `-tags libffi`. All six native library targets execute Go-style declarations and typed invocations with mixed scalars, small integers, C booleans, integer boundaries, native/temporary pointers, zero arguments, and void returns. Struct tests cover by-value arguments/results, nested padding, large returns, floating-point records, pointer fields, in/out mutation, alias identity, and temporary pointer lifetime checks. Five raw targets also execute scalar and struct object/archive calls. `examples/readme/dynamic.sh` runs the README's exact two requested input forms on Linux/macOS with both hosts. `examples/readme/structs.sh` executes the embedded struct commands on all six targets with both hosts. Pure Go parser tests cover all eight inspection jobs, including 386.
+`scripts/verify-cli.sh go|llgo` independently compiles the dynamic CLI with `-tags libffi`. All eight Go native library targets, and six llgo targets, execute Go-style declarations and typed invocations with mixed scalars, small integers, C booleans, integer boundaries, native/temporary pointers, zero arguments, and void returns. Struct tests cover by-value arguments/results, nested padding, large returns, floating-point records, pointer fields, in/out mutation, alias identity, and temporary pointer lifetime checks. All eight raw targets execute scalar and struct object/archive calls. `examples/readme/dynamic.sh` runs the README's exact two requested input forms on Linux/macOS with both hosts. `examples/readme/structs.sh` executes the embedded struct commands on the six amd64/arm64 targets with both hosts and on both 386 targets with Go. Pure Go parser tests cover all eight inspection jobs, including 386.
 
 Every fenced code block in `README.md` is embedded from one of these executed source files with an `<!-- embedme ... -->` marker. The separate README job checks freshness with `npm ci --ignore-scripts` and `npm run readme:verify`; compilation and result checks remain in the native Go and llgo jobs. To update a snippet, edit its source and run `npm run readme` before committing.
 
 ## Toolchain limits
 
-[setup-llgo v0.2.0](https://github.com/xgo-dev/setup-llgo/tree/v0.2.0)'s [platform validation](https://github.com/xgo-dev/setup-llgo/blob/v0.2.0/src/platform.ts) accepts amd64/arm64 only, although the compiler has some 386 capabilities. This project has no 32-bit relocation backend; installation or cross-compilation does not establish native object execution.
+[setup-llgo v0.2.0](https://github.com/xgo-dev/setup-llgo/tree/v0.2.0)'s [platform validation](https://github.com/xgo-dev/setup-llgo/blob/v0.2.0/src/platform.ts) accepts amd64/arm64 only, although the compiler has some 386 capabilities. This project provides native Go i386 backends for Linux ELF32 and Windows COFF/PE32, but does not claim llgo 386 execution. An installer or cross-compilation alone cannot qualify a native execution target.
 
-On Linux, llgo v1.0.6 misparses newline-only `pkg-config --cflags libffi` output as `-`, causing Clang to read an extra stdin input and emit two AST JSON documents ([upstream issue #2749](https://github.com/xgo-dev/llgo/issues/2749)). The llgo workflow sets `PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` to retain a system include flag as a temporary workaround. No tests are disabled.
+On Linux, llgo v1.0.6 misparses newline-only `pkg-config --cflags libffi` output as `-`, causing Clang to read an extra stdin input and emit two AST JSON documents ([upstream issue #2749](https://github.com/xgo-dev/llgo/issues/2749)). The llgo workflow sets `PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` to retain a system include flag as a temporary workaround. No ABI tests are disabled by this workaround.
 
 Runner labels follow [GitHub's official list](https://docs.github.com/en/actions/reference/runners/github-hosted-runners): ubuntu-24.04, ubuntu-24.04-arm, macos-15-intel, macos-15, windows-2022, and windows-11-arm.

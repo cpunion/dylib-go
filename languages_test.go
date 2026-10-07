@@ -45,8 +45,8 @@ func selectedLanguages(t *testing.T) map[string]bool {
 
 func requireLanguageNative(t *testing.T) {
 	t.Helper()
-	if !native.Available() || (runtime.GOARCH != "amd64" && runtime.GOARCH != "arm64") {
-		t.Fatal("selected language probes require a supported 64-bit host with native calls enabled")
+	if !native.Available() || (runtime.GOARCH != "amd64" && runtime.GOARCH != "arm64" && runtime.GOARCH != "386") {
+		t.Fatal("selected language probes require a supported host with native calls enabled")
 	}
 }
 

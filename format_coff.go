@@ -20,7 +20,9 @@ func parseCOFF(name string, b []byte) (*file, error) {
 		o.info.Arch = "amd64"
 	case pe.IMAGE_FILE_MACHINE_ARM64:
 		o.info.Arch = "arm64"
-		o.unsupported("ARM64 COFF relocation")
+	case pe.IMAGE_FILE_MACHINE_I386:
+		o.info.Arch = "386"
+		o.info.Bits = 32
 	default:
 		o.info.Arch = fmt.Sprintf("machine-%x", f.Machine)
 		o.info.Bits = 32
@@ -39,6 +41,15 @@ func parseCOFF(name string, b []byte) (*file, error) {
 		n, e := s.FullName(f.StringTable)
 		if e != nil {
 			return nil, e
+		}
+		if o.info.Arch == "386" {
+			// Normalize the x86 C linker underscore, retaining the import
+			// marker and any stdcall suffix. Calling conventions stay explicit.
+			if strings.HasPrefix(n, "__imp__") {
+				n = "__imp_" + strings.TrimPrefix(n, "__imp__")
+			} else {
+				n = strings.TrimPrefix(n, "_")
+			}
 		}
 		v := symbol{name: n, section: int(s.SectionNumber), value: uint64(s.Value), global: s.StorageClass == 2, weak: s.StorageClass == 105}
 		if v.section == 0 && s.Value != 0 {

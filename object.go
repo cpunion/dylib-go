@@ -92,15 +92,16 @@ type symbol struct {
 	global, weak       bool
 }
 type relocation struct {
-	section int
-	offset  uint64
-	typ     uint32
-	symbol  int
-	addend  int64
-	width   int
-	pcrel   bool
-	local   bool // Mach-O section ordinal instead of symbol-table index.
-	pair    int  // Mach-O subtractor: minuend; -1 otherwise.
+	section  int
+	offset   uint64
+	typ      uint32
+	symbol   int
+	addend   int64
+	width    int
+	pcrel    bool
+	local    bool // Mach-O section ordinal instead of symbol-table index.
+	implicit bool // ELF REL takes its addend from the relocated word.
+	pair     int  // Mach-O subtractor: minuend; -1 otherwise.
 }
 
 func parse(name string, b []byte) (*file, error) {

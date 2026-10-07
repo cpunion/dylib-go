@@ -25,6 +25,8 @@ jobs:
           - {os: macos-15-intel, target: darwin-amd64, arch: x64, languages: 'rust,zig,fortran,swift,go'}
           - {os: macos-15, target: darwin-arm64, arch: arm64, languages: 'rust,zig,fortran,swift,go'}
           - {os: windows-2022, target: windows-amd64, arch: x64, languages: 'go'}
+          - {os: ubuntu-24.04, target: linux-386, arch: '386', languages: 'go'}
+          - {os: windows-2022, target: windows-386, arch: '386', languages: 'go'}
     defaults:
       run:
         shell: bash
@@ -43,9 +45,17 @@ jobs:
           cache: false
       - if: runner.os != 'Windows'
         run: bash scripts/ci-unix-deps.sh
-      - if: runner.os != 'Windows'
+      - name: Install native Linux i386 dependencies
+        if: matrix.target == 'linux-386'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib libffi-dev:i386
+          echo 'CC=clang -m32' >> "$GITHUB_ENV"
+          echo 'PKG_CONFIG_LIBDIR=/usr/lib/i386-linux-gnu/pkgconfig' >> "$GITHUB_ENV"
+      - if: runner.os != 'Windows' && matrix.arch != '386'
         uses: dtolnay/rust-toolchain@stable
-      - if: runner.os != 'Windows'
+      - if: runner.os != 'Windows' && matrix.arch != '386'
         uses: mlugg/setup-zig@v2
         with:
           version: '0.15.2'
@@ -54,7 +64,7 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           msystem: CLANG64
-          install: mingw-w64-clang-x86_64-clang mingw-w64-clang-x86_64-binutils mingw-w64-clang-x86_64-libffi mingw-w64-clang-x86_64-pkgconf
+          install: mingw-w64-clang-x86_64-clang mingw-w64-clang-x86_64-binutils mingw-w64-clang-x86_64-libffi mingw-w64-clang-x86_64-pkgconf ${{ matrix.arch == '386' && 'mingw-w64-i686-gcc mingw-w64-i686-libffi mingw-w64-i686-pkgconf' || '' }}
       - if: runner.os == 'Windows'
         shell: pwsh
         env:
@@ -62,6 +72,18 @@ jobs:
         run: |
           Add-Content $env:GITHUB_PATH (Join-Path $env:MSYS2_ROOT 'clang64/bin')
           Add-Content $env:GITHUB_ENV 'CC=clang'
+      - name: Select native Windows i386 toolchain
+        if: matrix.target == 'windows-386'
+        shell: bash
+        env:
+          MSYS2_ROOT: ${{ steps.msys2.outputs.msys2-location }}
+        run: |
+          # Clang runs as a 64-bit tool and targets native i386 GNU libraries.
+          # Raw object fixtures explicitly select the i686 MSVC target.
+          mingw32_root=$(cygpath -u "$MSYS2_ROOT")/mingw32
+          echo "DYLIB_NATIVE_SYSROOT=$(cygpath -m "$mingw32_root")" >> "$GITHUB_ENV"
+          echo "$(cygpath -w "$mingw32_root/bin")" >> "$GITHUB_PATH"
+          echo 'CC=gcc' >> "$GITHUB_ENV"
       - name: Toolchain identity
         run: |
           go version
@@ -82,6 +104,7 @@ jobs:
           bash examples/readme/quickstart.sh go
           bash examples/readme/dynamic.sh go
       - name: Race and lifetime checks
+        if: matrix.arch != '386'
         env:
           DYLIB_TEST_LANGUAGES: ''
         run: go test -count=1 -race -tags libffi ./...
