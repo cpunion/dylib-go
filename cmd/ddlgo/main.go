@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	dylib "github.com/cpunion/llgo-dylib"
-	"github.com/cpunion/llgo-dylib/internal/examplecall"
+	examplecall "github.com/cpunion/llgo-dylib/examples/call"
 )
 
 func run(args []string) error {

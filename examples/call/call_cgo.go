@@ -1,8 +1,8 @@
 //go:build cgo && !llgo && (darwin || linux || windows)
 
-// Package examplecall supplies one known C signature for the CLI and compiler
-// probes. It is an example adapter, not part of the loader's public API.
-package examplecall
+// Package call demonstrates a known C signature for the CLI and compiler
+// probes. Applications supply their own signatures; this is an example adapter.
+package call
 
 /*
 #include <stdint.h>

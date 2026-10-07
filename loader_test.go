@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/cpunion/llgo-dylib/internal/examplecall"
+	examplecall "github.com/cpunion/llgo-dylib/examples/call"
 	"github.com/cpunion/llgo-dylib/internal/native"
 )
 

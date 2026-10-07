@@ -133,7 +133,7 @@ linker.go, relocate.go   Symbol selection, archive extraction, layout, relocatio
 symbol.go, function.go  Generic symbol handles and dynamic signature bindings
 abi/                    Go signature descriptions and optional scalar libffi calls
 internal/native/        OS memory, instruction cache, and shared-library operations
-internal/examplecall/   Fixed-signature adapter used only by the CLI and tests
+examples/call/   Fixed-signature adapter used only by the CLI and tests
 examples/cgo, llgo/     Caller-defined mixed-signature adapters
 cmd/ddlgo/              Inspection and demonstration CLI
 testdata/               Native compiler inputs for language probes

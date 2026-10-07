@@ -1,6 +1,6 @@
 //go:build llgo && cgo && (darwin || linux || windows)
 
-package examplecall
+package call
 
 import "unsafe"
 

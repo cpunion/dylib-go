@@ -1,6 +1,6 @@
 //go:build !cgo || (!darwin && !linux && !windows)
 
-package examplecall
+package call
 
 import "fmt"
 
