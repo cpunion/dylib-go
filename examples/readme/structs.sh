@@ -2,6 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 compiler=${1:-go} # Pass llgo to build with llgo instead.
+source scripts/native-cflags.sh
 mkdir -p build
 binary=build/ddlgo
 case "$(uname -s)" in
@@ -11,12 +12,12 @@ case "$(uname -s)" in
     ;;
   Linux)
     library=build/structs.so
-    "${CLANG:-clang}" -shared -fPIC testdata/cli.c -o "$library"
+    "${CLANG:-clang}" "${native_cflags[@]}" -shared -fPIC testdata/cli.c -o "$library"
     ;;
   MINGW*|MSYS*)
     binary=build/ddlgo.exe
     library=build/structs.dll
-    "${CLANG:-clang}" -shared testdata/cli.c -Wl,--export-all-symbols -o "$library"
+    "${CLANG:-clang}" "${native_cflags[@]}" -shared testdata/cli.c -Wl,--export-all-symbols -o "$library"
     ;;
   *) echo 'unsupported example host' >&2; exit 1 ;;
 esac

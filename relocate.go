@@ -47,7 +47,7 @@ func (im *image) relocate(o *object, r relocation) error {
 		if r.typ == 0 {
 			return nil
 		}
-		if r.typ == 1 {
+		if o.info.Arch == "amd64" && r.typ == 1 || o.info.Arch == "arm64" && r.typ == 14 {
 			w = 8
 		}
 	}
@@ -86,6 +86,9 @@ func (im *image) relocate(o *object, r relocation) error {
 }
 
 func (im *image) relocELF(o *object, r relocation, b []byte, s, p uintptr) error {
+	if o.info.Arch == "386" {
+		return im.relocELF386(r, b, s, p)
+	}
 	v := int64(s) + r.addend
 	if o.info.Arch == "amd64" {
 		switch r.typ {
@@ -276,6 +279,25 @@ func (im *image) relocMachO(o *object, r relocation, b []byte, s, p uintptr) err
 }
 
 func (im *image) relocCOFF(o *object, r relocation, b []byte, s, p uintptr) error {
+	if o.info.Arch == "arm64" {
+		return im.relocCOFFARM64(r, b, s, p)
+	}
+	if o.info.Arch == "386" {
+		switch r.typ {
+		case 6: // DIR32
+			if uint64(s) > math.MaxUint32 {
+				return fmt.Errorf("32-bit COFF address overflow")
+			}
+			le.PutUint32(b, uint32(s)+le.Uint32(b))
+			return nil
+		case 7: // DIR32NB
+			return unsigned32(b, int64(s)-int64(im.base)+int64(le.Uint32(b)))
+		case 20: // REL32 wraps within the 32-bit address space.
+			le.PutUint32(b, uint32(s)-uint32(p)-4+le.Uint32(b))
+			return nil
+		}
+		return fmt.Errorf("unsupported i386 COFF relocation %d", r.typ)
+	}
 	if o.info.Arch != "amd64" {
 		return fmt.Errorf("only AMD64 COFF relocation implemented")
 	}
@@ -324,7 +346,7 @@ func armPage(b []byte, target, p uintptr) error {
 	return nil
 }
 func armOffsetScale(ins uint32) (uint, error) {
-	if ins&0x7f000000 == 0x11000000 {
+	if ins&0x5f000000 == 0x11000000 {
 		if ins&(1<<22) != 0 {
 			return 0, fmt.Errorf("shifted ADD not supported for PAGEOFF12")
 		}

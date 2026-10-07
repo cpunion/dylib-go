@@ -25,7 +25,7 @@ jobs:
           - {os: macos-15-intel, target: darwin-amd64, arch: amd64, mode: native, languages: 'rust,zig,fortran,swift,go,llgo'}
           - {os: macos-15, target: darwin-arm64, arch: arm64, mode: native, languages: 'rust,zig,fortran,swift,go,llgo'}
           - {os: windows-2022, target: windows-amd64, arch: amd64, mode: native, languages: 'go,llgo'}
-          - {os: windows-11-arm, target: windows-arm64, arch: arm64, mode: shared, languages: 'go,llgo'}
+          - {os: windows-11-arm, target: windows-arm64, arch: arm64, mode: native, languages: 'go,llgo'}
     defaults:
       run:
         shell: bash
@@ -67,7 +67,7 @@ jobs:
           clang --version
           echo "LLGo revision: $LLGO_REVISION" >> "$GITHUB_STEP_SUMMARY"
       - name: Execute independent Go host on Windows ARM64
-        if: matrix.mode == 'shared'
+        if: matrix.target == 'windows-arm64'
         # setup-llgo uses setup-go and provides the native ARM64 C toolchain.
         # Build a separate gc test executable, including Go/llgo DLL producers.
         run: go test -count=1 -v -tags libffi ./...
@@ -91,7 +91,7 @@ jobs:
           bash examples/readme/quickstart.sh llgo
           bash examples/readme/dynamic.sh llgo
       - name: Execute README Go examples on Windows ARM64
-        if: matrix.mode == 'shared'
+        if: matrix.target == 'windows-arm64'
         run: |
           bash scripts/verify-examples.sh go
           bash scripts/verify-cli.sh go

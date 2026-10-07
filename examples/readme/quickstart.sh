@@ -8,7 +8,8 @@ case "$compiler" in
 esac
 
 mkdir -p build
-"${CLANG:-clang}" -fPIC -c testdata/add.c -o build/add.o
+source scripts/native-cflags.sh
+"${CLANG:-clang}" "${native_cflags[@]}" -fPIC -c testdata/add.c -o build/add.o
 "$compiler" build -o build/ddlgo ./cmd/ddlgo
 build/ddlgo inspect build/add.o
 result=$(build/ddlgo call add 20 22 build/add.o)

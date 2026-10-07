@@ -8,6 +8,7 @@ case "$compiler" in
 esac
 cli_dir=$(mktemp -d)
 trap 'rm -rf "$cli_dir"' EXIT
+source scripts/native-cflags.sh
 binary="$cli_dir/ddlgo"
 case "$(uname -s)" in
   Darwin)
@@ -16,12 +17,12 @@ case "$(uname -s)" in
     ;;
   Linux)
     library="$cli_dir/calls.so"
-    "${CLANG:-clang}" -shared -fPIC testdata/add.c testdata/scalars.c testdata/cli.c -o "$library"
+    "${CLANG:-clang}" "${native_cflags[@]}" -shared -fPIC testdata/add.c testdata/scalars.c testdata/cli.c -o "$library"
     ;;
   MINGW*|MSYS*)
     binary="$cli_dir/ddlgo.exe"
     library="$cli_dir/calls.dll"
-    "${CLANG:-clang}" -shared testdata/add.c testdata/scalars.c testdata/cli.c -Wl,--export-all-symbols -o "$library"
+    "${CLANG:-clang}" "${native_cflags[@]}" -shared testdata/add.c testdata/scalars.c testdata/cli.c -Wl,--export-all-symbols -o "$library"
     ;;
   *) echo 'unsupported CLI test host' >&2; exit 1 ;;
 esac
@@ -64,18 +65,19 @@ expect '{tag:1,p:{a:20,b:20},extra:1}' 'echo_nested({tag:1,p:{a:20,b:20},extra:1
 expect '{x:20.5,y:21.5}' 'echo_float_pair({20.5,21.5}:struct{x,y float32})struct{x,y float32}' "$library"
 expect '{p:&{a:22,b:20},bonus:0}' 'echo_pair_ref({p:&{a:20,b:20}}:struct{p *struct{a,b int32};bonus int32})struct{p *struct{a,b int32};bonus int32}' "$library"
 
-# Dynamic declarations also execute raw objects/archives on the five supported
-# targets. Windows ARM64 deliberately uses the DLL path only.
+# Dynamic declarations also execute raw objects/archives on each native target.
 if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ]]; then
-  if [[ "$(go env GOARCH)" == arm64 ]]; then
-    echo 'Windows ARM64: DLL calls verified; raw COFF remains unsupported'
-    exit 0
-  fi
-  "${CLANG:-clang}" --target=x86_64-pc-windows-msvc -ffreestanding -c testdata/add.c -o "$cli_dir/add.o"
-  "${CLANG:-clang}" --target=x86_64-pc-windows-msvc -ffreestanding -c testdata/pair.c -o "$cli_dir/pair.o"
+  case "$(go env GOARCH)" in
+    amd64) triple=x86_64-pc-windows-msvc ;;
+    arm64) triple=aarch64-pc-windows-msvc ;;
+    386) triple=i686-pc-windows-msvc ;;
+    *) echo 'unsupported Windows CLI architecture' >&2; exit 1 ;;
+  esac
+  "${CLANG:-clang}" --target="$triple" -ffreestanding -c testdata/add.c -o "$cli_dir/add.o"
+  "${CLANG:-clang}" --target="$triple" -ffreestanding -c testdata/pair.c -o "$cli_dir/pair.o"
 else
-  "${CLANG:-clang}" -fPIC -c testdata/add.c -o "$cli_dir/add.o"
-  "${CLANG:-clang}" -fPIC -c testdata/pair.c -o "$cli_dir/pair.o"
+  "${CLANG:-clang}" "${native_cflags[@]}" -fPIC -c testdata/add.c -o "$cli_dir/add.o"
+  "${CLANG:-clang}" "${native_cflags[@]}" -fPIC -c testdata/pair.c -o "$cli_dir/pair.o"
 fi
 "${AR:-ar}" rcs "$cli_dir/add.a" "$cli_dir/add.o"
 "${AR:-ar}" rcs "$cli_dir/pair.a" "$cli_dir/pair.o"

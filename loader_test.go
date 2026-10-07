@@ -24,6 +24,22 @@ func command(t *testing.T, name string, args ...string) {
 		t.Skipf("%s unavailable", name)
 	}
 	c := exec.Command(name, args...)
+	if name == compiler() && runtime.GOARCH == "386" {
+		foreign := false
+		for _, arg := range args {
+			foreign = foreign || strings.HasPrefix(arg, "--target=")
+		}
+		if !foreign {
+			flags := []string{"-m32"}
+			if runtime.GOOS == "windows" {
+				flags = []string{"--target=i686-w64-windows-gnu"}
+				if root := os.Getenv("DYLIB_NATIVE_SYSROOT"); root != "" {
+					flags = append(flags, "--sysroot="+root, "--rtlib=libgcc")
+				}
+			}
+			c = exec.Command(name, append(flags, args...)...)
+		}
+	}
 	if b, e := c.CombinedOutput(); e != nil {
 		t.Fatalf("%s %v: %v\n%s", name, args, e, b)
 	}
@@ -40,17 +56,23 @@ func compile(t *testing.T, src, out string, flags ...string) string {
 	if runtime.GOOS == "darwin" && runtime.GOARCH == "amd64" {
 		args = append(args, "--target=x86_64-apple-macosx11")
 	}
-	if runtime.GOOS == "windows" && runtime.GOARCH == "amd64" {
+	if runtime.GOOS == "windows" {
 		// Select the MSVC object ABI even when clang comes from MSYS2. MinGW
 		// can introduce COMDAT import-pointer helpers, which are unsupported.
 		// These fixtures need only clang's freestanding stdint.h, not an SDK.
-		args = append(args, "--target=x86_64-pc-windows-msvc", "-ffreestanding")
+		triple := map[string]string{"amd64": "x86_64", "arm64": "aarch64", "386": "i686"}[runtime.GOARCH]
+		args = append(args, "--target="+triple+"-pc-windows-msvc", "-ffreestanding")
 	}
 	windows := runtime.GOOS == "windows"
+	explicitTarget := false
 	for _, flag := range flags {
 		if strings.HasPrefix(flag, "--target=") {
 			windows = strings.Contains(flag, "windows")
+			explicitTarget = true
 		}
+	}
+	if runtime.GOOS == "linux" && runtime.GOARCH == "386" && !explicitTarget {
+		args = append(args, "-m32")
 	}
 	if !windows {
 		args = append(args, "-fPIC")
@@ -61,17 +83,11 @@ func compile(t *testing.T, src, out string, flags ...string) string {
 }
 func needNative(t *testing.T) {
 	t.Helper()
-	if !native.Available() || (runtime.GOARCH != "arm64" && runtime.GOARCH != "amd64") {
+	if !native.Available() || (runtime.GOARCH != "arm64" && runtime.GOARCH != "amd64" && runtime.GOARCH != "386") {
 		if os.Getenv("DYLIB_TEST_REQUIRE_NATIVE") == "1" {
 			t.Fatal("required native object execution unavailable")
 		}
 		t.Skip("native calls unavailable")
-	}
-	if runtime.GOOS == "windows" && runtime.GOARCH == "arm64" {
-		if os.Getenv("DYLIB_TEST_REQUIRE_NATIVE") == "1" {
-			t.Fatal("ARM64 COFF object relocation is unsupported")
-		}
-		t.Skip("ARM64 COFF object relocation is unsupported; covered by TestUnsupportedObjectTargets")
 	}
 }
 func load(t *testing.T, s *Session, paths ...string) {
@@ -210,15 +226,14 @@ func compileSharedAdd(t *testing.T, dir string) string {
 	return lib
 }
 
-// A platform loader can support shared libraries before raw object relocations
-// are implemented, notably for Windows ARM64 DLLs.
+// Library execution is checked independently of raw object execution.
 func needShared(t *testing.T) {
 	t.Helper()
-	if !native.Available() || (runtime.GOARCH != "arm64" && runtime.GOARCH != "amd64") {
+	if !native.Available() || (runtime.GOARCH != "arm64" && runtime.GOARCH != "amd64" && runtime.GOARCH != "386") {
 		if os.Getenv("DYLIB_TEST_REQUIRE_SHARED") == "1" {
-			t.Fatal("required 64-bit shared-library native bridge unavailable")
+			t.Fatal("required shared-library native bridge unavailable")
 		}
-		t.Skip("64-bit shared-library native bridge unavailable")
+		t.Skip("shared-library native bridge unavailable")
 	}
 }
 
@@ -348,7 +363,7 @@ func TestForeignPointerRelocations(t *testing.T) {
 	dir := t.TempDir()
 	src := filepath.Join(dir, "p.c")
 	os.WriteFile(src, []byte("int value=7; int *pointer=&value;"), 0600)
-	for _, triple := range []string{"x86_64-linux-gnu", "aarch64-linux-gnu", "x86_64-apple-macosx11", "arm64-apple-macosx11", "x86_64-windows-msvc"} {
+	for _, triple := range []string{"x86_64-linux-gnu", "aarch64-linux-gnu", "x86_64-apple-macosx11", "arm64-apple-macosx11", "x86_64-windows-msvc", "aarch64-windows-msvc"} {
 		t.Run(triple, func(t *testing.T) {
 			p := compile(t, src, filepath.Join(dir, triple+".o"), "--target="+triple)
 			b, e := readFile(p)

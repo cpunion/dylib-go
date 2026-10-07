@@ -23,7 +23,9 @@ func parseELF(name string, b []byte) (*file, error) {
 	}
 	if f.Class != elf.ELFCLASS64 {
 		o.info.Bits = 32
-		o.unsupported("ELF32 relocation")
+		if f.Machine != elf.EM_386 {
+			o.unsupported("ELF32 machine without a relocation backend")
+		}
 	}
 	if f.ByteOrder != binary.LittleEndian {
 		o.unsupported("big-endian relocation")
@@ -33,6 +35,8 @@ func parseELF(name string, b []byte) (*file, error) {
 		o.info.Arch = "amd64"
 	case elf.EM_AARCH64:
 		o.info.Arch = "arm64"
+	case elf.EM_386:
+		o.info.Arch = "386"
 	default:
 		o.info.Arch = f.Machine.String()
 		o.unsupported("machine " + f.Machine.String())
@@ -114,33 +118,55 @@ func parseELF(name string, b []byte) (*file, error) {
 		if s.Type != elf.SHT_RELA && s.Type != elf.SHT_REL {
 			continue
 		}
-		if int(s.Info) >= len(o.sections) {
+		if uint64(s.Info) >= uint64(len(o.sections)) {
 			return nil, fmt.Errorf("invalid relocation section target")
 		}
 		if o.sections[s.Info] == nil {
 			continue
 		}
-		if f.Class != elf.ELFCLASS64 || s.Type == elf.SHT_REL {
-			o.unsupported("only ELF64 RELA is implemented")
+		is386 := f.Class == elf.ELFCLASS32 && f.Machine == elf.EM_386
+		if !is386 && (f.Class != elf.ELFCLASS64 || s.Type == elf.SHT_REL) {
+			o.unsupported("only ELF64 RELA and i386 ELF32 REL/RELA are implemented")
 			continue
 		}
-		if int(s.Link) >= len(f.Sections) || f.Sections[s.Link].Type != elf.SHT_SYMTAB {
+		if uint64(s.Link) >= uint64(len(f.Sections)) || f.Sections[s.Link].Type != elf.SHT_SYMTAB {
 			return nil, fmt.Errorf("relocations require a regular symbol table")
 		}
 		data, e := s.Data()
 		if e != nil {
 			return nil, e
 		}
-		if len(data)%24 != 0 {
-			return nil, fmt.Errorf("invalid ELF64 RELA size")
+		entrySize := 24
+		if is386 {
+			entrySize = 8
+			if s.Type == elf.SHT_RELA {
+				entrySize = 12
+			}
+		}
+		if len(data)%entrySize != 0 {
+			return nil, fmt.Errorf("invalid ELF relocation entry size")
 		}
 		for len(data) > 0 {
+			if is386 {
+				info := f.ByteOrder.Uint32(data[4:])
+				si := uint64(info >> 8)
+				if si >= uint64(len(o.symbols)) {
+					return nil, fmt.Errorf("invalid relocation symbol %d", si)
+				}
+				r := relocation{section: int(s.Info), offset: uint64(f.ByteOrder.Uint32(data)), typ: info & 0xff, symbol: int(si), implicit: s.Type == elf.SHT_REL, pair: -1}
+				if !r.implicit {
+					r.addend = int64(int32(f.ByteOrder.Uint32(data[8:])))
+				}
+				o.relocs = append(o.relocs, r)
+				data = data[entrySize:]
+				continue
+			}
 			info := f.ByteOrder.Uint64(data[8:])
-			si := int(info >> 32)
-			if si >= len(o.symbols) {
+			si := uint64(info >> 32)
+			if si >= uint64(len(o.symbols)) {
 				return nil, fmt.Errorf("invalid relocation symbol %d", si)
 			}
-			o.relocs = append(o.relocs, relocation{section: int(s.Info), offset: f.ByteOrder.Uint64(data), typ: uint32(info), symbol: si, addend: int64(f.ByteOrder.Uint64(data[16:])), pair: -1})
+			o.relocs = append(o.relocs, relocation{section: int(s.Info), offset: f.ByteOrder.Uint64(data), typ: uint32(info), symbol: int(si), addend: int64(f.ByteOrder.Uint64(data[16:])), pair: -1})
 			data = data[24:]
 		}
 	}
