@@ -1,7 +1,8 @@
-# llgo-dylib
+# dylib-go
 
-[![Go](https://github.com/cpunion/llgo-dylib/actions/workflows/go.yml/badge.svg)](https://github.com/cpunion/llgo-dylib/actions/workflows/go.yml)
-[![llgo](https://github.com/cpunion/llgo-dylib/actions/workflows/llgo.yml/badge.svg)](https://github.com/cpunion/llgo-dylib/actions/workflows/llgo.yml)
+[![Go](https://github.com/cpunion/dylib-go/actions/workflows/go.yml/badge.svg)](https://github.com/cpunion/dylib-go/actions/workflows/go.yml)
+[![llgo](https://github.com/cpunion/dylib-go/actions/workflows/llgo.yml/badge.svg)](https://github.com/cpunion/dylib-go/actions/workflows/llgo.yml)
+[![README](https://github.com/cpunion/dylib-go/actions/workflows/readme.yml/badge.svg)](https://github.com/cpunion/dylib-go/actions/workflows/readme.yml)
 
 A Go runtime object loader: load `.o/.obj` files, link required members of `.a/.lib` archives, resolve symbols and relocations, and execute native code in the current process. Shared libraries (`.so/.dylib/.dll`) use the host operating system's loader.
 
@@ -11,90 +12,226 @@ This is an experimental implementation with native execution tests. See the [pla
 
 ## Quick start
 
-Use Go 1.23+ and a C compiler. Clang is used below to produce sample inputs; the loader does not require Clang at runtime.
+Use Go 1.23+ and a C compiler. The module path is `github.com/cpunion/dylib-go`; its Go package name is `dylib`. Clang is used below to produce sample inputs; the loader does not require Clang at runtime.
+
+On Linux or macOS amd64/arm64, run `bash examples/readme/quickstart.sh` from a checkout. Pass `llgo` as its argument to build the CLI with llgo. CI executes both variants and checks that the object and archive calls return 42:
+
+<!-- embedme examples/readme/quickstart.sh -->
 
 ```sh
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/../.."
+compiler=${1:-go} # Pass llgo to build the CLI with its direct C-call adapter.
+case "$compiler" in
+  go|llgo) ;;
+  *) echo 'usage: quickstart.sh [go|llgo]' >&2; exit 1 ;;
+esac
+
 mkdir -p build
-clang -fPIC -c testdata/add.c -o build/add.o
-go run ./cmd/ddlgo inspect build/add.o
-go run ./cmd/ddlgo call add 20 22 build/add.o
-# 42
+"${CLANG:-clang}" -fPIC -c testdata/add.c -o build/add.o
+"$compiler" build -o build/ddlgo ./cmd/ddlgo
+build/ddlgo inspect build/add.o
+result=$(build/ddlgo call add 20 22 build/add.o)
+test "$result" = 42
+echo "object result: $result"
 
-ar rcs build/add.a build/add.o
-go run ./cmd/ddlgo call add 20 22 build/add.a
-# 42
+"${AR:-ar}" rcs build/add.a build/add.o
+result=$(build/ddlgo call add 20 22 build/add.a)
+test "$result" = 42
+echo "archive result: $result"
 
-# Compile the CLI with llgo to use its direct C function-pointer adapter.
-llgo build -o build/ddlgo-llgo ./cmd/ddlgo
-build/ddlgo-llgo call add 20 22 build/add.o
-```
-
-The CLI's `call` command is a demonstration of the known signature `int32_t(int32_t,int32_t)`. The loader API has no signature-specific binding methods.
-
-Inspection also works without cgo:
-
-```sh
+# Metadata inspection also works without cgo.
 CGO_ENABLED=0 go run ./cmd/ddlgo inspect build/add.o
+
 ```
+
+The CLI's `call` command is a demonstration of the known signature `int32_t(int32_t,int32_t)`. The loader API has no signature-specific binding methods. Windows users can run the shared-library examples below; see the [platform matrix](docs/support.md) for object execution limits.
 
 ## Generic symbols and caller-defined adapters
 
-`Resolve` returns an untyped symbol handle. `WithAddress` keeps the owning session alive while a caller-defined adapter uses its address:
+`Resolve` returns an untyped symbol handle. `WithAddress` keeps the owning session alive while a caller-defined adapter uses its address. This complete [cgo example](examples/cgo/main.go) calls the C signature `double(int32_t,double,float,uint64_t)` and prints 42:
+
+<!-- embedme examples/cgo/main.go -->
 
 ```go
-import dylib "github.com/cpunion/llgo-dylib"
+//go:build cgo && (darwin || linux || windows)
 
-s := dylib.New(dylib.Options{})
-defer s.Close()
-if err := s.Load("build/plugin.so"); err != nil { panic(err) }
-symbol, err := s.Resolve("my_function")
-if err != nil { panic(err) }
-err = symbol.WithAddress(func(address uintptr) error {
-    // Invoke a handwritten or generated adapter with the exact native
-    // signature, or access native data with its known layout.
-    return myAdapter(address)
-})
-if err != nil { panic(err) }
+// This example implements a caller-defined signature with an ordinary cgo
+// adapter. The loader itself does not know the signature.
+package main
+
+/*
+#include <stdint.h>
+static double call_mixed(uintptr_t address, int32_t a, double b, float c, uint64_t d) {
+    return ((double (*)(int32_t, double, float, uint64_t))address)(a, b, c, d);
+}
+*/
+import "C"
+
+import (
+	"fmt"
+	"os"
+
+	dylib "github.com/cpunion/dylib-go"
+)
+
+func run(path string) error {
+	s := dylib.New(dylib.Options{})
+	defer s.Close()
+	if err := s.Load(path); err != nil {
+		return err
+	}
+	symbol, err := s.Resolve("mixed")
+	if err != nil {
+		return err
+	}
+	var result float64
+	err = symbol.WithAddress(func(address uintptr) error {
+		result = float64(C.call_mixed(C.uintptr_t(address), 10, 20.5, 1.5, 10))
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Println(result)
+	return s.Close()
+}
+
+func main() {
+	if len(os.Args) != 2 {
+		fmt.Fprintln(os.Stderr, "usage: mixed-cgo OBJECT_OR_LIBRARY")
+		os.Exit(1)
+	}
+	if err := run(os.Args[1]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
 ```
 
-`myAdapter` is application code. It supplies the actual types and calling convention; symbol names do not reveal function prototypes. Ordinary Go can use a cgo adapter, while llgo can use a caller-defined `//llgo:type C` function-pointer type. See [the cgo example](examples/cgo/main.go) and [the llgo example](examples/llgo/main.go), which call the mixed signature `double(int32_t,double,float,uint64_t)` without enabling the optional dynamic ABI backend.
+The adapter supplies the actual types and calling convention; symbol names do not reveal function prototypes. With llgo, the [same call](examples/llgo/main.go) uses a caller-defined `//llgo:type C` function-pointer type:
 
-Run the examples on a supported native host:
+<!-- embedme examples/llgo/main.go -->
 
-```sh
-bash scripts/verify-examples.sh go
-bash scripts/verify-examples.sh llgo
-# Each prints a result of 42.
+```go
+//go:build llgo && cgo && (darwin || linux || windows)
+
+// This example uses a caller-defined C signature without the libffi backend.
+package main
+
+import (
+	"fmt"
+	"os"
+	"unsafe"
+
+	dylib "github.com/cpunion/dylib-go"
+)
+
+// llgo emits the indirect call using the native C calling convention.
+//
+//llgo:type C
+type mixedFunc func(int32, float64, float32, uint64) float64
+
+func run(path string) error {
+	s := dylib.New(dylib.Options{})
+	defer s.Close()
+	if err := s.Load(path); err != nil {
+		return err
+	}
+	symbol, err := s.Resolve("mixed")
+	if err != nil {
+		return err
+	}
+	var result float64
+	err = symbol.WithAddress(func(address uintptr) error {
+		function := *(*mixedFunc)(unsafe.Pointer(&address))
+		result = function(10, 20.5, 1.5, 10)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Println(result)
+	return s.Close()
+}
+
+func main() {
+	if len(os.Args) != 2 {
+		fmt.Fprintln(os.Stderr, "usage: mixed-llgo OBJECT_OR_LIBRARY")
+		os.Exit(1)
+	}
+	if err := run(os.Args[1]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
 ```
+
+Neither typed adapter enables the optional dynamic ABI backend. CI compiles and runs these programs against a real C shared library on Linux, macOS, and Windows, on amd64 and arm64. Run `bash scripts/verify-examples.sh go` or `bash scripts/verify-examples.sh llgo` to reproduce the typed and dynamic examples; libffi development files are required for the dynamic example.
 
 `Load` may be called repeatedly before the first `Link`, `Lookup`, `Resolve`, or `Bind`. Add all dependencies before linking. A failed link can be retried after adding dependencies. A successful link seals the session; create a new session for another plugin set.
 
 ## Dynamic signatures
 
-`Bind(name, abi.Signature)` handles caller-supplied scalar signatures through the optional libffi backend. Build with `-tags libffi` and install the libffi development files and pkg-config.
+`Bind(name, abi.Signature)` handles caller-supplied scalar signatures through the optional libffi backend. Build with `-tags libffi` and install the libffi development files and pkg-config. This complete [dynamic example](examples/bind/main.go) is compiled and executed with both Go and llgo in CI, returning 42 on all six native library targets:
+
+<!-- embedme examples/bind/main.go -->
 
 ```go
+//go:build libffi && cgo && (darwin || linux || windows)
+
+// This example supplies a dynamic scalar signature to the libffi backend.
+package main
+
 import (
-    "math"
-    "github.com/cpunion/llgo-dylib/abi"
+	"fmt"
+	"math"
+	"os"
+
+	dylib "github.com/cpunion/dylib-go"
+	"github.com/cpunion/dylib-go/abi"
 )
 
-f, err := s.Bind("mixed", abi.Signature{
-    Result: abi.F64,
-    Args: []abi.Type{abi.I32, abi.F64, abi.F32, abi.U64},
-})
-if err != nil { panic(err) }
-v, err := f.Call(abi.Int32(10), abi.Float64(20.5), abi.Float32(1.5), abi.Uint64(10))
-if err != nil { panic(err) }
-result := math.Float64frombits(v.Bits) // 42
+func run(path string) error {
+	s := dylib.New(dylib.Options{})
+	defer s.Close()
+	if err := s.Load(path); err != nil {
+		return err
+	}
+	f, err := s.Bind("mixed", abi.Signature{
+		Result: abi.F64,
+		Args:   []abi.Type{abi.I32, abi.F64, abi.F32, abi.U64},
+	})
+	if err != nil {
+		return err
+	}
+	v, err := f.Call(abi.Int32(10), abi.Float64(20.5), abi.Float32(1.5), abi.Uint64(10))
+	if err != nil {
+		return err
+	}
+	fmt.Println(math.Float64frombits(v.Bits))
+	return s.Close()
+}
+
+func main() {
+	if len(os.Args) != 2 {
+		fmt.Fprintln(os.Stderr, "usage: mixed-bind OBJECT_OR_LIBRARY")
+		os.Exit(1)
+	}
+	if err := run(os.Args[1]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
 ```
 
 Supported scalar types are `i32/u32/i64/u64/f32/f64/pointer`, with `void` allowed as a result and up to 32 fixed arguments. Aggregate values, variadic calls, native callbacks, C++ `this` adjustment, and Swift calling conventions are not implemented.
 
-```sh
-go test -tags libffi ./...
-llgo test -tags libffi ./...
-```
+Run `go test -tags libffi ./...` or `llgo test -tags libffi ./...` to exercise the dynamic backend.
 
 Ordinary Go's default build does not require libffi. The llgo compiler's own runtime dependencies, including its GC and libffi, are separate from this optional backend.
 
@@ -127,28 +264,22 @@ The former experimental `BindInt32`, `CallInt32`, and `Int32Func` APIs have been
 
 ## Source layout and verification
 
-```text
-format_*.go, archive.go   Go parsers and the unified object model
-linker.go, relocate.go   Symbol selection, archive extraction, layout, relocation
-symbol.go, function.go  Generic symbol handles and dynamic signature bindings
-abi/                    Go signature descriptions and optional scalar libffi calls
-internal/native/        OS memory, instruction cache, and shared-library operations
-examples/call/   Fixed-signature adapter used only by the CLI and tests
-examples/cgo, llgo/     Caller-defined mixed-signature adapters
-cmd/ddlgo/              Inspection and demonstration CLI
-testdata/               Native compiler inputs for language probes
-docs/                   Design, compatibility, comparisons, CI, and evidence
-```
+| Path | Purpose |
+| --- | --- |
+| `format_*.go`, `archive.go` | Go parsers and the unified object model |
+| `linker.go`, `relocate.go` | Symbol selection, archive extraction, layout, relocation |
+| `symbol.go`, `function.go` | Generic symbol handles and dynamic signature bindings |
+| `abi/` | Go signature descriptions and optional scalar libffi calls |
+| `internal/native/` | OS memory, instruction cache, and shared-library operations |
+| `examples/call/` | Fixed-signature adapter used only by the CLI and tests |
+| `examples/cgo/`, `examples/llgo/`, `examples/bind/` | Executable README examples |
+| `examples/readme/` | Executable README quick-start script |
+| `cmd/ddlgo/` | Inspection and demonstration CLI |
+| `testdata/` | Native compiler inputs for language probes |
+| `docs/` | Design, compatibility, comparisons, CI, and evidence |
 
-```sh
-go test ./...
-CGO_ENABLED=0 go test ./...
-go test -race -tags libffi ./...
-llgo test -tags libffi ./...
-# Explicitly selected compilers are required; missing tools fail the test.
-DYLIB_TEST_LANGUAGES=rust,zig,fortran,go go test -v ./...
-# Full macOS probes, including Swift and llgo-produced libraries.
-DYLIB_TEST_LANGUAGES=1 DYLIB_TEST_LLGO=1 go test -v ./...
-```
+Run `scripts/verify.sh` for ordinary Go, no-cgo, and vet checks. Set `DYLIB_TEST_FFI=1 DYLIB_TEST_LLGO=1` to add race/libffi and llgo tests. Set `DYLIB_TEST_LANGUAGES=rust,zig,fortran,go` for those compiler probes, or `DYLIB_TEST_LANGUAGES=1 DYLIB_TEST_LLGO=1` for all macOS probes, including Swift and llgo-produced libraries. Explicitly selected compilers are required; missing tools fail the test.
+
+All fenced code in this README comes from source files under `examples/`, embedded with [embedme](https://github.com/zakhenry/embedme). Edit those files, run `npm ci --ignore-scripts` followed by `npm run readme`, and commit the source and regenerated README together. The README workflow runs `npm run readme:verify` to reject stale snippets; the Go and llgo workflows execute the examples and check their results.
 
 See the [design and DDL mapping](docs/design.md), [ABIBridge / llcppg comparison](docs/comparison.md), [CI matrix](docs/ci.md), [validation evidence](docs/validation.md), and [roadmap](docs/roadmap.md).

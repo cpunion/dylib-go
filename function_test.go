@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/cpunion/llgo-dylib/abi"
+	"github.com/cpunion/dylib-go/abi"
 )
 
 func TestResolvedSymbolLifetime(t *testing.T) {

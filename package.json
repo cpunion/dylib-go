@@ -1,0 +1,11 @@
+{
+  "name": "dylib-go-docs",
+  "private": true,
+  "scripts": {
+    "readme": "embedme README.md",
+    "readme:verify": "embedme --verify README.md"
+  },
+  "devDependencies": {
+    "embedme": "1.22.1"
+  }
+}

@@ -11,7 +11,7 @@ libffi backend.
 Use the adapter within a resolved symbol's lifetime guard:
 
 ```go
-import examplecall "github.com/cpunion/llgo-dylib/examples/call"
+import examplecall "github.com/cpunion/dylib-go/examples/call"
 
 symbol, err := session.Resolve("add")
 if err != nil { panic(err) }

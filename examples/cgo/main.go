@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"os"
 
-	dylib "github.com/cpunion/llgo-dylib"
+	dylib "github.com/cpunion/dylib-go"
 )
 
 func run(path string) error {

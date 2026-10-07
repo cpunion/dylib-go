@@ -79,9 +79,12 @@ jobs:
         run: llgo test -count=1 -v -tags libffi ./...
       - name: Build CLI with llgo
         run: llgo build -o ddlgo ./cmd/ddlgo
-      - name: Execute caller-defined llgo C signature example
+      - name: Execute README llgo and dynamic libffi examples
         run: bash scripts/verify-examples.sh llgo
-      - name: Execute caller-defined Go signature on Windows ARM64
+      - name: Execute README object/archive quick start with llgo
+        if: runner.os != 'Windows'
+        run: bash examples/readme/quickstart.sh llgo
+      - name: Execute README Go examples on Windows ARM64
         if: matrix.mode == 'shared'
         run: bash scripts/verify-examples.sh go
       - name: Record setup-llgo 386 boundary

@@ -4,7 +4,7 @@ Date: 2026-10-07. These results describe actual runs with specific toolchains. R
 
 ## Native GitHub runners
 
-[PR #1](https://github.com/cpunion/llgo-dylib/pull/1), final commit `96de660`, passed all 19 checks: [13 Go jobs](https://github.com/cpunion/llgo-dylib/actions/runs/37567616074) and [6 llgo jobs](https://github.com/cpunion/llgo-dylib/actions/runs/37567616142). The matrix includes both architectures of Linux/macOS, Windows AMD64 object/archive/DLL calls, and Windows ARM64 DLL/scalar calls with independent Go and llgo hosts. Raw ARM64 COFF execution remains rejected.
+[PR #1](https://github.com/cpunion/dylib-go/pull/1), final commit `96de660`, passed all 19 checks: [13 Go jobs](https://github.com/cpunion/dylib-go/actions/runs/37567616074) and [6 llgo jobs](https://github.com/cpunion/dylib-go/actions/runs/37567616142). The matrix includes both architectures of Linux/macOS, Windows AMD64 object/archive/DLL calls, and Windows ARM64 DLL/scalar calls with independent Go and llgo hosts. Raw ARM64 COFF execution remains rejected.
 
 Go's five raw-object jobs run functional, language, race, and vet checks. Eight no-cgo jobs run inspection/refusal tests, including real 32-bit Go processes on Linux/Windows. See the [CI matrix](ci.md) and current PR checks for changes made after this baseline. The generic symbol API and mixed-signature examples have their own lifetime and execution checks in the current suite.
 
@@ -48,6 +48,7 @@ Tests compile real inputs in temporary directories and check actual results:
 - GNU and COFF long archive names are checked with real objects, later offsets, and malformed references.
 - Optional libffi tests cover mixed integer/floating-point registers, negative results, 64-bit high bits, argument mismatches, and closed calls.
 - Caller-defined cgo and llgo examples invoke `double(int32_t,double,float,uint64_t)` through `Symbol.WithAddress` and return 42.
+- The dynamic `examples/bind` program invokes the same mixed signature through libffi with both Go and llgo. `examples/readme/quickstart.sh` checks object/archive calls and no-cgo inspection on Linux/macOS. All four README snippets are embedded from these source files, with a separate freshness check.
 
 ## Original language producers
 
