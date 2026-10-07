@@ -54,7 +54,7 @@ File format support alone does not establish language support. A callable entry 
 | --- | --- | --- |
 | C (Clang; native GCC output may also work) | Ordinary C ABI; `-fPIC` where appropriate | Clang objects, data, BSS, common, cross-object calls, and libraries tested; compiler-specific GCC extensions not comprehensively verified |
 | Assembly (llvm-mc/Clang/as) | C ABI entry points | ISA and relocation subset must match; arbitrary assembly packages are not automatically compatible |
-| C++ | `extern "C"` facade or simple functions with exact mangled names | Samples without exceptions/RTTI/complex runtimes tested; complete STL, class lifetime, and inheritance need libraries and adapters |
+| C++ | `extern "C"` facade; simple C-compatible functions may use exact mangled names | C-export fixtures without exceptions/RTTI tested; direct mangled entry calls are unverified. Complete STL, class lifetime, and inheritance need libraries and adapters |
 | Rust | `extern "C"`, stable exported names, `panic=abort` | `no_std` leaf objects on both Linux/macOS architectures; Rust ABI, trait objects, and panic unwinding unsupported |
 | Zig | `export fn`, C-compatible arguments | Objects on both Linux/macOS architectures; internal Zig ABI and complex layouts are not adapted |
 | Fortran | `bind(C)`, `iso_c_binding`, explicit `value` arguments | gfortran objects on both Linux/macOS architectures; I/O/descriptors need runtime libraries and wrappers |

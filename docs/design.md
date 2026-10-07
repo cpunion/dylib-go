@@ -14,7 +14,7 @@ In that snapshot, [DefaultRegistry.d](https://github.com/Marenz/ddl/blob/3bf531e
 | `DynamicLibrary` / `DynamicModule` | Internal `file/object/section/symbol/relocation` model | Go structs and standard parsers; no D class or module metadata |
 | `Linker.link` dependency resolution | `selectObjects`, `definitions`, `image.symbol` | Deterministic strong/weak/common rules, common merging, duplicate errors |
 | `ar/ArchiveReader` / `ArchiveLibrary` | `archive.go` | GNU/SysV, BSD, and COFF long names; rebuild indexes and extract on demand |
-| Per-module `resolveFixups` | `relocate.go` | Modern 64-bit ELF/Mach-O/COFF subset, bounds checks, GOT, branch stubs |
+| Per-module `resolveFixups` | `relocate*.go` | 64-bit ELF/Mach-O/COFF and i386 ELF/COFF subsets, bounds checks, GOT, branch stubs |
 | `host` / `insitu` | `Define`, explicit shared libraries, optional host symbols | Native addresses without D MAP/ModuleInfo |
 | `Memory` and object lifetime | `internal/native`, `Session.Close`, `Symbol.WithAddress` | W^X, rollback, explicit ownership, serialized access |
 | Template binding and D reflection | `Resolve`, caller-defined adapters, `abi.Signature`, `Function` | Explicit native signatures; no D ABI |
@@ -60,6 +60,6 @@ The [llgo example](../examples/llgo/main.go) defines a caller-owned `//llgo:type
 
 - [Go debug/elf](https://pkg.go.dev/debug/elf), [debug/macho](https://pkg.go.dev/debug/macho), and [debug/pe](https://pkg.go.dev/debug/pe): file structure parsing.
 - [Arm ELF64 ABI](https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst): AArch64 ELF relocations and alignment.
-- [Microsoft PE/COFF](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format): COFF/PE, archives, and AMD64 relocations.
+- [Microsoft PE/COFF](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format): COFF/PE, archives, and AMD64/ARM64/i386 relocations.
 - [LLVM Mach-O definitions](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/include/llvm/BinaryFormat/MachO.h): format constants and structures.
 - [LLVM JITLink](https://llvm.org/docs/JITLink.html): a comparison for long-term backend scope; its implementation is not used as a runtime backend here.
