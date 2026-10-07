@@ -3,6 +3,7 @@ package dylib
 import (
 	"errors"
 	"math"
+	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -51,7 +52,12 @@ func callbackLibrary(t *testing.T, input string) *Session {
 	s := New(Options{})
 	if runtime.GOOS == "windows" && runtime.GOARCH == "386" && input != "library" {
 		// MSVC's large struct copies require the host CRT's memcpy entry.
-		load(t, s, "msvcrt.dll")
+		root := os.Getenv("SystemRoot")
+		crt := filepath.Join(root, "SysWOW64", "msvcrt.dll")
+		if _, err := os.Stat(crt); err != nil {
+			crt = filepath.Join(root, "System32", "msvcrt.dll")
+		}
+		load(t, s, crt)
 	}
 	load(t, s, path)
 	t.Cleanup(func() { s.Close() })
