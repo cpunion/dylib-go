@@ -73,7 +73,9 @@ jobs:
       - name: Execute README cgo and dynamic libffi examples
         run: bash scripts/verify-examples.sh go
       - name: Execute dynamic CLI signatures, values, objects and libraries
-        run: bash scripts/verify-cli.sh go
+        run: |
+          bash scripts/verify-cli.sh go
+          bash examples/readme/structs.sh go
       - name: Execute README object/archive quick start
         if: runner.os != 'Windows'
         run: |

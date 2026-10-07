@@ -13,7 +13,7 @@ Workflows run on pushes to main, pull requests, and manual dispatch. Pure Go job
 | Linux amd64 / arm64 | Native runners | Native runners | Native objects and libraries |
 | macOS amd64 / arm64 | Intel / Apple Silicon runners | Same runners | Native objects and libraries |
 | Windows amd64 | Native runner, Clang/MinGW | Native runner | Native objects and DLLs, MinGW |
-| Windows arm64 | Independent gc process tests DLL/scalar ABI; reuses llgo job's setup-go and C tools | Native ARM64 runner | DLL/scalar ABI and Go/llgo producers; raw COFF refusal |
+| Windows arm64 | Independent gc process tests DLL/scalar/struct ABI; reuses llgo job's setup-go and C tools | Native ARM64 runner | DLL/scalar/struct ABI and Go/llgo producers; raw COFF refusal |
 | Linux 386 | No 32-bit object execution backend | 32-bit Go process on amd64 Linux | setup-llgo cannot install 386 |
 | Windows 386 | No 32-bit object execution backend | 32-bit Go process on amd64 Windows | setup-llgo cannot install 386 |
 | macOS 386 | Not applicable | Go has no darwin/386 port; CI checks that boundary | Not applicable |
@@ -41,7 +41,7 @@ These are workflow requirements; inspect [Go](https://github.com/cpunion/dylib-g
 
 `examples/readme/quickstart.sh` is the README's Linux/macOS object/archive quick start. Both compiler workflows execute it on both architectures, checking object and archive results and exercising no-cgo inspection. It is not a Windows ARM64 object-execution claim.
 
-`scripts/verify-cli.sh go|llgo` independently compiles the dynamic CLI with `-tags libffi`. All six native library targets execute Go-style declarations and typed invocations with mixed scalars, integer boundaries, pointers, zero arguments, and void returns. Five raw targets also execute object/archive calls. `examples/readme/dynamic.sh` runs the README's exact two requested input forms on Linux/macOS with both hosts. Pure Go parser tests cover all eight inspection jobs, including 386.
+`scripts/verify-cli.sh go|llgo` independently compiles the dynamic CLI with `-tags libffi`. All six native library targets execute Go-style declarations and typed invocations with mixed scalars, small integers, C booleans, integer boundaries, native/temporary pointers, zero arguments, and void returns. Struct tests cover by-value arguments/results, nested padding, large returns, floating-point records, pointer fields, in/out mutation, alias identity, and temporary pointer lifetime checks. Five raw targets also execute scalar and struct object/archive calls. `examples/readme/dynamic.sh` runs the README's exact two requested input forms on Linux/macOS with both hosts. `examples/readme/structs.sh` executes the embedded struct commands on all six targets with both hosts. Pure Go parser tests cover all eight inspection jobs, including 386.
 
 Every fenced code block in `README.md` is embedded from one of these executed source files with an `<!-- embedme ... -->` marker. The separate README job checks freshness with `npm ci --ignore-scripts` and `npm run readme:verify`; compilation and result checks remain in the native Go and llgo jobs. To update a snippet, edit its source and run `npm run readme` before committing.
 

@@ -75,9 +75,61 @@ echo "typed invocation result: $result"
 
 ```
 
-The `abi/signature` package parses declarations with Go's standard `go/parser`. Supported spellings are `int32`, `uint32`, `int64`, `uint64`, `float32`, `float64`, `uintptr`, `unsafe.Pointer`, and `*T` for opaque native pointers. Omit the result for a C `void` return. Calls support up to 32 fixed arguments and one result. `int`, `uint`, strings, slices, structures, variadic parameters, and multiple results are rejected. Parameter names and grouped parameters such as `a, b int32` are accepted in declarations.
+The `abi/signature` package parses declarations with Go's standard `go/parser`. Supported spellings are fixed-width integers from `int8`/`uint8` through `int64`/`uint64`, `byte`, `rune`, `bool`, `float32`, `float64`, `uintptr`, `unsafe.Pointer`, `*T`, and inline ordinary C structs. Omit the result for a C `void` return. Calls support up to 32 fixed arguments and one result. `int`, `uint`, strings, slices, arrays, unions, packed structs, variadic parameters, and multiple results are rejected. Parameter names and grouped parameters such as `a, b int32` are accepted in declarations.
 
 Integer values accept Go literal bases and underscores. Pointer values are native addresses or `nil`; the CLI does not allocate or marshal pointee storage. Float results retain their precision, unsigned results retain all high bits, and void calls print `void`. The declaration must match the actual native C ABI; parsing does not infer or verify prototypes from object symbols. See the [CLI reference](docs/cli.md) for complete rules and verification coverage.
+
+
+### Struct values and pointers
+
+Inline `struct{...}` descriptions support ordinary C structs as arguments and results, nested fields, and pointer fields. A known pointee type accepts a temporary literal such as `&40` or `&{a:20,b:22}`. The backend allocates native storage, copies fields in, and copies mutations back after the call. Layout, padding, and register classification come from libffi rather than Go's struct layout.
+
+This script runs with both Go and llgo on Linux/macOS/Windows amd64 and arm64. Its source is embedded by embedme:
+
+<!-- embedme examples/readme/structs.sh -->
+```sh
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/../.."
+compiler=${1:-go} # Pass llgo to build with llgo instead.
+mkdir -p build
+binary=build/ddlgo
+case "$(uname -s)" in
+  Darwin)
+    library=build/structs.dylib
+    "${CLANG:-clang}" -dynamiclib testdata/cli.c -o "$library"
+    ;;
+  Linux)
+    library=build/structs.so
+    "${CLANG:-clang}" -shared -fPIC testdata/cli.c -o "$library"
+    ;;
+  MINGW*|MSYS*)
+    binary=build/ddlgo.exe
+    library=build/structs.dll
+    "${CLANG:-clang}" -shared testdata/cli.c -Wl,--export-all-symbols -o "$library"
+    ;;
+  *) echo 'unsupported example host' >&2; exit 1 ;;
+esac
+"$compiler" build -tags libffi -o "$binary" ./cmd/ddlgo
+
+# Pass an ordinary C struct by value using a Go-style declaration.
+result=$("$binary" call "func sum_pair(struct{a,b int32})int32" "{a:20,b:22}" "$library")
+test "$result" = 42
+echo "struct value result: $result"
+
+# The known pointee type allows a temporary native copy of this literal.
+result=$("$binary" call "sum_pair_ptr(&{a:20,b:22}:*struct{a,b int32})int32" "$library")
+test "$result" = 42
+echo "struct pointer result: $result"
+
+# Mutations are copied back; a returned temporary pointer becomes a snapshot.
+result=$("$binary" call "mutate_pair(&{20,22}:*struct{a,b int32})*struct{a,b int32}" "$library")
+test "$result" = '&{a:22,b:20}'
+echo "modified struct result: $result"
+
+```
+
+The library API represents these values using `abi.TypeDesc`, `abi.StructValue`, and `abi.AddressOf`; `abi.Ptr` supplies caller-managed native addresses. Native code must not retain a temporary pointer beyond the call. See [literal and lifetime rules](docs/cli.md) for details and remaining limits.
 
 ## Generic symbols and caller-defined adapters
 
@@ -207,7 +259,7 @@ Neither typed adapter enables the optional dynamic ABI backend. CI compiles and 
 
 ## Dynamic signatures
 
-`Bind(name, abi.Signature)` handles caller-supplied scalar signatures through the optional libffi backend. Build with `-tags libffi` and install the libffi development files and pkg-config. This complete [dynamic example](examples/bind/main.go) is compiled and executed with both Go and llgo in CI, returning 42 on all six native library targets:
+`Bind(name, abi.Signature)` handles caller-supplied signatures through the optional libffi backend. Build with `-tags libffi` and install the libffi development files and pkg-config. This complete [dynamic example](examples/bind/main.go) is compiled and executed with both Go and llgo in CI, returning 42 on all six native library targets:
 
 <!-- embedme examples/bind/main.go -->
 
@@ -260,7 +312,7 @@ func main() {
 
 ```
 
-Supported scalar types are `i32/u32/i64/u64/f32/f64/pointer`, with `void` allowed as a result and up to 32 fixed arguments. Aggregate values, variadic calls, native callbacks, C++ `this` adjustment, and Swift calling conventions are not implemented.
+Supported scalar types are signed/unsigned 8/16/32/64-bit integers, C `bool`, `f32/f64`, and pointers. Ordinary C structs support arguments, results, nesting, and pointer fields through `abi.TypeDesc`. Calls allow `void` results and up to 32 fixed arguments. Arrays, unions, packed structs, bitfields, variadic calls, native callbacks, C++ `this` adjustment, and Swift calling conventions are not implemented.
 
 Run `go test -tags libffi ./...` or `llgo test -tags libffi ./...` to exercise the dynamic backend.
 
@@ -276,7 +328,7 @@ On Linux with llgo v1.0.6, set `export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` before 
 - `Lookup(name)`: obtain an unmanaged native address; callers manage its lifetime.
 - `Resolve(name)`: resolve once and return a session-owned, untyped `Symbol`.
 - `Symbol.WithAddress(callback)`: use an address while preventing concurrent `Close`.
-- `Bind(name, abi.Signature)` / `Function.Call`: bind and invoke an explicit dynamic scalar signature with libffi.
+- `Bind(name, abi.Signature)` / `Function.Call`: bind and invoke an explicit dynamic signature with libffi.
 - `Close()`: free the object image and release system library references; subsequent symbol access and bound calls return `ErrClosed`.
 
 Mach-O names omit one leading linker underscore. C++ names still require their exact mangled linkage name.
@@ -300,12 +352,12 @@ The former experimental `BindInt32`, `CallInt32`, and `Int32Func` APIs have been
 | `format_*.go`, `archive.go` | Go parsers and the unified object model |
 | `linker.go`, `relocate.go` | Symbol selection, archive extraction, layout, relocation |
 | `symbol.go`, `function.go` | Generic symbol handles and dynamic signature bindings |
-| `abi/` | Go signature descriptions and optional scalar libffi calls |
-| `abi/signature/` | Pure Go declaration, typed-invocation, and scalar literal parsing |
+| `abi/` | Go signature descriptions and optional scalar/struct libffi calls |
+| `abi/signature/` | Pure Go declaration, typed-invocation, and typed literal parsing |
 | `internal/native/` | OS memory, instruction cache, and shared-library operations |
 | `examples/call/` | Fixed-signature adapter used only by the CLI and tests |
 | `examples/cgo/`, `examples/llgo/`, `examples/bind/` | Executable README examples |
-| `examples/readme/` | Executable README quick-start and dynamic CLI scripts |
+| `examples/readme/` | Executable README quick-start, dynamic CLI, and struct scripts |
 | `cmd/ddlgo/` | Inspection and demonstration CLI |
 | `testdata/` | Native compiler inputs for language probes |
 | `docs/` | Design, compatibility, comparisons, CI, and evidence |

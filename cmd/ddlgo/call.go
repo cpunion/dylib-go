@@ -36,8 +36,8 @@ func parseCallInput(args []string) (callInput, error) {
 		if len(args) < count+2 {
 			return callInput{}, fmt.Errorf("signature requires %d arguments followed by at least one file", count)
 		}
-		for i, t := range input.Signature.Args {
-			v, err := signature.ParseValue(t, args[i+1])
+		for i := range input.Signature.Args {
+			v, err := signature.ParseTypedValue(input.Signature.ArgumentType(i), args[i+1])
 			if err != nil {
 				return callInput{}, fmt.Errorf("argument %d: %w", i+1, err)
 			}

@@ -10,7 +10,7 @@ The tables distinguish file inspection, implemented relocations, and actual exec
 | macOS amd64 | Mach-O 64 `.o` / `.a` | `.dylib` | Go and llgo on GitHub Intel runners; additional local Rosetta tests |
 | Linux arm64 | ELF64 LE RELA `.o` / `.a` | `.so` | Go and llgo on GitHub ARM64 runners |
 | Linux amd64 | ELF64 LE RELA `.o` / `.a` | `.so` | Go and llgo on GitHub AMD64 runners |
-| Windows amd64 | AMD64 COFF `.obj` / ordinary `.lib` archives | PE `.dll` | Native Go and llgo objects, archives, DLLs, and scalar ABI calls |
+| Windows amd64 | AMD64 COFF `.obj` / ordinary `.lib` archives | PE `.dll` | Native Go and llgo objects, archives, DLLs, and scalar/struct ABI calls |
 | Windows arm64 | COFF inspection; raw object execution rejected | PE `.dll` | Independent Go and llgo hosts, DLL/libffi calls, and Go/llgo c-shared producers; ARM64 COFF relocation unimplemented |
 | Linux / Windows 386 | Inspection; 32-bit object execution rejected | No execution support in this project | CI runs 32-bit Go parser/refusal tests; setup-llgo does not install 386 |
 | Linux RISC-V, LoongArch, PPC, s390x, ARM32 | Standard parsers can inspect some ELF inputs | No execution support in this project | No matching relocation backend or execution tests |
@@ -60,7 +60,7 @@ File format support alone does not establish language support. A callable entry 
 | D | Independent C ABI boundary can be attempted as native input | No DDL-specific D compatibility or D compiler/runtime verification |
 | Odin, Nim, Pascal, other native compilers | C exports with complete runtimes or standalone computation objects | Possible extensions, but no execution evidence and no current support claim |
 
-`Resolve` and `Symbol.WithAddress` support caller-defined adapters for any compatible native signature or data layout. llgo can compile known C signatures into direct calls; ordinary Go can use typed cgo bridges. The loader does not infer or validate those signatures. Optional dynamic `Bind` uses libffi for `void/i32/u32/i64/u64/f32/f64/pointer`, at most 32 fixed arguments, and the host's default C ABI. It does not supply C++/Swift or cross-OS ABI adaptation.
+`Resolve` and `Symbol.WithAddress` support caller-defined adapters for any compatible native signature or data layout. llgo can compile known C signatures into direct calls; ordinary Go can use typed cgo bridges. The loader does not infer or validate those signatures. Optional dynamic `Bind` uses libffi for fixed-width 8/16/32/64-bit integers, C `bool`, `f32/f64`, pointers, and ordinary C structs, with at most 32 fixed arguments and the host's default C ABI. Struct arguments/results, nesting, and temporary pointers are tested; arrays, unions, packed records, and bitfields remain unsupported. It does not supply C++/Swift or cross-OS ABI adaptation.
 
 ## Other execution domains
 

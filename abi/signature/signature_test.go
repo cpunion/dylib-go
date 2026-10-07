@@ -22,7 +22,7 @@ func TestDeclarations(t *testing.T) {
 		{"func add(int32,int32)int32", "add", abi.Signature{Result: abi.I32, Args: []abi.Type{abi.I32, abi.I32}}},
 		{"func mixed(a int32, b float64, c float32, d uint64) float64", "mixed", abi.Signature{Result: abi.F64, Args: []abi.Type{abi.I32, abi.F64, abi.F32, abi.U64}}},
 		{"func pair(a, b uint32) (result uint64)", "pair", abi.Signature{Result: abi.U64, Args: []abi.Type{abi.U32, abi.U32}}},
-		{"func pointer(*int32, unsafe.Pointer) unsafe.Pointer", "pointer", abi.Signature{Result: abi.Pointer, Args: []abi.Type{abi.Pointer, abi.Pointer}}},
+		{"func pointer(*int32, unsafe.Pointer) unsafe.Pointer", "pointer", abi.Signature{Result: abi.Pointer, Args: []abi.Type{abi.Pointer, abi.Pointer}, ArgTypes: []abi.TypeDesc{{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.I32}}, {Type: abi.Pointer}}}},
 		{"func word(uintptr) uintptr", "word", abi.Signature{Result: uintptrType, Args: []abi.Type{uintptrType}}},
 		{"func no_result()", "no_result", abi.Signature{}},
 		{"func signed(int64) int64", "signed", abi.Signature{Result: abi.I64, Args: []abi.Type{abi.I64}}},
@@ -44,7 +44,7 @@ func TestRejectedDeclarations(t *testing.T) {
 	for _, text := range []string{
 		"", "func (int32) int32", "func _()", "func f(int) int32",
 		"func f(uint) uint64", "func f(string)", "func f([]int32)",
-		"func f(struct{ x int32 })", "func f(...int32)", "func f(func())",
+		"func f(struct{})", "func f(...int32)", "func f(func())",
 		"func f() (int32,int32)", "func f() (a,b int32)", "func f() {}",
 		"func (r T) f()", "func f[T any](T)", "var f int32",
 		"func f(); func g()", "import \"unsafe\"; func f()",
