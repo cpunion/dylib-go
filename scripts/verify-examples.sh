@@ -36,3 +36,8 @@ echo "$compiler caller-defined mixed C signature: $result"
 result=$("$binary" "$library")
 test "$result" = 42
 echo "$compiler dynamic libffi signature: $result"
+
+"$compiler" build -tags libffi -o "$binary" ./examples/callback
+result=$("$binary" "$library")
+test "$result" = 42
+echo "$compiler dynamic C callback with Go capture: $result"

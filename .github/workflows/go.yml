@@ -92,7 +92,7 @@ jobs:
           pkg-config --modversion libffi
       - name: Execute C/C++, archives, shared libraries and selected language interfaces
         run: go test -count=1 -v -tags libffi ./...
-      - name: Execute README cgo and dynamic libffi examples
+      - name: Execute README cgo, dynamic call and callback examples
         run: bash examples/run.sh go library
       - name: Execute dynamic CLI signatures, values, objects and libraries
         run: |

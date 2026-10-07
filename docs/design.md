@@ -46,6 +46,8 @@ Struct metadata is deep-copied when binding. The backend asks libffi for native 
 
 Signature-specific methods do not belong to the loader's core contract. The experimental `BindInt32` / `CallInt32` methods and `Int32Func` type were removed. Their small adapter now lives in `examples/call`, used by the demonstration CLI and compiler probes. Applications can write their own adapters, and generators such as llcppg can emit them from declarations.
 
+`abi.NewCallback` owns an independent fixed-signature libffi closure, a prepared type graph, and a `runtime/cgo.Handle` retaining its Go handler. Callback leases prevent close until callers unregister and join native users. Each invocation decodes arguments into logical Go values and validates the returned value; errors and recovered panics remain inside the C entry and produce zero results. C-created threads enter the Go runtime through cgo, or use isolated llgo foreign-thread hooks before handling Go pointers. This does not add raw-object TLS or exception unwinding. See [callback design](callbacks.md).
+
 ## Go first, with llgo for native calls
 
 Parsing, archives, symbol tables, layout, errors, relocations, signature descriptions, and lifetime ownership are implemented in Go. The default module has no external Go dependencies. `CGO_ENABLED=0` preserves inspection.

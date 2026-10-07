@@ -131,11 +131,70 @@ static void dylib_record_arg(dylib_record_call *c, unsigned i, ffi_type *t, void
 static void dylib_record_execute(dylib_call_plan *plan, dylib_record_call *c, uintptr_t address, void *out) {
     ffi_call(&plan->cif,FFI_FN(address),out,c->args);
 }
+
+extern void dylibgo_dispatch_callback(uintptr_t handle, void *result, void *arguments);
+typedef struct {
+    void *writable;
+    void *code;
+    uintptr_t handle;
+} dylib_callback;
+static int dylib_register_result(ffi_type *type) {
+    switch (type->type) {
+    case FFI_TYPE_INT: case FFI_TYPE_SINT8: case FFI_TYPE_UINT8:
+    case FFI_TYPE_SINT16: case FFI_TYPE_UINT16:
+    case FFI_TYPE_SINT32: case FFI_TYPE_UINT32: return 1;
+    }
+    return 0;
+}
+static void dylib_closure_dispatch(ffi_cif *cif, void *out, void **args, void *user) {
+    dylib_callback *callback = (dylib_callback *)user;
+    if (cif->rtype->type != FFI_TYPE_VOID) {
+        size_t size = cif->rtype->size;
+        if (dylib_register_result(cif->rtype) && size < sizeof(ffi_arg)) size = sizeof(ffi_arg);
+        memset(out, 0, size);
+    }
+    dylibgo_dispatch_callback(callback->handle, out, args);
+}
+static dylib_callback *dylib_callback_new(dylib_call_plan *plan, uintptr_t handle, int *status) {
+    *status = -1;
+#if FFI_CLOSURES
+    dylib_callback *callback = (dylib_callback *)calloc(1,sizeof(*callback));
+    if (!callback) return NULL;
+    callback->writable = (ffi_closure *)ffi_closure_alloc(sizeof(ffi_closure), &callback->code);
+    if (!callback->writable) { free(callback); return NULL; }
+    callback->handle = handle;
+    *status = ffi_prep_closure_loc(callback->writable, &plan->cif,
+                                  dylib_closure_dispatch, callback, callback->code);
+    if (*status != FFI_OK) { ffi_closure_free(callback->writable); free(callback); return NULL; }
+    return callback;
+#else
+    return NULL;
+#endif
+}
+static uintptr_t dylib_callback_code(dylib_callback *callback) { return (uintptr_t)callback->code; }
+static void dylib_callback_free(dylib_callback *callback) {
+#if FFI_CLOSURES
+    ffi_closure_free(callback->writable);
+#endif
+    free(callback);
+}
+static void dylib_callback_store(void *out, uint8_t type, uint64_t bits) {
+    switch (type) {
+    case 1: { ffi_sarg v=(int32_t)bits; memcpy(out,&v,sizeof(v)); return; }
+    case 8: { ffi_sarg v=(int8_t)bits; memcpy(out,&v,sizeof(v)); return; }
+    case 10: { ffi_sarg v=(int16_t)bits; memcpy(out,&v,sizeof(v)); return; }
+    case 2: { ffi_arg v=(uint32_t)bits; memcpy(out,&v,sizeof(v)); return; }
+    case 9: case 12: { ffi_arg v=(uint8_t)bits; memcpy(out,&v,sizeof(v)); return; }
+    case 11: { ffi_arg v=(uint16_t)bits; memcpy(out,&v,sizeof(v)); return; }
+    }
+    dylib_store(out,type,bits);
+}
 */
 import "C"
 
 import (
 	"fmt"
+	"runtime/cgo"
 	"unsafe"
 )
 
@@ -388,4 +447,65 @@ func (b *ffiBackend) invokeRecords(address uintptr, s Signature, args []Value) (
 		return Value{}, pool.err
 	}
 	return result, nil
+}
+
+type ffiCallbackBackend struct {
+	plan   *ffiBackend
+	native *C.dylib_callback
+	handle uintptr
+}
+
+func prepareCallback(state *callbackState) (callbackBackend, error) {
+	initializeCallbackThreads()
+	backend, err := prepare(state.signature)
+	if err != nil {
+		return nil, err
+	}
+	b := &ffiCallbackBackend{plan: backend.(*ffiBackend), handle: uintptr(cgo.NewHandle(state))}
+	var status C.int
+	b.native = C.dylib_callback_new(b.plan.plan, C.uintptr_t(b.handle), &status)
+	if b.native == nil {
+		cgo.Handle(b.handle).Delete()
+		b.plan.close()
+		return nil, fmt.Errorf("native callback preparation failed: %d", status)
+	}
+	return b, nil
+}
+
+func (b *ffiCallbackBackend) address() uintptr { return uintptr(C.dylib_callback_code(b.native)) }
+func (b *ffiCallbackBackend) close() {
+	C.dylib_callback_free(b.native)
+	cgo.Handle(b.handle).Delete()
+	b.plan.close()
+}
+func (b *ffiCallbackBackend) dispatch(state *callbackState, result, arguments unsafe.Pointer) {
+	args := make([]Value, len(state.signature.Args))
+	pointers := unsafe.Slice((*unsafe.Pointer)(arguments), len(args))
+	// Native argument storage and pointee addresses are borrowed for this call.
+	// The type graph is immutable; each invocation owns its logical Go values.
+	pool := nativePool{abi: b.plan.pool.abi}
+	for i := range args {
+		args[i] = pool.read(state.signature.ArgumentType(i), b.plan.args[i], pointers[i], false)
+	}
+	value, err := state.handler(args)
+	if err == nil {
+		err = value.Validate(state.signature.ReturnType())
+	}
+	if err == nil && temporaryCallbackResult(value) {
+		err = fmt.Errorf("callback result cannot contain temporary pointees")
+	}
+	if err != nil {
+		state.record(err)
+		return
+	}
+	if value.Type == Void {
+		return
+	}
+	if value.Type == Struct {
+		if err := pool.write(value, state.signature.ReturnType(), b.plan.result, result); err != nil {
+			state.record(err)
+		}
+	} else {
+		C.dylib_callback_store(result, C.uint8_t(value.Type), C.uint64_t(value.Bits))
+	}
 }

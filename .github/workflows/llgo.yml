@@ -73,13 +73,13 @@ jobs:
         run: go test -count=1 -v -tags libffi ./...
       - name: Execute direct llgo function-pointer path
         run: llgo test -count=1 -v ./...
-      - name: Execute optional scalar and struct libffi ABI
+      - name: Execute optional scalar, struct and callback libffi ABI
         env:
           DYLIB_TEST_LANGUAGES: ''
         run: llgo test -count=1 -v -tags libffi ./...
       - name: Build CLI with llgo
         run: llgo build -o ddlgo ./cmd/ddlgo
-      - name: Execute README llgo and dynamic libffi examples
+      - name: Execute README llgo, dynamic call and callback examples
         run: bash examples/run.sh llgo library
       - name: Execute dynamic CLI signatures, values, objects and libraries
         run: |
