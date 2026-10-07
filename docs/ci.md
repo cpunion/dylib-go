@@ -12,7 +12,7 @@
 | Linux amd64 / arm64 | 各自原生 runner | 各自原生 runner | 原生执行 |
 | macOS amd64 / arm64 | Intel / Apple Silicon runner | 同左 | 原生执行 |
 | Windows amd64 | 原生 runner，Clang/MinGW | 原生 runner | 原生执行，MinGW |
-| Windows arm64 | 暂不提供原始对象执行 | ARM64 runner | 系统 DLL 调用、标量 ABI、Go/llgo 共享库；ARM64 COFF 拒绝测试 |
+| Windows arm64 | 独立 gc 测试进程验证 DLL / 标量 ABI；复用 llgo 作业的工具链安装 | ARM64 runner | 系统 DLL 调用、标量 ABI、Go/llgo 共享库；ARM64 COFF 拒绝测试 |
 | Linux 386 | 暂不提供 32 位对象执行 | amd64 Linux 上运行 32 位 Go 测试进程 | setup-llgo 当前不能安装 386 |
 | Windows 386 | 暂不提供 32 位对象执行 | amd64 Windows 上运行 32 位 Go 测试进程 | setup-llgo 当前不能安装 386 |
 | macOS 386 | 不适用 | Go 已无 darwin/386 port；CI 验证此边界 | 不适用 |
@@ -25,11 +25,11 @@
 | --- | --- | --- |
 | C、无异常/RTTI 的 C++ 对象、归档、动态库 | 五个原生执行目标 | 五个原生执行目标 |
 | 固定 `int32(int32,int32)` | cgo 桥 | llgo 直接 C ABI 函数指针 |
-| libffi 混合整数/浮点标量接口 | 五个目标，另有 race 检查 | 六个目标；Windows 用系统 DLL 处理常量池 COMDAT |
+| libffi 混合整数/浮点标量接口 | 六个目标；其中五个原始对象目标另有 race 检查 | 六个目标；Windows 用系统 DLL 处理常量池 COMDAT |
 | Rust `extern C`、Zig `export`、Fortran `bind(C)` | Linux/macOS 两架构 | Linux/macOS 两架构 |
 | Swift C 导出动态库、原始元数据对象拒绝 | macOS 两架构 | macOS 两架构 |
-| Go `c-shared` | 五个原生执行目标 | 六个目标，含 Windows arm64 DLL |
-| llgo `c-shared` | 本地已验证；CI 使用 llgo 宿主 | 六个目标，含 Windows arm64 DLL |
+| Go `c-shared` | 六个目标，含 Windows arm64 DLL | 六个目标，含 Windows arm64 DLL |
+| llgo `c-shared` | 本地 macOS 与 CI Windows arm64；其余由 llgo 宿主验证 | 六个目标，含 Windows arm64 DLL |
 
 这些是工作流的测试要求，成功与否应查看 [Go](https://github.com/cpunion/llgo-dylib/actions/workflows/go.yml) / [llgo](https://github.com/cpunion/llgo-dylib/actions/workflows/llgo.yml) 对应提交的结果。接口覆盖只代表样例中的 C ABI 子集；Windows Rust/Zig/Fortran、Linux Swift、ObjC 原生 ABI 等没有在本矩阵中验证。
 

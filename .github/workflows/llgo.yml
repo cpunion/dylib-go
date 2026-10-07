@@ -66,6 +66,11 @@ jobs:
           go env GOOS GOARCH CGO_ENABLED CC
           clang --version
           echo "LLGo revision: $LLGO_REVISION" >> "$GITHUB_STEP_SUMMARY"
+      - name: Execute independent Go host on Windows ARM64
+        if: matrix.mode == 'shared'
+        # setup-llgo uses setup-go and provides the native ARM64 C toolchain.
+        # Build a separate gc test executable, including Go/llgo DLL producers.
+        run: go test -count=1 -v -tags libffi ./...
       - name: Execute direct llgo function-pointer path
         run: llgo test -count=1 -v ./...
       - name: Execute optional scalar libffi ABI
