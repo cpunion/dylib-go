@@ -92,6 +92,8 @@ type section struct {
 	size, align, original uint64
 	exec, write           bool
 	offset                uint64 // Assigned only in the private image built by Link.
+	lifecycle             lifecycleKind
+	priority              uint32
 }
 
 // section: 0 undefined, -1 absolute, -2 common, -3 ignored/debug/unsupported.

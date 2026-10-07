@@ -18,7 +18,7 @@ In that snapshot, [DefaultRegistry.d](https://github.com/Marenz/ddl/blob/3bf531e
 | `host` / `insitu` | `Define`, explicit shared libraries, optional host symbols | Native addresses without D MAP/ModuleInfo |
 | `Memory` and object lifetime | `internal/native`, `Session.Close`, `Symbol.WithAddress` | W^X, rollback, explicit ownership, serialized access |
 | Template binding and D reflection | `Resolve`, caller-defined adapters, `abi.Signature`, `Function` | Explicit native signatures; no D ABI |
-| D ModuleInfo constructors/destructors | Outside scope | OS libraries can initialize runtimes; recognized raw-object requirements are rejected |
+| D ModuleInfo constructors/destructors | Native lifecycle tables and session-owned exit registrations | ELF/Mach-O/COFF initialization and cleanup; no D module metadata |
 
 This is a functional reimplementation rather than a line-by-line syntax translation. OMF records, D mangling, class exports, and the Enki/meta tools were not copied. Modern relocation handling was independently implemented from the format specifications listed below.
 
@@ -29,8 +29,8 @@ This is a functional reimplementation rather than a line-by-line syntax translat
 3. Global strong definitions take precedence over weak/common. Multiple strong definitions fail. Common symbols use the maximum size and alignment. Local symbols retain object scope.
 4. One contiguous mapping contains sections, common storage, GOT, and branch stubs. Each section occupies its own pages to separate writable and executable permissions. Images are limited to 64 MiB and files to 256 MiB. Section alignment larger than a host page is rejected.
 5. Go applies relocations and validates ranges. Nearby stubs can reach distant native function addresses; arbitrary data references cannot be replaced by branch stubs. GOT slots hold addresses for indirect references.
-6. Instruction caches are flushed and page permissions are applied. The image is published only after all steps succeed. Failure frees the mapping and allows dependency fixes followed by retry. Side effects of opening shared libraries are outside this image rollback.
-7. `Close` frees the object image, then releases OS library handles in reverse order. `KeepLibraries` deliberately retains library references until process exit.
+6. Instruction caches are flushed and page permissions are applied. After validation of lifecycle entries and requested roots, raw initializers run once and the image is published. Failure frees the mapping and allows dependency fixes followed by retry. Side effects of opening shared libraries and executing successful native initializers are outside this image rollback.
+7. `Close` releases prepared plans, runs session-owned exit registrations and termination arrays, frees the object image, then releases OS library handles in reverse order. See [object lifecycle](lifecycle.md) for ordering and unsupported forms. `KeepLibraries` deliberately retains library references until process exit.
 
 Lookup does not infer types. Raw addresses from `Lookup` are valid only while the session remains open. There is no finalizer that unloads code at an arbitrary GC-selected time.
 

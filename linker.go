@@ -124,6 +124,9 @@ func (s *Session) Define(name string, address uintptr) error {
 	if name == "" || strings.IndexByte(name, 0) >= 0 || address == 0 {
 		return fmt.Errorf("invalid native symbol")
 	}
+	if runtimeHelper(strings.TrimPrefix(name, "__imp_")) {
+		return fmt.Errorf("%s is reserved for session-owned object lifecycle", name)
+	}
 	if _, ok := s.defined[name]; ok {
 		return fmt.Errorf("duplicate symbol %s", name)
 	}
@@ -307,6 +310,8 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 // Link extracts archive members needed by roots and object references, then
 // resolves all relocations before granting execute permission. On failure no
 // executable image is published; the caller may add dependencies and retry.
+// Supported object initializers run after every link validation succeeds.
+// Native initialization side effects cannot be rolled back.
 func (s *Session) Link(roots ...string) error { s.mu.Lock(); defer s.mu.Unlock(); return s.link(roots) }
 func (s *Session) link(roots []string) error {
 	if s.closed {
@@ -352,6 +357,7 @@ func (s *Session) link(roots []string) error {
 			return err
 		}
 	}
+	im.initialize()
 	s.image = im
 	return nil
 }
@@ -410,6 +416,10 @@ type image struct {
 	gotStart, stubStart, gotNext, stubNext uint64
 	page                                   uint64
 	pointerSize                            uint64
+	lifecycle                              *native.Lifecycle
+	hooks                                  map[string]uintptr
+	initializers, finalizers               []uintptr
+	initialized                            bool
 }
 
 func alignUp(n, a uint64) uint64 {
@@ -487,6 +497,9 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	im.stubStart = size
 	im.stubNext = size
 	size += alignUp((count+1)*16, im.page)
+	// Three context-bound exit helpers need at most 64 bytes each.
+	// This also leaves capacity for branch stubs from every relocation.
+	size += im.page
 	if size > maxImage {
 		return nil, fmt.Errorf("image exceeds 64 MiB")
 	}
@@ -502,6 +515,9 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 			im.close()
 		}
 	}()
+	if e := im.prepareRuntimeHelpers(); e != nil {
+		return nil, e
+	}
 	for _, o := range objs {
 		for _, s := range o.sections {
 			if s != nil {
@@ -515,6 +531,9 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 				return nil, fmt.Errorf("%s: relocation %d at section %d+%#x: %w", o.info.Name, r.typ, r.section, r.offset, e)
 			}
 		}
+	}
+	if e := im.prepareLifecycle(); e != nil {
+		return nil, e
 	}
 	native.ClearCache(b)
 	// Each section owns whole pages; never grant WRITE and EXEC together.
@@ -541,13 +560,27 @@ func (im *image) close() error {
 	if im.mem == nil {
 		return nil
 	}
+	if im.initialized {
+		im.initialized = false
+		im.lifecycle.Finalize()
+		for _, address := range im.finalizers {
+			native.CallVoid(address)
+		}
+		// A finalizer may itself register an exit function.
+		im.lifecycle.Finalize()
+	}
+	im.lifecycle.Close()
 	e := native.Free(im.mem)
 	im.mem = nil
+	im.initializers, im.finalizers = nil, nil
 	return e
 }
 func (im *image) lookup(n string) (uintptr, error) {
 	if d, ok := im.defs[n]; ok {
 		return im.symbol(d.o, d.index, false)
+	}
+	if p := im.hooks[n]; p != 0 {
+		return p, nil
 	}
 	if p := im.external(n); p != 0 {
 		return p, nil
@@ -584,7 +617,10 @@ func (im *image) symbol(o *object, index int, local bool) (uintptr, error) {
 		if indirect {
 			n = strings.TrimPrefix(n, "__imp_")
 		}
-		p := im.external(n)
+		p := im.hooks[n]
+		if p == 0 {
+			p = im.external(n)
+		}
 		if p == 0 && !s.weak {
 			return 0, fmt.Errorf("unresolved symbol %s", s.name)
 		}
