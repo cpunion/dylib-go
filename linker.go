@@ -27,7 +27,7 @@ type Options struct {
 }
 
 // Session owns one linked image and its shared-library handles. Do not copy it.
-// A session is built in two phases: Load/Define, then Link/Lookup/CallInt32.
+// A session is built in two phases: Load/Define, then Link/Lookup/Resolve/Bind.
 // Close invalidates every returned address. Callers using raw addresses must
 // ensure no native threads or callbacks still use them before calling Close.
 type Session struct {
@@ -374,19 +374,6 @@ func (s *Session) lookup(name string) (uintptr, error) {
 		return 0, err
 	}
 	return s.image.lookup(name)
-}
-
-// CallInt32 calls exactly int32_t fn(int32_t, int32_t). The caller must know
-// that signature. Native exceptions, longjmp and Go ABI entry points are not
-// supported. The session lock keeps its image alive for the duration of a call.
-func (s *Session) CallInt32(name string, a, b int32) (int32, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	p, e := s.lookup(name)
-	if e != nil {
-		return 0, e
-	}
-	return native.CallInt32(p, a, b), nil
 }
 
 func (s *Session) Close() error {

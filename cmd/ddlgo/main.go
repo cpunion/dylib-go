@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	dylib "github.com/cpunion/llgo-dylib"
+	examplecall "github.com/cpunion/llgo-dylib/examples/call"
 )
 
 func run(args []string) error {
@@ -53,7 +54,16 @@ func run(args []string) error {
 				return e
 			}
 		}
-		r, e := s.CallInt32(v[0], int32(a), int32(b))
+		symbol, e := s.Resolve(v[0])
+		if e != nil {
+			return e
+		}
+		var r int32
+		e = symbol.WithAddress(func(address uintptr) error {
+			var err error
+			r, err = examplecall.Int32(address, int32(a), int32(b))
+			return err
+		})
 		if e != nil {
 			return e
 		}

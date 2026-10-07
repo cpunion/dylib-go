@@ -1,51 +1,61 @@
-# DDL 的 Go 移植与实现边界
+# Go implementation of DDL's loading mechanisms
 
-## 来源核实
+## Source verification
 
-恢复并阅读了 [Marenz/ddl](https://github.com/Marenz/ddl/tree/3bf531e9701469ccecd5c3c698036ef4ef72362b)，提交 `3bf531e9701469ccecd5c3c698036ef4ef72362b`。它包含 `ddl/`、`xf/linker/`、`meta/`，主页指向原 dsource DDL。不能凭这一份镜像证明完整 SVN 历史已恢复，但核心源码已可直接取得。
+The inspected [Marenz/ddl snapshot](https://github.com/Marenz/ddl/tree/3bf531e9701469ccecd5c3c698036ef4ef72362b), commit `3bf531e9701469ccecd5c3c698036ef4ef72362b`, contains `ddl/`, `xf/linker/`, and `meta/`, and points to the original dsource DDL project. This mirror makes the core source available, but does not establish that the complete SVN history has been recovered.
 
-在这个快照中，[DefaultRegistry.d](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/DefaultRegistry.d) 注册 OMF、ELF 和 InSituMap，而归档、COFF 的默认注册被注释掉。[ELFBinary.d](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/elf/ELFBinary.d) 明确拒绝 ELFCLASS64。因此不能把最早的规划和这个版本中所有目录的存在等同于完整格式支持。
+In that snapshot, [DefaultRegistry.d](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/DefaultRegistry.d) registers OMF, ELF, and InSituMap, while archive and COFF registrations are commented out. [ELFBinary.d](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/elf/ELFBinary.d) explicitly rejects ELFCLASS64. Early plans and the presence of format directories should not be treated as evidence of complete implementation.
 
-## 对应关系
+## Responsibility mapping
 
-| DDL 源码职责 | Go 实现 | 改动 |
+| DDL responsibility | Go implementation | Change |
 | --- | --- | --- |
-| `DynamicLibraryLoader` / `LoaderRegistry` 的内容识别 | `parse`、各格式解析器、`Session.Load` | 依文件头识别；不根据后缀猜测 |
-| `DynamicLibrary` / `DynamicModule` | 内部 `file/object/section/symbol/relocation` 模型 | 用结构体和标准库解析，去除 D 类/模块元数据 |
-| `Linker.link` 依赖解析 | `selectObjects`、`definitions`、`image.symbol` | 确定性强/弱符号规则、common 合并、重复定义报错 |
-| `ar/ArchiveReader` / `ArchiveLibrary` | `archive.go` | GNU/SysV、BSD 扩展名；从对象重建索引，按需提取 |
-| 各模块 `resolveFixups` | `relocate.go` | 现代 64 位 ELF/Mach-O/COFF 子集、边界检查、GOT、远跳板 |
-| `host` / `insitu` | `Define`、显式动态库、可选宿主符号 | 不依赖 D MAP/ModuleInfo；仅传原生地址 |
-| `Memory` 和对象寿命 | `internal/native`、`Session.Close` | W^X、失败回滚、显式所属会话与调用锁 |
-| 模板绑定和 D 反射 | `BindInt32`、`abi.Signature`、`Function` | C ABI 签名显式提供；不实现 D ABI |
-| D ModuleInfo 构造/析构 | 不移植 | 系统动态库可承担语言运行时初始化；直接对象拒绝已识别需求 |
+| `DynamicLibraryLoader` / `LoaderRegistry` content identification | `parse`, format parsers, `Session.Load` | Identify file content rather than guess from extensions |
+| `DynamicLibrary` / `DynamicModule` | Internal `file/object/section/symbol/relocation` model | Go structs and standard parsers; no D class or module metadata |
+| `Linker.link` dependency resolution | `selectObjects`, `definitions`, `image.symbol` | Deterministic strong/weak/common rules, common merging, duplicate errors |
+| `ar/ArchiveReader` / `ArchiveLibrary` | `archive.go` | GNU/SysV, BSD, and COFF long names; rebuild indexes and extract on demand |
+| Per-module `resolveFixups` | `relocate.go` | Modern 64-bit ELF/Mach-O/COFF subset, bounds checks, GOT, branch stubs |
+| `host` / `insitu` | `Define`, explicit shared libraries, optional host symbols | Native addresses without D MAP/ModuleInfo |
+| `Memory` and object lifetime | `internal/native`, `Session.Close`, `Symbol.WithAddress` | W^X, rollback, explicit ownership, serialized access |
+| Template binding and D reflection | `Resolve`, caller-defined adapters, `abi.Signature`, `Function` | Explicit native signatures; no D ABI |
+| D ModuleInfo constructors/destructors | Outside scope | OS libraries can initialize runtimes; recognized raw-object requirements are rejected |
 
-这是按功能重构的移植，不是逐行语法转换。旧 OMF 记录解析、D 名称修饰、类导出、Enki/meta 工具没有复制。底层现代重定位根据格式规范独立实现；见下方参考。
+This is a functional reimplementation rather than a line-by-line syntax translation. OMF records, D mangling, class exports, and the Enki/meta tools were not copied. Modern relocation handling was independently implemented from the format specifications listed below.
 
-## 加载流程
+## Loading sequence
 
-1. `Load` 解析对象，暂存归档；动态库立即交给 OS，所以 `Load(shared)` 可能运行库构造函数。
-2. 首次 `Link(roots...)` 或 `Lookup` 选择全部显式对象及必需归档成员。每加入一个成员就重建定义索引，直到依赖闭包稳定。
-3. 全局强定义优先于 weak/common；多个强定义失败；common 取最大大小与对齐。局部符号保持对象内作用域。
-4. 单个连续映射容纳全部段、common、GOT 和分支跳板。每个段独占页，以分离写/执行权限；总映像上限 64 MiB，单文件上限 256 MiB。超过页大小的段对齐明确拒绝。
-5. Go 完成重定位和范围验证。分支到远处宿主地址时可用相邻跳板；不能把任意数据引用改成跳板。GOT 为间接引用保存原生地址。
-6. 刷新指令缓存并设置段权限。所有步骤成功后发布映像；失败释放映射，允许补依赖后重试。动态库打开的副作用不属于这次映像回滚。
-7. `Close` 先释放映像，再逆序释放系统动态库引用。`KeepLibraries` 则有意保留库句柄到进程退出。
+1. `Load` parses objects and stages archives. Shared libraries are opened immediately by the OS, so `Load(shared)` may execute library constructors.
+2. The first `Link(roots...)`, `Lookup`, `Resolve`, or `Bind` selects all explicit objects and required archive members. The definition index is rebuilt after each extracted member until dependency closure stabilizes.
+3. Global strong definitions take precedence over weak/common. Multiple strong definitions fail. Common symbols use the maximum size and alignment. Local symbols retain object scope.
+4. One contiguous mapping contains sections, common storage, GOT, and branch stubs. Each section occupies its own pages to separate writable and executable permissions. Images are limited to 64 MiB and files to 256 MiB. Section alignment larger than a host page is rejected.
+5. Go applies relocations and validates ranges. Nearby stubs can reach distant native function addresses; arbitrary data references cannot be replaced by branch stubs. GOT slots hold addresses for indirect references.
+6. Instruction caches are flushed and page permissions are applied. The image is published only after all steps succeed. Failure frees the mapping and allows dependency fixes followed by retry. Side effects of opening shared libraries are outside this image rollback.
+7. `Close` frees the object image, then releases OS library handles in reverse order. `KeepLibraries` deliberately retains library references until process exit.
 
-查找不推断签名。`Lookup` 的原始地址只在会话存活期间有效；绑定句柄保留所属会话，调用时检查是否已经关闭。没有 finalizer 自动卸载代码，避免 GC 时机决定可执行代码的生命周期。
+Lookup does not infer types. Raw addresses from `Lookup` are valid only while the session remains open. There is no finalizer that unloads code at an arbitrary GC-selected time.
 
-## Go 优先与 llgo 的位置
+## Generic binding and lifetime
 
-解析、归档、符号表、链接布局、错误处理、重定位、签名描述全部用 Go。默认无外部 Go 模块依赖。`CGO_ENABLED=0` 保留检查功能。
+`Resolve(name)` returns an untyped `Symbol` associated with its owning session. `Symbol.WithAddress` invokes a Go adapter while holding the session lock, so `Close` cannot release code or libraries during address use. The adapter may invoke a native function with a known signature or access native data with a known layout. It must finish all address use before returning and must not re-enter the session's locking methods.
 
-POSIX 映射与保护使用 Go `syscall`；Windows 使用 `VirtualAlloc` / `VirtualProtect` / `VirtualFree`。POSIX `dlopen/dlsym/dlclose` 和指令缓存刷新使用很小的 C 桥。普通 gc 通过 cgo 正确切换到 C ABI；不能将 Go `func` 的内部表示当成 C 指针。
+`Bind(name, abi.Signature)` builds a `Function` on the same symbol lifetime guard. It validates and copies the caller's signature, then uses the optional libffi backend to arrange scalar arguments and results. Neither API infers types from names or demangled strings.
 
-`internal/native/call_llgo.go` 使用 `//llgo:type C` 定义函数类型，读取原生函数指针并直接调用。编译期固定签名是 llgo 优先路径。动态未知的标量签名可启用 `abi` 的 libffi 后端；这只承担寄存器/栈参数编排，不解析或链接二进制。
+Signature-specific methods do not belong to the loader's core contract. The experimental `BindInt32` / `CallInt32` methods and `Int32Func` type were removed. Their small adapter now lives in `examples/call`, used by the demonstration CLI and compiler probes. Applications can write their own adapters, and generators such as llcppg can emit them from declarations.
 
-## 规范参考
+## Go first, with llgo for native calls
 
-- [Go debug/elf](https://pkg.go.dev/debug/elf)、[debug/macho](https://pkg.go.dev/debug/macho)、[debug/pe](https://pkg.go.dev/debug/pe)：文件结构解析。
-- [Arm ELF64 ABI](https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst)：AArch64 ELF 重定位与对齐。
-- [Microsoft PE/COFF](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format)：COFF/PE、AMD64 重定位。
-- [LLVM Mach-O ARM64 定义](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/include/llvm/BinaryFormat/MachO.h)：格式常量与结构。
-- [LLVM JITLink](https://llvm.org/docs/JITLink.html)：长期后端范围的对照；本项目没有使用其实现作为运行时后端。
+Parsing, archives, symbol tables, layout, errors, relocations, signature descriptions, and lifetime ownership are implemented in Go. The default module has no external Go dependencies. `CGO_ENABLED=0` preserves inspection.
+
+POSIX mappings and protections use Go `syscall`; Windows uses `VirtualAlloc`, `VirtualProtect`, and `VirtualFree`. POSIX `dlopen/dlsym/dlclose` and instruction-cache flushing use small C bridges.
+
+Ordinary gc callers use a typed cgo bridge to enter the C ABI correctly. The [cgo example](../examples/cgo/main.go) supplies a mixed integer/floating-point signature. A Go `func` value's representation cannot be treated as a C pointer.
+
+The [llgo example](../examples/llgo/main.go) defines a caller-owned `//llgo:type C` function type and invokes a native pointer directly. Known signatures can therefore use compiler-generated calls without the optional dynamic ABI backend. Unknown-at-build-time scalar signatures can use `abi` with libffi; libffi arranges registers and stack arguments, but does not parse or link binaries.
+
+## Format references
+
+- [Go debug/elf](https://pkg.go.dev/debug/elf), [debug/macho](https://pkg.go.dev/debug/macho), and [debug/pe](https://pkg.go.dev/debug/pe): file structure parsing.
+- [Arm ELF64 ABI](https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst): AArch64 ELF relocations and alignment.
+- [Microsoft PE/COFF](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format): COFF/PE, archives, and AMD64 relocations.
+- [LLVM Mach-O definitions](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/include/llvm/BinaryFormat/MachO.h): format constants and structures.
+- [LLVM JITLink](https://llvm.org/docs/JITLink.html): a comparison for long-term backend scope; its implementation is not used as a runtime backend here.

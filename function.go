@@ -4,8 +4,7 @@ import "github.com/cpunion/llgo-dylib/abi"
 
 // Function couples an explicit ABI signature with the lifetime of its code.
 type Function struct {
-	owner     *Session
-	address   uintptr
+	symbol    *Symbol
 	signature abi.Signature
 }
 
@@ -18,23 +17,22 @@ func (s *Session) Bind(name string, signature abi.Signature) (*Function, error) 
 	if !abi.Available() {
 		return nil, abi.ErrUnavailable
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	p, err := s.lookup(name)
+	symbol, err := s.Resolve(name)
 	if err != nil {
 		return nil, err
 	}
 	signature.Args = append([]abi.Type(nil), signature.Args...)
-	return &Function{owner: s, address: p, signature: signature}, nil
+	return &Function{symbol: symbol, signature: signature}, nil
 }
 func (f *Function) Call(args ...abi.Value) (abi.Value, error) {
-	if f == nil || f.owner == nil {
+	if f == nil {
 		return abi.Value{}, ErrClosed
 	}
-	f.owner.mu.Lock()
-	defer f.owner.mu.Unlock()
-	if f.owner.closed {
-		return abi.Value{}, ErrClosed
-	}
-	return abi.Call(f.address, f.signature, args...)
+	var result abi.Value
+	err := f.symbol.WithAddress(func(address uintptr) error {
+		var err error
+		result, err = abi.Call(address, f.signature, args...)
+		return err
+	})
+	return result, err
 }
