@@ -167,9 +167,8 @@ func TestRetryAndLifecycle(t *testing.T) {
 	}
 }
 
-func TestSharedAndHostSymbols(t *testing.T) {
-	needNative(t)
-	dir := t.TempDir()
+func compileSharedAdd(t *testing.T, dir string) string {
+	t.Helper()
 	lib := filepath.Join(dir, "plugin.so")
 	flags := []string{"-shared", "-fPIC", "testdata/add.c", "-o", lib}
 	if runtime.GOOS == "darwin" {
@@ -187,6 +186,38 @@ func TestSharedAndHostSymbols(t *testing.T) {
 		flags = []string{"-shared", src, "-o", lib}
 	}
 	command(t, compiler(), flags...)
+	return lib
+}
+
+// A platform loader can support shared libraries before raw object relocations
+// are implemented, notably for Windows ARM64 DLLs.
+func needShared(t *testing.T) {
+	t.Helper()
+	if !native.Available() || (runtime.GOARCH != "arm64" && runtime.GOARCH != "amd64") {
+		if os.Getenv("DYLIB_TEST_REQUIRE_SHARED") == "1" {
+			t.Fatal("required 64-bit shared-library native bridge unavailable")
+		}
+		t.Skip("64-bit shared-library native bridge unavailable")
+	}
+}
+
+func TestSystemSharedLibrary(t *testing.T) {
+	needShared(t)
+	lib := compileSharedAdd(t, t.TempDir())
+	i, e := Inspect(lib)
+	if e != nil || i.Kind != "shared" || i.Arch != runtime.GOARCH {
+		t.Fatalf("native shared-library metadata: %+v, %v", i, e)
+	}
+	s := New(Options{})
+	defer s.Close()
+	load(t, s, lib)
+	call(t, s, "add", 20, 22, 42)
+}
+
+func TestSharedAndHostSymbols(t *testing.T) {
+	needNative(t)
+	dir := t.TempDir()
+	lib := compileSharedAdd(t, dir)
 	caller := compile(t, "testdata/caller.c", filepath.Join(dir, "caller.o"))
 	s := New(Options{})
 	defer s.Close()

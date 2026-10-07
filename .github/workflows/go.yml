@@ -31,6 +31,7 @@ jobs:
     env:
       CGO_ENABLED: '1'
       DYLIB_TEST_REQUIRE_NATIVE: '1'
+      DYLIB_TEST_REQUIRE_SHARED: '1'
       DYLIB_TEST_REQUIRE_TOOLS: '1'
       DYLIB_TEST_LANGUAGES: ${{ matrix.languages }}
     steps:
@@ -49,14 +50,18 @@ jobs:
         with:
           version: '0.15.2'
       - if: runner.os == 'Windows'
+        id: msys2
         uses: msys2/setup-msys2@v2
         with:
           msystem: CLANG64
           install: mingw-w64-clang-x86_64-clang mingw-w64-clang-x86_64-binutils mingw-w64-clang-x86_64-libffi mingw-w64-clang-x86_64-pkgconf
       - if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          MSYS2_ROOT: ${{ steps.msys2.outputs.msys2-location }}
         run: |
-          echo 'C:/msys64/clang64/bin' >> "$GITHUB_PATH"
-          echo 'CC=clang' >> "$GITHUB_ENV"
+          Add-Content $env:GITHUB_PATH (Join-Path $env:MSYS2_ROOT 'clang64/bin')
+          Add-Content $env:GITHUB_ENV 'CC=clang'
       - name: Toolchain identity
         run: |
           go version
@@ -81,12 +86,12 @@ jobs:
         include:
           - {os: ubuntu-24.04, target: linux-amd64, arch: x64}
           - {os: ubuntu-24.04-arm, target: linux-arm64, arch: arm64}
-          - {os: ubuntu-24.04, target: linux-386, arch: x86}
+          - {os: ubuntu-24.04, target: linux-386, arch: '386'}
           - {os: macos-15-intel, target: darwin-amd64, arch: x64}
           - {os: macos-15, target: darwin-arm64, arch: arm64}
           - {os: windows-2022, target: windows-amd64, arch: x64}
           - {os: windows-11-arm, target: windows-arm64, arch: arm64}
-          - {os: windows-2022, target: windows-386, arch: x86}
+          - {os: windows-2022, target: windows-386, arch: '386'}
     env:
       CGO_ENABLED: '0'
       DYLIB_TEST_REQUIRE_TOOLS: '1'

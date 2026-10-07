@@ -7,11 +7,12 @@
 | 宿主 / 目标 | 直接对象 | 系统动态库 | 当前证据 |
 | --- | --- | --- | --- |
 | macOS arm64 | Mach-O 64 `.o` / `.a` | `.dylib` / bundle | Go、llgo 执行测试；可选 libffi |
-| macOS amd64 | Mach-O 64 `.o` / `.a` | `.dylib` | Go 测试，Apple Silicon 上 Rosetta；非原生 Intel 硬件验证 |
-| Linux arm64 | ELF64 LE RELA `.o` / `.a` | `.so` | Linux arm64 容器真实执行测试 |
-| Linux amd64 | ELF64 LE RELA `.o` / `.a` | `.so` | Linux amd64 容器测试，arm64 宿主上的架构转换 |
-| Windows amd64 | AMD64 COFF `.obj` / 普通 `.lib` 归档 | PE `.dll` | 已实现 OS 接口；COFF 交叉生成、指针重定位测试；Windows 无 cgo 交叉构建。**未做 Windows 原生执行验证** |
-| Windows arm64 | COFF 可以检查 | PE 可识别 | ARM64 COFF 重定位未实现；不宣称执行支持 |
+| macOS amd64 | Mach-O 64 `.o` / `.a` | `.dylib` | Go、llgo 在 GitHub Intel runner 的执行测试通过；另有本地 Rosetta 验证 |
+| Linux arm64 | ELF64 LE RELA `.o` / `.a` | `.so` | Go、llgo 在 GitHub ARM64 runner 的执行测试通过 |
+| Linux amd64 | ELF64 LE RELA `.o` / `.a` | `.so` | Go、llgo 在 GitHub AMD64 runner 的执行测试通过 |
+| Windows amd64 | AMD64 COFF `.obj` / 普通 `.lib` 归档 | PE `.dll` | Go、llgo 在 GitHub Windows runner 的对象、归档、DLL、标量 ABI 执行测试通过 |
+| Windows arm64 | COFF 可以检查；拒绝原始对象执行 | PE `.dll` | llgo 在原生 ARM64 runner 的 DLL、libffi、Go/llgo c-shared 测试通过；ARM64 COFF 重定位未实现 |
+| Linux / Windows 386 | 可检查；拒绝 32 位对象执行 | 未提供本项目执行支持 | CI 实际运行 32 位 Go 解析与拒绝测试；llgo setup 暂不接受 386 |
 | Linux RISC-V、LoongArch、PPC、s390x、ARM32 | 标准库能检查部分 ELF | 未提供本项目执行支持 | 没有对应重定位后端或执行测试 |
 | FreeBSD 等 BSD | 可构建纯 Go 检查路径 | 未提供 native 后端 | 需要系统接口、OS ABI 与执行测试 |
 | iOS / tvOS / watchOS / visionOS | 部分 Mach-O 元数据可检查 | 未提供宿主集成 | 识别并拒绝移动平台对象作为 macOS 插件；还涉及平台代码执行政策 |
@@ -49,12 +50,12 @@
 | C（clang；GCC 原生输出理论可用） | 普通 C ABI，`-fPIC` | clang 多平台对象、数据、BSS、common、跨对象、动态库已测；GCC 编译器专有扩展未全面验证 |
 | 汇编（llvm-mc/clang/as 等） | C ABI 入口 | 格式及指令/重定位子集需匹配；不是任意汇编包自动兼容 |
 | C++ | `extern "C"` 包装，或已知 mangled name 的简单函数 | 无异常/RTTI/复杂运行时的样例对象已测；完整 STL、类生命周期、继承布局用完整动态库及生成适配器 |
-| Rust | `extern "C"` + 导出稳定符号，`panic=abort` | macOS arm64 的 `no_std` leaf 对象实测；Rust ABI、trait object、panic unwinding 不支持 |
-| Zig | `export fn`、C-compatible 参数 | macOS arm64 对象实测；Zig 内部 ABI、复杂布局不自动适配 |
-| Fortran | `bind(C)` + `iso_c_binding`，值参数显式 `value` | gfortran 简单对象实测；I/O/数组描述符等需 libgfortran、运行时和包装 |
-| Go gc | `go build -buildmode=c-shared` 的 `//export` | macOS arm64 动态库实测；Go 自有 `.a`、普通 Go ABI、GC 数据结构不作为 C ABI 调用 |
+| Rust | `extern "C"` + 导出稳定符号，`panic=abort` | Linux/macOS 双架构 `no_std` leaf 对象实测；Rust ABI、trait object、panic unwinding 不支持 |
+| Zig | `export fn`、C-compatible 参数 | Linux/macOS 双架构对象实测；Zig 内部 ABI、复杂布局不自动适配 |
+| Fortran | `bind(C)` + `iso_c_binding`，值参数显式 `value` | Linux/macOS 双架构 gfortran 简单对象实测；I/O/数组描述符等需 libgfortran、运行时和包装 |
+| Go gc | `go build -buildmode=c-shared` 的 `//export` | Linux/macOS/Windows 双架构动态库实测；Go 自有 `.a`、普通 Go ABI、GC 数据结构不作为 C ABI 调用 |
 | llgo | 用其编译宿主；插件使用 C ABI 导出/`c-shared` | 宿主与插件都实测；不能因是 LLVM 输出就忽略 llgo GC、初始化和函数元数据 |
-| Swift | 完整动态库 + C 导出 façade | macOS arm64 C 导出 dylib 实测；原始对象因注册元数据拒绝；原生 Swift 泛型/async/throws 未实现 |
+| Swift | 完整动态库 + C 导出 façade | macOS 双架构 C 导出 dylib 实测；原始对象因注册元数据拒绝；原生 Swift 泛型/async/throws 未实现 |
 | Objective-C / ObjC++ | 系统加载 framework/dylib，C façade 或显式 ObjC 适配层 | 原始 ObjC 注册段拒绝；本库没有 objc_msgSend 签名/ARC 管理 |
 | D | 若输出独立 C ABI 边界可按普通原生输入尝试 | 不保留 DDL 的 D 特例；没有 D 编译器/运行时验证 |
 | Odin、Nim、Pascal、其他本机编译器 | C ABI 导出 + 完整运行时库或纯计算对象 | 架构上可扩展；尚无执行证据，不能计作已支持 |

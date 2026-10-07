@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// parseArchive handles GNU/SysV and BSD extended names. Index members are
+// parseArchive handles GNU/SysV, COFF and BSD extended names. Index members are
 // skipped: symbols are indexed from the objects, so stale ranlib tables do not
 // determine which code is loaded. Member bytes remain owned by this file.
 func parseArchive(name string, b []byte) (*file, error) {
@@ -50,13 +50,18 @@ func parseArchive(name string, b []byte) (*file, error) {
 		case strings.HasPrefix(mn, "/"):
 			o, e := strconv.Atoi(mn[1:])
 			if e != nil || o < 0 || o >= len(names) {
-				return nil, fmt.Errorf("invalid GNU archive name")
+				return nil, fmt.Errorf("invalid archive name offset")
 			}
-			end := bytes.IndexByte(names[o:], '\n')
+			// GNU long names end with /\n; COFF long names end with NUL.
+			// Both use the // member and /decimal-offset references.
+			end := bytes.IndexAny(names[o:], "\n\x00")
 			if end < 0 {
 				return nil, fmt.Errorf("unterminated archive name")
 			}
-			mn = strings.TrimSuffix(string(names[o:o+end]), "/")
+			mn = string(names[o : o+end])
+			if names[o+end] == '\n' {
+				mn = strings.TrimSuffix(mn, "/")
+			}
 		default:
 			mn = strings.TrimSuffix(mn, "/")
 		}

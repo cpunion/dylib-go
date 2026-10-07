@@ -15,11 +15,15 @@ var virtualFree = kernel32.NewProc("VirtualFree")
 var flushInstructionCache = kernel32.NewProc("FlushInstructionCache")
 
 func Alloc(n int) ([]byte, error) {
-	p, _, e := virtualAlloc.Call(0, uintptr(n), 0x3000, 0x04)
-	if p == 0 {
+	address, _, e := virtualAlloc.Call(0, uintptr(n), 0x3000, 0x04)
+	if address == 0 {
 		return nil, e
 	}
-	return unsafe.Slice((*byte)(unsafe.Pointer(p)), n), nil
+	// VirtualAlloc returns an OS-owned address, not a Go heap pointer. Its
+	// storage remains stable across GC until VirtualFree, so reinterpret the
+	// returned address bits as a pointer without a uintptr-to-pointer cast.
+	p := *(*unsafe.Pointer)(unsafe.Pointer(&address))
+	return unsafe.Slice((*byte)(p), n), nil
 }
 func Free(b []byte) error {
 	r, _, e := virtualFree.Call(uintptr(unsafe.Pointer(&b[0])), 0, 0x8000)
