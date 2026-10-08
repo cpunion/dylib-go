@@ -143,8 +143,11 @@ typedef struct {
     unsigned n;
     void *args[];
 } dylib_record_call;
+static size_t dylib_record_size(unsigned n) {
+    return dylib_array_size(sizeof(dylib_record_call),n,sizeof(void *));
+}
 static dylib_record_call *dylib_record_new(unsigned n) {
-    size_t size=dylib_array_size(sizeof(dylib_record_call),n,sizeof(void *));
+    size_t size=dylib_record_size(n);
     if (!size) return NULL;
     dylib_record_call *c=(dylib_record_call *)calloc(1,size);
     if (c) c->n=n;
@@ -226,11 +229,96 @@ import (
 func Available() bool { return true }
 
 type ffiBackend struct {
-	layoutMu sync.Mutex // Protect lazy owned layouts, never native execution.
-	plan     *C.dylib_call_plan
-	pool     nativePool
-	result   *nativeType
-	args     []*nativeType
+	layoutMu    sync.Mutex // Protect lazy owned layouts, never native execution.
+	plan        *C.dylib_call_plan
+	pool        nativePool
+	result      *nativeType
+	args        []*nativeType
+	recordMu    sync.Mutex // Protect idle buffers, never native execution.
+	records     []*recordBuffer
+	recordBytes uint64
+}
+
+// Explicit ownership is needed for native allocations: a sync.Pool could drop
+// them during GC without freeing them. Keep a bounded, plan-owned idle cache.
+const maxIdleRecordBuffers = 4
+const maxIdleRecordBytes = 1 << 20
+
+type recordBuffer struct {
+	call  *C.dylib_record_call
+	args  []unsafe.Pointer
+	out   unsafe.Pointer
+	roots nativePool // Fixed argument/result storage; lives until eviction/Close.
+	pool  nativePool // Per-call types, pointees, aliases and lifetime checks.
+	size  uint64
+}
+
+func (b *ffiBackend) acquireRecords() (*recordBuffer, error) {
+	b.recordMu.Lock()
+	var work *recordBuffer
+	if n := len(b.records); n != 0 {
+		work = b.records[n-1]
+		b.records[n-1] = nil
+		b.records = b.records[:n-1]
+		b.recordBytes -= work.size
+	}
+	b.recordMu.Unlock()
+	if work == nil {
+		work = &recordBuffer{pool: nativePool{abi: b.pool.abi, types: b, pointers: make(map[*Value]nativeCopy), owners: make(map[uint64]*Value)}}
+		work.call = C.dylib_record_new(C.uint(len(b.args)))
+		if work.call == nil {
+			return nil, fmt.Errorf("native call allocation failed")
+		}
+		work.size = uint64(C.dylib_record_size(C.uint(len(b.args))))
+		work.args = make([]unsafe.Pointer, len(b.args))
+		for i, t := range b.args {
+			mem, err := work.roots.allocate(uint64(C.dylib_type_size(t.ffi)))
+			if err != nil {
+				work.close()
+				return nil, err
+			}
+			work.args[i] = mem
+			C.dylib_record_arg(work.call, C.uint(i), mem)
+		}
+		var err error
+		work.out, err = work.roots.allocate(uint64(C.dylib_type_size(b.result.ffi)))
+		if err != nil {
+			work.close()
+			return nil, err
+		}
+		for _, buffer := range work.roots.buffers {
+			work.size += buffer.size
+		}
+	}
+	// Native code may inspect struct padding; restore calloc's zeroing guarantee.
+	for i, mem := range work.roots.allocations {
+		C.memset(mem, 0, C.size_t(work.roots.buffers[i].size))
+	}
+	work.pool.buffers = append(work.pool.buffers, work.roots.buffers...)
+	return work, nil
+}
+
+func (b *ffiBackend) releaseRecords(work *recordBuffer) {
+	// Copy-back has completed. Free temporary types/pointees and drop every Go
+	// owner before caching this context, including on marshaling/read errors.
+	work.pool.reset()
+	b.recordMu.Lock()
+	keep := len(b.records) < maxIdleRecordBuffers && work.size <= maxIdleRecordBytes-b.recordBytes
+	if keep {
+		b.records = append(b.records, work)
+		b.recordBytes += work.size
+	}
+	b.recordMu.Unlock()
+	if !keep {
+		work.close()
+	}
+}
+
+func (w *recordBuffer) close() {
+	w.pool.close()
+	w.roots.close()
+	C.free(unsafe.Pointer(w.call))
+	w.call, w.args, w.out = nil, nil, nil
 }
 
 // Only signature-declared pointees use this persistent cache. Opaque pointers
@@ -294,6 +382,13 @@ func prepare(s Signature) (callBackend, error) {
 }
 
 func (b *ffiBackend) close() {
+	b.recordMu.Lock()
+	works := b.records
+	b.records, b.recordBytes = nil, 0
+	b.recordMu.Unlock()
+	for _, work := range works {
+		work.close()
+	}
 	C.free(unsafe.Pointer(b.plan))
 	b.pool.close()
 }
@@ -352,6 +447,18 @@ func (p *nativePool) close() {
 	for i := len(p.allocations) - 1; i >= 0; i-- {
 		C.free(p.allocations[i])
 	}
+	clear(p.allocations)
+	p.allocations = p.allocations[:0]
+}
+func (p *nativePool) reset() {
+	p.close()
+	clear(p.layouts)
+	p.layouts = p.layouts[:0]
+	clear(p.buffers)
+	p.buffers = p.buffers[:0]
+	clear(p.pointers)
+	clear(p.owners)
+	p.err = nil
 }
 func (p *nativePool) allocate(size uint64) (unsafe.Pointer, error) {
 	if size > 65536 {
@@ -485,36 +592,26 @@ func (p *nativePool) read(d TypeDesc, n *nativeType, mem unsafe.Pointer, result 
 	return v
 }
 func (b *ffiBackend) invokeRecords(address uintptr, s Signature, args []Value) (Value, error) {
-	pool := nativePool{abi: b.pool.abi, types: b, pointers: make(map[*Value]nativeCopy), owners: make(map[uint64]*Value)}
-	defer pool.close()
-	resultDesc := s.ReturnType()
-	resultType := b.result
-	call := C.dylib_record_new(C.uint(len(args)))
-	if call == nil {
-		return Value{}, fmt.Errorf("native call allocation failed")
-	}
-	defer C.free(unsafe.Pointer(call))
-	for i, v := range args {
-		d := s.ArgumentType(i)
-		t := b.args[i]
-		mem, err := pool.allocate(uint64(C.dylib_type_size(t.ffi)))
-		if err != nil {
-			return Value{}, err
-		}
-		if err = pool.write(v, d, t, mem); err != nil {
-			return Value{}, err
-		}
-		C.dylib_record_arg(call, C.uint(i), mem)
-	}
-	out, err := pool.allocate(uint64(C.dylib_type_size(resultType.ffi)))
+	work, err := b.acquireRecords()
 	if err != nil {
 		return Value{}, err
 	}
-	C.dylib_record_execute(b.plan, call, C.uintptr_t(address), out)
+	defer b.releaseRecords(work)
+	pool := &work.pool
+	resultDesc := s.ReturnType()
+	resultType := b.result
+	for i, v := range args {
+		d := s.ArgumentType(i)
+		t := b.args[i]
+		if err := pool.write(v, d, t, work.args[i]); err != nil {
+			return Value{}, err
+		}
+	}
+	C.dylib_record_execute(b.plan, work.call, C.uintptr_t(address), work.out)
 	for _, copy := range pool.pointers {
 		*copy.value = pool.read(copy.desc, copy.native, copy.memory, false)
 	}
-	result := pool.read(resultDesc, resultType, out, true)
+	result := pool.read(resultDesc, resultType, work.out, true)
 	if pool.err != nil {
 		return Value{}, pool.err
 	}
