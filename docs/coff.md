@@ -2,6 +2,14 @@
 
 The Go linker implements these rules for AMD64, ARM64, and i386 COFF. Inputs still need supported relocations and a matching Windows host for execution.
 
+## Ordinary objects and bigobj
+
+Ordinary COFF/PE parsing uses Go's `debug/pe`. An independent Go reader handles bigobj's 56-byte header, format UUID, 32-bit section numbers, and 20-byte symbol records, following the [LLVM COFF format definitions](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/include/llvm/Object/COFF.h). Both paths then use the same symbol, COMDAT, relocation, and lifecycle implementation.
+
+Ordinary COFF section references above 32767 remain positive; only reserved values are interpreted as signed. Bigobj associative section records combine the low/high parent fields. Direct objects and archive members are accepted by content. Section data, symbol/string tables, auxiliary counts, and relocation ranges are checked before access.
+
+Extended relocation tables use the first record as a count marker, including that marker in the stored count. It is validated and excluded from actual relocations. This works for ordinary objects and bigobj. Bigobj does not widen relocation fields: a 16-bit SECTION relocation cannot encode an image ordinal above 65535. It also does not relax image size, W^X, architecture, TLS, or unwinding limits. Short import objects use a related signature but remain a separate, unsupported input until DLL dependency handling is implemented.
+
 ## Weak externals
 
 A COFF weak external has an auxiliary record naming its fallback symbol and archive search policy. It is not just an undefined ELF weak symbol. The supported policies follow the [Microsoft PE/COFF specification](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#auxiliary-format-3-weak-externals):
@@ -33,3 +41,5 @@ NEWEST is an explicit loader policy for selection value 7; current LLD rejects t
 ## Validation
 
 Clang-generated fixtures inspect all three COFF targets. Tests cover malformed records, alias chains/cycles, strong/native overrides, fallback archive extraction, address and section relocations, equal/unequal EXACT_MATCH content, and timestamp/tie selection. Existing Windows Go and llgo suites execute weak function calls from objects and archives and functions selected by EXACT_MATCH/NEWEST. Windows 386 executes with Go because setup-llgo does not install that architecture.
+
+Large fixtures are genuine Clang output with 33000 and 65540 padding sections, testing ordinary unsigned indexes, bigobj, high associative parents, weak fallback indexes, and archive parsing. Windows native tests call functions from high-section bigobj objects/archives and verify the last of 65536 relocated data pointers. Separate malformed-input tests cover header/UUID/version, sizes and offsets, auxiliary counts, and overflow markers.
