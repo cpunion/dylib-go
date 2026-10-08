@@ -133,11 +133,14 @@ func (g coffImportGraph) convert(o *object) (*object, bool) {
 		return nil, false
 	}
 	descriptor, ok := g.reference(o, force, 0)
-	if !ok || descriptor.o.sections[descriptor.section].name != ".idata$2" || descriptor.offset+20 > descriptor.o.sections[descriptor.section].size {
+	if !ok || descriptor.o.sections[descriptor.section].name != ".idata$2" || descriptor.offset != 0 || descriptor.o.sections[descriptor.section].size != 20 || !validCOFFImportHelper(descriptor.o) {
 		return nil, false
 	}
 	dllName, ok := g.reference(descriptor.o, descriptor.section, descriptor.offset+12)
 	if !ok {
+		return nil, false
+	}
+	if !validCOFFImportHelper(dllName.o) || dllName.offset != 0 {
 		return nil, false
 	}
 	dll, ok := dllName.name(0)
@@ -205,6 +208,62 @@ func (g coffImportGraph) convert(o *object) (*object, bool) {
 	}
 	copy.info.Imports = []ImportInfo{{DLL: dll, Symbol: public, Name: entry.name, Ordinal: entry.ordinal, Kind: kind}}
 	return &copy, true
+}
+
+// A descriptor/name member would normally be extracted with its import.
+// Do not bypass extra initialization or code by treating it as mere metadata.
+func validCOFFImportHelper(o *object) bool {
+	if len(o.groups) != 0 {
+		return false
+	}
+	for _, unsupported := range o.info.Unsupported {
+		if !strings.HasPrefix(unsupported, "COFF long import tables:") {
+			return false
+		}
+	}
+	for _, sec := range o.sections {
+		if sec == nil || sec.size == 0 {
+			continue
+		}
+		if sec.exec || sec.lifecycle != 0 {
+			return false
+		}
+		switch sec.name {
+		case ".idata$2":
+			if sec.size != 20 || len(sec.data) != 20 || !allZero(sec.data[4:12]) {
+				return false
+			}
+		case ".idata$4", ".idata$5":
+			if sec.size != uint64(o.info.Bits/8) || !allZero(sec.data) {
+				return false
+			}
+		case ".idata$6", ".idata$7":
+			end := bytes.IndexByte(sec.data, 0)
+			if end <= 0 || !allZero(sec.data[end:]) {
+				return false
+			}
+		default:
+			return false
+		}
+	}
+	rva := map[string]uint32{"amd64": 3, "arm64": 2, "386": 7}[o.info.Arch]
+	seen := make(map[uint64]bool)
+	for _, r := range o.relocs {
+		if r.section <= 0 || r.section >= len(o.sections) || o.sections[r.section] == nil || o.sections[r.section].name != ".idata$2" || (r.offset != 0 && r.offset != 12 && r.offset != 16) || r.typ != rva || r.symbol < 0 || r.symbol >= len(o.symbols) || seen[r.offset] {
+			return false
+		}
+		seen[r.offset] = true
+	}
+	return true
+}
+
+func allZero(data []byte) bool {
+	for _, v := range data {
+		if v != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // Require every relocation to belong to the known import template. This

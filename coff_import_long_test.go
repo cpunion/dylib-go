@@ -110,6 +110,12 @@ func TestCOFFLongImportTemplateValidation(t *testing.T) {
 	for _, mutation := range []func([]*object){
 		func(objects []*object) { objects[0].symbols = nil },
 		func(objects []*object) {
+			objects[0].sections = append(objects[0].sections, &section{name: ".text", size: 1, data: []byte{0xc3}, exec: true})
+		},
+		func(objects []*object) {
+			objects[1].sections = append(objects[1].sections, &section{name: ".CRT$XCU", size: 8, data: make([]byte, 8), lifecycle: lifecycleInit})
+		},
+		func(objects []*object) {
 			for _, s := range objects[1].sections {
 				if s != nil && s.name == ".idata$7" {
 					s.data = []byte("unterminated")
