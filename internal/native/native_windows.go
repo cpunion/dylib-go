@@ -13,6 +13,7 @@ var virtualAlloc = kernel32.NewProc("VirtualAlloc")
 var virtualProtect = kernel32.NewProc("VirtualProtect")
 var virtualFree = kernel32.NewProc("VirtualFree")
 var flushInstructionCache = kernel32.NewProc("FlushInstructionCache")
+var getProcAddress = kernel32.NewProc("GetProcAddress")
 
 func Alloc(n int) ([]byte, error) {
 	address, _, e := virtualAlloc.Call(0, uintptr(n), 0x3000, 0x04)
@@ -62,6 +63,13 @@ func Lookup(h uintptr, name string) uintptr {
 		return 0
 	}
 	p, _ := syscall.GetProcAddress(syscall.Handle(h), name)
+	return p
+}
+func LookupOrdinal(h uintptr, ordinal uint16) uintptr {
+	if h == 0 || ordinal == 0 {
+		return 0
+	}
+	p, _, _ := getProcAddress.Call(h, uintptr(ordinal))
 	return p
 }
 func Close(h uintptr) error {
