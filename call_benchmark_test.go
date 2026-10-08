@@ -70,3 +70,20 @@ func BenchmarkNativeCalls(b *testing.B) {
 		})
 	}
 }
+
+func BenchmarkNativeBindingCache(b *testing.B) {
+	s := nativeABILibrary(b, "testdata/many_arguments.c", "object")
+	sig := abi.Signature{Result: abi.I32, Args: []abi.Type{abi.I32, abi.I32}}
+	first, err := s.Bind("sum_two", sig)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		f, err := s.Bind("sum_two", sig)
+		if err != nil || f.plan != first.plan {
+			b.Fatalf("cached binding: %v", err)
+		}
+	}
+}

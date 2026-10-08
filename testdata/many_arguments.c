@@ -36,8 +36,10 @@
 
 typedef struct { int32_t a, b; } pair;
 EXPORT int32_t sum_two(int32_t a, int32_t b) { return a+b; }
+EXPORT int32_t sub_two(int32_t a, int32_t b) { return a-b; }
 EXPORT int32_t sum_pair(pair v) { return v.a+v.b; }
 EXPORT int32_t read_pair(pair *v) { return v->a+v->b; }
+EXPORT void *identity_pointer(void *p) { return p; }
 EXPORT int64_t sum_many(PARAMETERS(int32_t)) {
     int32_t values[] = { ARGUMENTS };
     int64_t sum = 0;
