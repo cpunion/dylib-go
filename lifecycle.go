@@ -289,8 +289,8 @@ func (im *image) prepareRuntimeHelpers() error {
 	for _, o := range im.objects {
 		for _, s := range o.symbols {
 			name := strings.TrimPrefix(s.name, "__imp_")
-			if s.section == 0 && runtimeHelper(name) {
-				if _, defined := im.defs[name]; !defined {
+			if (s.section == 0 || s.imported != nil) && runtimeHelper(name) {
+				if d, defined := im.defs[name]; !defined || d.sym().imported != nil {
 					needed[name] = true
 				}
 			}

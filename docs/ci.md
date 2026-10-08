@@ -32,6 +32,7 @@ All eight Go execution targets and six llgo targets set `DYLIB_TEST_REQUIRE_NATI
 | Fixed C callbacks: scalars/structs, errors, captures, leases, C-created threads with allocation/GC | Eight targets; object/archive/library and native worker fixtures | Six targets; collector-aware foreign-thread entry |
 | Foreign ELF/COFF COMDAT discard; COFF SECTION/SECREL; weak external search/aliases | Parser/relocation fixtures independent of host; Windows executes weak overrides and EXACT_MATCH/NEWEST selection | Same fixtures and native Windows execution |
 | COFF high section indexes, bigobj, and extended relocation tables | Foreign fixtures on every host; Windows executes objects/archives and checks the final extended relocation | Same fixtures and Windows AMD64/ARM64 execution |
+| COFF short imports and DLL dependencies | All-target metadata policies; Windows executes genuine LLD `.lib` files, functions/data, name/ordinal imports, paths, handle reuse, and failure/retry | Same metadata and Windows AMD64/ARM64 execution |
 | Rust `extern C`, Zig `export`, Fortran `bind(C)` | Both Linux/macOS architectures | Both Linux/macOS architectures |
 | Swift C-exported library and raw metadata refusal | Both macOS architectures | Both macOS architectures |
 | Go c-shared | Eight library targets, including both 386 hosts | Six library targets |
