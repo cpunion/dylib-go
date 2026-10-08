@@ -217,6 +217,70 @@ func TestCOFFImportedRuntimeHelper(t *testing.T) {
 			t.Fatalf("session helper import: %#x %v", got, err)
 		}
 	}
+	// An ordinary object definition still overrides an imported helper.
+	strong := &object{symbols: []symbol{{name: "atexit", section: -1, value: 0x12345678, global: true}}}
+	defs, err = definitions([]*object{f.obj, strong})
+	if err != nil {
+		t.Fatal(err)
+	}
+	im = &image{base: 0x10000000, defs: defs, got: map[uintptr]uintptr{}, mem: make([]byte, 64), pointerSize: 8, stubStart: 64}
+	if _, err := im.symbol(f.obj, 0, false); err != nil || le.Uint64(im.mem) != 0x12345678 {
+		t.Fatalf("object-defined helper import: %v", err)
+	}
+}
+
+func TestNativeCOFFImportHelperPreparation(t *testing.T) {
+	needNative(t)
+	f, err := parse("atexit import", shortImport(0x8664, 0, 1, "atexit", "not-opened-crt.dll", "", 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Exercise native helper preparation on every host; no foreign code is
+	// executed, and the generated helper thunk uses this host's ABI.
+	f.obj.info.Arch, f.obj.info.OS = runtime.GOARCH, runtime.GOOS
+	if runtime.GOARCH == "386" {
+		f.obj.info.Bits = 32
+	}
+	defs, err := definitions([]*object{f.obj})
+	if err != nil {
+		t.Fatal(err)
+	}
+	im, err := newImage([]*object{f.obj}, defs, func(string) uintptr { return 0 }, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer im.close()
+	if im.lifecycle == nil || im.hooks["atexit"] == 0 {
+		t.Fatal("import-only root did not prepare the session helper")
+	}
+}
+
+func TestNativeCOFFImportedExitRegistration(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("DLL imports require Windows")
+	}
+	needNative(t)
+	dir := t.TempDir()
+	host, _, read := lifecycleObserver(t, dir)
+	src := filepath.Join(dir, "imported-exit.c")
+	if err := os.WriteFile(src, []byte("extern void record_event(int);\n__declspec(dllimport) int atexit(void (*)(void));\nstatic void done(void){record_event(9);}\nint register_imported(int a,int b){return atexit(done)==0?a+b:-1;}\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	obj := compile(t, src, filepath.Join(dir, "imported-exit.obj"))
+	machine := map[string]uint16{"amd64": 0x8664, "arm64": 0xaa64, "386": 0x14c}[runtime.GOARCH]
+	path := filepath.Join(dir, "atexit.obj")
+	if err := os.WriteFile(path, shortImport(machine, 0, 1, "atexit", "not-opened-crt.dll", "", 0), 0600); err != nil {
+		t.Fatal(err)
+	}
+	s := New(Options{})
+	defer s.Close()
+	load(t, s, host, obj, path)
+	call(t, s, "register_imported", 20, 22, 42)
+	expectEvents(t, read)
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+	expectEvents(t, read, 9)
 }
 
 func nativeImportFixture(t *testing.T) (string, string, string) {
