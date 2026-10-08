@@ -18,8 +18,8 @@ The execution columns describe native loading and calls on the listed host. Insp
 | --- | --- | --- | --- | --- | --- |
 | Linux | amd64 | ELF64 little-endian RELA `.o` | GNU/BSD ar and GNU thin `.a` | ELF `.so` | Go and llgo native calls |
 | Linux | arm64 | ELF64 little-endian RELA `.o` | GNU/BSD ar and GNU thin `.a` | ELF `.so` | Go and llgo native calls |
-| macOS | amd64 | Mach-O 64 `.o` | GNU/BSD ar and GNU thin `.a` | Mach-O `.dylib` | Go and llgo native calls |
-| macOS | arm64 | Mach-O 64 `.o` | GNU/BSD ar and GNU thin `.a` | Mach-O `.dylib` | Go and llgo native calls |
+| macOS | amd64 | Mach-O 64 / universal `.o` | GNU/BSD ar, GNU thin / universal `.a` | Mach-O / universal `.dylib` | Go and llgo native calls |
+| macOS | arm64 | Mach-O 64 / universal `.o` | GNU/BSD ar, GNU thin / universal `.a` | Mach-O / universal `.dylib` | Go and llgo native calls |
 | Windows | amd64 | AMD64 COFF `.obj` / `.o` | COFF/GNU ar and GNU thin `.lib` / `.a` | PE `.dll` | Go and llgo native calls |
 | Windows | arm64 | ARM64 COFF `.obj` / `.o` | COFF/GNU ar and GNU thin `.lib` / `.a` | PE `.dll` | Go and llgo native calls |
 | Linux | 386 | ELF32 little-endian REL/RELA `.o` | GNU/BSD ar and GNU thin `.a` | ELF32 `.so` | Native 32-bit Go calls on amd64 runners |
@@ -27,7 +27,7 @@ The execution columns describe native loading and calls on the listed host. Insp
 
 The six amd64/arm64 targets test scalar and struct calls, C callbacks, and C-created callback threads with both Go and llgo; Linux/Windows 386 use native 32-bit Go processes. The current setup-llgo installer accepts only amd64/arm64, so no llgo 386 execution is claimed. Ordinary Go execution requires cgo; metadata inspection does not. Raw objects and archives support the implemented relocation subset, ELF COMDAT, COFF COMDAT selections 1–7, and COFF weak aliases. Modern initialization/termination tables and session-owned C/C++ exit registrations are supported; TLS and exception unwinding remain unsupported on that path. See [COFF selection rules](docs/coff.md) and [object lifecycle](docs/lifecycle.md) for limits. Shared libraries use the host OS loader. Inputs and call signatures must match the host architecture and OS ABI; this table does not imply cross-CPU or cross-OS execution.
 
-Metadata inspection uses pure Go and can read ELF, Mach-O, COFF/PE (including bigobj and short/GNU long import libraries), and ordinary/GNU thin ar files independently of the file's CPU architecture. Windows short and standard GNU long import libraries resolve selected symbols from their DLLs; `Options.LibraryPaths` configures dependency directories. See [archive containers and paths](docs/archives.md) for thin references and snapshots. Fat Mach-O, nonstandard raw import tables, OMF, D `.ddl`, Go gc `.a`, and LLVM IR/bitcode are not directly supported library inputs. See the [detailed format limits and language matrix](docs/support.md) for other platforms and unsupported features.
+Metadata inspection uses pure Go and can read ELF, Mach-O (including universal containers), COFF/PE (including bigobj and short/GNU long import libraries), and ordinary/GNU thin ar files independently of the file's CPU architecture. Windows short and standard GNU long import libraries resolve selected symbols from their DLLs; `Options.LibraryPaths` configures dependency directories. See [archive containers and paths](docs/archives.md) for thin references and snapshots. See [universal Mach-O selection](docs/universal.md) for baseline CPU slices and shared-library limits. Nonstandard raw import tables, OMF, D `.ddl`, Go gc `.a`, and LLVM IR/bitcode are not directly supported library inputs. See the [detailed format limits and language matrix](docs/support.md) for other platforms and unsupported features.
 
 ## Installation
 
