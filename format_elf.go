@@ -96,7 +96,7 @@ func parseELF(name string, b []byte) (*file, error) {
 		if s.Flags&elf.SHF_ALLOC == 0 || strings.HasPrefix(s.Name, ".eh_frame") || s.Name == ".gcc_except_table" {
 			continue
 		}
-		if strings.HasPrefix(s.Name, ".ctors") || strings.HasPrefix(s.Name, ".dtors") || s.Name == ".init" || s.Name == ".fini" {
+		if s.Name == ".init" || s.Name == ".fini" {
 			o.unsupported("automatic initialization/finalization: " + s.Name)
 		}
 		v := &section{name: s.Name, size: s.Size, align: s.Addralign, write: s.Flags&elf.SHF_WRITE != 0, exec: s.Flags&elf.SHF_EXECINSTR != 0}
@@ -107,6 +107,14 @@ func parseELF(name string, b []byte) (*file, error) {
 			v.lifecycle = lifecycleInit
 		case elf.SHT_FINI_ARRAY:
 			v.lifecycle = lifecycleFini
+		}
+		if s.Name == ".ctors" || strings.HasPrefix(s.Name, ".ctors.") {
+			v.lifecycle, v.legacyLifecycle = lifecycleInit, true
+		} else if s.Name == ".dtors" || strings.HasPrefix(s.Name, ".dtors.") {
+			v.lifecycle, v.legacyLifecycle = lifecycleFini, true
+		}
+		if v.legacyLifecycle && s.Type != elf.SHT_PROGBITS {
+			return nil, fmt.Errorf("%s: legacy lifecycle table requires SHT_PROGBITS", s.Name)
 		}
 		if v.lifecycle != 0 {
 			if err := configureLifecycle(v, o.info.Bits); err != nil {

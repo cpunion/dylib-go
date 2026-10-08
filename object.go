@@ -111,6 +111,7 @@ type section struct {
 	offset                uint64 // Assigned only in the private image built by Link.
 	lifecycle             lifecycleKind
 	priority              uint32
+	legacyLifecycle       bool // ELF .ctors/.dtors: reverse entries and -1 sentinels.
 }
 
 // section: 0 undefined, -1 absolute, -2 common, -3 ignored/debug, -4 DLL import.

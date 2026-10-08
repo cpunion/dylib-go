@@ -24,13 +24,16 @@ func configureLifecycle(s *section, bits int) error {
 		return fmt.Errorf("%s: invalid lifecycle pointer array", s.name)
 	}
 	s.priority = 65535
-	for _, prefix := range []string{".preinit_array.", ".init_array.", ".fini_array."} {
+	for _, prefix := range []string{".preinit_array.", ".init_array.", ".fini_array.", ".ctors.", ".dtors."} {
 		if strings.HasPrefix(s.name, prefix) {
 			value, err := strconv.ParseUint(strings.TrimPrefix(s.name, prefix), 10, 16)
 			if err != nil {
 				return fmt.Errorf("%s: invalid initialization priority", s.name)
 			}
 			s.priority = uint32(value)
+			if s.legacyLifecycle {
+				s.priority = 65535 - s.priority
+			}
 		}
 	}
 	return nil
@@ -167,7 +170,14 @@ func (im *image) prepareLifecycle() error {
 			return err
 		}
 		coff = a.object.info.Format == "COFF"
-		for pos := uint64(0); pos < s.size; pos += im.pointerSize {
+		for entry := uint64(0); entry < s.size; entry += im.pointerSize {
+			pos := entry
+			if s.legacyLifecycle {
+				// .ctors execute backward. .dtors are collected backward too,
+				// so reversing the complete finalizer list restores their
+				// forward entry order while reversing priorities/dependencies.
+				pos = s.size - im.pointerSize - entry
+			}
 			data := im.mem[s.offset+pos:]
 			var address uint64
 			if im.pointerSize == 4 {
@@ -177,6 +187,9 @@ func (im *image) prepareLifecycle() error {
 			}
 			if address == 0 { // COFF boundary sentinels and empty entries.
 				continue
+			}
+			if s.legacyLifecycle && (im.pointerSize == 4 && address == 0xffffffff || im.pointerSize == 8 && address == ^uint64(0)) {
+				continue // Legacy CRT start sentinel, never a function pointer.
 			}
 			if a.object.info.Arch == "arm64" && address%4 != 0 || !im.executableAddress(uintptr(address)) {
 				return fmt.Errorf("%s: %s+%#x: initializer/finalizer is outside executable image sections", a.object.info.Name, s.name, pos)
