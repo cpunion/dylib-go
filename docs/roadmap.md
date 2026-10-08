@@ -11,10 +11,10 @@ The CLI now accepts Go-style signature declarations and typed invocations throug
 | Coverage area | Work still required |
 | --- | --- |
 | Current 64-bit raw targets | Remaining relocations, Mach-O coalescing/indirect symbols, remaining lifecycle forms, TLS, and unwinder registration |
-| Windows ARM64 raw objects | Import-library handling, remaining relocations/lifecycle forms, and unwind registration |
+| Windows ARM64 raw objects | Nonstandard import tables, remaining relocations/lifecycle forms, and unwind registration |
 | 386 and additional ISAs | 386 executes C cdecl on Linux/Windows with Go; Windows 386 stdcall/fastcall are implemented; other conventions and llgo qualification remain. Additional ISAs need linker/ABI backends and execution tests |
 | BSD and Apple mobile hosts | Native OS backend, ABI/runtime integration, platform policy compatibility, and device tests |
-| Additional containers | Import libraries, thin archives, universal target selection; optional IR compilation |
+| Additional containers | Nonstandard import tables, thin archives, universal target selection; optional IR compilation |
 | Full dynamic C/C++ interfaces | Unions, packed structs, bitfields, additional callback conventions/aggregates, and generated declaration validation |
 | Swift, ObjC, and other language ABIs | Dedicated metadata, ownership, calling-convention, initialization, and runtime adapters |
 | Foreign CPU or OS execution | An appropriate emulator/system process plus RPC; native relocation cannot supply OS services |
@@ -26,7 +26,7 @@ Complete shared libraries already use the host OS loader for their dependency, i
 
 Future extensions need explicit implementation and tests:
 
-1. **Windows object coverage:** native Go and llgo objects, archives, and DLLs are covered for AMD64/ARM64, plus Go for i386. Weak aliases, COMDAT selections 1–7, bigobj, and extended relocation tables are implemented. Further work includes import libraries, remaining lifecycle forms, unwind registration, and additional architecture-specific relocations.
+1. **Windows object coverage:** native Go and llgo objects, archives, and DLLs are covered for AMD64/ARM64, plus Go for i386. Weak aliases, COMDAT selections 1–7, bigobj, extended relocation tables, and short/GNU long import libraries are implemented. Further work includes nonstandard import tables, remaining lifecycle forms, unwind registration, and additional architecture-specific relocations.
 2. **Object initialization and exceptions:** modern platform tables, dependency ordering, cycle handling, validation rollback, and session-owned exit registration are implemented. Add legacy tables, Mach-O relative offsets, and integer-returning CRT initialization; then register `.eh_frame`, compact unwind, or Windows runtime function tables. Complete OS libraries currently provide those services.
 3. **TLS and more relocations:** define each target's TLS model and thread registration/destruction; extend ARM64 COFF coverage and add RISC-V, LoongArch, and other relocation backends. Parser support alone does not provide execution support.
 4. **Archive and object containers:** universal slice selection, thin-archive path handling, and optional LLVM bitcode/IR compilation. OMF and D `.ddl` compatibility remain outside scope.
@@ -44,7 +44,9 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Fixed-length array members and pointees, including nested arrays/records and callbacks.
 - [x] COFF weak fallback chains, archive search policies, and COMDAT EXACT_MATCH/NEWEST.
 - [x] COFF bigobj and extended relocation tables, including high section indexes and real object/archive calls.
-- [ ] COFF short import libraries, with DLL dependency and real call tests.
+- [x] COFF short import libraries, with DLL dependency and real call tests.
+- [x] Standard GNU COFF long import libraries, including MinGW consumer and genuine GNU dlltool fixture execution.
+- [ ] Mixed/custom COFF import layouts and delay import tables.
 - [ ] Remaining relocations on existing targets; Mach-O indirect symbols/coalesced sections.
 - [ ] Legacy ELF lifecycle tables/code, Mach-O initializer offsets, and COFF integer-returning CRT initializers.
 - [ ] Native unwind registration and cleanup on POSIX/Windows.

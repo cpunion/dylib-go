@@ -110,6 +110,12 @@ func parseCOFF(name string, b []byte) (*file, error) {
 	o.sections = make([]*section, len(f.sections)+1)
 	for i, s := range f.sections {
 		flags := s.flags
+		if s.name == ".idata" || strings.HasPrefix(s.name, ".idata$") {
+			o.unsupported("COFF long import tables: " + s.name)
+		}
+		if s.name == ".didat" || strings.HasPrefix(s.name, ".didat$") {
+			o.unsupported("COFF delay import tables: " + s.name)
+		}
 		if flags&0x200 != 0 || strings.HasPrefix(s.name, ".debug") || s.name == ".drectve" || s.name == ".pdata" || s.name == ".xdata" {
 			continue
 		}
@@ -178,6 +184,9 @@ func parseCOFF(name string, b []byte) (*file, error) {
 		for _, r := range s.relocs {
 			o.relocs = append(o.relocs, relocation{section: i + 1, offset: uint64(r.VirtualAddress), typ: uint32(r.Type), symbol: int(r.SymbolTableIndex), pair: -1})
 		}
+	}
+	if imported, ok := newCOFFImportGraph([]*object{o}).convert(o); ok {
+		o = imported
 	}
 	return finish(o), nil
 }

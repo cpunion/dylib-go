@@ -22,6 +22,9 @@ var ErrLinked = errors.New("dylib: session is already linked; create a new sessi
 // (for example libc on POSIX). Explicitly loaded libraries are always searched.
 type Options struct {
 	ProcessSymbols bool
+	// LibraryPaths searches these directories before the importing file's
+	// directory and OS loader paths. Explicitly loaded matching DLLs win.
+	LibraryPaths []string
 	// KeepLibraries leaves OS library references alive after Close. Use this
 	// for runtimes with background threads or registrations (e.g. Go c-shared).
 	KeepLibraries bool
@@ -32,18 +35,20 @@ type Options struct {
 // Close invalidates every returned address. Callers using raw addresses must
 // ensure no native threads or callbacks still use them before calling Close.
 type Session struct {
-	mu      sync.Mutex
-	opts    Options
-	files   []*file
-	libs    []uintptr
-	paths   map[string]bool
-	defined map[string]uintptr
-	image   *image
-	closed  bool
-	plans   []*abi.CallPlan
+	mu         sync.Mutex
+	opts       Options
+	files      []*file
+	libs       []uintptr
+	dllHandles map[string]uintptr
+	paths      map[string]bool
+	defined    map[string]uintptr
+	image      *image
+	closed     bool
+	plans      []*abi.CallPlan
 }
 
 func New(opts Options) *Session {
+	opts.LibraryPaths = append([]string(nil), opts.LibraryPaths...)
 	return &Session{opts: opts, paths: map[string]bool{}, defined: map[string]uintptr{}}
 }
 
@@ -89,6 +94,12 @@ func (s *Session) Load(path string) error {
 	if err != nil {
 		return err
 	}
+	if f.obj != nil {
+		f.obj.directory = filepath.Dir(abs)
+	}
+	for _, member := range f.members {
+		member.obj.directory = filepath.Dir(abs)
+	}
 	switch f.info.Kind {
 	case "archive":
 		s.files = append(s.files, f)
@@ -106,6 +117,12 @@ func (s *Session) Load(path string) error {
 			return e
 		}
 		s.libs = append(s.libs, h)
+		if runtime.GOOS == "windows" {
+			if s.dllHandles == nil {
+				s.dllHandles = make(map[string]uintptr)
+			}
+			s.dllHandles[strings.ToLower(filepath.Base(abs))] = h
+		}
 	default:
 		return fmt.Errorf("%s: executables cannot be loaded as libraries", path)
 	}
@@ -202,6 +219,20 @@ func definitions(objs []*object) (map[string]definition, error) {
 				continue
 			}
 			old := d.sym()
+			if old.imported != nil || v.imported != nil {
+				if old.imported != nil && v.imported == nil {
+					m[v.name] = definition{o, i}
+					continue
+				}
+				if old.imported == nil && v.imported != nil {
+					continue
+				}
+				a, b := old.imported, v.imported
+				if strings.EqualFold(a.entry.dll, b.entry.dll) && a.entry.name == b.entry.name && a.entry.ordinal == b.entry.ordinal && a.indirect == b.indirect {
+					continue
+				}
+				return nil, fmt.Errorf("conflicting DLL imports for %s", v.name)
+			}
 			if old.section == -2 && v.section == -2 {
 				continue
 			} // Merged by layout.
@@ -380,11 +411,15 @@ func (s *Session) link(roots []string) error {
 		return err
 	}
 	for n := range s.defined {
-		if _, ok := defs[n]; ok {
+		if d, ok := defs[n]; ok && d.sym().imported == nil {
 			return fmt.Errorf("symbol %s is defined by both host and object", n)
 		}
 	}
-	im, err := newImage(objs, defs, s.external)
+	imports, err := s.prepareImports(objs)
+	if err != nil {
+		return err
+	}
+	im, err := newImage(objs, defs, s.external, imports)
 	if err != nil {
 		return err
 	}
@@ -438,6 +473,7 @@ func (s *Session) Close() error {
 		}
 	}
 	s.libs = nil
+	s.dllHandles = nil
 	return err
 }
 
@@ -447,6 +483,7 @@ type image struct {
 	objects                                []*object
 	defs                                   map[string]definition
 	aliases                                map[string]definition
+	imports                                map[*coffImport]uintptr
 	common                                 map[string]uint64
 	external                               func(string) uintptr
 	resolved                               map[string]uintptr
@@ -466,8 +503,8 @@ func alignUp(n, a uint64) uint64 {
 	}
 	return (n + a - 1) &^ (a - 1)
 }
-func newImage(objs []*object, defs map[string]definition, external func(string) uintptr) (*image, error) {
-	im := &image{objects: objs, defs: defs, external: external, common: map[string]uint64{}, resolved: map[string]uintptr{}, got: map[uintptr]uintptr{}, stubs: map[uintptr]uintptr{}, page: uint64(os.Getpagesize())}
+func newImage(objs []*object, defs map[string]definition, external func(string) uintptr, imports map[*coffImport]uintptr) (*image, error) {
+	im := &image{objects: objs, defs: defs, external: external, imports: imports, common: map[string]uint64{}, resolved: map[string]uintptr{}, got: map[uintptr]uintptr{}, stubs: map[uintptr]uintptr{}, page: uint64(os.Getpagesize())}
 	var err error
 	im.aliases, err = weakAliases(objs)
 	if err != nil {
@@ -480,6 +517,11 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	var size, count uint64
 	for _, o := range objs {
 		count += uint64(len(o.relocs))
+		for _, v := range o.symbols {
+			if v.imported != nil && v.imported.indirect {
+				count++
+			}
+		}
 		for _, s := range o.sections {
 			if s == nil {
 				continue
@@ -560,6 +602,17 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	}()
 	if e := im.prepareRuntimeHelpers(); e != nil {
 		return nil, e
+	}
+	// Populate every selected IAT slot before its pages become read-only,
+	// including imports selected by roots with no object relocations.
+	for _, o := range objs {
+		for i, v := range o.symbols {
+			if v.imported != nil {
+				if _, err := im.symbol(o, i, false); err != nil {
+					return nil, err
+				}
+			}
+		}
 	}
 	for _, o := range objs {
 		for _, s := range o.sections {
@@ -649,6 +702,31 @@ func (im *image) symbol(o *object, index int, local bool) (uintptr, error) {
 	}
 	o, s := d.o, d.sym()
 	switch s.section {
+	case -4:
+		if s.imported == nil {
+			return 0, fmt.Errorf("missing COFF import metadata")
+		}
+		entry := s.imported.entry
+		p := im.hooks[entry.public]
+		if p == 0 {
+			p = im.imports[entry]
+		}
+		if p == 0 && runtimeHelper(entry.public) {
+			if d, ok := im.defs[entry.public]; ok && d.sym().imported == nil {
+				var err error
+				p, err = im.symbol(d.o, d.index, false)
+				if err != nil {
+					return 0, err
+				}
+			}
+		}
+		if p == 0 {
+			return 0, fmt.Errorf("unresolved DLL import %s", entry.public)
+		}
+		if s.imported.indirect {
+			return im.gotSlot(p)
+		}
+		return p, nil
 	case 0:
 		if o.info.Format == "ELF" && o.info.Arch == "386" && s.name == "_GLOBAL_OFFSET_TABLE_" {
 			return im.base + uintptr(im.gotStart), nil
