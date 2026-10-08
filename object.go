@@ -20,6 +20,7 @@ type Info struct {
 	OS          string       `json:"os,omitempty"`
 	CPUSubtype  uint32       `json:"cpu_subtype,omitempty"`
 	Bits        int          `json:"bits,omitempty"`
+	Thin        bool         `json:"thin,omitempty"`
 	Symbols     []SymbolInfo `json:"symbols,omitempty"`
 	Imports     []ImportInfo `json:"imports,omitempty"`
 	Members     []Info       `json:"members,omitempty"`
@@ -42,6 +43,7 @@ type ImportInfo struct {
 }
 
 // Inspect reads metadata only; it can inspect foreign targets on any host.
+// Thin archives also read their referenced external files.
 func Inspect(path string) (Info, error) {
 	b, err := readFile(path)
 	if err != nil {
@@ -57,7 +59,9 @@ func Inspect(path string) (Info, error) {
 const maxFile = 256 << 20
 const maxImage = 64 << 20
 
-func readFile(path string) ([]byte, error) {
+func readFile(path string) ([]byte, error) { return readFileLimit(path, maxFile) }
+
+func readFileLimit(path string, limit int64) ([]byte, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -67,8 +71,8 @@ func readFile(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !st.Mode().IsRegular() || st.Size() > maxFile {
-		return nil, fmt.Errorf("%s: expected regular file of at most %d bytes", path, maxFile)
+	if !st.Mode().IsRegular() || st.Size() > limit {
+		return nil, fmt.Errorf("%s: expected regular file of at most %d bytes", path, limit)
 	}
 	b := make([]byte, st.Size())
 	_, err = f.ReadAt(b, 0)
@@ -146,7 +150,7 @@ func parse(name string, b []byte) (*file, error) {
 	case bytes.HasPrefix(b, []byte("!<arch>\n")):
 		f, err = parseArchive(name, b)
 	case bytes.HasPrefix(b, []byte("!<thin>\n")):
-		err = fmt.Errorf("thin archives are not supported; use a regular archive")
+		f, err = parseThinArchive(name, b)
 	case bytes.HasPrefix(b, []byte("\x7fELF")):
 		f, err = parseELF(name, b)
 	case len(b) >= 4 && (binary.LittleEndian.Uint32(b) == 0xfeedfacf || binary.LittleEndian.Uint32(b) == 0xfeedface || binary.BigEndian.Uint32(b) == 0xfeedfacf || binary.BigEndian.Uint32(b) == 0xfeedface):

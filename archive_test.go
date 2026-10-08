@@ -30,15 +30,24 @@ func TestArchiveLongNameFormats(t *testing.T) {
 	second := "another_long_archive_member_name.obj"
 	for _, tc := range []struct {
 		name, terminator string
+		padded           bool
 	}{
-		{"GNU", "/\n"},
-		{"COFF", "\x00"},
+		{"GNU", "/\n", false},
+		{"COFF", "\x00", false},
+		{"GNU-padded", "/\n", true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			names := []byte(first + tc.terminator + second + tc.terminator)
 			b := append([]byte("!<arch>\n"), archiveMemberBytes("//", names)...)
-			b = append(b, archiveMemberBytes("/0", obj)...)
-			b = append(b, archiveMemberBytes("/"+strconv.Itoa(len(first)+len(tc.terminator)), obj)...)
+			ref := func(offset int) string {
+				name := "/" + strconv.Itoa(offset)
+				if tc.padded {
+					name = fmt.Sprintf("%-15s/", name)
+				}
+				return name
+			}
+			b = append(b, archiveMemberBytes(ref(0), obj)...)
+			b = append(b, archiveMemberBytes(ref(len(first)+len(tc.terminator)), obj)...)
 			f, err := parse("names.lib", b)
 			if err != nil {
 				t.Fatal(err)

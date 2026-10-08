@@ -38,7 +38,7 @@ func TestDuplicateAndUnknownSymbol(t *testing.T) {
 }
 
 func TestMalformedArchives(t *testing.T) {
-	for _, b := range [][]byte{nil, []byte("!<arch>\nx"), []byte("!<thin>\n"), append([]byte("!<arch>\n"), make([]byte, 60)...)} {
+	for _, b := range [][]byte{nil, []byte("!<arch>\nx"), []byte("!<thin>\nx"), append([]byte("!<arch>\n"), make([]byte, 60)...)} {
 		if _, e := parse("bad", b); e == nil {
 			t.Fatal("malformed input accepted")
 		}

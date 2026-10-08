@@ -32,7 +32,8 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 | GNU long import libraries (`.a` / `.lib`) | Standard per-symbol IAT/thunk templates decoded across descriptor/DLL-name members; functions/data/names/ordinals supported. Arbitrary mixed import/code objects are rejected |
 | `.so`, `.dylib`, PE DLL | Host OS loads complete images, dependencies, TLS, and initialization |
 | PE EXE, ELF EXEC/PIE, Mach-O EXEC | Identified and rejected as library inputs |
-| Thin archives, fat Mach-O, nonstandard/delay import tables | Rejected or unsupported; use a supported import library, an ordinary target slice/object, or load the DLL directly |
+| GNU/LLVM thin archives | External objects and GNU proxy references into regular archives; snapshot reads and the same lazy extraction as ordinary archives. See [paths and limits](archives.md) |
+| Fat Mach-O, nonstandard/delay import tables | Rejected or unsupported; use a supported import library, an ordinary target slice/object, or load the DLL directly |
 | OMF, D `.ddl`, Go gc `.a`, LLVM bitcode, raw LLVM IR | Not directly loaded; matching toolchains can first compile IR/bitcode to native `.o` |
 
 Implemented relocation families:
