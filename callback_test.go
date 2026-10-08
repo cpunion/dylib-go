@@ -17,30 +17,36 @@ import (
 
 func callbackLibrary(t *testing.T, input string) *Session {
 	t.Helper()
+	return nativeABILibrary(t, "testdata/callbacks.c", input)
+}
+
+// All dynamic ABI fixtures run as standalone objects, archives, and OS libraries.
+func nativeABILibrary(t *testing.T, source, input string) *Session {
+	t.Helper()
 	if !abi.Available() {
-		t.Skip("callbacks require libffi")
+		t.Skip("requires libffi")
 	}
 	needNative(t)
 	dir := t.TempDir()
 	var path string
 	switch input {
 	case "object", "archive":
-		path = compile(t, "testdata/callbacks.c", filepath.Join(dir, "callbacks.o"))
+		path = compile(t, source, filepath.Join(dir, "native.o"))
 		if input == "archive" {
-			archive := filepath.Join(dir, "callbacks.a")
+			archive := filepath.Join(dir, "native.a")
 			command(t, "ar", "rcs", archive, path)
 			path = archive
 		}
 	case "library":
-		name, flag := "callbacks.so", "-shared"
+		name, flag := "native.so", "-shared"
 		if runtime.GOOS == "darwin" {
-			name, flag = "callbacks.dylib", "-dynamiclib"
+			name, flag = "native.dylib", "-dynamiclib"
 		}
 		if runtime.GOOS == "windows" {
-			name = "callbacks.dll"
+			name = "native.dll"
 		}
 		path = filepath.Join(dir, name)
-		args := []string{flag, "-O0", "testdata/callbacks.c", "-o", path}
+		args := []string{flag, "-O0", source, "-o", path}
 		if runtime.GOOS != "windows" {
 			args = append(args, "-fPIC")
 		}
@@ -49,13 +55,16 @@ func callbackLibrary(t *testing.T, input string) *Session {
 		}
 		command(t, compiler(), args...)
 	}
-	s := New(Options{})
-	if runtime.GOOS == "windows" && runtime.GOARCH == "386" && input != "library" {
-		// MSVC's large struct copies require the host CRT's memcpy entry.
+	// Aggregate copies/initializers may call the host's memcpy or memset.
+	s := New(Options{ProcessSymbols: runtime.GOOS != "windows"})
+	if runtime.GOOS == "windows" && input != "library" {
 		root := os.Getenv("SystemRoot")
-		crt := filepath.Join(root, "SysWOW64", "msvcrt.dll")
-		if _, err := os.Stat(crt); err != nil {
-			crt = filepath.Join(root, "System32", "msvcrt.dll")
+		crt := filepath.Join(root, "System32", "msvcrt.dll")
+		if runtime.GOARCH == "386" {
+			wow := filepath.Join(root, "SysWOW64", "msvcrt.dll")
+			if _, err := os.Stat(wow); err == nil {
+				crt = wow
+			}
 		}
 		load(t, s, crt)
 	}

@@ -124,9 +124,9 @@ func formatValue(v abi.Value) (string, error) {
 		return strconv.FormatUint(uint64(uint8(v.Bits)), 10), nil
 	case abi.U16:
 		return strconv.FormatUint(uint64(uint16(v.Bits)), 10), nil
-	case abi.Struct:
+	case abi.Struct, abi.Array:
 		if v.Aggregate == nil {
-			return "", fmt.Errorf("missing struct fields")
+			return "", fmt.Errorf("missing aggregate members")
 		}
 		var fields []string
 		for i, f := range v.Aggregate.Fields {
@@ -134,8 +134,10 @@ func formatValue(v abi.Value) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if name := v.Aggregate.Type.Fields[i].Name; name != "" {
-				text = name + ":" + text
+			if v.Type == abi.Struct {
+				if name := v.Aggregate.Type.Fields[i].Name; name != "" {
+					text = name + ":" + text
+				}
 			}
 			fields = append(fields, text)
 		}

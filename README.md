@@ -230,7 +230,9 @@ func main() {
 
 ```
 
-Supported scalar types are signed/unsigned 8/16/32/64-bit integers, C `bool`, `f32/f64`, and pointers. Ordinary C structs support arguments, results, nesting, and pointer fields through `abi.TypeDesc`. Use `abi.StructValue` for fields, `abi.AddressOf` for temporary native copies of scalars or structs, and `abi.Ptr` for caller-managed native addresses. Temporary mutations are copied back; native code must not retain those pointers. Layout and register classification come from libffi. Calls allow `void` results and up to 32 total arguments. Arrays, unions, packed structs, bitfields, C++ `this` adjustment, and Swift calling conventions are not implemented.
+Supported scalar types are signed/unsigned 8/16/32/64-bit integers, C `bool`, `f32/f64`, and pointers. Ordinary C structs support arguments, results, nesting, pointer fields, and fixed-length array members through `abi.TypeDesc`. Use `abi.StructValue` for fields, `abi.ArrayValue` for array elements, `abi.AddressOf` for temporary native copies, and `abi.Ptr` for caller-managed native addresses. Temporary mutations are copied back; native code must not retain those pointers. Layout and register classification come from libffi. Calls allow `void` results and up to 32 total arguments. Unions, packed structs, bitfields, C++ `this` adjustment, and Swift calling conventions are not implemented.
+
+Arrays use `TypeDesc{Type: abi.Array, Len: N, Elem: &element}` and may appear inside structs or behind pointers, including multidimensional arrays and arrays of structs or pointers. C array parameters decay to pointers; bare array arguments/results are rejected. The [array library example](examples/arrays/main.go) constructs an array member and calls a C function; `examples/run.sh go library` and `examples/run.sh llgo library` execute it in CI. See [array types and limits](docs/arrays.md).
 
 For a variadic call shape, set `Signature.Variadic = true` and `FixedArgs` to the fixed-prefix count. `Args` includes every concrete tail argument. The backend promotes tail `float32` to `float64` and small integers / C bool to `int32`; fixed arguments retain their declared types. Prepare another binding for a different tail shape. `Convention` accepts `abi.Default` / `abi.CDecl` on supported hosts and `abi.StdCall` / `abi.FastCall` for fixed calls on Windows 386; unsupported host/convention combinations fail during preparation.
 
@@ -398,6 +400,8 @@ See the [design and DDL mapping](docs/design.md), [ABIBridge / llcppg comparison
 | Typed invocation | `examples/run.sh go call "add(20:int32 22:int32)int32" <library>` |
 | Struct value | `examples/run.sh go call "func sum_pair(struct{a,b int32})int32" "{a:20,b:22}" <library>` |
 | Struct pointer | `examples/run.sh go call "sum_pair_ptr(&{a:20,b:22}:*struct{a,b int32})int32" <library>` |
+| Array member | `examples/run.sh go call "func sum_array_i32(struct{values [2]int32})float64" "{values:{20,22}}" <library>` |
+| Array pointer | `examples/run.sh go call "sum_array_ptr(&{20,22}:*[2]int32)int32" <library>` |
 | Concrete variadic call | `examples/run.sh go call -variadic-from=2 "func var_fixed(float32,int32,float32)float64" 20.5 1 21.5 <library>` |
 
 Replace `go` with `llgo` to use that compiler. Quote each declaration or invocation as a single shell argument. File paths remain relative to your working directory. Use Bash, including Git Bash/MSYS2 on Windows. CI checks struct declarations and typed pointers through this runner with both compilers.
