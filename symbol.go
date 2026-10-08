@@ -23,8 +23,9 @@ func (s *Session) Resolve(name string) (*Symbol, error) {
 }
 
 // WithAddress runs use while retaining the session's code and library handles.
-// The callback must finish all address use before returning and must not
-// re-enter this session's locking methods. Native calling conventions, types,
+// Concurrent and reentrant use is supported. The callback must finish all
+// address use before returning and must not close its owning session.
+// Native calling conventions, types,
 // pointer ownership and exception boundaries remain the adapter's responsibility.
 // A nil or closed Symbol returns ErrClosed; a nil callback is an error.
 func (s *Symbol) WithAddress(use func(uintptr) error) error {
@@ -32,12 +33,16 @@ func (s *Symbol) WithAddress(use func(uintptr) error) error {
 		return ErrClosed
 	}
 	s.owner.mu.Lock()
-	defer s.owner.mu.Unlock()
 	if s.owner.closed {
+		s.owner.mu.Unlock()
 		return ErrClosed
 	}
 	if use == nil {
+		s.owner.mu.Unlock()
 		return fmt.Errorf("dylib: nil symbol callback")
 	}
+	s.owner.calls++
+	s.owner.mu.Unlock()
+	defer s.owner.releaseCall()
 	return use(s.address)
 }

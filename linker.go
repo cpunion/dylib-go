@@ -36,6 +36,9 @@ type Options struct {
 // ensure no native threads or callbacks still use them before calling Close.
 type Session struct {
 	mu         sync.Mutex
+	cond       *sync.Cond
+	calls      int
+	closing    bool
 	opts       Options
 	files      []*file
 	libs       []uintptr
@@ -451,30 +454,63 @@ func (s *Session) lookup(name string) (uintptr, error) {
 	return s.image.lookup(name)
 }
 
+// Close retires the session, rejects new calls, and waits for active address
+// users before releasing resources. Call it outside this session's adapters,
+// callbacks, and finalizers: waiting for one's own call would deadlock.
 func (s *Session) Close() error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	if s.closed {
+		for s.closing {
+			s.waitCalls()
+		}
+		s.mu.Unlock()
 		return nil
 	}
-	s.closed = true
+	s.closed, s.closing = true, true
+	for s.calls != 0 {
+		s.waitCalls()
+	}
+	plans, image, libs := s.plans, s.image, s.libs
+	s.plans, s.image, s.libs, s.dllHandles = nil, nil, nil, nil
+	s.mu.Unlock()
+	// Native finalizers may call back into Go. The session is already retired,
+	// so reentrant lookups return ErrClosed without blocking on cleanup.
 	var err error
-	for _, plan := range s.plans {
+	for _, plan := range plans {
 		plan.Close()
 	}
-	s.plans = nil
-	if s.image != nil {
-		err = s.image.close()
-		s.image = nil
+	if image != nil {
+		err = image.close()
 	}
 	if !s.opts.KeepLibraries {
-		for i := len(s.libs) - 1; i >= 0; i-- {
-			err = errors.Join(err, native.Close(s.libs[i]))
+		for i := len(libs) - 1; i >= 0; i-- {
+			err = errors.Join(err, native.Close(libs[i]))
 		}
 	}
-	s.libs = nil
-	s.dllHandles = nil
+	s.mu.Lock()
+	s.closing = false
+	if s.cond != nil {
+		s.cond.Broadcast()
+	}
+	s.mu.Unlock()
 	return err
+}
+
+// waitCalls requires mu. Lazy creation preserves the usable zero value.
+func (s *Session) waitCalls() {
+	if s.cond == nil {
+		s.cond = sync.NewCond(&s.mu)
+	}
+	s.cond.Wait()
+}
+
+func (s *Session) releaseCall() {
+	s.mu.Lock()
+	s.calls--
+	if s.calls == 0 && s.cond != nil {
+		s.cond.Broadcast()
+	}
+	s.mu.Unlock()
 }
 
 type image struct {
