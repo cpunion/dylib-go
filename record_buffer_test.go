@@ -108,3 +108,28 @@ func TestNativeRecordMarshalingFailureRecovery(t *testing.T) {
 		}
 	}
 }
+
+func TestNativeRecordArgumentVectorReuse(t *testing.T) {
+	for _, input := range []string{"object", "archive", "library"} {
+		t.Run(input, func(t *testing.T) {
+			session := nativeABILibrary(t, "testdata/record_buffers.c", input)
+			sig := callbackSignature(t, "func bump_big(struct{a,b,c int64},int64)struct{a,b,c int64}")
+			fn, err := session.Bind("bump_big", sig)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for i := int64(0); i < 10; i++ {
+				value, err := abi.StructValue(sig.ArgumentType(0), abi.Int64(20+i), abi.Int64(21-i), abi.Int64(1))
+				if err != nil {
+					t.Fatal(err)
+				}
+				// libffi can rewrite the address vector for structures larger
+				// than the register ABI. A reused vector must start from roots.
+				got, err := fn.Call(value, abi.Int64(2*i))
+				if err != nil || got.Aggregate == nil || got.Aggregate.Fields[0] != abi.Int64(20+3*i) || got.Aggregate.Fields[1] != abi.Int64(21-i) || got.Aggregate.Fields[2] != abi.Int64(1) || value.Aggregate.Fields[0] != abi.Int64(20+i) {
+					t.Fatalf("large struct call %d: %+v, %v", i, got, err)
+				}
+			}
+		})
+	}
+}

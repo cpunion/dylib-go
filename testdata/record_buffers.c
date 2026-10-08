@@ -5,6 +5,11 @@
 #define EXPORT
 #endif
 struct pair { int32_t a, b; };
+struct big { int64_t a, b, c; };
+EXPORT struct big bump_big(struct big value, int64_t delta) {
+    value.a += delta;
+    return value;
+}
 EXPORT int32_t reenter_record(int32_t (*fn)(int32_t), struct pair value,
                              struct pair *p, int32_t depth) {
     int32_t nested = fn(depth);

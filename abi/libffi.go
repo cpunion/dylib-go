@@ -144,7 +144,7 @@ typedef struct {
     void *args[];
 } dylib_record_call;
 static size_t dylib_record_size(unsigned n) {
-    return dylib_array_size(sizeof(dylib_record_call),n,sizeof(void *));
+    return dylib_array_size(sizeof(dylib_record_call),n,2*sizeof(void *));
 }
 static dylib_record_call *dylib_record_new(unsigned n) {
     size_t size=dylib_record_size(n);
@@ -155,7 +155,11 @@ static dylib_record_call *dylib_record_new(unsigned n) {
 }
 static void dylib_record_arg(dylib_record_call *c, unsigned i, void *p) { c->args[i]=p; }
 static void dylib_record_execute(dylib_call_plan *plan, dylib_record_call *c, uintptr_t address, void *out) {
-    ffi_call(&plan->cif,FFI_FN(address),out,c->args);
+    // libffi may replace argument pointers with its own temporary struct
+    // copies. Rebuild a mutable vector for every invocation, retaining roots.
+    void **values=c->args+c->n;
+    memcpy(values,c->args,c->n*sizeof(void *));
+    ffi_call(&plan->cif,FFI_FN(address),out,values);
 }
 
 extern void dylibgo_dispatch_callback(uintptr_t handle, void *result, void *arguments);

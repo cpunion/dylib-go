@@ -86,10 +86,10 @@ outside the measured loop.
 
 | Shape / mode | Go before → reused ns/op | llgo before → reused ns/op | Go before → reused B/op | Go before → reused allocs/op |
 | --- | ---: | ---: | ---: | ---: |
-| Struct / Bound | 748.9 → 346.3 | 1712 → 1098 | 168 → 0 | 6 → 0 |
-| Struct / Prepared | 781.1 → 339.2 | 1689 → 1013 | 168 → 0 | 6 → 0 |
-| Pointer / Bound | 1976 → 882.8 | 3757 → 2518 | 1576 → 464 | 17 → 7 |
-| Pointer / Prepared | 2232 → 886.8 | 3642 → 2389 | 1576 → 464 | 17 → 7 |
+| Struct / Bound | 748.9 → 346.6 | 1712 → 1122 | 168 → 0 | 6 → 0 |
+| Struct / Prepared | 781.1 → 336.2 | 1689 → 1029 | 168 → 0 | 6 → 0 |
+| Pointer / Bound | 1976 → 907.7 | 3757 → 2541 | 1576 → 464 | 17 → 7 |
+| Pointer / Prepared | 2232 → 904.1 | 3642 → 2488 | 1576 → 464 | 17 → 7 |
 
 These figures cover the small fixtures above. Returned aggregates still require
 logical Go values, temporary pointees still use per-call native allocation, and
@@ -115,6 +115,8 @@ for larger calls. Aggregate calls borrow an exclusive native argument vector
 and fixed argument/result buffers from their plan. Idle storage is limited to
 four contexts and 1 MiB of native buffers per plan; extra contexts are freed
 on return. Arguments/results, including padding, are zeroed before reuse.
+An immutable argument address table restores a separate libffi vector before
+every call: some backends replace argument pointers with temporary struct copies.
 Retirement waits for active calls and frees every retained context. No pool
 lock is held during native execution or callbacks. Callbacks use the same
 prepared type storage. No fixed 32-argument limit remains; native ABI limits
