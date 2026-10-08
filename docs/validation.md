@@ -48,7 +48,8 @@ Tests compile real inputs in temporary directories and check actual results:
 - GNU and COFF long archive names are checked with real objects, later offsets, and malformed references.
 - Optional libffi tests cover mixed integer/floating-point registers, negative results, 64-bit high bits, argument mismatches, and closed calls.
 - Caller-defined cgo and llgo examples invoke `double(int32_t,double,float,uint64_t)` through `Symbol.WithAddress` and return 42.
-- The dynamic `examples/bind` program invokes the same mixed signature through libffi with both Go and llgo. `examples/run.sh <go|llgo> call ARGS...` builds the test CLI and preserves caller argument boundaries and relative paths; the runner also dispatches the library, object/archive, dynamic-signature, and struct examples; CI uses the same commands shown in the README. Library Go snippets are embedded from their executed source files, with a separate freshness check.
+- Fixed native callbacks cover scalar widths, pointers, void/zero-argument entries, nested/large/floating-point struct results, handler failures and panic recovery, retained registrations, lease retirement, and Windows 386 stdcall/fastcall. C-created threads allocate Go memory and trigger GC concurrently. Ordinary Go uses cgo transitions; llgo uses compiler-generated public C-export thread transitions.
+- The dynamic `examples/bind` program invokes the same mixed signature through libffi with both Go and llgo. `examples/callback` passes a captured Go closure to a C caller and prints 42 with both compilers. `examples/run.sh <go|llgo> call ARGS...` builds the test CLI and preserves caller argument boundaries and relative paths; the runner also dispatches the library, object/archive, dynamic-signature, and struct examples; CI uses the same commands shown in the README. Library Go snippets are embedded from their executed source files, with a separate freshness check.
 
 ## Original language producers
 

@@ -31,9 +31,6 @@ jobs:
         shell: bash
     env:
       CGO_ENABLED: '1'
-      # llgo v1.0.6 misparses newline-only pkg-config CFLAGS as a '-' input.
-      # Keep the system include flag until the upstream parser is fixed.
-      PKG_CONFIG_ALLOW_SYSTEM_CFLAGS: '1'
       DYLIB_TEST_REQUIRE_NATIVE: ${{ matrix.mode == 'native' && '1' || '0' }}
       DYLIB_TEST_REQUIRE_SHARED: '1'
       DYLIB_TEST_REQUIRE_TOOLS: '1'
@@ -43,7 +40,9 @@ jobs:
       - uses: xgo-dev/setup-llgo@v0.2.0
         id: llgo
         with:
-          llgo-version: v1.0.6
+          # Merged C-export foreign-thread guards: https://github.com/xgo-dev/llgo/pull/2752
+          llgo-version: b86d349178d610e6b15e95c2a5fdfcb130d09fa1
+          install-method: source
           go-version: '1.27.x'
           llvm-version: '22'
           architecture: ${{ matrix.arch }}
@@ -73,13 +72,13 @@ jobs:
         run: go test -count=1 -v -tags libffi ./...
       - name: Execute direct llgo function-pointer path
         run: llgo test -count=1 -v ./...
-      - name: Execute optional scalar and struct libffi ABI
+      - name: Execute optional scalar, struct and callback libffi ABI
         env:
           DYLIB_TEST_LANGUAGES: ''
         run: llgo test -count=1 -v -tags libffi ./...
       - name: Build CLI with llgo
         run: llgo build -o ddlgo ./cmd/ddlgo
-      - name: Execute README llgo and dynamic libffi examples
+      - name: Execute README llgo, dynamic call and callback examples
         run: bash examples/run.sh llgo library
       - name: Execute dynamic CLI signatures, values, objects and libraries
         run: |

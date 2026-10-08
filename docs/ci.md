@@ -3,7 +3,7 @@
 Go and llgo use independent workflows and separately compiled test processes:
 
 - [Go workflow](../.github/workflows/go.yml): `actions/setup-go@v7`, Go 1.27.x.
-- [llgo workflow](../.github/workflows/llgo.yml): `xgo-dev/setup-llgo@v0.2.0`, llgo v1.0.6, Go 1.27.x, LLVM 22; Windows uses the MinGW profile.
+- [llgo workflow](../.github/workflows/llgo.yml): `xgo-dev/setup-llgo@v0.2.0`, llgo revision `b86d349178d610e6b15e95c2a5fdfcb130d09fa1`, built from source, Go 1.27.x, LLVM 22; Windows uses the MinGW profile.
 - [README workflow](../.github/workflows/readme.yml): `actions/setup-node@v7`, Node 24, and lockfile-pinned embedme 1.22.1; verifies embedded source matches the README.
 
 Workflows run on pushes to main, pull requests, and manual dispatch. Pure Go jobs set `CGO_ENABLED=0` and run parser, error, and execution-refusal tests in a process compiled for the target architecture.
@@ -28,7 +28,8 @@ All eight Go execution targets and six llgo targets set `DYLIB_TEST_REQUIRE_NATI
 | Caller-defined `double(int32,double,float,uint64)` | `examples/cgo` on all eight library targets | `examples/llgo` on all six library targets |
 | libffi mixed integer/floating-point signatures, variadic promotions/records/pointers, reusable plan lifetime | Eight Go targets; race checks on the five Go native amd64/arm64 jobs (Go race does not support 386) | Six targets; raw COFF constant-pool COMDAT exercised |
 | C++ inline COMDAT/shared state from objects and archives | Eight targets | Six targets |
-| Windows 386 stdcall/fastcall fixed calls | Native Windows 386 C fixtures | Not qualified |
+| Windows 386 stdcall/fastcall fixed calls and callback entries | Native Windows 386 C fixtures | Not qualified |
+| Fixed C callbacks: scalars/structs, errors, captures, leases, C-created threads with allocation/GC | Eight targets; object/archive/library and native worker fixtures | Six targets; collector-aware foreign-thread entry |
 | Foreign ELF/COFF COMDAT discard; COFF SECTION/SECREL | Parser/relocation fixtures independent of host | Same fixtures |
 | Rust `extern C`, Zig `export`, Fortran `bind(C)` | Both Linux/macOS architectures | Both Linux/macOS architectures |
 | Swift C-exported library and raw metadata refusal | Both macOS architectures | Both macOS architectures |
@@ -39,7 +40,7 @@ These are workflow requirements; inspect [Go](https://github.com/cpunion/dylib-g
 
 `DYLIB_TEST_LANGUAGES=rust,zig,fortran,swift,go,llgo` selects producers explicitly. A selected compiler that is missing or inappropriate for the host fails. Override executable paths with `DYLIB_RUSTC`, `DYLIB_ZIG`, `DYLIB_FC`, `DYLIB_SWIFTC`, `DYLIB_GO`, and `DYLIB_LLGO`. Go/llgo library calls run in child processes that retain their runtime library references until exit, allowing Windows to remove DLL files afterward.
 
-`bash examples/run.sh go library|llgo` delegates to `scripts/verify-examples.sh`, which builds a complete C library, independently compiles and executes the appropriate typed adapter (`examples/cgo` or `examples/llgo`), and then runs `examples/bind` with `-tags libffi`. Each program must print exactly 42. The examples use complete C libraries; separate native tests exercise raw COMDAT selection. The six amd64/arm64 targets execute both a typed adapter and the dynamic example with each host compiler; both 386 targets also execute them with Go; the Go Windows ARM64 examples run in the llgo workflow's independent Go step.
+`bash examples/run.sh go library|llgo` delegates to `scripts/verify-examples.sh`, which builds a complete C library, independently compiles and executes the appropriate typed adapter (`examples/cgo` or `examples/llgo`), and then runs `examples/bind` and `examples/callback` with `-tags libffi`. Each program must print exactly 42. The examples use complete C libraries; separate native tests exercise raw COMDAT selection. The six amd64/arm64 targets execute the typed adapter, dynamic call, and Go capture callback examples with each host compiler; both 386 targets also execute them with Go; the Go Windows ARM64 examples run in the llgo workflow's independent Go step.
 
 `bash examples/run.sh go quickstart|llgo` runs the Linux/macOS object/archive smoke test in `examples/readme/quickstart.sh`. Both compiler workflows execute it on amd64/arm64, and Go also executes it on Linux 386, checking object and archive results and exercising no-cgo inspection. Windows raw-object execution is verified separately by the native test suite and CLI script.
 
@@ -51,8 +52,10 @@ README library code blocks are embedded from the executed Go source files under 
 
 [setup-llgo v0.2.0](https://github.com/xgo-dev/setup-llgo/tree/v0.2.0)'s [platform validation](https://github.com/xgo-dev/setup-llgo/blob/v0.2.0/src/platform.ts) accepts amd64/arm64 only, although the compiler has some 386 capabilities. This project provides native Go i386 backends for Linux ELF32 and Windows COFF/PE32, but does not claim llgo 386 execution. An installer or cross-compilation alone cannot qualify a native execution target.
 
-On Linux, llgo v1.0.6 misparses newline-only `pkg-config --cflags libffi` output as `-`, causing Clang to read an extra stdin input and emit two AST JSON documents ([upstream issue #2749](https://github.com/xgo-dev/llgo/issues/2749)). The llgo workflow sets `PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` to retain a system include flag as a temporary workaround. No ABI tests are disabled by this workaround.
+On Linux, llgo v1.0.6 misparses newline-only `pkg-config --cflags libffi` output as `-`, causing Clang to read an extra stdin input and emit two AST JSON documents ([upstream issue #2749](https://github.com/xgo-dev/llgo/issues/2749)). Users of that older version can set `PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` as a workaround. The qualified compiler revision includes the upstream fix, so CI no longer needs that setting.
 
 Runner labels follow [GitHub's official list](https://docs.github.com/en/actions/reference/runners/github-hosted-runners): ubuntu-24.04, ubuntu-24.04-arm, macos-15-intel, macos-15, windows-2022, and windows-11-arm.
 
 Raw lifecycle fixtures run in every native Go and llgo job, without requiring libffi: C++ dependency initialization/destruction, ordinary archive selection, C termination tables, `atexit`/`__cxa_atexit`, selective and recursive `__cxa_finalize`, two-image isolation, validation rollback, and close idempotence. A retained observer library verifies callbacks after raw-image release. Pure Go jobs cross-inspect the eight target lifecycle table formats. See [lifecycle coverage](lifecycle.md).
+
+CI pins the upstream merge commit of [public C-export foreign-thread guards](https://github.com/xgo-dev/llgo/pull/2752) for dependency packages and executables. The library uses ordinary `//export` declarations and has no private llgo runtime hooks; v1.0.6 cannot qualify C-created-thread callbacks on this path. `setup-llgo` builds the exact commit from source; the full matrix tests that compiler rather than applying patches during a job.

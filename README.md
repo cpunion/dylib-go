@@ -25,7 +25,7 @@ The execution columns describe native loading and calls on the listed host. Insp
 | Linux | 386 | ELF32 little-endian REL/RELA `.o` | Ordinary GNU/BSD ar `.a` | ELF32 `.so` | Native 32-bit Go calls on amd64 runners |
 | Windows | 386 | i386 COFF `.obj` / `.o` | Ordinary COFF ar `.lib` / `.a` | PE32 `.dll` | Native 32-bit Go calls under WoW64 |
 
-The six amd64/arm64 targets test scalar and struct calls with both Go and llgo; Linux/Windows 386 use native 32-bit Go processes. The current setup-llgo installer accepts only amd64/arm64, so no llgo 386 execution is claimed. Ordinary Go execution requires cgo; metadata inspection does not. Raw objects and archives support the implemented relocation subset; ELF COMDAT and common COFF COMDAT selections are supported; Modern initialization/termination tables and session-owned C/C++ exit registrations are supported; TLS and exception unwinding remain unsupported on that path. See [object lifecycle](docs/lifecycle.md) for ordering and limits. Shared libraries use the host OS loader. Inputs and call signatures must match the host architecture and OS ABI; this table does not imply cross-CPU or cross-OS execution.
+The six amd64/arm64 targets test scalar and struct calls, C callbacks, and C-created callback threads with both Go and llgo; Linux/Windows 386 use native 32-bit Go processes. The current setup-llgo installer accepts only amd64/arm64, so no llgo 386 execution is claimed. Ordinary Go execution requires cgo; metadata inspection does not. Raw objects and archives support the implemented relocation subset; ELF COMDAT and common COFF COMDAT selections are supported; Modern initialization/termination tables and session-owned C/C++ exit registrations are supported; TLS and exception unwinding remain unsupported on that path. See [object lifecycle](docs/lifecycle.md) for ordering and limits. Shared libraries use the host OS loader. Inputs and call signatures must match the host architecture and OS ABI; this table does not imply cross-CPU or cross-OS execution.
 
 Metadata inspection uses pure Go and can read ELF, Mach-O, COFF/PE, and ordinary ar files independently of the file's CPU architecture. Thin archives, fat Mach-O, COFF import libraries/bigobj, OMF, D `.ddl`, Go gc `.a`, and LLVM IR/bitcode are not directly supported library inputs. See the [detailed format limits and language matrix](docs/support.md) for other platforms and unsupported features.
 
@@ -44,6 +44,7 @@ Known native signatures can use caller-defined cgo or llgo adapters. For dynamic
 - `Resolve(name)`: resolve once and return a session-owned, untyped `Symbol`.
 - `Symbol.WithAddress(callback)`: use an address while preventing concurrent `Close`.
 - `Bind(name, abi.Signature)` / `Function.Call`: bind and invoke an explicit dynamic signature with libffi.
+- `abi.NewCallback(signature, handler)`: create a native C entry for a Go closure; acquire a lease before publishing its address.
 - `Close()`: free the object image and release system library references; subsequent symbol access and bound calls return `ErrClosed`.
 
 Mach-O and i386 COFF C names omit one leading linker underscore. i386 stdcall/fastcall decorations remain; select the matching convention explicitly when binding. C++ names still require their exact mangled linkage name.
@@ -229,7 +230,7 @@ func main() {
 
 ```
 
-Supported scalar types are signed/unsigned 8/16/32/64-bit integers, C `bool`, `f32/f64`, and pointers. Ordinary C structs support arguments, results, nesting, and pointer fields through `abi.TypeDesc`. Use `abi.StructValue` for fields, `abi.AddressOf` for temporary native copies of scalars or structs, and `abi.Ptr` for caller-managed native addresses. Temporary mutations are copied back; native code must not retain those pointers. Layout and register classification come from libffi. Calls allow `void` results and up to 32 total arguments. Arrays, unions, packed structs, bitfields, native callbacks, C++ `this` adjustment, and Swift calling conventions are not implemented.
+Supported scalar types are signed/unsigned 8/16/32/64-bit integers, C `bool`, `f32/f64`, and pointers. Ordinary C structs support arguments, results, nesting, and pointer fields through `abi.TypeDesc`. Use `abi.StructValue` for fields, `abi.AddressOf` for temporary native copies of scalars or structs, and `abi.Ptr` for caller-managed native addresses. Temporary mutations are copied back; native code must not retain those pointers. Layout and register classification come from libffi. Calls allow `void` results and up to 32 total arguments. Arrays, unions, packed structs, bitfields, C++ `this` adjustment, and Swift calling conventions are not implemented.
 
 For a variadic call shape, set `Signature.Variadic = true` and `FixedArgs` to the fixed-prefix count. `Args` includes every concrete tail argument. The backend promotes tail `float32` to `float64` and small integers / C bool to `int32`; fixed arguments retain their declared types. Prepare another binding for a different tail shape. `Convention` accepts `abi.Default` / `abi.CDecl` on supported hosts and `abi.StdCall` / `abi.FastCall` for fixed calls on Windows 386; unsupported host/convention combinations fail during preparation.
 
@@ -241,7 +242,84 @@ Run `go test -tags libffi ./...` or `llgo test -tags libffi ./...` to exercise t
 
 Ordinary Go's default build does not require libffi. The llgo compiler's own runtime dependencies, including its GC and libffi, are separate from this optional backend.
 
-On Linux with llgo v1.0.6, set `export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` before enabling libffi. This avoids that version's newline-only pkg-config CFLAGS parsing bug ([upstream issue #2749](https://github.com/xgo-dev/llgo/issues/2749)). CI sets the workaround; ordinary Go does not require it.
+On Linux with llgo v1.0.6, set `export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` before enabling libffi. This avoids that version's newline-only pkg-config CFLAGS parsing bug ([upstream issue #2749](https://github.com/xgo-dev/llgo/issues/2749)). The qualified CI compiler includes the upstream fix; ordinary Go does not require this workaround.
+
+## Dynamic C callbacks
+
+`abi.NewCallback` turns an explicit fixed C signature and a Go handler into a native function pointer through libffi. It supports the same scalars, pointers, and ordinary struct values as dynamic calls. This complete [callback example](examples/callback/main.go) captures a Go value, passes its entry to a C function, and prints 42. CI executes it with Go on eight targets and llgo on six targets:
+
+<!-- embedme examples/callback/main.go -->
+
+```go
+//go:build libffi && cgo && (darwin || linux || windows)
+
+// This example passes a Go closure through a dynamically described C entry.
+package main
+
+import (
+	"fmt"
+	"os"
+
+	dylib "github.com/cpunion/dylib-go"
+	"github.com/cpunion/dylib-go/abi"
+)
+
+func run(path string) error {
+	s := dylib.New(dylib.Options{})
+	defer s.Close()
+	if err := s.Load(path); err != nil {
+		return err
+	}
+	f, err := s.Bind("callback_add", abi.Signature{
+		Result: abi.I32,
+		Args:   []abi.Type{abi.Pointer, abi.I32, abi.I32},
+	})
+	if err != nil {
+		return err
+	}
+	offset := int32(2)
+	callback, err := abi.NewCallback(abi.Signature{
+		Result: abi.I32,
+		Args:   []abi.Type{abi.I32, abi.I32},
+	}, func(args []abi.Value) (abi.Value, error) {
+		return abi.Int32(int32(args[0].Bits) + int32(args[1].Bits) + offset), nil
+	})
+	if err != nil {
+		return err
+	}
+	defer callback.Close()
+	err = callback.WithAddress(func(address uintptr) error {
+		value, err := f.Call(abi.Ptr(address), abi.Int32(20), abi.Int32(20))
+		if err == nil {
+			fmt.Println(int32(value.Bits))
+		}
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	if err := callback.Err(); err != nil {
+		return err
+	}
+	return s.Close()
+}
+
+func main() {
+	if len(os.Args) != 2 {
+		fmt.Fprintln(os.Stderr, "usage: callback OBJECT_OR_LIBRARY")
+		os.Exit(1)
+	}
+	if err := run(os.Args[1]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+```
+
+Use `Callback.WithAddress` for synchronous calls. For a stored registration, hold an `Acquire` lease until native code has unregistered the entry and all callers have finished; release the lease, then close the callback. Handler errors, panics, and invalid results produce a zero native result and are retained by `Callback.Err`. Incoming pointers are borrowed native addresses; returned pointers must have caller-managed native storage. Variadic callbacks and temporary pointee results are unsupported.
+
+C-created threads may invoke the entry concurrently; captures need appropriate synchronization. A handler must not re-enter the calling session's locking methods or close its own callback. With llgo, the public `//export` entry relies on compiler-generated foreign-thread protection; use the [qualified compiler revision](docs/ci.md). llgo v1.0.6 does not protect dependency-package or executable exports on this path. See [callback ownership and thread integration](docs/callbacks.md). Run `bash examples/run.sh go library` or `bash examples/run.sh llgo library` to execute the README examples, including this callback.
 
 ## Language interfaces and calling conventions
 
@@ -251,6 +329,7 @@ Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cde
 | --- | --- | --- | --- |
 | C | Host default C ABI | Supported subset | Eight Go targets; six llgo targets. Fixed-width scalars, pointers, ordinary structs, struct pointers, and concrete variadic shapes |
 | C with x86 conventions | Windows 386 stdcall / fastcall | Supported subset | Explicit `Convention`; fixed calls, exact decorated symbol names; tested with C fixtures |
+| C callbacks into Go / llgo | Fixed host C ABI; Windows 386 stdcall / fastcall | Supported subset | Scalars, pointers, ordinary struct values, captures, explicit leases, and C-created threads; no variadic callbacks |
 | C with other conventions | vectorcall and other non-default ABIs | Not implemented | Use a compiled adapter matching the convention |
 | C++ C exports | `extern "C"`, host C ABI | Verified subset | C exports and global construction/destruction on native targets; raw fixtures disable exceptions and RTTI |
 | C++ free functions | C-compatible representation, exact mangled symbol | Conditional | Caller supplies the exact symbol and signature; direct mangled entry calls are not separately tested in CI |
@@ -277,7 +356,7 @@ Inputs must be trusted native code. The parser and execution layer provide no se
 
 Objects are allocated RW, relocated in Go, flushed from the instruction cache, and protected as RX/R/RW per section. No pages are RWX. Raw objects run supported initialization tables after link validation and session-owned exit callbacks/termination tables before unmapping. The raw path rejects recognized TLS, unsupported lifecycle forms, unsupported COMDAT selections, and language runtime registration requirements. It does not register exception unwind information. Use complete shared libraries when these services are needed; the OS handles their dependencies, TLS, and initialization. Exceptions must still remain within the native call boundary.
 
-`Symbol.WithAddress`, `Function.Call`, and `Close` are serialized. An adapter must finish using its address before returning, and must not re-enter locking methods of the same session. Raw addresses, asynchronous native threads, and native callbacks require caller-managed lifetimes. `WithAddress` is a Go-side lifetime guard, not a native callback facility. Go function values cannot be cast into C function pointers; `Define` requires a native function or data address.
+`Symbol.WithAddress`, `Function.Call`, and `Close` are serialized. An adapter must finish using its address before returning, and must not re-enter locking methods of the same session. Raw addresses, asynchronous native threads, and native callbacks require caller-managed lifetimes. `Symbol.WithAddress` guards session addresses. `abi.Callback` owns a separate native entry and captures, with leases that callers hold for registrations and native workers. Go function values cannot be cast into C function pointers; use `abi.NewCallback` to create an entry. `Define` accepts a native function or data address and does not acquire a callback lease for you.
 
 Use `Options{KeepLibraries:true}` for Go/llgo `c-shared` libraries and other runtimes with background threads, retaining OS references until process exit. `ProcessSymbols:true` searches POSIX host exports; on Windows, load the supplying DLL explicitly.
 
@@ -291,11 +370,11 @@ The former experimental `BindInt32`, `CallInt32`, and `Int32Func` APIs have been
 | `linker.go`, `relocate*.go` | Symbol selection, archive extraction, layout, relocation |
 | `symbol.go`, `function.go` | Generic symbol handles and owned dynamic call plans |
 | `comdat.go` | COMDAT selection before dependency discovery |
-| `abi/` | Go signature descriptions and optional scalar/struct libffi calls |
+| `abi/` | Go signatures, reusable libffi calls, and leased native C callbacks |
 | `abi/signature/` | Pure Go declaration, typed-invocation, and typed literal parsing |
 | `internal/native/` | OS memory, instruction cache, and shared-library operations |
 | `examples/call/` | Fixed-signature adapter used only by the CLI and tests |
-| `examples/cgo/`, `examples/llgo/`, `examples/bind/` | Executable README examples |
+| `examples/cgo/`, `examples/llgo/`, `examples/bind/`, `examples/callback/` | Executable README examples |
 | `examples/run.sh` | Build and run the test CLI or example checks with Go or llgo |
 | `examples/readme/` | Build and check the CLI examples |
 | `cmd/ddlgo/` | Test CLI for inspection and native calls |
