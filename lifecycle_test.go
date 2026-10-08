@@ -214,7 +214,7 @@ func TestLifecycleDependencyCycles(t *testing.T) {
 		o.relocs = []relocation{{symbol: 1, pair: -1}}
 	}
 	defs := map[string]definition{"a": {a, 0}, "b": {b, 0}, "c": {c, 0}}
-	order, err := lifecycleObjectOrder([]*object{c, a, b}, defs)
+	order, err := (&image{objects: []*object{c, a, b}, defs: defs}).lifecycleObjectOrder()
 	if err != nil || order[a] != 0 || order[b] != 1 || order[c] != 2 {
 		t.Fatalf("cycle order: %v %v", order, err)
 	}

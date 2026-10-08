@@ -103,12 +103,11 @@ func (im *image) relocCOFFSection(o *object, r relocation, b []byte) error {
 	if r.symbol < 0 || r.symbol >= len(o.symbols) {
 		return fmt.Errorf("invalid section-relative symbol")
 	}
-	s := o.symbols[r.symbol]
-	if s.global {
-		if d, ok := im.defs[s.name]; ok {
-			o, s = d.o, d.sym()
-		}
+	d, err := im.resolveDefinition(o, r.symbol)
+	if err != nil {
+		return err
 	}
+	o, s := d.o, d.sym()
 	if s.section <= 0 || s.section >= len(o.sections) || o.sections[s.section] == nil || s.value > o.sections[s.section].size {
 		return fmt.Errorf("section-relative relocation requires a symbol in a loaded object section")
 	}

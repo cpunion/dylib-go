@@ -10,8 +10,8 @@ The CLI now accepts Go-style signature declarations and typed invocations throug
 
 | Coverage area | Work still required |
 | --- | --- |
-| Current 64-bit raw targets | Remaining relocations, additional COMDAT rules/weak aliases, remaining lifecycle forms, TLS, and unwinder registration |
-| Windows ARM64 raw objects | Additional COMDAT rules, weak aliases, import-library handling, remaining lifecycle forms, and unwind registration |
+| Current 64-bit raw targets | Remaining relocations, Mach-O coalescing/indirect symbols, remaining lifecycle forms, TLS, and unwinder registration |
+| Windows ARM64 raw objects | Import-library/bigobj handling, remaining relocations/lifecycle forms, and unwind registration |
 | 386 and additional ISAs | 386 executes C cdecl on Linux/Windows with Go; Windows 386 stdcall/fastcall are implemented; other conventions and llgo qualification remain. Additional ISAs need linker/ABI backends and execution tests |
 | BSD and Apple mobile hosts | Native OS backend, ABI/runtime integration, platform policy compatibility, and device tests |
 | Additional containers | Import libraries, bigobj, thin archives, universal target selection; optional IR compilation |
@@ -26,7 +26,7 @@ Complete shared libraries already use the host OS loader for their dependency, i
 
 Future extensions need explicit implementation and tests:
 
-1. **Windows object coverage:** native Go and llgo objects, archives, and DLLs are covered for AMD64/ARM64, plus Go for i386. Further work includes import libraries, EXACT_MATCH/NEWEST COMDAT, weak aliases, remaining lifecycle forms, unwind registration, and additional architecture-specific relocations.
+1. **Windows object coverage:** native Go and llgo objects, archives, and DLLs are covered for AMD64/ARM64, plus Go for i386. Weak aliases and COMDAT selections 1–7 are implemented. Further work includes import libraries, bigobj, remaining lifecycle forms, unwind registration, and additional architecture-specific relocations.
 2. **Object initialization and exceptions:** modern platform tables, dependency ordering, cycle handling, validation rollback, and session-owned exit registration are implemented. Add legacy tables, Mach-O relative offsets, and integer-returning CRT initialization; then register `.eh_frame`, compact unwind, or Windows runtime function tables. Complete OS libraries currently provide those services.
 3. **TLS and more relocations:** define each target's TLS model and thread registration/destruction; extend ARM64 COFF coverage and add RISC-V, LoongArch, and other relocation backends. Parser support alone does not provide execution support.
 4. **Archive and object containers:** universal slice selection, thin-archive path handling, and optional LLVM bitcode/IR compilation. OMF and D `.ddl` compatibility remain outside scope.
@@ -36,3 +36,28 @@ Future extensions need explicit implementation and tests:
 8. **Independent execution backends:** isolated/remote processes, Wasm, and GPU execution need separate interfaces appropriate to their execution models.
 
 Keep the parser and linker in Go and extend llgo or small native adapters when lower-level facilities are required. A future optional LLVM backend should preserve the independent Go backend rather than make LLVM a default dependency.
+
+## Development checklist
+
+Each implementation PR must pass its native Go and llgo CI jobs before the next item starts. A checked item describes implemented behavior with tests, not universal toolchain compatibility.
+
+- [x] Fixed-length array members and pointees, including nested arrays/records and callbacks.
+- [x] COFF weak fallback chains, archive search policies, and COMDAT EXACT_MATCH/NEWEST.
+- [ ] COFF short import libraries and bigobj, with DLL dependency and real call tests.
+- [ ] Remaining relocations on existing targets; Mach-O indirect symbols/coalesced sections.
+- [ ] Legacy ELF lifecycle tables/code, Mach-O initializer offsets, and COFF integer-returning CRT initializers.
+- [ ] Native unwind registration and cleanup on POSIX/Windows.
+- [ ] Concurrent session calls and reentrant callbacks without holding session locks across native execution.
+- [ ] Explicit raw-object TLS models, per-thread allocation, and thread destructor ownership.
+- [ ] Union, packed record, and bitfield layouts through validated compiler adapters where libffi cannot represent the ABI.
+- [ ] Dynamic argument counts, reusable layout caches, and measured call/allocation costs.
+- [ ] Thin archives and universal Mach-O host-slice selection.
+- [ ] Clang/llcppg declaration-based dynamic adapter generation.
+- [ ] C++ constructor/method/object adapters, followed by inheritance and virtual dispatch.
+- [ ] Public providers, dependency paths/manifests, and version contracts.
+- [ ] Owned native values and long-lived native registrations.
+- [ ] Module replacement with explicit retirement and state migration.
+- [ ] Optional Apple C facades for ABIBridge Swift/ObjC integration.
+- [ ] BSD backends, additional ISAs, and llgo 386 qualification when toolchains/runners are available.
+- [ ] Optional LLVM IR/bitcode compiler provider.
+- [ ] Separate process/RPC and Wasm executors; GPU/eBPF require domain-specific executors.

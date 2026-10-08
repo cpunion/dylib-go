@@ -44,7 +44,7 @@ dylib-go implements the general object-loading path: identify content, model sec
 
 Source anchors: [default registry](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/DefaultRegistry.d), [ELF limits](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/elf/ELFBinary.d), [loader registry](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/LoaderRegistry.d), [path library](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/PathLibrary.d), [lazy linker](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/xf/linker/LazyLinker.d), [compiler/provider setup](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/xf/linker/DefaultLinker.d), [typed library access](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/DynamicLibrary.d), and [module initialization](https://github.com/Marenz/ddl/blob/3bf531e9701469ccecd5c3c698036ef4ef72362b/ddl/Linker.d).
 
-Separately, broader raw-object compatibility still needs additional COMDAT rules/weak aliases, remaining relocations, TLS, import-library/bigobj handling, and native unwind registration. These are current dylib-go gaps, not a claim that DDL completely implemented them. The host OS supplies initialization, TLS, dependencies, and unwind metadata for complete shared libraries; it does not adapt an incompatible call signature or language value.
+Separately, broader raw-object compatibility still needs Mach-O coalescing, remaining relocations, TLS, import-library/bigobj handling, and native unwind registration. ELF COMDAT and COFF selections 1–7/weak aliases are implemented. The remaining items are dylib-go gaps, not a claim that DDL completely implemented them. The host OS supplies initialization, TLS, dependencies, and unwind metadata for complete shared libraries; it does not adapt an incompatible call signature or language value.
 
 ### Compared with ABIBridge
 
@@ -67,7 +67,7 @@ ABIBridge reports routine runtime tests on macOS and iOS Simulator with selected
 
 ### Priorities for this project
 
-1. Broaden general raw-object use: Additional COMDAT rules/import libraries and remaining relocations, remaining lifecycle forms, unwind registration, then explicit TLS models. Modern lifecycle tables and session-owned C/C++ exit registrations are implemented. Keep parsing and linking in Go.
+1. Broaden general raw-object use: Import libraries/bigobj, Mach-O coalescing and remaining relocations, remaining lifecycle forms, unwind registration, then explicit TLS models. Modern lifecycle tables and session-owned C/C++ exit registrations are implemented. Keep parsing and linking in Go.
 2. Broaden dynamic C interfaces: additional aggregate forms, calling conventions, and generated declaration validation. Fixed C callbacks with explicit retirement, foreign-thread integration, variadic promotion, and reusable call plans are implemented. Use llgo or small native bridges where Go cannot emit the required ABI entry points.
 3. Add optional declaration/provider packages: generated C/C++ adapters using llcppg or Clang information, dependency manifests, and a lifecycle model before module replacement. Preserve the current explicit core API.
 4. Evaluate an optional Apple C facade backed by ABIBridge for Swift/ObjC/C++ runtime values, using opaque handles and explicit retain/release. Add platform/runtime/device tests before claiming support.
