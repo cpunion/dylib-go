@@ -40,7 +40,8 @@ func configureLifecycle(s *section, bits int) error {
 // connected components retain input order; providers precede their consumers.
 // Numeric ELF priorities and COFF subsection names take precedence over this
 // order, just as explicit init priorities override translation-unit order.
-func lifecycleObjectOrder(objects []*object, defs map[string]definition) (map[*object]int, error) {
+func (im *image) lifecycleObjectOrder() (map[*object]int, error) {
+	objects := im.objects
 	indices := make(map[*object]int, len(objects))
 	for i, o := range objects {
 		indices[o] = i
@@ -54,9 +55,19 @@ func lifecycleObjectOrder(objects []*object, defs map[string]definition) (map[*o
 		seen := make(map[int]bool)
 		for _, ref := range refs {
 			if ref.global {
-				if d, ok := defs[ref.name]; ok {
-					j := indices[d.o]
-					if j != i && !seen[j] {
+				d, ok := im.defs[ref.name]
+				if !ok {
+					if alias, found := im.aliases[ref.name]; found {
+						d, err = im.resolveDefinition(alias.o, alias.index)
+						if err != nil {
+							return nil, err
+						}
+						ok = d.sym().section != 0
+					}
+				}
+				if ok {
+					j, selected := indices[d.o]
+					if selected && j != i && !seen[j] {
 						seen[j] = true
 						deps[i] = append(deps[i], j)
 					}
@@ -123,7 +134,7 @@ func (im *image) prepareLifecycle() error {
 		object  *object
 		section *section
 	}
-	order, err := lifecycleObjectOrder(im.objects, im.defs)
+	order, err := im.lifecycleObjectOrder()
 	if err != nil {
 		return err
 	}

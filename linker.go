@@ -255,50 +255,87 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 		if err != nil {
 			return nil, err
 		}
-		wanted := append([]string{}, roots...)
+		aliases, err := weakAliases(selected)
+		if err != nil {
+			return nil, err
+		}
+		probe := &image{defs: defs, aliases: aliases, external: s.external}
+		var wanted []string
+		for _, name := range roots {
+			if _, weak := aliases[name]; !weak {
+				wanted = append(wanted, name)
+			}
+		}
+		referenced := append([]string{}, roots...)
 		for _, o := range selected {
 			refs, e := references(o)
 			if e != nil {
 				return nil, e
 			}
 			for _, r := range refs {
+				if r.section == 0 && r.name != "" {
+					referenced = append(referenced, r.name)
+				}
 				if r.section == 0 && !r.weak && r.name != "" {
-					wanted = append(wanted, r.name)
+					if _, weak := aliases[r.name]; !weak {
+						wanted = append(wanted, r.name)
+					}
 				}
 			}
 		}
+		wanted = append(wanted, probe.weakLibraryNames(referenced)...)
 		changed := false
-		for _, n := range wanted {
-			if _, ok := defs[n]; ok {
-				continue
-			}
-			if s.defined[n] != 0 {
-				continue
-			}
-			for _, o := range archives {
-				if used[o] {
-					continue
-				}
-				found := false
-				for _, v := range o.symbols {
-					if v.global && v.name == n && v.section != 0 && v.section != -3 {
-						found = true
-						break
+		// First exhaust ordinary dependencies and SEARCH_LIBRARY names. Only
+		// then consider fallback dependencies, preserving COFF search policy.
+		for phase := 0; phase < 2 && !changed; phase++ {
+			if phase == 1 {
+				wanted = nil
+				for _, name := range referenced {
+					alias, ok := aliases[name]
+					if !ok {
+						continue
+					}
+					d, err := probe.resolveDefinition(alias.o, alias.index)
+					if err != nil {
+						return nil, err
+					}
+					if v := d.sym(); v.section == 0 && !v.weak && probe.externalSymbol(d.o, v.name) == 0 {
+						wanted = append(wanted, v.name)
 					}
 				}
-				if !found {
+			}
+			for _, n := range wanted {
+				if _, ok := defs[n]; ok {
 					continue
 				}
-				if e := checkTarget(o); e != nil {
-					return nil, e
+				if s.defined[n] != 0 {
+					continue
 				}
-				used[o] = true
-				objs = append(objs, o)
-				changed = true
-				break
-			}
-			if changed {
-				break // Rebuild the symbol index before selecting another member.
+				for _, o := range archives {
+					if used[o] {
+						continue
+					}
+					found := false
+					for _, v := range o.symbols {
+						if v.global && v.name == n && (v.section != 0 && v.section != -3 || v.alias != nil) {
+							found = true
+							break
+						}
+					}
+					if !found {
+						continue
+					}
+					if e := checkTarget(o); e != nil {
+						return nil, e
+					}
+					used[o] = true
+					objs = append(objs, o)
+					changed = true
+					break
+				}
+				if changed {
+					break // Rebuild the symbol index before selecting another member.
+				}
 			}
 		}
 		if !changed {
@@ -409,6 +446,7 @@ type image struct {
 	base                                   uintptr
 	objects                                []*object
 	defs                                   map[string]definition
+	aliases                                map[string]definition
 	common                                 map[string]uint64
 	external                               func(string) uintptr
 	resolved                               map[string]uintptr
@@ -430,6 +468,11 @@ func alignUp(n, a uint64) uint64 {
 }
 func newImage(objs []*object, defs map[string]definition, external func(string) uintptr) (*image, error) {
 	im := &image{objects: objs, defs: defs, external: external, common: map[string]uint64{}, resolved: map[string]uintptr{}, got: map[uintptr]uintptr{}, stubs: map[uintptr]uintptr{}, page: uint64(os.Getpagesize())}
+	var err error
+	im.aliases, err = weakAliases(objs)
+	if err != nil {
+		return nil, err
+	}
 	im.pointerSize = uint64(unsafe.Sizeof(uintptr(0)))
 	if len(objs) != 0 && (objs[0].info.Bits == 32 || objs[0].info.Bits == 64) {
 		im.pointerSize = uint64(objs[0].info.Bits / 8)
@@ -585,6 +628,9 @@ func (im *image) lookup(n string) (uintptr, error) {
 	if p := im.external(n); p != 0 {
 		return p, nil
 	}
+	if d, ok := im.aliases[n]; ok {
+		return im.symbol(d.o, d.index, false)
+	}
 	return 0, fmt.Errorf("unresolved symbol %s", n)
 }
 func (im *image) symbol(o *object, index int, local bool) (uintptr, error) {
@@ -597,13 +643,11 @@ func (im *image) symbol(o *object, index int, local bool) (uintptr, error) {
 	if index < 0 || index >= len(o.symbols) {
 		return 0, fmt.Errorf("invalid symbol index %d", index)
 	}
-	s := o.symbols[index]
-	if s.global {
-		if d, ok := im.defs[s.name]; ok {
-			o = d.o
-			s = d.sym()
-		}
+	d, err := im.resolveDefinition(o, index)
+	if err != nil {
+		return 0, err
 	}
+	o, s := d.o, d.sym()
 	switch s.section {
 	case 0:
 		if o.info.Format == "ELF" && o.info.Arch == "386" && s.name == "_GLOBAL_OFFSET_TABLE_" {

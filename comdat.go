@@ -1,6 +1,9 @@
 package dylib
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 // coalesceObjects snapshots a link attempt and removes duplicate COMDAT groups
 // before dependency discovery. References in discarded groups must not pull in
@@ -45,8 +48,16 @@ func coalesceObjects(inputs []*object) ([]*object, error) {
 				if groupSize(&o, g) != groupSize(old.object, previous) {
 					return nil, fmt.Errorf("COMDAT %s has different sizes", g.key)
 				}
+			case 4:
+				if !sameGroupContents(&o, g, old.object, previous) {
+					return nil, fmt.Errorf("EXACT_MATCH COMDAT %s has different contents", g.key)
+				}
 			case 6:
 				if groupSize(&o, g) > groupSize(old.object, previous) {
+					winners[key] = groupRef{&o, j}
+				}
+			case 7:
+				if o.timestamp > old.object.timestamp {
 					winners[key] = groupRef{&o, j}
 				}
 			default:
@@ -125,6 +136,21 @@ func coalesceObjects(inputs []*object) ([]*object, error) {
 		o.relocs = relocs
 	}
 	return objects, nil
+}
+
+// Microsoft/LLD EXACT_MATCH compares section contents, not relocation targets
+// or alignment. Relocations from the discarded definition are discarded too.
+func sameGroupContents(a *object, ag sectionGroup, b *object, bg sectionGroup) bool {
+	if len(ag.sections) != len(bg.sections) {
+		return false
+	}
+	for i, index := range ag.sections {
+		x, y := a.sections[index], b.sections[bg.sections[i]]
+		if x == nil || y == nil || x.size != y.size || !bytes.Equal(x.data, y.data) {
+			return false
+		}
+	}
+	return true
 }
 
 func groupSize(o *object, g sectionGroup) uint64 {

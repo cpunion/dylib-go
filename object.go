@@ -71,11 +71,12 @@ type file struct {
 	members []*file
 }
 type object struct {
-	info     Info
-	sections []*section // Original section indices (zero reserved).
-	symbols  []symbol   // Original symbol table indices.
-	relocs   []relocation
-	groups   []sectionGroup
+	info      Info
+	timestamp uint32     // COFF header time stamp, used by NEWEST COMDAT selection.
+	sections  []*section // Original section indices (zero reserved).
+	symbols   []symbol   // Original symbol table indices.
+	relocs    []relocation
+	groups    []sectionGroup
 }
 
 // ELF COMDAT groups and COFF COMDAT sections share selection and discard rules.
@@ -83,7 +84,7 @@ type object struct {
 type sectionGroup struct {
 	key       string
 	sections  []int
-	selection uint8 // COFF NODUPLICATES=1, ANY=2, SAME_SIZE=3, ASSOCIATIVE=5, LARGEST=6.
+	selection uint8 // COFF selections 1..7; ELF COMDAT uses ANY=2.
 	parent    int
 }
 type section struct {
@@ -102,6 +103,13 @@ type symbol struct {
 	section            int
 	value, size, align uint64
 	global, weak       bool
+	alias              *weakAlias
+}
+
+// COFF weak externals reference a fallback by original symbol-table index.
+type weakAlias struct {
+	target int
+	search uint32 // NOLIBRARY=1, LIBRARY=2, ALIAS=3.
 }
 type relocation struct {
 	section  int
