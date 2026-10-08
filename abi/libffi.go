@@ -10,7 +10,11 @@ package abi
 #include <stdlib.h>
 typedef union { ffi_arg word; int32_t i32; uint32_t u32; int64_t i64;
     uint64_t u64; int8_t i8; uint8_t u8; int16_t i16; uint16_t u16; float f32; double f64; void *ptr; } dylib_scalar;
-typedef struct { ffi_cif cif; ffi_type *types[32]; } dylib_call_plan;
+typedef struct { ffi_cif cif; ffi_type *types[]; } dylib_call_plan;
+static size_t dylib_array_size(size_t header, size_t n, size_t element) {
+    if (n > (SIZE_MAX-header)/element) return 0;
+    return header+n*element;
+}
 static int dylib_abi(uint8_t convention) {
     if (convention <= 1) return FFI_DEFAULT_ABI;
 #if defined(_WIN32) && (defined(__i386__) || defined(_M_IX86))
@@ -19,7 +23,11 @@ static int dylib_abi(uint8_t convention) {
 #endif
     return -1;
 }
-static dylib_call_plan *dylib_plan_new(void) { return (dylib_call_plan *)calloc(1,sizeof(dylib_call_plan)); }
+static dylib_call_plan *dylib_plan_new(unsigned n) {
+    size_t size=dylib_array_size(sizeof(dylib_call_plan),n,sizeof(ffi_type *));
+    if (!size) return NULL;
+    return (dylib_call_plan *)calloc(1,size);
+}
 static void dylib_plan_arg(dylib_call_plan *p, unsigned i, ffi_type *type) { p->types[i]=type; }
 static int dylib_plan_prepare(dylib_call_plan *p, int abi, unsigned n, unsigned fixed, int variadic, ffi_type *result) {
     if (variadic) return ffi_prep_cif_var(&p->cif,(ffi_abi)abi,fixed,n,result,p->types);
@@ -38,24 +46,35 @@ static ffi_type *dylib_ffi_type(uint8_t t) {
     }
 }
 static int dylib_ffi_call(dylib_call_plan *plan, uintptr_t address, uint8_t result, unsigned n,
-    const uint8_t *types, const uint64_t *bits, uint64_t *out) {
-    if (n > 32) return -1;
-    ffi_type *atypes[32]; dylib_scalar storage[32]; void *args[32];
+    const uint64_t *bits, uint64_t *out) {
+    if (n != plan->cif.nargs) return -1;
+    dylib_scalar small_storage[32]; void *small_args[32];
+    dylib_scalar *storage=small_storage; void **args=small_args;
+    void *allocation=NULL;
+    if (n > 32) {
+        size_t size=dylib_array_size(0,n,sizeof(dylib_scalar)+sizeof(void *));
+        if (!size) return -2;
+        allocation=malloc(size);
+        if (!allocation) return -2;
+        storage=(dylib_scalar *)allocation;
+        args=(void **)(storage+n);
+    }
     for (unsigned i=0;i<n;i++) {
-        atypes[i]=dylib_ffi_type(types[i]); args[i]=&storage[i];
-        if (!atypes[i] || types[i]==0) return -1;
-        switch(types[i]) {
-        case 1: storage[i].i32=(int32_t)bits[i]; break;
-        case 2: storage[i].u32=(uint32_t)bits[i]; break;
-        case 3: storage[i].i64=(int64_t)bits[i]; break;
-        case 4: storage[i].u64=bits[i]; break;
-        case 5: { uint32_t b=(uint32_t)bits[i]; memcpy(&storage[i].f32,&b,4); break; }
-        case 6: memcpy(&storage[i].f64,&bits[i],8); break;
-        case 7: storage[i].ptr=(void *)(uintptr_t)bits[i]; break;
-        case 8: storage[i].i8=(int8_t)bits[i]; break;
-        case 9: case 12: storage[i].u8=(uint8_t)bits[i]; break;
-        case 10: storage[i].i16=(int16_t)bits[i]; break;
-        case 11: storage[i].u16=(uint16_t)bits[i]; break;
+        args[i]=&storage[i];
+        // Prepared CIF types are immutable and already validated.
+        switch(plan->cif.arg_types[i]->type) {
+        case FFI_TYPE_SINT32: storage[i].i32=(int32_t)bits[i]; break;
+        case FFI_TYPE_UINT32: storage[i].u32=(uint32_t)bits[i]; break;
+        case FFI_TYPE_SINT64: storage[i].i64=(int64_t)bits[i]; break;
+        case FFI_TYPE_UINT64: storage[i].u64=bits[i]; break;
+        case FFI_TYPE_FLOAT: { uint32_t b=(uint32_t)bits[i]; memcpy(&storage[i].f32,&b,4); break; }
+        case FFI_TYPE_DOUBLE: memcpy(&storage[i].f64,&bits[i],8); break;
+        case FFI_TYPE_POINTER: storage[i].ptr=(void *)(uintptr_t)bits[i]; break;
+        case FFI_TYPE_SINT8: storage[i].i8=(int8_t)bits[i]; break;
+        case FFI_TYPE_UINT8: storage[i].u8=(uint8_t)bits[i]; break;
+        case FFI_TYPE_SINT16: storage[i].i16=(int16_t)bits[i]; break;
+        case FFI_TYPE_UINT16: storage[i].u16=(uint16_t)bits[i]; break;
+        default: free(allocation); return -1;
         }
     }
     dylib_scalar ret; memset(&ret,0,sizeof(ret));
@@ -70,6 +89,7 @@ static int dylib_ffi_call(dylib_call_plan *plan, uintptr_t address, uint8_t resu
     case 8: case 9: case 12: *out=(uint8_t)ret.word; break;
     case 10: case 11: *out=(uint16_t)ret.word; break;
     }
+    free(allocation);
     return 0;
 }
 typedef struct {
@@ -121,16 +141,16 @@ static uint64_t dylib_read(void *p, uint8_t t, int is_result) {
 }
 typedef struct {
     unsigned n;
-    ffi_type *result;
-    ffi_type *types[32];
-    void *args[32];
+    void *args[];
 } dylib_record_call;
-static dylib_record_call *dylib_record_new(ffi_type *result, unsigned n) {
-    dylib_record_call *c=(dylib_record_call *)calloc(1,sizeof(*c));
-    if (c) { c->n=n; c->result=result; }
+static dylib_record_call *dylib_record_new(unsigned n) {
+    size_t size=dylib_array_size(sizeof(dylib_record_call),n,sizeof(void *));
+    if (!size) return NULL;
+    dylib_record_call *c=(dylib_record_call *)calloc(1,size);
+    if (c) c->n=n;
     return c;
 }
-static void dylib_record_arg(dylib_record_call *c, unsigned i, ffi_type *t, void *p) { c->types[i]=t; c->args[i]=p; }
+static void dylib_record_arg(dylib_record_call *c, unsigned i, void *p) { c->args[i]=p; }
 static void dylib_record_execute(dylib_call_plan *plan, dylib_record_call *c, uintptr_t address, void *out) {
     ffi_call(&plan->cif,FFI_FN(address),out,c->args);
 }
@@ -215,7 +235,7 @@ func prepare(s Signature) (callBackend, error) {
 	if convention < 0 {
 		return nil, fmt.Errorf("calling convention %d is unavailable on this host", s.Convention)
 	}
-	b := &ffiBackend{pool: nativePool{abi: convention}, plan: C.dylib_plan_new()}
+	b := &ffiBackend{pool: nativePool{abi: convention}, plan: C.dylib_plan_new(C.uint(len(s.Args)))}
 	if b.plan == nil {
 		return nil, fmt.Errorf("native call plan allocation failed")
 	}
@@ -262,16 +282,17 @@ func (b *ffiBackend) invoke(address uintptr, s Signature, args []Value) (Value, 
 	if records {
 		return b.invokeRecords(address, s, args)
 	}
-	var types [32]C.uint8_t
-	var bits [32]C.uint64_t
+	bits := make([]C.uint64_t, len(args))
 	for i, v := range args {
-		types[i] = C.uint8_t(v.Type)
 		bits[i] = C.uint64_t(v.Bits)
 	}
 	var out C.uint64_t
-	rc := C.dylib_ffi_call(b.plan, C.uintptr_t(address), C.uint8_t(s.Result), C.uint(len(args)), &types[0], &bits[0], &out)
+	rc := C.dylib_ffi_call(b.plan, C.uintptr_t(address), C.uint8_t(s.Result), C.uint(len(args)), unsafe.SliceData(bits), &out)
+	if rc == -2 {
+		return Value{}, fmt.Errorf("native scalar call allocation failed")
+	}
 	if rc != 0 {
-		return Value{}, fmt.Errorf("ffi call preparation failed: %d", rc)
+		return Value{}, fmt.Errorf("ffi scalar invocation failed: %d", rc)
 	}
 	return Value{Type: s.Result, Bits: uint64(out)}, nil
 }
@@ -426,7 +447,7 @@ func (b *ffiBackend) invokeRecords(address uintptr, s Signature, args []Value) (
 	defer pool.close()
 	resultDesc := s.ReturnType()
 	resultType := b.result
-	call := C.dylib_record_new(resultType.ffi, C.uint(len(args)))
+	call := C.dylib_record_new(C.uint(len(args)))
 	if call == nil {
 		return Value{}, fmt.Errorf("native call allocation failed")
 	}
@@ -441,7 +462,7 @@ func (b *ffiBackend) invokeRecords(address uintptr, s Signature, args []Value) (
 		if err = pool.write(v, d, t, mem); err != nil {
 			return Value{}, err
 		}
-		C.dylib_record_arg(call, C.uint(i), t.ffi, mem)
+		C.dylib_record_arg(call, C.uint(i), mem)
 	}
 	out, err := pool.allocate(uint64(C.dylib_type_size(resultType.ffi)))
 	if err != nil {

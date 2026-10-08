@@ -50,10 +50,12 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [ ] Remaining relocations on existing targets; Mach-O indirect symbols/coalesced sections.
 - [ ] Legacy ELF lifecycle tables/code, Mach-O initializer offsets, and COFF integer-returning CRT initializers.
 - [ ] Native unwind registration and cleanup on POSIX/Windows.
-- [ ] Concurrent session calls and reentrant callbacks without holding session locks across native execution.
+- [x] Concurrent Symbol/Function/CallPlan calls and reentrant callbacks, with retirement before cleanup and no invocation lock across native calls.
+- [ ] Reentrant load/link initializers that can resolve staged symbols before publication.
 - [ ] Explicit raw-object TLS models, per-thread allocation, and thread destructor ownership.
 - [ ] Union, packed record, and bitfield layouts through validated compiler adapters where libffi cannot represent the ABI.
-- [ ] Dynamic argument counts, reusable layout caches, and measured call/allocation costs.
+- [x] Dynamic argument counts for scalar/aggregate calls, variadic shapes, and callbacks; reproducible call/allocation benchmarks.
+- [ ] Cross-binding layout/CIF caches and reuse of typed pointee layouts.
 - [ ] Thin archives and universal Mach-O host-slice selection.
 - [ ] Clang/llcppg declaration-based dynamic adapter generation.
 - [ ] C++ constructor/method/object adapters, followed by inheritance and virtual dispatch.

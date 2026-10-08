@@ -34,9 +34,13 @@ func TestDeclarations(t *testing.T) {
 			}
 		})
 	}
-	maximum := "func maximum(" + strings.Repeat("int32,", 32) + ")"
-	if _, err := Parse(maximum); err != nil {
-		t.Fatal(err)
+	large := "func many(" + strings.Repeat("int32,", 64) + ")int64"
+	if d, err := Parse(large); err != nil || len(d.Signature.Args) != 64 {
+		t.Fatalf("large declaration: %+v, %v", d, err)
+	}
+	call := "many(" + strings.Repeat("1:int32,", 63) + "2:int32)int64"
+	if d, err := ParseCall(call); err != nil || len(d.Args) != 64 || d.Args[63] != abi.Int32(2) {
+		t.Fatalf("large invocation: %+v, %v", d, err)
 	}
 }
 
@@ -48,7 +52,6 @@ func TestRejectedDeclarations(t *testing.T) {
 		"func f() (int32,int32)", "func f() (a,b int32)", "func f() {}",
 		"func (r T) f()", "func f[T any](T)", "var f int32",
 		"func f(); func g()", "import \"unsafe\"; func f()",
-		"func f(" + strings.Repeat("int32,", 33) + ")",
 	} {
 		t.Run(text, func(t *testing.T) {
 			if d, err := Parse(text); err == nil {

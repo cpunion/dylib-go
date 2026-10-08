@@ -21,7 +21,7 @@ func callbackLibrary(t *testing.T, input string) *Session {
 }
 
 // All dynamic ABI fixtures run as standalone objects, archives, and OS libraries.
-func nativeABILibrary(t *testing.T, source, input string) *Session {
+func nativeABILibrary(t testing.TB, source, input string) *Session {
 	t.Helper()
 	if !abi.Available() {
 		t.Skip("requires libffi")
@@ -386,7 +386,8 @@ func TestNativeCallbackWindows386Conventions(t *testing.T) {
 	}
 }
 
-func TestNativeCallbacksOnForeignThreads(t *testing.T) {
+func callbackThreadLibrary(t *testing.T, source string) *Session {
+	t.Helper()
 	if !abi.Available() {
 		t.Skip("callbacks require libffi")
 	}
@@ -400,7 +401,7 @@ func TestNativeCallbacksOnForeignThreads(t *testing.T) {
 		name = "threads.dll"
 	}
 	path := filepath.Join(dir, name)
-	args := []string{flag, "-O0", "testdata/callback_threads.c", "-o", path}
+	args := []string{flag, "-O0", source, "-o", path}
 	if runtime.GOOS != "windows" {
 		args = append(args, "-fPIC", "-pthread")
 	}
@@ -409,8 +410,13 @@ func TestNativeCallbacksOnForeignThreads(t *testing.T) {
 	}
 	command(t, compiler(), args...)
 	s := New(Options{})
-	defer s.Close()
 	load(t, s, path)
+	t.Cleanup(func() { s.Close() })
+	return s
+}
+
+func TestNativeCallbacksOnForeignThreads(t *testing.T) {
+	s := callbackThreadLibrary(t, "testdata/callback_threads.c")
 	var mu sync.Mutex
 	calls := 0
 	capture := []int32{20, 22}

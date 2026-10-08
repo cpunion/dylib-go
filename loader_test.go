@@ -15,7 +15,7 @@ import (
 	"github.com/cpunion/dylib-go/internal/native"
 )
 
-func command(t *testing.T, name string, args ...string) {
+func command(t testing.TB, name string, args ...string) {
 	t.Helper()
 	if _, e := exec.LookPath(name); e != nil {
 		if os.Getenv("DYLIB_TEST_REQUIRE_TOOLS") == "1" {
@@ -50,7 +50,7 @@ func compiler() string {
 	}
 	return "clang"
 }
-func compile(t *testing.T, src, out string, flags ...string) string {
+func compile(t testing.TB, src, out string, flags ...string) string {
 	t.Helper()
 	args := []string{"-O0", "-fno-stack-protector", "-c", src, "-o", out}
 	if runtime.GOOS == "darwin" && runtime.GOARCH == "amd64" {
@@ -81,7 +81,7 @@ func compile(t *testing.T, src, out string, flags ...string) string {
 	command(t, compiler(), args...)
 	return out
 }
-func needNative(t *testing.T) {
+func needNative(t testing.TB) {
 	t.Helper()
 	if !native.Available() || (runtime.GOARCH != "arm64" && runtime.GOARCH != "amd64" && runtime.GOARCH != "386") {
 		if os.Getenv("DYLIB_TEST_REQUIRE_NATIVE") == "1" {
@@ -90,7 +90,7 @@ func needNative(t *testing.T) {
 		t.Skip("native calls unavailable")
 	}
 }
-func load(t *testing.T, s *Session, paths ...string) {
+func load(t testing.TB, s *Session, paths ...string) {
 	t.Helper()
 	for _, p := range paths {
 		if e := s.Load(p); e != nil {

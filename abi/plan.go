@@ -16,9 +16,13 @@ type callBackend interface {
 
 // CallPlan owns a prepared native call interface and its type layouts. It is
 // independent of any code address; callers must keep the target image alive.
-// Close releases native resources and waits for an active call. Do not copy it.
+// Concurrent and reentrant calls share its immutable prepared layout. Close
+// releases native resources after active calls return. Do not copy it.
 type CallPlan struct {
 	mu        sync.Mutex
+	cond      *sync.Cond
+	calls     int
+	closing   bool
 	signature Signature
 	physical  Signature
 	backend   callBackend
@@ -54,31 +58,36 @@ func Prepare(s Signature) (*CallPlan, error) {
 }
 
 // Call invokes an exact native address with the plan's original logical types.
-// Calls through one plan are serialized. Native code must not retain temporary
-// pointers or re-enter this plan; use separate plans for independent calls.
+// Calls have independent native storage and may overlap or reenter this plan.
+// Synchronize shared pointees/native state. Native code must not retain
+// temporary pointers or close this plan from one of its own calls.
 func (p *CallPlan) Call(address uintptr, args ...Value) (Value, error) {
 	if p == nil {
 		return Value{}, ErrClosed
 	}
 	p.mu.Lock()
-	defer p.mu.Unlock()
 	if p.backend == nil {
+		p.mu.Unlock()
 		return Value{}, ErrClosed
 	}
+	backend, signature, physical := p.backend, p.signature, p.physical
+	p.calls++
+	p.mu.Unlock()
+	defer p.releaseCall()
 	if address == 0 {
 		return Value{}, fmt.Errorf("null function address")
 	}
-	if len(args) != len(p.signature.Args) {
+	if len(args) != len(signature.Args) {
 		return Value{}, fmt.Errorf("argument count mismatch")
 	}
 	for i, v := range args {
-		if err := v.Validate(p.signature.ArgumentType(i)); err != nil {
+		if err := v.Validate(signature.ArgumentType(i)); err != nil {
 			return Value{}, fmt.Errorf("argument %d: %w", i+1, err)
 		}
 	}
-	if p.signature.Variadic {
+	if signature.Variadic {
 		args = append([]Value(nil), args...)
-		for i := p.signature.FixedArgs; i < len(args); i++ {
+		for i := signature.FixedArgs; i < len(args); i++ {
 			v := args[i]
 			switch v.Type {
 			case F32:
@@ -94,20 +103,52 @@ func (p *CallPlan) Call(address uintptr, args ...Value) (Value, error) {
 			}
 		}
 	}
-	return p.backend.invoke(address, p.physical, args)
+	return backend.invoke(address, physical, args)
 }
 
+// Close rejects new calls and waits for active calls before freeing the CIF.
+// Call it outside handlers invoked by this plan, to avoid waiting for itself.
 func (p *CallPlan) Close() error {
 	if p == nil {
 		return nil
 	}
 	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.backend != nil {
-		p.backend.close()
-		p.backend = nil
-		p.signature = Signature{}
-		p.physical = Signature{}
+	for p.closing {
+		p.waitCalls()
 	}
+	if p.backend == nil {
+		p.mu.Unlock()
+		return nil
+	}
+	backend := p.backend
+	p.backend, p.closing = nil, true
+	for p.calls != 0 {
+		p.waitCalls()
+	}
+	p.signature, p.physical = Signature{}, Signature{}
+	p.mu.Unlock()
+	backend.close()
+	p.mu.Lock()
+	p.closing = false
+	if p.cond != nil {
+		p.cond.Broadcast()
+	}
+	p.mu.Unlock()
 	return nil
+}
+
+func (p *CallPlan) waitCalls() {
+	if p.cond == nil {
+		p.cond = sync.NewCond(&p.mu)
+	}
+	p.cond.Wait()
+}
+
+func (p *CallPlan) releaseCall() {
+	p.mu.Lock()
+	p.calls--
+	if p.calls == 0 && p.cond != nil {
+		p.cond.Broadcast()
+	}
+	p.mu.Unlock()
 }

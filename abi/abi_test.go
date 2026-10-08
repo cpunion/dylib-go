@@ -30,3 +30,17 @@ func TestVariadicValidation(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestLargeSignatureValidation(t *testing.T) {
+	s := Signature{Result: I64, Args: make([]Type, 64)}
+	for i := range s.Args {
+		s.Args[i] = I32
+	}
+	if err := s.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	s.Args[63] = Void
+	if err := s.Validate(); err == nil {
+		t.Fatal("last argument was not validated")
+	}
+}
