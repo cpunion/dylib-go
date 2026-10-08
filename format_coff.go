@@ -62,7 +62,7 @@ func parseCOFF(name string, b []byte) (*file, error) {
 			v.value = 0
 			v.align = 16
 		}
-		if s.StorageClass == 105 {
+		if s.StorageClass == 105 && o.info.Kind == "object" {
 			if s.SectionNumber != 0 || s.Value != 0 || s.NumberOfAuxSymbols != 1 {
 				return nil, fmt.Errorf("invalid COFF weak external record")
 			}
@@ -98,13 +98,13 @@ func parseCOFF(name string, b []byte) (*file, error) {
 		}
 		i += 1 + int(s.NumberOfAuxSymbols)
 	}
+	if o.info.Kind != "object" {
+		return finish(o), nil
+	}
 	for _, s := range o.symbols {
 		if s.alias != nil && !o.symbols[s.alias.target].global {
 			return nil, fmt.Errorf("COFF weak fallback must reference an external symbol")
 		}
-	}
-	if o.info.Kind != "object" {
-		return finish(o), nil
 	}
 	o.sections = make([]*section, len(f.Sections)+1)
 	for i, s := range f.Sections {

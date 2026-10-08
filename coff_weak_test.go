@@ -260,6 +260,46 @@ func TestCOFFWeakChainsAndLifecycle(t *testing.T) {
 	}
 }
 
+func TestPEWeakDebugMetadata(t *testing.T) {
+	// A completed PE image may retain weak debug records whose fallback
+	// indexes no longer describe input-object externals. The OS, not our
+	// object linker, resolves the image and must remain responsible for it.
+	data, _ := coffAssembly(t, "i686-pc-windows-msvc", ".data\n.weak optional\n.set optional,target\n.globl target\ntarget:\n.long 42\n")
+	le.PutUint32(data[weakAuxOffset(t, data, "optional"):], 0) // Static section symbol.
+	if _, err := parse("object", data); err == nil {
+		t.Fatal("invalid input-object fallback accepted")
+	}
+	const optionalSize = 224 // IMAGE_OPTIONAL_HEADER32 with 16 data directories.
+	const delta = 128 + 4 + optionalSize
+	b := make([]byte, 128)
+	copy(b, "MZ")
+	le.PutUint32(b[0x3c:], 128)
+	b = append(b, 'P', 'E', 0, 0)
+	header := append([]byte(nil), data[:20]...)
+	le.PutUint32(header[8:], le.Uint32(header[8:])+delta)
+	le.PutUint16(header[16:], optionalSize)
+	le.PutUint16(header[18:], 0x2000) // DLL.
+	b = append(b, header...)
+	opt := make([]byte, optionalSize)
+	le.PutUint16(opt, 0x10b)
+	le.PutUint32(opt[92:], 16)
+	b = append(b, opt...)
+	remaining := append([]byte(nil), data[20:]...)
+	for i := 0; i < int(le.Uint16(data[2:])); i++ {
+		for _, field := range []int{20, 24, 28} { // Data, relocations, line numbers.
+			position := i*40 + field
+			if p := le.Uint32(remaining[position:]); p != 0 {
+				le.PutUint32(remaining[position:], p+delta)
+			}
+		}
+	}
+	b = append(b, remaining...)
+	f, err := parse("retained-debug.dll", b)
+	if err != nil || f.info.Format != "PE" || f.info.Kind != "shared" {
+		t.Fatalf("completed PE metadata: %+v, %v", f, err)
+	}
+}
+
 func TestNativeCOFFWeakCalls(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("COFF execution needs Windows")
