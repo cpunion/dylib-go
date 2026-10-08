@@ -711,6 +711,15 @@ func (im *image) symbol(o *object, index int, local bool) (uintptr, error) {
 		if p == 0 {
 			p = im.imports[entry]
 		}
+		if p == 0 && runtimeHelper(entry.public) {
+			if d, ok := im.defs[entry.public]; ok && d.sym().imported == nil {
+				var err error
+				p, err = im.symbol(d.o, d.index, false)
+				if err != nil {
+					return 0, err
+				}
+			}
+		}
 		if p == 0 {
 			return 0, fmt.Errorf("unresolved DLL import %s", entry.public)
 		}
