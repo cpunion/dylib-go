@@ -8,20 +8,21 @@ import (
 	"go/parser"
 	"go/scanner"
 	"go/token"
+	"strconv"
 	"strings"
 
 	"github.com/cpunion/dylib-go/abi"
 )
 
-// ParseTypedValue accepts ordinary struct literals in the context of a known
-// C layout. Pointer literals &VALUE (or a struct literal for *struct) become
+// ParseTypedValue accepts struct and array literals in a known C layout.
+// Pointer literals &VALUE (or an aggregate literal for its pointer) become
 // temporary native copies, without passing Go memory to the native function.
 func ParseTypedValue(d abi.TypeDesc, text string) (abi.Value, error) {
 	if err := d.Validate(); err != nil {
 		return abi.Value{}, err
 	}
 	text = strings.TrimSpace(text)
-	if d.Type != abi.Struct && !(d.Type == abi.Pointer && (strings.HasPrefix(text, "&") || strings.HasPrefix(text, "{"))) {
+	if d.Type != abi.Struct && d.Type != abi.Array && !(d.Type == abi.Pointer && (strings.HasPrefix(text, "&") || strings.HasPrefix(text, "{"))) {
 		return ParseValue(d.Type, text)
 	}
 	if d.Type == abi.Pointer {
@@ -35,7 +36,7 @@ func ParseTypedValue(d abi.TypeDesc, text string) (abi.Value, error) {
 		return abi.AddressOf(&v), nil
 	}
 	if !strings.HasPrefix(text, "{") {
-		return abi.Value{}, fmt.Errorf("expected a struct literal {...}")
+		return abi.Value{}, fmt.Errorf("expected an aggregate literal {...}")
 	}
 	expr, err := parser.ParseExpr(expandPointeeLiterals("_native" + text))
 	if err != nil {
@@ -44,7 +45,7 @@ func ParseTypedValue(d abi.TypeDesc, text string) (abi.Value, error) {
 	return parseComposite(d, expr)
 }
 
-// Go permits elided nested struct literals, but &{...} needs a type token.
+// Go permits elided nested aggregate literals, but &{...} needs a type token.
 // Insert a placeholder only at that token boundary; the descriptor supplies
 // the actual type, so no expression is evaluated or identifier resolved.
 func expandPointeeLiterals(text string) string {
@@ -91,7 +92,7 @@ func parseComposite(d abi.TypeDesc, expr ast.Expr) (abi.Value, error) {
 			return abi.AddressOf(&v), nil
 		}
 	}
-	if d.Type != abi.Struct {
+	if d.Type != abi.Struct && d.Type != abi.Array {
 		var buf bytes.Buffer
 		if err := format.Node(&buf, token.NewFileSet(), expr); err != nil {
 			return abi.Value{}, err
@@ -100,13 +101,16 @@ func parseComposite(d abi.TypeDesc, expr ast.Expr) (abi.Value, error) {
 	}
 	composite, ok := expr.(*ast.CompositeLit)
 	if !ok {
-		return abi.Value{}, fmt.Errorf("expected a struct literal")
+		return abi.Value{}, fmt.Errorf("expected an aggregate literal")
 	}
 	if composite.Type != nil {
 		name, ok := composite.Type.(*ast.Ident)
 		if !ok || name.Name != "_native" {
-			return abi.Value{}, fmt.Errorf("struct literals must omit their type name")
+			return abi.Value{}, fmt.Errorf("aggregate literals must omit their type name")
 		}
+	}
+	if d.Type == abi.Array {
+		return parseArrayComposite(d, composite)
 	}
 	v := abi.Zero(d)
 	seen := make(map[int]bool)
@@ -148,6 +152,36 @@ func parseComposite(d abi.TypeDesc, expr ast.Expr) (abi.Value, error) {
 	}
 	if len(composite.Elts) > 0 && !keyed && len(composite.Elts) != len(d.Fields) {
 		return abi.Value{}, fmt.Errorf("positional literal needs all struct fields")
+	}
+	return v, nil
+}
+
+func parseArrayComposite(d abi.TypeDesc, composite *ast.CompositeLit) (abi.Value, error) {
+	v := abi.Zero(d)
+	seen := make(map[int]bool)
+	index := 0
+	for _, e := range composite.Elts {
+		if kv, ok := e.(*ast.KeyValueExpr); ok {
+			key, ok := kv.Key.(*ast.BasicLit)
+			if !ok || key.Kind != token.INT {
+				return abi.Value{}, fmt.Errorf("array index must be a nonnegative integer literal")
+			}
+			n, err := strconv.ParseUint(key.Value, 0, 32)
+			if err != nil || n >= uint64(d.Len) {
+				return abi.Value{}, fmt.Errorf("array index outside length %d", d.Len)
+			}
+			index, e = int(n), kv.Value
+		}
+		if index >= d.Len || seen[index] {
+			return abi.Value{}, fmt.Errorf("too many or duplicate array elements")
+		}
+		seen[index] = true
+		element, err := parseComposite(*d.Elem, e)
+		if err != nil {
+			return abi.Value{}, fmt.Errorf("array element %d: %w", index, err)
+		}
+		v.Aggregate.Fields[index] = element
+		index++
 	}
 	return v, nil
 }

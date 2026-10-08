@@ -74,12 +74,15 @@ static int dylib_ffi_call(dylib_call_plan *plan, uintptr_t address, uint8_t resu
 }
 typedef struct {
     ffi_type type;
-    ffi_type *elements[33];
-    size_t offsets[32];
+    size_t *offsets;
+    ffi_type *elements[];
 } dylib_struct_type;
-static dylib_struct_type *dylib_struct_new(void) {
-    dylib_struct_type *t=(dylib_struct_type *)calloc(1,sizeof(*t));
-    if (t) { t->type.type=FFI_TYPE_STRUCT; t->type.elements=t->elements; }
+static dylib_struct_type *dylib_struct_new(unsigned n) {
+    dylib_struct_type *t=(dylib_struct_type *)calloc(1,sizeof(*t)+(n+1)*sizeof(ffi_type *)+n*sizeof(size_t));
+    if (t) {
+        t->type.type=FFI_TYPE_STRUCT; t->type.elements=t->elements;
+        t->offsets=(size_t *)(t->elements+n+1);
+    }
     return t;
 }
 static void dylib_struct_field(dylib_struct_type *t, unsigned i, ffi_type *f) { t->elements[i]=f; }
@@ -315,19 +318,25 @@ func (p *nativePool) allocate(size uint64) (unsafe.Pointer, error) {
 	return mem, nil
 }
 func (p *nativePool) build(d TypeDesc) (*nativeType, error) {
-	if d.Type != Struct {
+	if d.Type != Struct && d.Type != Array {
 		return &nativeType{ffi: C.dylib_ffi_type(C.uint8_t(d.Type))}, nil
 	}
-	t := C.dylib_struct_new()
+	t := C.dylib_struct_new(C.uint(d.memberCount()))
 	if t == nil {
 		return nil, fmt.Errorf("native type allocation failed")
 	}
 	p.allocations = append(p.allocations, unsafe.Pointer(t))
 	n := &nativeType{ffi: C.dylib_struct_ffi(t)}
-	for i, f := range d.Fields {
-		child, err := p.build(f.Type)
-		if err != nil {
-			return nil, err
+	var child *nativeType
+	for i := 0; i < d.memberCount(); i++ {
+		// libffi represents an array member as a struct with repeated elements.
+		// Reuse its element layout; array arguments/results are rejected earlier.
+		if d.Type != Array || i == 0 {
+			var err error
+			child, err = p.build(d.memberType(i))
+			if err != nil {
+				return nil, err
+			}
 		}
 		n.fields = append(n.fields, child)
 		C.dylib_struct_field(t, C.uint(i), child.ffi)
@@ -336,17 +345,17 @@ func (p *nativePool) build(d TypeDesc) (*nativeType, error) {
 		return nil, fmt.Errorf("ffi struct layout failed: %d", rc)
 	}
 	if uint64(C.dylib_type_size(n.ffi)) > 65536 {
-		return nil, fmt.Errorf("native struct exceeds 64 KiB")
+		return nil, fmt.Errorf("native aggregate exceeds 64 KiB")
 	}
-	for i := range d.Fields {
+	for i := 0; i < d.memberCount(); i++ {
 		n.offsets = append(n.offsets, C.dylib_struct_offset(t, C.uint(i)))
 	}
 	return n, nil
 }
 func (p *nativePool) write(v Value, d TypeDesc, n *nativeType, mem unsafe.Pointer) error {
-	if d.Type == Struct {
-		for i, f := range d.Fields {
-			if err := p.write(v.Aggregate.Fields[i], f.Type, n.fields[i], C.dylib_field_address(mem, n.offsets[i])); err != nil {
+	if d.Type == Struct || d.Type == Array {
+		for i, member := range v.Aggregate.Fields {
+			if err := p.write(member, d.memberType(i), n.fields[i], C.dylib_field_address(mem, n.offsets[i])); err != nil {
 				return err
 			}
 		}
@@ -382,10 +391,10 @@ func (p *nativePool) write(v Value, d TypeDesc, n *nativeType, mem unsafe.Pointe
 }
 func (p *nativePool) read(d TypeDesc, n *nativeType, mem unsafe.Pointer, result bool) Value {
 	v := Value{Type: d.Type}
-	if d.Type == Struct {
+	if d.Type == Struct || d.Type == Array {
 		v.Aggregate = &Aggregate{Type: d.Clone()}
-		for i, f := range d.Fields {
-			v.Aggregate.Fields = append(v.Aggregate.Fields, p.read(f.Type, n.fields[i], C.dylib_field_address(mem, n.offsets[i]), false))
+		for i := 0; i < d.memberCount(); i++ {
+			v.Aggregate.Fields = append(v.Aggregate.Fields, p.read(d.memberType(i), n.fields[i], C.dylib_field_address(mem, n.offsets[i]), false))
 		}
 	} else {
 		isResult := C.int(0)

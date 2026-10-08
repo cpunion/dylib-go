@@ -113,6 +113,12 @@ func consumeType(tokens []lexeme, i int) (int, bool) {
 	if tokens[i].kind == token.MUL {
 		return consumeType(tokens, i+1)
 	}
+	if tokens[i].kind == token.LBRACK {
+		if i+2 >= len(tokens) || tokens[i+1].kind != token.INT || tokens[i+2].kind != token.RBRACK {
+			return i, false
+		}
+		return consumeType(tokens, i+3)
+	}
 	if tokens[i].kind == token.IDENT {
 		i++
 		for i < len(tokens) && tokens[i].kind == token.PERIOD {

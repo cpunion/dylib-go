@@ -14,16 +14,16 @@ binary="$example_dir/mixed"
 case "$(uname -s)" in
   Darwin)
     library="$example_dir/scalars.dylib"
-    "${CLANG:-clang}" -dynamiclib testdata/scalars.c -o "$library"
+    "${CLANG:-clang}" -dynamiclib testdata/scalars.c testdata/arrays.c -o "$library"
     ;;
   Linux)
     library="$example_dir/scalars.so"
-    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared -fPIC testdata/scalars.c -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared -fPIC testdata/scalars.c testdata/arrays.c -o "$library"
     ;;
   MINGW*|MSYS*)
     binary="$example_dir/mixed.exe"
     library="$example_dir/scalars.dll"
-    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared testdata/scalars.c -Wl,--export-all-symbols -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared testdata/scalars.c testdata/arrays.c -Wl,--export-all-symbols -o "$library"
     ;;
   *) echo 'unsupported example host' >&2; exit 1 ;;
 esac
@@ -41,3 +41,8 @@ echo "$compiler dynamic libffi signature: $result"
 result=$("$binary" "$library")
 test "$result" = 42
 echo "$compiler dynamic C callback with Go capture: $result"
+
+"$compiler" build -tags libffi -o "$binary" ./examples/arrays
+result=$("$binary" "$library")
+test "$result" = 42
+echo "$compiler dynamic C struct with array members: $result"

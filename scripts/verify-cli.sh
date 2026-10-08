@@ -13,16 +13,16 @@ binary="$cli_dir/ddlgo"
 case "$(uname -s)" in
   Darwin)
     library="$cli_dir/calls.dylib"
-    "${CLANG:-clang}" -dynamiclib testdata/add.c testdata/scalars.c testdata/cli.c testdata/variadic.c -o "$library"
+    "${CLANG:-clang}" -dynamiclib testdata/add.c testdata/scalars.c testdata/cli.c testdata/arrays.c testdata/variadic.c -o "$library"
     ;;
   Linux)
     library="$cli_dir/calls.so"
-    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared -fPIC testdata/add.c testdata/scalars.c testdata/cli.c testdata/variadic.c -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared -fPIC testdata/add.c testdata/scalars.c testdata/cli.c testdata/arrays.c testdata/variadic.c -o "$library"
     ;;
   MINGW*|MSYS*)
     binary="$cli_dir/ddlgo.exe"
     library="$cli_dir/calls.dll"
-    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared testdata/add.c testdata/scalars.c testdata/cli.c testdata/variadic.c -Wl,--export-all-symbols -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared testdata/add.c testdata/scalars.c testdata/cli.c testdata/arrays.c testdata/variadic.c -Wl,--export-all-symbols -o "$library"
     ;;
   *) echo 'unsupported CLI test host' >&2; exit 1 ;;
 esac
@@ -70,6 +70,24 @@ expect 42 'sum_nested({tag:1,p:{a:20,b:20},extra:1}:struct{tag int8;p struct{a,b
 expect '{tag:1,p:{a:20,b:20},extra:1}' 'echo_nested({tag:1,p:{a:20,b:20},extra:1}:struct{tag int8;p struct{a,b int32};extra float64})struct{tag int8;p struct{a,b int32};extra float64}' "$library"
 expect '{x:20.5,y:21.5}' 'echo_float_pair({20.5,21.5}:struct{x,y float32})struct{x,y float32}' "$library"
 expect '{p:&{a:22,b:20},bonus:0}' 'echo_pair_ref({p:&{a:20,b:20}}:struct{p *struct{a,b int32};bonus int32})struct{p *struct{a,b int32};bonus int32}' "$library"
+expect 42 'func sum_array_i32(struct{values [2]int32})float64' '{values:{20,22}}' "$library"
+expect 42 'sum_array_ptr(&{20,22}:*[2]int32)int32' "$library"
+expect '{values:{20.5,21.5}}' 'echo_array_f64({{20.5,21.5}}:struct{values [2]float64})struct{values [2]float64}' "$library"
+expect '&{22,20}' 'mutate_array(&{20,22}:*[2]int32)*[2]int32' "$library"
+expect '{values:{&22,&20}}' 'mutate_array_refs({{&20,&22}}:struct{values [2]*int32})struct{values [2]*int32}' "$library"
+expect 42 -variadic-from=1 'var_array(2:int32,{{20,20}}:struct{values [2]int32})int32' "$library"
+
+# Invalid C array signatures must fail before attempting to load native code.
+for declaration in 'func f([2]int32)' 'func f()[2]int32' 'func f(*[0]int32)'; do
+  if "$binary" call "$declaration" "$cli_dir/not-a-library" >"$cli_dir/error" 2>&1; then
+    echo "accepted invalid array signature: $declaration" >&2
+    exit 1
+  fi
+  if ! grep -qi 'array' "$cli_dir/error"; then
+    cat "$cli_dir/error" >&2
+    exit 1
+  fi
+done
 
 # Dynamic declarations also execute raw objects/archives on each native target.
 if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ]]; then

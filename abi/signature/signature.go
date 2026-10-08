@@ -21,7 +21,8 @@ type Declaration struct {
 
 // Parse accepts a single Go function declaration without a body. Supported
 // types are fixed-width integers, bool, float32/64, uintptr, unsafe.Pointer,
-// pointers, and inline ordinary C structs. An omitted result is void.
+// pointers, and inline ordinary C structs, including fixed-length array fields.
+// Arrays may also be pointer elements. An omitted result is void.
 // uintptr follows the host word size; int and uint are deliberately rejected.
 func Parse(text string) (Declaration, error) {
 	f, err := parser.ParseFile(token.NewFileSet(), "signature", "package signature\n"+text, parser.SkipObjectResolution)
@@ -107,6 +108,21 @@ func describeType(expr ast.Expr) (abi.TypeDesc, error) {
 		return d, nil
 	case *ast.ParenExpr:
 		return describeType(t.X)
+	case *ast.ArrayType:
+		length, ok := t.Len.(*ast.BasicLit)
+		if !ok || length.Kind != token.INT {
+			return abi.TypeDesc{}, fmt.Errorf("C arrays require a positive integer literal length")
+		}
+		n, err := strconv.ParseInt(length.Value, 0, 32)
+		if err != nil {
+			return abi.TypeDesc{}, fmt.Errorf("invalid array length: %w", err)
+		}
+		elem, err := describeType(t.Elt)
+		if err != nil {
+			return abi.TypeDesc{}, err
+		}
+		d := abi.TypeDesc{Type: abi.Array, Len: int(n), Elem: &elem}
+		return d, d.Validate()
 	case *ast.StructType:
 		d := abi.TypeDesc{Type: abi.Struct}
 		for _, field := range t.Fields.List {
@@ -126,7 +142,7 @@ func describeType(expr ast.Expr) (abi.TypeDesc, error) {
 		}
 		return d, nil
 	}
-	return abi.TypeDesc{}, fmt.Errorf("unsupported native type; use fixed-width integers, bool, floats, pointers, or ordinary structs")
+	return abi.TypeDesc{}, fmt.Errorf("unsupported native type; use fixed-width integers, bool, floats, pointers, ordinary structs, or fixed-length array members")
 }
 
 // Invocation includes literals in the form name(value:type, value:type)result.

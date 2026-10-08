@@ -26,6 +26,7 @@ const (
 	U16
 	Bool
 	Struct
+	Array // Fixed-length C array, only within aggregates or behind a pointer.
 )
 
 // Convention selects a native C calling convention, not a language object ABI.
@@ -47,7 +48,7 @@ type Signature struct {
 	Convention Convention
 	Variadic   bool
 	FixedArgs  int
-	// ArgTypes and ResultType describe struct fields and optional pointee types.
+	// ArgTypes and ResultType describe aggregates and optional pointee types.
 	// Scalar-only signatures may omit them.
 	ArgTypes   []TypeDesc
 	ResultType *TypeDesc
@@ -67,7 +68,10 @@ func (s Signature) Validate() error {
 	} else if s.FixedArgs != 0 {
 		return fmt.Errorf("FixedArgs requires a variadic signature")
 	}
-	if s.Result > Struct {
+	if s.Result == Array {
+		return fmt.Errorf("C arrays cannot be returned by value; use a struct or pointer")
+	}
+	if s.Result > Array {
 		return fmt.Errorf("invalid result type %d", s.Result)
 	}
 	if len(s.Args) > 32 {
@@ -77,7 +81,10 @@ func (s Signature) Validate() error {
 		return fmt.Errorf("argument descriptor count mismatch")
 	}
 	for i, t := range s.Args {
-		if t == Void || t > Struct {
+		if t == Array {
+			return fmt.Errorf("argument %d: C array parameters decay to pointers; use a pointer descriptor", i+1)
+		}
+		if t == Void || t > Array {
 			return fmt.Errorf("invalid argument type %d", t)
 		}
 		d := s.ArgumentType(i)
@@ -95,7 +102,7 @@ func (s Signature) Validate() error {
 	return d.Validate()
 }
 
-// Value carries scalar bits, logical struct fields, or a temporary pointee.
+// Value carries scalar bits, logical aggregate members, or a temporary pointee.
 // Numeric pointers refer to caller-managed native storage. Go objects are
 // described field by field, never pinned or passed as raw Go memory.
 type Value struct {
