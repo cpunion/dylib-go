@@ -107,6 +107,7 @@ type section struct {
 	name                  string
 	data                  []byte
 	size, align, original uint64
+	tail                  uint64 // Zero native padding, e.g. an ELF frame terminator.
 	exec, write           bool
 	offset                uint64 // Assigned only in the private image built by Link.
 	lifecycle             lifecycleKind

@@ -72,4 +72,6 @@ Windows jobs execute COFF integer `.CRT$XI*` initialization before void `.CRT$XC
 
 Windows amd64/arm64 Go and llgo jobs execute optional raw runtime function table registration. A DLL observer uses `RtlVirtualUnwind` through two real raw C frames, from objects and archives. Tests verify OS lookup, deletion after close, and ownership during failed C initialization cleanup. Pure Go jobs inspect real AMD64/ARM64 `.pdata/.xdata` producer records and validate malformed/unsupported metadata. See [unwind scope](unwind.md).
 
+Linux amd64/arm64 Go and llgo jobs, and native Go 386, execute optional ELF frame registration with libgcc, `_Unwind_Backtrace` through two raw C frames, and `_Unwind_Find_FDE` before/after close. Object/archive calls, default loading, validation retry and failed-initializer ownership are covered. Pure Go jobs inspect all three ELF producers and reject malformed CIE/FDE/CFI records.
+
 CI pins the upstream merge commit of [public C-export foreign-thread guards](https://github.com/xgo-dev/llgo/pull/2752) for dependency packages and executables. The library uses ordinary `//export` declarations and has no private llgo runtime hooks; v1.0.6 cannot qualify C-created-thread callbacks on this path. `setup-llgo` builds the exact commit from source; the full matrix tests that compiler rather than applying patches during a job.
