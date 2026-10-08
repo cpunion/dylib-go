@@ -16,6 +16,6 @@ for target in amd64 arm64 386; do
   assembler="$temp/$target-as"
   printf '#!/bin/sh\nexec clang --target=%s-w64-windows-gnu -c "$@"\n' "$triple" > "$assembler"
   chmod +x "$assembler"
-  "$tool" -m "$machine" -S "$assembler" -D provider.dll -d provider.def \
+  "$tool" --deterministic-libraries -m "$machine" -S "$assembler" -D provider.dll -d provider.def \
     -l "windows_$target.a" -t "$temp/$target-"
 done
