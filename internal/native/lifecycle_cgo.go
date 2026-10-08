@@ -92,6 +92,7 @@ static uintptr_t dylib_exit_address(int which) {
     return 0;
 }
 static void dylib_call_void(uintptr_t fn) { ((void (*)(void))fn)(); }
+static int dylib_call_initializer(uintptr_t fn) { return ((int (*)(void))fn)(); }
 */
 import "C"
 
@@ -136,3 +137,8 @@ func (l *Lifecycle) Close() {
 	}
 }
 func CallVoid(address uintptr) { C.dylib_call_void(C.uintptr_t(address)) }
+
+// CallInitializer invokes an int(void) C initializer using the native C ABI.
+func CallInitializer(address uintptr) int32 {
+	return int32(C.dylib_call_initializer(C.uintptr_t(address)))
+}

@@ -17,6 +17,10 @@ import (
 var ErrClosed = errors.New("dylib: session is closed")
 var ErrLinked = errors.New("dylib: session is already linked; create a new session to load more code")
 
+// ErrInitialization marks a nonzero native C initializer result. Close the
+// failed session and use a new one; native side effects cannot be retried safely.
+var ErrInitialization = errors.New("dylib: C initialization failed; close the session and create a new one")
+
 // Options controls resolution. ProcessSymbols exposes exported host symbols
 // (for example libc on POSIX). Explicitly loaded libraries are always searched.
 type Options struct {
@@ -34,19 +38,21 @@ type Options struct {
 // Close invalidates every returned address. Callers using raw addresses must
 // ensure no native threads or callbacks still use them before calling Close.
 type Session struct {
-	mu         sync.Mutex
-	cond       *sync.Cond
-	calls      int
-	closing    bool
-	opts       Options
-	files      []*file
-	libs       []uintptr
-	dllHandles map[string]uintptr
-	paths      map[string]bool
-	defined    map[string]uintptr
-	image      *image
-	closed     bool
-	plans      []preparedBinding
+	mu          sync.Mutex
+	cond        *sync.Cond
+	calls       int
+	closing     bool
+	opts        Options
+	files       []*file
+	libs        []uintptr
+	dllHandles  map[string]uintptr
+	paths       map[string]bool
+	defined     map[string]uintptr
+	image       *image
+	failedImage *image // Retain code for exit registrations until Close after init failure.
+	initErr     error
+	closed      bool
+	plans       []preparedBinding
 }
 
 func New(opts Options) *Session {
@@ -57,6 +63,9 @@ func New(opts Options) *Session {
 func (s *Session) mutable() error {
 	if s.closed {
 		return ErrClosed
+	}
+	if s.initErr != nil {
+		return s.initErr
 	}
 	if s.image != nil {
 		return ErrLinked
@@ -386,14 +395,19 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 }
 
 // Link extracts archive members needed by roots and object references, then
-// resolves all relocations before granting execute permission. On failure no
-// executable image is published; the caller may add dependencies and retry.
+// resolves all relocations before granting execute permission. Before native
+// initialization, failure permits adding dependencies and retrying. A nonzero
+// C initializer result permanently fails the session; call Close to clean up.
+// No executable image is published on failure.
 // Supported object initializers run after every link validation succeeds.
 // Native initialization side effects cannot be rolled back.
 func (s *Session) Link(roots ...string) error { s.mu.Lock(); defer s.mu.Unlock(); return s.link(roots) }
 func (s *Session) link(roots []string) error {
 	if s.closed {
 		return ErrClosed
+	}
+	if s.initErr != nil {
+		return s.initErr
 	}
 	for _, name := range roots {
 		if name == "" || strings.IndexByte(name, 0) >= 0 {
@@ -439,7 +453,13 @@ func (s *Session) link(roots []string) error {
 			return err
 		}
 	}
-	im.initialize()
+	if err := im.initialize(); err != nil {
+		// Do not run cleanup under mu: exit callbacks may reenter Go. Keep
+		// their code alive until Close retires the failed session and drains
+		// registrations outside the lock. No symbol is published meanwhile.
+		s.failedImage, s.initErr = im, err
+		return err
+	}
 	s.image = im
 	return nil
 }
@@ -478,7 +498,10 @@ func (s *Session) Close() error {
 		s.waitCalls()
 	}
 	plans, image, libs := s.plans, s.image, s.libs
-	s.plans, s.image, s.libs, s.dllHandles = nil, nil, nil, nil
+	if image == nil {
+		image = s.failedImage
+	}
+	s.plans, s.image, s.failedImage, s.libs, s.dllHandles = nil, nil, nil, nil, nil
 	s.mu.Unlock()
 	// Native finalizers may call back into Go. The session is already retired,
 	// so reentrant lookups return ErrClosed without blocking on cleanup.
@@ -537,6 +560,7 @@ type image struct {
 	lifecycle                              *native.Lifecycle
 	hooks                                  map[string]uintptr
 	initializers, finalizers               []uintptr
+	cInitializers                          []cInitializer
 	initialized                            bool
 }
 
@@ -699,9 +723,12 @@ func (im *image) close() error {
 	if im.mem == nil {
 		return nil
 	}
+	// Registrations from a failed C initializer still own pointers into the
+	// image. Drain them before unmapping, without running static termination
+	// arrays for constructors that never completed.
+	im.lifecycle.Finalize()
 	if im.initialized {
 		im.initialized = false
-		im.lifecycle.Finalize()
 		for _, address := range im.finalizers {
 			native.CallVoid(address)
 		}
@@ -712,6 +739,7 @@ func (im *image) close() error {
 	e := native.Free(im.mem)
 	im.mem = nil
 	im.initializers, im.finalizers = nil, nil
+	im.cInitializers = nil
 	return e
 }
 func (im *image) lookup(n string) (uintptr, error) {

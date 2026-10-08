@@ -14,3 +14,4 @@ func (*Lifecycle) Helper(string) uintptr { return 0 }
 func (*Lifecycle) Finalize()             {}
 func (*Lifecycle) Close()                {}
 func CallVoid(uintptr)                   { panic("native lifecycle requires cgo or llgo") }
+func CallInitializer(uintptr) int32      { panic("native lifecycle requires cgo or llgo") }
