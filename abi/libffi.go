@@ -217,17 +217,41 @@ import "C"
 
 import (
 	"fmt"
+	"reflect"
 	"runtime/cgo"
+	"sync"
 	"unsafe"
 )
 
 func Available() bool { return true }
 
 type ffiBackend struct {
-	plan   *C.dylib_call_plan
-	pool   nativePool
-	result *nativeType
-	args   []*nativeType
+	layoutMu sync.Mutex // Protect lazy owned layouts, never native execution.
+	plan     *C.dylib_call_plan
+	pool     nativePool
+	result   *nativeType
+	args     []*nativeType
+}
+
+// Only signature-declared pointees use this persistent cache. Opaque pointers
+// can carry arbitrary temporary shapes, which stay in the invocation pool.
+// Keep preparation lazy: a large native pointee remains usable as a raw pointer
+// even when copying its value would exceed the temporary marshaling budget.
+func (b *ffiBackend) pointeeLayout(d TypeDesc) (*nativeType, error) {
+	b.layoutMu.Lock()
+	defer b.layoutMu.Unlock()
+	allocations, layouts := len(b.pool.allocations), len(b.pool.layouts)
+	n, err := b.pool.build(d)
+	if err != nil {
+		for i := len(b.pool.allocations) - 1; i >= allocations; i-- {
+			C.free(b.pool.allocations[i])
+		}
+		clear(b.pool.allocations[allocations:])
+		clear(b.pool.layouts[layouts:])
+		b.pool.allocations = b.pool.allocations[:allocations]
+		b.pool.layouts = b.pool.layouts[:layouts]
+	}
+	return n, err
 }
 
 func prepare(s Signature) (callBackend, error) {
@@ -309,12 +333,18 @@ type nativeCopy struct {
 	memory unsafe.Pointer
 }
 type nativePool struct {
+	types       *ffiBackend
+	layouts     []nativeLayout
 	abi         C.int
 	allocations []unsafe.Pointer
 	buffers     []nativeBuffer
 	pointers    map[*Value]nativeCopy
 	owners      map[uint64]*Value
 	err         error
+}
+type nativeLayout struct {
+	desc   TypeDesc
+	native *nativeType
 }
 type nativeBuffer struct{ base, size uint64 }
 
@@ -341,6 +371,11 @@ func (p *nativePool) allocate(size uint64) (unsafe.Pointer, error) {
 func (p *nativePool) build(d TypeDesc) (*nativeType, error) {
 	if d.Type != Struct && d.Type != Array {
 		return &nativeType{ffi: C.dylib_ffi_type(C.uint8_t(d.Type))}, nil
+	}
+	for _, layout := range p.layouts {
+		if reflect.DeepEqual(layout.desc, d) {
+			return layout.native, nil
+		}
 	}
 	t := C.dylib_struct_new(C.uint(d.memberCount()))
 	if t == nil {
@@ -371,6 +406,7 @@ func (p *nativePool) build(d TypeDesc) (*nativeType, error) {
 	for i := 0; i < d.memberCount(); i++ {
 		n.offsets = append(n.offsets, C.dylib_struct_offset(t, C.uint(i)))
 	}
+	p.layouts = append(p.layouts, nativeLayout{d, n})
 	return n, nil
 }
 func (p *nativePool) write(v Value, d TypeDesc, n *nativeType, mem unsafe.Pointer) error {
@@ -390,7 +426,13 @@ func (p *nativePool) write(v Value, d TypeDesc, n *nativeType, mem unsafe.Pointe
 			if d.Elem != nil {
 				e = *d.Elem
 			}
-			t, err := p.build(e)
+			var t *nativeType
+			var err error
+			if d.Elem != nil && p.types != nil {
+				t, err = p.types.pointeeLayout(e)
+			} else {
+				t, err = p.build(e)
+			}
 			if err != nil {
 				return err
 			}
@@ -443,7 +485,7 @@ func (p *nativePool) read(d TypeDesc, n *nativeType, mem unsafe.Pointer, result 
 	return v
 }
 func (b *ffiBackend) invokeRecords(address uintptr, s Signature, args []Value) (Value, error) {
-	pool := nativePool{abi: b.pool.abi, pointers: make(map[*Value]nativeCopy), owners: make(map[uint64]*Value)}
+	pool := nativePool{abi: b.pool.abi, types: b, pointers: make(map[*Value]nativeCopy), owners: make(map[uint64]*Value)}
 	defer pool.close()
 	resultDesc := s.ReturnType()
 	resultType := b.result

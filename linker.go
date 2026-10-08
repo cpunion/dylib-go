@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/cpunion/dylib-go/abi"
 	"github.com/cpunion/dylib-go/internal/native"
 	"os"
 	"path/filepath"
@@ -47,7 +46,7 @@ type Session struct {
 	defined    map[string]uintptr
 	image      *image
 	closed     bool
-	plans      []*abi.CallPlan
+	plans      []preparedBinding
 }
 
 func New(opts Options) *Session {
@@ -477,7 +476,7 @@ func (s *Session) Close() error {
 	// so reentrant lookups return ErrClosed without blocking on cleanup.
 	var err error
 	for _, plan := range plans {
-		plan.Close()
+		plan.plan.Close()
 	}
 	if image != nil {
 		err = image.close()
