@@ -13,7 +13,7 @@ In that snapshot, [DefaultRegistry.d](https://github.com/Marenz/ddl/blob/3bf531e
 | `DynamicLibraryLoader` / `LoaderRegistry` content identification | `parse`, format parsers, `Session.Load` | Identify file content rather than guess from extensions |
 | `DynamicLibrary` / `DynamicModule` | Internal `file/object/section/symbol/relocation` model | Go structs and standard parsers; no D class or module metadata |
 | `Linker.link` dependency resolution | `selectObjects`, `definitions`, `image.symbol` | Deterministic strong/weak/common rules, common merging, duplicate errors |
-| `ar/ArchiveReader` / `ArchiveLibrary` | `archive.go` | GNU/SysV, BSD, and COFF long names; rebuild indexes and extract on demand |
+| `ar/ArchiveReader` / `ArchiveLibrary` | `archive.go` | GNU/SysV, BSD, COFF and GNU thin references; rebuild indexes and extract on demand |
 | Per-module `resolveFixups` | `relocate*.go` | 64-bit ELF/Mach-O/COFF and i386 ELF/COFF subsets, bounds checks, GOT, branch stubs |
 | `host` / `insitu` | `Define`, explicit shared libraries, optional host symbols | Native addresses without D MAP/ModuleInfo |
 | `Memory` and object lifetime | `internal/native`, `Session.Close`, `Symbol.WithAddress` | W^X, rollback, explicit ownership, in-flight call guards |
@@ -24,7 +24,7 @@ This is a functional reimplementation rather than a line-by-line syntax translat
 
 ## Loading sequence
 
-1. `Load` parses objects and stages archives. Shared libraries are opened immediately by the OS, so `Load(shared)` may execute library constructors.
+1. `Load` parses objects and stages archives. Thin archive objects are read once from external paths and snapshotted, including GNU offsets into regular archives; see [archive containers](archives.md). Shared libraries are opened immediately by the OS, so `Load(shared)` may execute library constructors.
 2. The first `Link(roots...)`, `Lookup`, `Resolve`, or `Bind` selects all explicit objects and required archive members. COMDAT groups are selected before discovering their references, so discarded groups do not introduce dependencies. The definition index is rebuilt after each extracted member until dependency closure stabilizes.
 3. Global strong definitions take precedence over weak/common. Multiple strong definitions fail. Common symbols use the maximum size and alignment. Local symbols retain object scope.
 4. One contiguous mapping contains sections, common storage, GOT, and branch stubs. Each section occupies its own pages to separate writable and executable permissions. Images are limited to 64 MiB and files to 256 MiB. Section alignment larger than a host page is rejected.

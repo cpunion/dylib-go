@@ -100,7 +100,9 @@ func (s *Session) Load(path string) error {
 		f.obj.directory = filepath.Dir(abs)
 	}
 	for _, member := range f.members {
-		member.obj.directory = filepath.Dir(abs)
+		if member.obj.directory == "" {
+			member.obj.directory = filepath.Dir(abs)
+		}
 	}
 	switch f.info.Kind {
 	case "archive":
