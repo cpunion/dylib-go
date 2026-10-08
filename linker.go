@@ -96,6 +96,12 @@ func (s *Session) Load(path string) error {
 	if err != nil {
 		return err
 	}
+	if f.info.Kind == "universal" {
+		f, err = f.hostSlice(runtime.GOOS, runtime.GOARCH)
+		if err != nil {
+			return err
+		}
+	}
 	if f.obj != nil {
 		f.obj.directory = filepath.Dir(abs)
 	}

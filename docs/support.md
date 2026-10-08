@@ -33,7 +33,8 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 | `.so`, `.dylib`, PE DLL | Host OS loads complete images, dependencies, TLS, and initialization |
 | PE EXE, ELF EXEC/PIE, Mach-O EXEC | Identified and rejected as library inputs |
 | GNU/LLVM thin archives | External objects and GNU proxy references into regular archives; snapshot reads and the same lazy extraction as ordinary archives. See [paths and limits](archives.md) |
-| Fat Mach-O, nonstandard/delay import tables | Rejected or unsupported; use a supported import library, an ordinary target slice/object, or load the DLL directly |
+| Universal Mach-O FAT32/FAT64 | Inspect all slices; macOS selects baseline amd64/arm64 objects or ordinary archives. Universal libraries use the OS loader. See [selection and limits](universal.md) |
+| Nonstandard/delay import tables | Rejected or unsupported; use a supported import library, an ordinary target slice/object, or load the DLL directly |
 | OMF, D `.ddl`, Go gc `.a`, LLVM bitcode, raw LLVM IR | Not directly loaded; matching toolchains can first compile IR/bitcode to native `.o` |
 
 Implemented relocation families:

@@ -8,6 +8,17 @@ import (
 	"strings"
 )
 
+func machoArch(cpu macho.Cpu) string {
+	switch cpu {
+	case macho.CpuAmd64:
+		return "amd64"
+	case macho.CpuArm64:
+		return "arm64"
+	default:
+		return cpu.String()
+	}
+}
+
 func parseMachO(name string, b []byte) (*file, error) {
 	f, err := macho.NewFile(bytes.NewReader(b))
 	if err != nil {
@@ -38,16 +49,14 @@ func parseMachO(name string, b []byte) (*file, error) {
 	if f.ByteOrder != binary.LittleEndian {
 		o.unsupported("big-endian Mach-O")
 	}
+	o.info.Arch = machoArch(f.Cpu)
 	switch f.Cpu {
 	case macho.CpuAmd64:
-		o.info.Arch = "amd64"
 	case macho.CpuArm64:
-		o.info.Arch = "arm64"
 		if f.SubCpu&0xffffff > 1 {
 			o.unsupported(fmt.Sprintf("ARM64 subtype %#x (including arm64e authentication)", f.SubCpu))
 		}
 	default:
-		o.info.Arch = f.Cpu.String()
 		o.unsupported("machine " + f.Cpu.String())
 	}
 	switch f.Type {

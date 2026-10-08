@@ -83,6 +83,7 @@ type file struct {
 	info    Info
 	obj     *object
 	members []*file
+	slices  []*file // Universal Mach-O alternatives, separate from ar members.
 }
 type object struct {
 	info      Info
@@ -156,7 +157,7 @@ func parse(name string, b []byte) (*file, error) {
 	case len(b) >= 4 && (binary.LittleEndian.Uint32(b) == 0xfeedfacf || binary.LittleEndian.Uint32(b) == 0xfeedface || binary.BigEndian.Uint32(b) == 0xfeedfacf || binary.BigEndian.Uint32(b) == 0xfeedface):
 		f, err = parseMachO(name, b)
 	case len(b) >= 4 && (binary.BigEndian.Uint32(b) == 0xcafebabe || binary.BigEndian.Uint32(b) == 0xcafebabf):
-		err = fmt.Errorf("universal Mach-O: extract a single target slice first")
+		f, err = parseUniversal(name, b)
 	case bytes.HasPrefix(b, []byte("MZ")) || len(b) >= 20 && (binary.LittleEndian.Uint16(b) == 0x8664 || binary.LittleEndian.Uint16(b) == 0xaa64 || binary.LittleEndian.Uint16(b) == 0x14c):
 		f, err = parseCOFF(name, b)
 	case len(b) >= 4 && binary.LittleEndian.Uint32(b) == 0xffff0000:
