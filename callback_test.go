@@ -21,7 +21,7 @@ func callbackLibrary(t *testing.T, input string) *Session {
 }
 
 // All dynamic ABI fixtures run as standalone objects, archives, and OS libraries.
-func nativeABILibrary(t *testing.T, source, input string) *Session {
+func nativeABILibrary(t testing.TB, source, input string) *Session {
 	t.Helper()
 	if !abi.Available() {
 		t.Skip("requires libffi")

@@ -230,13 +230,15 @@ func main() {
 
 ```
 
-Supported scalar types are signed/unsigned 8/16/32/64-bit integers, C `bool`, `f32/f64`, and pointers. Ordinary C structs support arguments, results, nesting, pointer fields, and fixed-length array members through `abi.TypeDesc`. Use `abi.StructValue` for fields, `abi.ArrayValue` for array elements, `abi.AddressOf` for temporary native copies, and `abi.Ptr` for caller-managed native addresses. Temporary mutations are copied back; native code must not retain those pointers. Layout and register classification come from libffi. Calls allow `void` results and up to 32 total arguments. Unions, packed structs, bitfields, C++ `this` adjustment, and Swift calling conventions are not implemented.
+Supported scalar types are signed/unsigned 8/16/32/64-bit integers, C `bool`, `f32/f64`, and pointers. Ordinary C structs support arguments, results, nesting, pointer fields, and fixed-length array members through `abi.TypeDesc`. Use `abi.StructValue` for fields, `abi.ArrayValue` for array elements, `abi.AddressOf` for temporary native copies, and `abi.Ptr` for caller-managed native addresses. Temporary mutations are copied back; native code must not retain those pointers. Layout and register classification come from libffi. Calls allow `void` results and allocate argument storage for the concrete signature length. Native ABI limits and available memory still bound call size. Unions, packed structs, bitfields, C++ `this` adjustment, and Swift calling conventions are not implemented.
 
 Arrays use `TypeDesc{Type: abi.Array, Len: N, Elem: &element}` and may appear inside structs or behind pointers, including multidimensional arrays and arrays of structs or pointers. C array parameters decay to pointers; bare array arguments/results are rejected. The [array library example](examples/arrays/main.go) constructs an array member and calls a C function; `examples/run.sh go library` and `examples/run.sh llgo library` execute it in CI. See [array types and limits](docs/arrays.md).
 
 For a variadic call shape, set `Signature.Variadic = true` and `FixedArgs` to the fixed-prefix count. `Args` includes every concrete tail argument. The backend promotes tail `float32` to `float64` and small integers / C bool to `int32`; fixed arguments retain their declared types. Prepare another binding for a different tail shape. `Convention` accepts `abi.Default` / `abi.CDecl` on supported hosts and `abi.StdCall` / `abi.FastCall` for fixed calls on Windows 386; unsupported host/convention combinations fail during preparation.
 
 `Bind` prepares and owns a reusable native call plan; repeated calls reuse its CIF and struct layouts, with separate value storage. `Session.Close` releases these plans. For independently managed native addresses, use `abi.Prepare(signature)`, `CallPlan.Call(address, values...)`, and explicit `CallPlan.Close`; the plan does not own the target code.
+
+See [dynamic call benchmarks](docs/performance.md) for reproducible scalar, struct, and pointer measurements comparing bindings, prepared plans, and one-shot calls.
 
 `abi/signature.Parse` converts a Go-style declaration into a symbol name and `abi.Signature`, ready for `Bind`; `ParseCall` also parses typed values for dynamic tests. The parser uses Go's standard `go/parser` and does not infer prototypes from symbols.
 

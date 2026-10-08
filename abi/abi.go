@@ -74,8 +74,9 @@ func (s Signature) Validate() error {
 	if s.Result > Array {
 		return fmt.Errorf("invalid result type %d", s.Result)
 	}
-	if len(s.Args) > 32 {
-		return fmt.Errorf("at most 32 total arguments supported")
+	// libffi represents argument counts with an unsigned 32-bit integer.
+	if uint64(len(s.Args)) > math.MaxUint32 {
+		return fmt.Errorf("argument count exceeds the native ABI representation")
 	}
 	if len(s.ArgTypes) != 0 && len(s.ArgTypes) != len(s.Args) {
 		return fmt.Errorf("argument descriptor count mismatch")
