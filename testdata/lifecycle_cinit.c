@@ -62,4 +62,9 @@ __attribute__((used, section(CPP_FINI))) static hook const cpp_fini[] = {
     terminate, preterminate
 };
 #endif
-int cinit_root(int a, int b) { return ready+a+b; }
+int cinit_root(int a, int b) {
+#if defined(FORCE_DWARF) && defined(__APPLE__)
+    __asm__ volatile(".cfi_escape 0x00");
+#endif
+    return ready+a+b;
+}

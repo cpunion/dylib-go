@@ -26,7 +26,7 @@ var ErrInitialization = errors.New("dylib: C initialization failed; close the se
 type Options struct {
 	ProcessSymbols bool
 	// RegisterUnwind registers supported raw-image runtime function tables.
-	// Supports Windows amd64/arm64 and Linux amd64/arm64/386 C frames.
+	// Supports Windows/macOS amd64/arm64 and Linux amd64/arm64/386 C frames.
 	// Other targets and language handlers are rejected. Exceptions must remain
 	// inside native code.
 	RegisterUnwind bool
@@ -712,6 +712,9 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 				return nil, fmt.Errorf("%s: relocation %d at section %d+%#x: %w", o.info.Name, r.typ, r.section, r.offset, e)
 			}
 		}
+	}
+	if e := im.rebaseMachODWARF(); e != nil {
+		return nil, e
 	}
 	if e := im.prepareLifecycle(); e != nil {
 		return nil, e
