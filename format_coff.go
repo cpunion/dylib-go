@@ -116,7 +116,7 @@ func parseCOFF(name string, b []byte) (*file, error) {
 		if s.name == ".didat" || strings.HasPrefix(s.name, ".didat$") {
 			o.unsupported("COFF delay import tables: " + s.name)
 		}
-		if flags&0x200 != 0 || strings.HasPrefix(s.name, ".debug") || s.name == ".drectve" || s.name == ".pdata" || s.name == ".xdata" {
+		if flags&0x200 != 0 || strings.HasPrefix(s.name, ".debug") || s.name == ".drectve" {
 			continue
 		}
 		if flags&0x1000 != 0 {

@@ -25,6 +25,10 @@ var ErrInitialization = errors.New("dylib: C initialization failed; close the se
 // (for example libc on POSIX). Explicitly loaded libraries are always searched.
 type Options struct {
 	ProcessSymbols bool
+	// RegisterUnwind registers supported raw-image runtime function tables.
+	// Currently Windows amd64/arm64 C frames; other raw targets and language
+	// handlers are rejected. Exceptions must remain inside native code.
+	RegisterUnwind bool
 	// LibraryPaths searches these directories before the importing file's
 	// directory and OS loader paths. Explicitly loaded matching DLLs win.
 	LibraryPaths []string
@@ -109,6 +113,12 @@ func (s *Session) Load(path string) error {
 		f, err = f.hostSlice(runtime.GOOS, runtime.GOARCH)
 		if err != nil {
 			return err
+		}
+	}
+	if !s.opts.RegisterUnwind {
+		discardCOFFUnwind(f.obj)
+		for _, member := range f.members {
+			discardCOFFUnwind(member.obj)
 		}
 	}
 	if f.obj != nil {
@@ -453,6 +463,12 @@ func (s *Session) link(roots []string) error {
 			return err
 		}
 	}
+	if s.opts.RegisterUnwind && len(objs) != 0 {
+		if err := im.registerUnwind(); err != nil {
+			im.close()
+			return err
+		}
+	}
 	if err := im.initialize(); err != nil {
 		// Do not run cleanup under mu: exit callbacks may reenter Go. Keep
 		// their code alive until Close retires the failed session and drains
@@ -561,6 +577,7 @@ type image struct {
 	hooks                                  map[string]uintptr
 	initializers, finalizers               []uintptr
 	cInitializers                          []cInitializer
+	unwind                                 *runtimeFunctions
 	initialized                            bool
 }
 
@@ -734,6 +751,10 @@ func (im *image) close() error {
 		}
 		// A finalizer may itself register an exit function.
 		im.lifecycle.Finalize()
+	}
+	if err := im.unwind.close(); err != nil {
+		// Never free code/table storage while the OS may still reference it.
+		return err
 	}
 	im.lifecycle.Close()
 	e := native.Free(im.mem)

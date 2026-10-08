@@ -2,7 +2,7 @@
 
 `Load` stages raw objects. The first successful `Link`, `Lookup`, `Resolve`, or `Bind` relocates the selected objects, validates all lifecycle entries and requested roots, applies W^X protection, then runs their initializers. Repeated linking does not run them again. A failed validation runs no native initializer and permits a dependency fix and retry.
 
-`Close` prevents further calls, releases prepared call plans, executes session-owned exit callbacks, runs termination arrays, drains any callbacks registered by those terminators, and only then frees the image and native registration storage. OS library handles remain available throughout this sequence and are released afterward. `KeepLibraries` retains OS handles, but does not retain the raw object image or skip its finalization. Closing a session that never began initialization runs no object code; repeated close is harmless.
+`Close` prevents further calls, releases prepared call plans, executes session-owned exit callbacks, runs termination arrays, drains any callbacks registered by those terminators, unregisters optional runtime function tables, and only then frees the image and native registration storage. OS library handles remain available throughout this sequence and are released afterward. `KeepLibraries` retains OS handles, but does not retain the raw object image or skip its finalization. Closing a session that never began initialization runs no object code; repeated close is harmless.
 
 ## Supported tables
 
@@ -19,7 +19,7 @@ Legacy tables require `SHT_PROGBITS` pointer storage. Their normalized prioritie
 
 Only selected archive members participate. COMDAT-discarded arrays and their references do not participate. ELF numeric priorities must fit 16 bits. Tables must contain whole native pointers, cannot request executable storage, and may contain null sentinels. Every non-null entry must point into an executable section of this image; ARM64 entries must also be instruction aligned. External initializer pointers are currently rejected. The validated entry lists are copied before initialization, so later writes to a writable table cannot substitute a finalizer.
 
-Executable ELF `.init`/`.fini` sections, Mach-O `S_INIT_FUNC_OFFSETS`, and CRT TLS tables remain unsupported. `.init`/`.fini` may contain separate prologue/body/epilogue fragments that need a different section layout. This does not implement a complete CRT startup environment or register unwind information.
+Executable ELF `.init`/`.fini` sections, Mach-O `S_INIT_FUNC_OFFSETS`, and CRT TLS tables remain unsupported. `.init`/`.fini` may contain separate prologue/body/epilogue fragments that need a different section layout. This does not implement a complete CRT startup environment. Optional Windows C [unwind registration](unwind.md) is owned through initialization and cleanup.
 
 ## Integer initialization failures
 
