@@ -32,7 +32,7 @@ type SymbolInfo struct {
 	Weak    bool   `json:"weak,omitempty"`
 }
 
-// ImportInfo describes a COFF short import without opening its DLL.
+// ImportInfo describes a decoded COFF import without opening its DLL.
 type ImportInfo struct {
 	DLL     string `json:"dll"`
 	Symbol  string `json:"symbol"`         // Normalized public linker name.

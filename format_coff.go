@@ -185,5 +185,8 @@ func parseCOFF(name string, b []byte) (*file, error) {
 			o.relocs = append(o.relocs, relocation{section: i + 1, offset: uint64(r.VirtualAddress), typ: uint32(r.Type), symbol: int(r.SymbolTableIndex), pair: -1})
 		}
 	}
+	if imported, ok := newCOFFImportGraph([]*object{o}).convert(o); ok {
+		o = imported
+	}
 	return finish(o), nil
 }

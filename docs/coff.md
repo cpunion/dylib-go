@@ -32,7 +32,17 @@ CODE imports expose the callable public name and `__imp_` IAT name. DATA exposes
 
 Each opened DLL reference belongs to the session. Link failure publishes no raw image and retains opened DLLs for retry, matching explicitly loaded dependencies. `Close` unloads them after raw finalization unless `KeepLibraries` requests retention. Native DLL initialization is an OS-loader side effect and cannot be rolled back by the raw linker.
 
-Long import objects containing `.idata` tables remain unsupported for raw execution. They are recognized and reported in member metadata, so an unused descriptor member in a short import library does not block linking. This distinction prevents executing a thunk whose OS import table was never initialized. ARM64EC hybrid imports, delay-load tables, and linker directives for automatic default-library selection remain outside the current implementation.
+## GNU long import libraries
+
+Standard GNU Binutils import libraries store each IAT slot and optional function thunk in an ordinary COFF member. DLL descriptors and names live in separate members. The Go parser follows `.idata$7` RVA references to the `.idata$2` descriptor and its DLL-name reference; `.idata$5`/`.idata$4` entries identify a hint/name record or ordinal. It converts a validated import-only member to the same symbol model used by short imports, so the OS does not need to initialize the raw tables.
+
+The decoder verifies matching lookup/address entries, known tail-jump code and its relocations, and the absence of additional code/data/definitions. Descriptor helpers remain metadata and are not extracted for a converted import. Ambiguous/missing descriptors, isolated thunk members, malformed entries, and arbitrary mixed import/code layouts retain an explicit unsupported marker. The parser never discards unknown executable behavior merely because a section has an `.idata` name.
+
+`Info.Imports`, `LibraryPaths`, DLL ownership, and failure/retry behavior are shared with short imports. MinGW consumers using explicit `__declspec(dllimport)` function/data declarations execute on Windows AMD64/ARM64/386; calling conventions still require an appropriate caller adapter. Compiler-driven data auto-import/pseudo-relocations are not implemented.
+
+Tests execute genuine [GNU Binutils 2.45 dlltool](https://sourceware.org/binutils/docs/binutils/dlltool.html) archives alongside freshly compiled DLLs. The fixtures and their regeneration script are in [testdata/coffimports](../testdata/coffimports/README.md). The decoder follows [PE import descriptor/lookup-table semantics](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#the-idata-section), with a bounded GNU per-symbol template.
+
+ARM64EC hybrid imports, delay-load tables, and linker directives for automatic default-library selection remain outside the current implementation.
 
 ## Weak externals
 

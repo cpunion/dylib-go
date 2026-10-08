@@ -10,10 +10,10 @@ The tables distinguish file inspection, implemented relocations, and actual exec
 | macOS amd64 | Mach-O 64 `.o` / `.a` | `.dylib` | Go and llgo on GitHub Intel runners; additional local Rosetta tests |
 | Linux arm64 | ELF64 LE RELA `.o` / `.a` | `.so` | Go and llgo on GitHub ARM64 runners |
 | Linux amd64 | ELF64 LE RELA `.o` / `.a` | `.so` | Go and llgo on GitHub AMD64 runners |
-| Windows amd64 | AMD64 COFF `.obj` / `.lib` archives / short imports | PE `.dll` | Native Go and llgo objects, archives, DLLs, and scalar/struct ABI calls |
-| Windows arm64 | ARM64 COFF `.obj` / `.lib` archives / short imports | PE `.dll` | Independent Go and llgo object/archive/DLL calls and c-shared producers |
+| Windows amd64 | AMD64 COFF `.obj` / `.lib` archives / short/GNU long imports | PE `.dll` | Native Go and llgo objects, archives, DLLs, and scalar/struct ABI calls |
+| Windows arm64 | ARM64 COFF `.obj` / `.lib` archives / short/GNU long imports | PE `.dll` | Independent Go and llgo object/archive/DLL calls and c-shared producers |
 | Linux 386 | ELF32 little-endian REL/RELA `.o` / `.a` | ELF32 `.so` | Native 32-bit Go objects, archives, libraries, scalar/struct calls, and c-shared producer on an amd64 runner |
-| Windows 386 | i386 COFF `.obj` / `.lib` archives / short imports | PE32 `.dll` | Native 32-bit Go under WoW64; C cdecl calls and Go c-shared producer. setup-llgo does not install 386 |
+| Windows 386 | i386 COFF `.obj` / `.lib` archives / short/GNU long imports | PE32 `.dll` | Native 32-bit Go under WoW64; C cdecl calls and Go c-shared producer. setup-llgo does not install 386 |
 | Linux RISC-V, LoongArch, PPC, s390x, ARM32 | Standard parsers can inspect some ELF inputs | No execution support in this project | No matching relocation backend or execution tests |
 | FreeBSD and other BSD systems | Pure Go inspection can be built | No native backend | Needs OS operations, ABI validation, and execution tests |
 | iOS / tvOS / watchOS / visionOS | Some Mach-O metadata can be inspected | No host integration | Mobile objects are identified and rejected as macOS plugins; execution policies also apply |
@@ -29,9 +29,10 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 | Ordinary GNU/BSD ar (`.a`, ordinary COFF `.lib`) | Inspect all members, but map only needed members; unresolved dependencies in unused members do not affect linking |
 | COFF bigobj, directly or inside ordinary `.lib` archives | 32-bit section numbers and 20-byte symbols; the same relocation and lifecycle limits as ordinary COFF |
 | COFF short import objects, directly or inside `.lib` archives | Selected imports bind functions/data/ordinal exports from session-owned DLLs; all five name policies supported |
+| GNU long import libraries (`.a` / `.lib`) | Standard per-symbol IAT/thunk templates decoded across descriptor/DLL-name members; functions/data/names/ordinals supported. Arbitrary mixed import/code objects are rejected |
 | `.so`, `.dylib`, PE DLL | Host OS loads complete images, dependencies, TLS, and initialization |
 | PE EXE, ELF EXEC/PIE, Mach-O EXEC | Identified and rejected as library inputs |
-| Thin archives, fat Mach-O, COFF long import tables | Rejected or unsupported; use a short import library, an ordinary target slice/object, or load the DLL directly |
+| Thin archives, fat Mach-O, nonstandard/delay import tables | Rejected or unsupported; use a supported import library, an ordinary target slice/object, or load the DLL directly |
 | OMF, D `.ddl`, Go gc `.a`, LLVM bitcode, raw LLVM IR | Not directly loaded; matching toolchains can first compile IR/bitcode to native `.o` |
 
 Implemented relocation families:
@@ -52,7 +53,7 @@ ELF `GRP_COMDAT` groups retain the first signature-matched group. COFF supports 
 
 COFF bigobj retains full 32-bit section references and associative parent numbers. Ordinary COFF retains legal unsigned section numbers above 32767. Both readers support extended relocation tables, including the overflow-count marker. A 16-bit SECTION relocation still cannot represent an image ordinal above 65535; bigobj does not change the width of individual relocation fields. File/image size and page-alignment limits still apply.
 
-Short import libraries stage DLL dependencies until a member is selected. Imports resolve against their specified DLL, rather than the first matching export in another library. Explicit matching DLLs take precedence, followed by `Options.LibraryPaths`, the importing file's directory, and the Windows loader search paths. The session retains opened DLL references through link failure for retry and releases them on close unless `KeepLibraries` is set. Session-owned exit helpers retain their lifecycle behavior. See [import names, IAT slots, and ownership](coff.md#short-import-libraries).
+Supported import libraries stage DLL dependencies until a member is selected. Imports resolve against their specified DLL, rather than the first matching export in another library. Explicit matching DLLs take precedence, followed by `Options.LibraryPaths`, the importing file's directory, and the Windows loader search paths. The session retains opened DLL references through link failure for retry and releases them on close unless `KeepLibraries` is set. Session-owned exit helpers retain their lifecycle behavior. See [import names, IAT slots, and ownership](coff.md#short-import-libraries).
 
 ## Language outputs
 

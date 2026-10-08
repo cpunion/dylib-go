@@ -81,5 +81,17 @@ func parseArchive(name string, b []byte) (*file, error) {
 		f.members = append(f.members, child)
 		f.info.Members = append(f.info.Members, child.info)
 	}
+	objects := make([]*object, len(f.members))
+	for i, child := range f.members {
+		objects[i] = child.obj
+	}
+	imports := newCOFFImportGraph(objects)
+	f.info.Members = nil
+	for _, child := range f.members {
+		if imported, ok := imports.convert(child.obj); ok {
+			child.obj, child.info = imported, finish(imported).info
+		}
+		f.info.Members = append(f.info.Members, child.info)
+	}
 	return f, nil
 }

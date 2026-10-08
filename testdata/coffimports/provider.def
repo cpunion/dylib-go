@@ -1,0 +1,5 @@
+LIBRARY provider.dll
+EXPORTS
+add @7
+value DATA
+numbered @7 NONAME

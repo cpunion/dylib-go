@@ -46,11 +46,10 @@ func parseCOFFImport(name string, b []byte) (*file, error) {
 		return nil, fmt.Errorf("invalid COFF import names")
 	}
 	public, dll := string(parts[0]), string(parts[1])
-	if strings.ContainsAny(dll, "/\\:") || dll == "." || dll == ".." {
-		return nil, fmt.Errorf("COFF DLL name must be a file name; configure LibraryPaths for directories")
-	}
-	if filepath.Ext(dll) == "" {
-		dll += ".dll" // Match LoadLibrary's default extension and handle reuse.
+	var err error
+	dll, err = coffDLLName(dll)
+	if err != nil {
+		return nil, err
 	}
 	exported := public
 	if nameType == 2 || nameType == 3 {
@@ -95,6 +94,16 @@ func parseCOFFImport(name string, b []byte) (*file, error) {
 		o.symbols = append(o.symbols, symbol{name: public, section: -4, global: true, imported: &coffImportSymbol{entry: entry, indirect: kind == 2}})
 	}
 	return finish(o), nil
+}
+
+func coffDLLName(dll string) (string, error) {
+	if dll == "" || strings.ContainsAny(dll, "/\\:\x00") || dll == "." || dll == ".." {
+		return "", fmt.Errorf("COFF DLL name must be a file name; configure LibraryPaths for directories")
+	}
+	if filepath.Ext(dll) == "" {
+		dll += ".dll" // Match LoadLibrary's default extension and handle reuse.
+	}
+	return dll, nil
 }
 
 // Imported DLLs are retained like explicitly loaded OS libraries, including
