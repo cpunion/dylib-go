@@ -11,7 +11,7 @@ prepares and frees a plan for every call; it is convenient for occasional use.
 | OneShot | Signature copies, CIF/type construction, validation, marshaling, call and cleanup | One surrounding Symbol guard |
 
 Run `go test -tags libffi -run '^$' -bench '^BenchmarkNativeCalls$' -benchmem .`
-or replace `go` with `llgo`. Use `-bench '^BenchmarkNative(Calls|BindingCache)$'` to include warm session binding. The benchmarks use the same compiled C fixture and
+or replace `go` with `llgo`. Use `-bench '^BenchmarkNative(Calls|BindingCache(Size)?)$'` to include warm session binding and cache-size comparisons. The benchmarks use the same compiled C fixture and
 check every result. Compilation, load and initial binding are outside the
 measured loops. Cases cover two scalars, 64 scalars, a by-value struct, and a
 temporary struct pointer with copy-back. The 64-argument function also performs
@@ -50,9 +50,42 @@ The measured llgo runtime reports `0 allocs/op` for every case despite nonzero
 `B/op`; that counter is not evidence of allocation-free execution. Reproduce
 measurements on the application host before drawing performance conclusions.
 
+## Indexed binding comparison
+
+The following medians compare the previous linear signature cache with the
+indexed cache on the same host/toolchains on 2026-10-09. Each size case prepares
+that many distinct typed-pointer signatures, then repeatedly binds the last
+one. Compilation and initial preparation are outside the measured loop. These
+are three 200 ms samples per case; they measure warm `Bind`, not native call
+latency or cold preparation. Run
+`go test -tags libffi -run '^$' -bench '^BenchmarkNativeBindingCache(Size)?$' -benchmem -benchtime=200ms -count=3 .`
+and repeat with `llgo`.
+
+| Cached signatures | Go before ns/op | Go indexed ns/op | llgo before ns/op | llgo indexed ns/op | Go allocations before → indexed |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 480.1 | 183.1 | 2483 | 712.1 | 4 → 3 |
+| 16 | 6178 | 181.8 | 34928 | 706.3 | 34 → 3 |
+| 256 | 108247 | 182.3 | 554351 | 736.6 | 514 → 3 |
+| 4096 | 1810061 | 178.5 | 8497625 | 709.0 | 8194 → 3 |
+
+The separate two-scalar warm-binding case changed from 319.9 to 173.0 ns/op
+under Go, and from 1202 to 537.4 ns/op under llgo. Indexed cases use 48 Go B/op;
+the remaining allocations include the returned `Function` and `Symbol` plus
+the signature key. Larger descriptors still require validation and encoding.
+This removes the scan through existing signatures without changing invocation
+storage or merging logically different signatures.
+
 ## Storage and cache scope
 
-CIF argument types and aggregate layouts are owned by each prepared plan. Bindings with identical signature snapshots share a plan within their session; each symbol retains its own address. The signature cache uses a linear exact comparison, so binding cost also depends on the number and size of unique signatures. It does not merge ABI-equivalent but logically distinct signatures or share resources across sessions.
+CIF argument types and aggregate layouts are owned by each prepared plan. Bindings
+with the same canonical logical signature share a plan within their session;
+each symbol retains its own address. A string-keyed map replaces comparisons
+against every cached signature. Validation and key construction still depend on
+the size of the supplied signature. Omitted and explicit scalar descriptors,
+including empty metadata slices, encode identically. Field names, pointee types,
+array lengths, conventions and variadic boundaries remain distinct. Invalid
+metadata is rejected before lookup, and failed symbol resolution does not cache
+a newly prepared plan. No resources are shared across sessions.
 Scalar argument bits use a Go slice sized to the call. Native scalar packing
 uses a 32-slot stack buffer for small calls and overflow-checked heap storage
 for larger calls. Struct calls allocate a native argument vector for their
@@ -63,6 +96,7 @@ and available memory still bound call size.
 Equal aggregate descriptors reuse a plan-owned layout. Declared temporary
 pointee layouts are constructed lazily, shared after preparation, and freed
 with the plan. Unannotated temporary shapes remain invocation-owned, and value
-buffers are always independent. ABI-equivalent signature normalization, indexed
-cache lookup, buffer pooling and cross-session sharing remain future work. These measurements do not establish universal
+buffers are always independent. Sharing physical ABI resources between logically
+distinct signatures, buffer pooling and cross-session sharing remain future work.
+These measurements do not establish universal
 latency guarantees or remove pointer lifetime and synchronization requirements.

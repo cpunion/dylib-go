@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/cpunion/dylib-go/internal/native"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -12,6 +11,9 @@ import (
 	"strings"
 	"sync"
 	"unsafe"
+
+	"github.com/cpunion/dylib-go/abi"
+	"github.com/cpunion/dylib-go/internal/native"
 )
 
 var ErrClosed = errors.New("dylib: session is closed")
@@ -57,7 +59,7 @@ type Session struct {
 	failedImage *image // Retain code for exit registrations until Close after init failure.
 	initErr     error
 	closed      bool
-	plans       []preparedBinding
+	plans       map[string]*abi.CallPlan
 }
 
 func New(opts Options) *Session {
@@ -524,7 +526,7 @@ func (s *Session) Close() error {
 	// so reentrant lookups return ErrClosed without blocking on cleanup.
 	var err error
 	for _, plan := range plans {
-		plan.plan.Close()
+		plan.Close()
 	}
 	if image != nil {
 		err = image.close()

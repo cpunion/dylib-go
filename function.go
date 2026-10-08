@@ -1,15 +1,6 @@
 package dylib
 
-import (
-	"reflect"
-
-	"github.com/cpunion/dylib-go/abi"
-)
-
-type preparedBinding struct {
-	signature abi.Signature
-	plan      *abi.CallPlan
-}
+import "github.com/cpunion/dylib-go/abi"
 
 // Function couples an explicit ABI signature with the lifetime of its code.
 type Function struct {
@@ -19,7 +10,7 @@ type Function struct {
 
 // Bind validates the signature and resolves the symbol once. No demangling or
 // type guessing occurs; a header generator such as llcppg can supply metadata.
-// Exact signature snapshots share a session-owned plan across bindings. The
+// Canonical logical signatures share a session-owned plan across bindings. The
 // symbol address is separate from the plan; no cache crosses session lifetimes.
 func (s *Session) Bind(name string, signature abi.Signature) (*Function, error) {
 	s.mu.Lock()
@@ -30,22 +21,13 @@ func (s *Session) Bind(name string, signature abi.Signature) (*Function, error) 
 	if s.initErr != nil {
 		return nil, s.initErr
 	}
-	if len(signature.Args) == 0 {
-		signature.Args = nil
+	key, err := bindingKey(signature)
+	if err != nil {
+		return nil, err
 	}
-	if len(signature.ArgTypes) == 0 {
-		signature.ArgTypes = nil
-	}
-	var plan *abi.CallPlan
-	for _, cached := range s.plans {
-		if reflect.DeepEqual(cached.signature, signature) {
-			plan = cached.plan
-			break
-		}
-	}
+	plan := s.plans[key]
 	fresh := plan == nil
 	if fresh {
-		var err error
 		plan, err = abi.Prepare(signature)
 		if err != nil {
 			return nil, err
@@ -59,7 +41,10 @@ func (s *Session) Bind(name string, signature abi.Signature) (*Function, error) 
 		return nil, err
 	}
 	if fresh {
-		s.plans = append(s.plans, preparedBinding{signature.Clone(), plan})
+		if s.plans == nil {
+			s.plans = make(map[string]*abi.CallPlan)
+		}
+		s.plans[key] = plan
 	}
 	return &Function{symbol: &Symbol{owner: s, address: address}, plan: plan}, nil
 }
