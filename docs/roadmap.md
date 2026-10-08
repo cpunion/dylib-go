@@ -10,7 +10,7 @@ The CLI now accepts Go-style signature declarations and typed invocations throug
 
 | Coverage area | Work still required |
 | --- | --- |
-| Current 64-bit raw targets | Remaining relocations, Mach-O coalescing/indirect symbols, remaining lifecycle forms, TLS, and remaining POSIX/Mach-O unwind registration; Windows and Linux C frame tables are optional |
+| Current 64-bit raw targets | Remaining relocations, Mach-O coalescing/indirect symbols, remaining lifecycle forms, TLS, and remaining POSIX/Mach-O unwind registration; Windows/Linux/macOS C frame tables are optional |
 | Windows ARM64 raw objects | Nonstandard import tables, remaining relocations/lifecycle forms, and language exception handlers; C frame tables are optional |
 | 386 and additional ISAs | 386 executes C cdecl on Linux/Windows with Go; Windows 386 stdcall/fastcall are implemented; other conventions and llgo qualification remain. Additional ISAs need linker/ABI backends and execution tests |
 | BSD and Apple mobile hosts | Native OS backend, ABI/runtime integration, platform policy compatibility, and device tests |
@@ -27,7 +27,7 @@ Complete shared libraries already use the host OS loader for their dependency, i
 Future extensions need explicit implementation and tests:
 
 1. **Windows object coverage:** native Go and llgo objects, archives, and DLLs are covered for AMD64/ARM64, plus Go for i386. Weak aliases, COMDAT selections 1–7, bigobj, extended relocation tables, short/GNU long import libraries, and optional C frame unwind registration are implemented. Further work includes nonstandard import tables, remaining lifecycle forms, language exception handlers, and additional architecture-specific relocations.
-2. **Object initialization and exceptions:** modern platform tables, legacy ELF `.ctors/.dtors`, COFF integer-returning initialization/failure cleanup, dependency ordering, cycle handling, validation rollback, session-owned exit registration, and optional Windows/Linux C frame tables are implemented. Add ELF executable startup fragments and Mach-O relative offsets; extend the implemented libgcc `.eh_frame` subset, add Mach-O DWARF/compact unwind, and extend Windows unwind records. Complete OS libraries already use their native runtime registration.
+2. **Object initialization and exceptions:** modern platform tables, legacy ELF `.ctors/.dtors`, COFF integer-returning initialization/failure cleanup, dependency ordering, cycle handling, validation rollback, session-owned exit registration, and optional Windows/Linux/macOS C frame tables are implemented. Add ELF executable startup fragments and Mach-O relative offsets; extend the implemented libgcc `.eh_frame` subset, extend Mach-O DWARF and add compact unwind, and extend Windows unwind records. Complete OS libraries already use their native runtime registration.
 3. **TLS and more relocations:** define each target's TLS model and thread registration/destruction; extend ARM64 COFF coverage and add RISC-V, LoongArch, and other relocation backends. Parser support alone does not provide execution support.
 4. **Archive and object containers:** GNU/LLVM thin archives, GNU member-offset references, and universal Mach-O object/archive/library selection are implemented. Add optional LLVM bitcode/IR compilation. OMF and D `.ddl` compatibility remain outside scope.
 5. **llcppg dynamic generation:** complement its static `go:linkname` output with adapters using `Resolve` and `WithAddress`, preserving declaration-based ABI validation.
@@ -53,7 +53,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [ ] ELF `.init/.fini` executable startup fragments and Mach-O initializer offsets.
 - [x] Optional Windows amd64/arm64 C runtime function tables, OS stack traversal, and owned unregistration.
 - [x] Optional Linux amd64/arm64/386 C `.eh_frame` registration with retained libgcc, native stack traversal and deregistration.
-- [ ] Windows language/chained unwind records, POSIX personality/LSDA and additional providers, and Mach-O DWARF/compact unwind registration.
+- [x] Optional macOS amd64/arm64 C DWARF registration with system libunwind, implicit FDE rebasing, native traversal and deregistration.
+- [ ] Windows language/chained unwind records, POSIX personality/LSDA and additional providers, and Mach-O compact unwind registration.
 - [x] Concurrent Symbol/Function/CallPlan calls and reentrant callbacks, with retirement before cleanup and no invocation lock across native calls.
 - [ ] Reentrant load/link initializers that can resolve staged symbols before publication.
 - [ ] Explicit raw-object TLS models, per-thread allocation, and thread destructor ownership.

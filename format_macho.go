@@ -105,7 +105,7 @@ func parseMachO(name string, b []byte) (*file, error) {
 	}
 	o.sections = make([]*section, len(f.Sections)+1)
 	for i, s := range f.Sections {
-		if s.Flags&0x02000000 != 0 || s.Seg == "__DWARF" || s.Name == "__compact_unwind" || s.Name == "__eh_frame" {
+		if s.Flags&0x02000000 != 0 || s.Seg == "__DWARF" || s.Name == "__compact_unwind" {
 			continue
 		}
 		t := s.Flags & 0xff
@@ -115,7 +115,7 @@ func parseMachO(name string, b []byte) (*file, error) {
 		if t == 0x16 {
 			o.unsupported("automatic initialization/finalization: " + s.Name)
 		}
-		if t == 0xb {
+		if t == 0xb && s.Name != "__eh_frame" {
 			o.unsupported("Mach-O coalesced section " + s.Name)
 		}
 		if strings.HasPrefix(s.Name, "__objc_") || strings.HasPrefix(s.Name, "__swift5_") {

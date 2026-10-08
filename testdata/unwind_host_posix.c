@@ -3,8 +3,10 @@
 #include <stdint.h>
 #include <unwind.h>
 
+#if !defined(__APPLE__)
 struct dwarf_eh_bases { void *tbase, *dbase, *func; };
 extern const void *_Unwind_Find_FDE(const void *, struct dwarf_eh_bases *);
+#endif
 static uintptr_t saved_pc;
 static int frame_count;
 static _Unwind_Reason_Code capture(struct _Unwind_Context *context, void *argument) {

@@ -1,3 +1,5 @@
+//go:build linux || darwin
+
 package dylib
 
 import (
@@ -9,11 +11,21 @@ import (
 	"testing"
 )
 
-func TestNativeLinuxFrameRegistration(t *testing.T) {
+func TestNativePOSIXFrameRegistration(t *testing.T) {
 	needNative(t)
 	dir := t.TempDir()
-	host := filepath.Join(dir, "unwind_host.so")
-	args := []string{"-shared", "-fPIC", "-O0", "-funwind-tables", "testdata/unwind_host_linux.c", "-o", host, "-lgcc_s", "-ldl"}
+	name, flag := "unwind_host.so", "-shared"
+	if runtime.GOOS == "darwin" {
+		name, flag = "unwind_host.dylib", "-dynamiclib"
+	}
+	host := filepath.Join(dir, name)
+	args := []string{flag, "-fPIC", "-O0", "-funwind-tables", "testdata/unwind_host_posix.c", "-o", host}
+	if runtime.GOOS == "linux" {
+		args = append(args, "-lgcc_s", "-ldl")
+	}
+	if runtime.GOOS == "darwin" && runtime.GOARCH == "amd64" {
+		args = append(args, "--target=x86_64-apple-macosx11")
+	}
 	if runtime.GOARCH == "386" {
 		args = append(args, "-m32")
 	}
@@ -45,42 +57,52 @@ func TestNativeLinuxFrameRegistration(t *testing.T) {
 			t.Fatal("registration survived Close")
 		}
 	}
-	// Fill the last real FDE's CFI with no-ops up to a complete host page.
-	// A following nonzero data section must not become libgcc's terminator.
-	padded := New(Options{RegisterUnwind: true})
-	defer padded.Close()
-	load(t, padded, host, obj)
-	o := padded.files[0].obj
-	for _, frame := range o.sections {
-		if frame == nil || frame.name != ".eh_frame" {
-			continue
-		}
-		last := 0
-		for offset := 0; offset < len(frame.data); {
-			size := int(binary.LittleEndian.Uint32(frame.data[offset:]))
-			if size == 0 {
-				break
+	if runtime.GOOS == "linux" {
+		// Fill the last real FDE's CFI with no-ops up to a complete host page.
+		// A following nonzero data section must not become libgcc's terminator.
+		padded := New(Options{RegisterUnwind: true})
+		defer padded.Close()
+		load(t, padded, host, obj)
+		o := padded.files[0].obj
+		for _, frame := range o.sections {
+			if frame == nil || frame.name != ".eh_frame" {
+				continue
 			}
-			last, offset = offset, offset+4+size
+			last := 0
+			for offset := 0; offset < len(frame.data); {
+				size := int(binary.LittleEndian.Uint32(frame.data[offset:]))
+				if size == 0 {
+					break
+				}
+				last, offset = offset, offset+4+size
+			}
+			if binary.LittleEndian.Uint32(frame.data[last+4:]) == 0 {
+				t.Fatal("last producer record is not an FDE")
+			}
+			page := os.Getpagesize()
+			frame.data = append(frame.data, make([]byte, page-len(frame.data))...)
+			frame.size = uint64(page)
+			binary.LittleEndian.PutUint32(frame.data[last:], uint32(page-last-4))
 		}
-		if binary.LittleEndian.Uint32(frame.data[last+4:]) == 0 {
-			t.Fatal("last producer record is not an FDE")
+		o.sections = append(o.sections, &section{name: ".tail_probe", size: 4, data: []byte{255, 255, 255, 255}})
+		call(t, padded, "unwind_root", 20, 22, 42)
+		if err := padded.Close(); err != nil {
+			t.Fatal(err)
 		}
-		page := os.Getpagesize()
-		frame.data = append(frame.data, make([]byte, page-len(frame.data))...)
-		frame.size = uint64(page)
-		binary.LittleEndian.PutUint32(frame.data[last:], uint32(page-last-4))
+		call(t, observer, "has_saved_frame", 0, 0, 0)
 	}
-	o.sections = append(o.sections, &section{name: ".tail_probe", size: 4, data: []byte{255, 255, 255, 255}})
-	call(t, padded, "unwind_root", 20, 22, 42)
-	if err := padded.Close(); err != nil {
-		t.Fatal(err)
-	}
-	call(t, observer, "has_saved_frame", 0, 0, 0)
 	defaultSession := New(Options{})
 	defer defaultSession.Close()
 	load(t, defaultSession, host, obj)
-	call(t, defaultSession, "unwind_root", 20, 22, -2)
+	if runtime.GOOS == "linux" {
+		call(t, defaultSession, "unwind_root", 20, 22, -2)
+	} else {
+		result, err := callInt32(defaultSession, "unwind_root", 20, 22)
+		if err != nil || result != 42 && result != -1 && result != -2 {
+			t.Fatalf("default frame result: %d, %v", result, err)
+		}
+	}
+	call(t, observer, "has_saved_frame", 0, 0, 0)
 	// A bad table fails before publication and allows correcting the staged
 	// bytes; registration is never reused across a validation retry.
 	validation := New(Options{RegisterUnwind: true})
@@ -88,7 +110,7 @@ func TestNativeLinuxFrameRegistration(t *testing.T) {
 	load(t, validation, host, obj)
 	var metadata *section
 	for _, section := range validation.files[0].obj.sections {
-		if section != nil && section.name == ".eh_frame" {
+		if section != nil && (section.name == ".eh_frame" || section.name == "__eh_frame") {
 			metadata = section
 			break
 		}
@@ -109,7 +131,7 @@ func TestNativeLinuxFrameRegistration(t *testing.T) {
 	call(t, observer, "has_saved_frame", 0, 0, 0)
 
 	lifecycleHost, _, read := lifecycleObserver(t, dir)
-	failed := compile(t, "testdata/lifecycle_cinit.c", filepath.Join(dir, "failed.o"), "-DFAIL_CODE=7", "-funwind-tables")
+	failed := compile(t, "testdata/lifecycle_cinit.c", filepath.Join(dir, "failed.o"), "-DFAIL_CODE=7", "-funwind-tables", "-DFORCE_DWARF")
 	s := New(Options{RegisterUnwind: true})
 	defer s.Close()
 	load(t, s, lifecycleHost)

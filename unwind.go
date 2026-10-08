@@ -14,7 +14,7 @@ import (
 type runtimeFunctions struct {
 	mem        []byte // OS-owned storage; never retain a Go heap table in Windows.
 	registered bool
-	frames     []uintptr // ELF section starts registered with the retained libgcc.
+	frames     []uintptr // POSIX section/FDE addresses registered with one provider.
 	provider   uintptr
 	deregister uintptr
 }
@@ -24,6 +24,10 @@ func elfUnwindSection(name string) bool {
 }
 
 func discardUnwind(o *object) {
+	if o != nil && o.info.Format == "Mach-O" {
+		discardUnwindSections(o, func(s *section) bool { return s.name == "__eh_frame" })
+		return
+	}
 	if o != nil && o.info.Format == "ELF" {
 		discardUnwindSections(o, func(s *section) bool { return elfUnwindSection(s.name) })
 		return
@@ -63,8 +67,11 @@ func (im *image) registerUnwind() error {
 	if im.objects[0].info.Format == "ELF" && runtime.GOOS == "linux" {
 		return im.registerELFUnwind()
 	}
+	if im.objects[0].info.Format == "Mach-O" && runtime.GOOS == "darwin" {
+		return im.registerMachOUnwind()
+	}
 	if im.objects[0].info.Format != "COFF" || arch != "amd64" && arch != "arm64" {
-		return fmt.Errorf("raw unwind registration requires Windows amd64/arm64 or Linux amd64/arm64/386")
+		return fmt.Errorf("raw unwind registration requires Windows/macOS amd64/arm64 or Linux amd64/arm64/386")
 	}
 	table, err := im.windowsFunctionTable(arch)
 	if err != nil || len(table) == 0 {
