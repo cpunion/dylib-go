@@ -3,7 +3,7 @@
 Go and llgo use independent workflows and separately compiled test processes:
 
 - [Go workflow](../.github/workflows/go.yml): `actions/setup-go@v7`, Go 1.27.x.
-- [llgo workflow](../.github/workflows/llgo.yml): `xgo-dev/setup-llgo@v0.2.0`, llgo revision `fd60172d4ee2808a13900bf9b61605bdf8b52448`, built from source, Go 1.27.x, LLVM 22; Windows uses the MinGW profile.
+- [llgo workflow](../.github/workflows/llgo.yml): `xgo-dev/setup-llgo@v0.2.0`, llgo revision `b86d349178d610e6b15e95c2a5fdfcb130d09fa1`, built from source, Go 1.27.x, LLVM 22; Windows uses the MinGW profile.
 - [README workflow](../.github/workflows/readme.yml): `actions/setup-node@v7`, Node 24, and lockfile-pinned embedme 1.22.1; verifies embedded source matches the README.
 
 Workflows run on pushes to main, pull requests, and manual dispatch. Pure Go jobs set `CGO_ENABLED=0` and run parser, error, and execution-refusal tests in a process compiled for the target architecture.
@@ -58,4 +58,4 @@ Runner labels follow [GitHub's official list](https://docs.github.com/en/actions
 
 Raw lifecycle fixtures run in every native Go and llgo job, without requiring libffi: C++ dependency initialization/destruction, ordinary archive selection, C termination tables, `atexit`/`__cxa_atexit`, selective and recursive `__cxa_finalize`, two-image isolation, validation rollback, and close idempotence. A retained observer library verifies callbacks after raw-image release. Pure Go jobs cross-inspect the eight target lifecycle table formats. See [lifecycle coverage](lifecycle.md).
 
-The llgo revision includes [public C-export foreign-thread guards](https://github.com/xgo-dev/llgo/pull/2752) for dependency packages and executables. This contribution is pending upstream review. The library uses ordinary `//export` declarations and has no private llgo runtime hooks; v1.0.6 cannot qualify C-created-thread callbacks on this path. `setup-llgo` builds the exact commit from source; the full matrix tests that compiler rather than applying patches during a job.
+CI pins the upstream merge commit of [public C-export foreign-thread guards](https://github.com/xgo-dev/llgo/pull/2752) for dependency packages and executables. The library uses ordinary `//export` declarations and has no private llgo runtime hooks; v1.0.6 cannot qualify C-created-thread callbacks on this path. `setup-llgo` builds the exact commit from source; the full matrix tests that compiler rather than applying patches during a job.
