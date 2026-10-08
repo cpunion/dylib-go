@@ -43,6 +43,32 @@ func weakAuxOffset(t *testing.T, data []byte, name string) int {
 	return 0
 }
 
+func TestForeignCOFFCompiledWeakCall(t *testing.T) {
+	for _, target := range []string{"x86_64-pc-windows-msvc", "aarch64-pc-windows-msvc", "i686-pc-windows-msvc"} {
+		t.Run(target, func(t *testing.T) {
+			path := compile(t, "testdata/coff_weak.c", filepath.Join(t.TempDir(), "weak.obj"), "--target="+target, "-ffreestanding")
+			data, err := readFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			f, err := parse(path, data)
+			if err != nil {
+				t.Fatal(err)
+			}
+			refs, err := references(f.obj)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, v := range refs {
+				if v.name == "optional" && v.alias != nil {
+					return
+				}
+			}
+			t.Fatal("assembler resolved the call without a weak relocation")
+		})
+	}
+}
+
 func TestForeignCOFFWeakSearchAndRelocations(t *testing.T) {
 	for _, target := range []string{"x86_64-pc-windows-msvc", "aarch64-pc-windows-msvc", "i686-pc-windows-msvc"} {
 		t.Run(target, func(t *testing.T) {
