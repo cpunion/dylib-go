@@ -3,6 +3,7 @@ package dylib
 import (
 	"encoding/binary"
 	"fmt"
+	"runtime"
 	"sort"
 	"strings"
 	"unsafe"
@@ -13,6 +14,21 @@ import (
 type runtimeFunctions struct {
 	mem        []byte // OS-owned storage; never retain a Go heap table in Windows.
 	registered bool
+	frames     []uintptr // ELF section starts registered with the retained libgcc.
+	provider   uintptr
+	deregister uintptr
+}
+
+func elfUnwindSection(name string) bool {
+	return name == ".eh_frame" || strings.HasPrefix(name, ".eh_frame.")
+}
+
+func discardUnwind(o *object) {
+	if o != nil && o.info.Format == "ELF" {
+		discardUnwindSections(o, func(s *section) bool { return elfUnwindSection(s.name) })
+		return
+	}
+	discardCOFFUnwind(o)
 }
 
 // Preserve the default linker behavior: discarded unwind metadata does not
@@ -22,8 +38,14 @@ func discardCOFFUnwind(o *object) {
 	if o == nil || o.info.Format != "COFF" {
 		return
 	}
+	discardUnwindSections(o, func(s *section) bool {
+		return s.name == ".pdata" || s.name == ".xdata" || strings.HasPrefix(s.name, ".pdata$") || strings.HasPrefix(s.name, ".xdata$")
+	})
+}
+
+func discardUnwindSections(o *object, discard func(*section) bool) {
 	for i, s := range o.sections {
-		if s != nil && (s.name == ".pdata" || s.name == ".xdata" || strings.HasPrefix(s.name, ".pdata$") || strings.HasPrefix(s.name, ".xdata$")) {
+		if s != nil && discard(s) {
 			o.sections[i] = nil
 		}
 	}
@@ -38,8 +60,11 @@ func discardCOFFUnwind(o *object) {
 
 func (im *image) registerUnwind() error {
 	arch := im.objects[0].info.Arch
+	if im.objects[0].info.Format == "ELF" && runtime.GOOS == "linux" {
+		return im.registerELFUnwind()
+	}
 	if im.objects[0].info.Format != "COFF" || arch != "amd64" && arch != "arm64" {
-		return fmt.Errorf("raw unwind registration currently requires Windows amd64/arm64")
+		return fmt.Errorf("raw unwind registration requires Windows amd64/arm64 or Linux amd64/arm64/386")
 	}
 	table, err := im.windowsFunctionTable(arch)
 	if err != nil || len(table) == 0 {
@@ -67,7 +92,21 @@ func (im *image) registerUnwind() error {
 }
 
 func (u *runtimeFunctions) close() error {
-	if u == nil || u.mem == nil {
+	if u == nil {
+		return nil
+	}
+	for i := len(u.frames) - 1; i >= 0; i-- {
+		native.CallPointer(u.deregister, u.frames[i])
+	}
+	u.frames = nil
+	if u.provider != 0 {
+		if err := native.Close(u.provider); err != nil {
+			return err
+		}
+		u.provider, u.deregister = 0, 0
+	}
+	if u.mem == nil {
+		u.registered = false
 		return nil
 	}
 	if u.registered {

@@ -19,7 +19,7 @@ Legacy tables require `SHT_PROGBITS` pointer storage. Their normalized prioritie
 
 Only selected archive members participate. COMDAT-discarded arrays and their references do not participate. ELF numeric priorities must fit 16 bits. Tables must contain whole native pointers, cannot request executable storage, and may contain null sentinels. Every non-null entry must point into an executable section of this image; ARM64 entries must also be instruction aligned. External initializer pointers are currently rejected. The validated entry lists are copied before initialization, so later writes to a writable table cannot substitute a finalizer.
 
-Executable ELF `.init`/`.fini` sections, Mach-O `S_INIT_FUNC_OFFSETS`, and CRT TLS tables remain unsupported. `.init`/`.fini` may contain separate prologue/body/epilogue fragments that need a different section layout. This does not implement a complete CRT startup environment. Optional Windows C [unwind registration](unwind.md) is owned through initialization and cleanup.
+Executable ELF `.init`/`.fini` sections, Mach-O `S_INIT_FUNC_OFFSETS`, and CRT TLS tables remain unsupported. `.init`/`.fini` may contain separate prologue/body/epilogue fragments that need a different section layout. This does not implement a complete CRT startup environment. Optional Windows/Linux C [unwind registration](unwind.md) is owned through initialization and cleanup.
 
 ## Integer initialization failures
 

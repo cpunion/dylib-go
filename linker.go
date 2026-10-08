@@ -26,8 +26,9 @@ var ErrInitialization = errors.New("dylib: C initialization failed; close the se
 type Options struct {
 	ProcessSymbols bool
 	// RegisterUnwind registers supported raw-image runtime function tables.
-	// Currently Windows amd64/arm64 C frames; other raw targets and language
-	// handlers are rejected. Exceptions must remain inside native code.
+	// Supports Windows amd64/arm64 and Linux amd64/arm64/386 C frames.
+	// Other targets and language handlers are rejected. Exceptions must remain
+	// inside native code.
 	RegisterUnwind bool
 	// LibraryPaths searches these directories before the importing file's
 	// directory and OS loader paths. Explicitly loaded matching DLLs win.
@@ -116,9 +117,9 @@ func (s *Session) Load(path string) error {
 		}
 	}
 	if !s.opts.RegisterUnwind {
-		discardCOFFUnwind(f.obj)
+		discardUnwind(f.obj)
 		for _, member := range f.members {
-			discardCOFFUnwind(member.obj)
+			discardUnwind(member.obj)
 		}
 	}
 	if f.obj != nil {
@@ -614,7 +615,7 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 				return nil, fmt.Errorf("%s: alignment exceeds host page size", s.name)
 			}
 			s.offset = size
-			size += alignUp(s.size, im.page)
+			size += alignUp(s.size+s.tail, im.page)
 			if size > maxImage {
 				return nil, fmt.Errorf("image exceeds 64 MiB")
 			}
@@ -719,10 +720,10 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	// Each section owns whole pages; never grant WRITE and EXEC together.
 	for _, o := range objs {
 		for _, s := range o.sections {
-			if s == nil || s.size == 0 {
+			if s == nil || s.size+s.tail == 0 {
 				continue
 			}
-			if e := native.Protect(b[s.offset:s.offset+alignUp(s.size, im.page)], s.exec, s.write); e != nil {
+			if e := native.Protect(b[s.offset:s.offset+alignUp(s.size+s.tail, im.page)], s.exec, s.write); e != nil {
 				return nil, e
 			}
 		}

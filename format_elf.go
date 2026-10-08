@@ -93,13 +93,16 @@ func parseELF(name string, b []byte) (*file, error) {
 		if s.Flags&elf.SHF_TLS != 0 {
 			o.unsupported("TLS section " + s.Name)
 		}
-		if s.Flags&elf.SHF_ALLOC == 0 || strings.HasPrefix(s.Name, ".eh_frame") || s.Name == ".gcc_except_table" {
+		if s.Flags&elf.SHF_ALLOC == 0 || strings.HasPrefix(s.Name, ".eh_frame") && !elfUnwindSection(s.Name) || s.Name == ".gcc_except_table" {
 			continue
 		}
 		if s.Name == ".init" || s.Name == ".fini" {
 			o.unsupported("automatic initialization/finalization: " + s.Name)
 		}
 		v := &section{name: s.Name, size: s.Size, align: s.Addralign, write: s.Flags&elf.SHF_WRITE != 0, exec: s.Flags&elf.SHF_EXECINSTR != 0}
+		if elfUnwindSection(s.Name) {
+			v.tail = 4 // libgcc walks each registered section to a zero length.
+		}
 		switch s.Type {
 		case elf.SHT_PREINIT_ARRAY:
 			v.lifecycle = lifecyclePreinit
