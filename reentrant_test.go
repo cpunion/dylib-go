@@ -81,14 +81,20 @@ func TestNativeFunctionConcurrentInvocations(t *testing.T) {
 	}
 	defer lease.Close()
 	var releaseOnce sync.Once
-	defer releaseOnce.Do(func() { close(release) })
+	var workers sync.WaitGroup
+	defer func() {
+		releaseOnce.Do(func() { close(release) })
+		workers.Wait() // Join native calls before releasing the callback lease.
+	}()
 	address, err := lease.Address()
 	if err != nil {
 		t.Fatal(err)
 	}
 	results := make(chan error, 2)
 	for i := int32(0); i < 2; i++ {
+		workers.Add(1)
 		go func(a int32) {
+			defer workers.Done()
 			got, err := f.Call(abi.Ptr(address), abi.Int32(a), abi.Int32(42-a))
 			if err == nil && got != abi.Int32(42) {
 				err = fmt.Errorf("concurrent result: %+v", got)
@@ -144,7 +150,15 @@ func TestNativeFunctionRetirementDuringCallback(t *testing.T) {
 		t.Fatal(err)
 	}
 	result, closed := make(chan error, 1), make(chan error, 1)
+	var workers sync.WaitGroup
+	var releaseOnce sync.Once
+	defer func() {
+		releaseOnce.Do(func() { close(release) })
+		workers.Wait()
+	}()
+	workers.Add(1)
 	go func() {
+		defer workers.Done()
 		got, err := f.Call(abi.Ptr(address), abi.Int32(20), abi.Int32(22))
 		if err == nil && got != abi.Int32(42) {
 			err = fmt.Errorf("in-flight call changed: %+v", got)
@@ -152,9 +166,13 @@ func TestNativeFunctionRetirementDuringCallback(t *testing.T) {
 		result <- err
 	}()
 	<-entered
-	go func() { closed <- s.Close() }()
+	workers.Add(1)
+	go func() {
+		defer workers.Done()
+		closed <- s.Close()
+	}()
 	waitSessionRetired(t, s)
-	close(release)
+	releaseOnce.Do(func() { close(release) })
 	if err := <-result; err != nil || cb.Err() != nil {
 		t.Fatalf("retiring call: %v, callback=%v", err, cb.Err())
 	}
