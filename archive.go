@@ -67,7 +67,9 @@ func archiveEntries(b []byte, thin bool) ([]archiveEntry, error) {
 				continue
 			}
 		case strings.HasPrefix(mn, "/"):
-			reference := mn[1:]
+			// GNU ar 2.42 can leave a slash at the end of its padded name
+			// field ("/0             /"). It terminates the reference.
+			reference := strings.TrimSpace(strings.TrimSuffix(mn[1:], "/"))
 			if thin && strings.Contains(reference, ":") {
 				parts := strings.Split(reference, ":")
 				if len(parts) != 2 {

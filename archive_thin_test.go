@@ -76,6 +76,22 @@ func TestThinArchiveInspectionAndProxyMembers(t *testing.T) {
 	if !strings.Contains(i.Members[2].Name, "long object name.obj") {
 		t.Fatal("proxy inspection lost the actual member name")
 	}
+	// Preserve the GNU ar 2.42 name-field spelling seen in Linux CI. Apply
+	// the same terminating slash to direct and regular-member proxy references.
+	padded := thinBytes(thinTestMember{name: p}, thinTestMember{name: inner, origin: offset})
+	for pos := 8; pos < len(padded); {
+		h := padded[pos : pos+60]
+		pos += 60
+		if strings.TrimSpace(string(h[:16])) == "//" {
+			n := len(padded) - pos - 120
+			pos += n
+		} else {
+			h[15] = '/'
+		}
+	}
+	if f, err := parse(outer, padded); err != nil || len(f.members) != 2 {
+		t.Fatalf("GNU padded thin/proxy references: %v", err)
+	}
 	if f, err := parse("empty.a", []byte("!<thin>\n")); err != nil || !f.info.Thin || len(f.members) != 0 {
 		t.Fatalf("empty thin archive: %+v, %v", f, err)
 	}
