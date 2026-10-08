@@ -21,6 +21,7 @@ type Info struct {
 	CPUSubtype  uint32       `json:"cpu_subtype,omitempty"`
 	Bits        int          `json:"bits,omitempty"`
 	Symbols     []SymbolInfo `json:"symbols,omitempty"`
+	Imports     []ImportInfo `json:"imports,omitempty"`
 	Members     []Info       `json:"members,omitempty"`
 	Unsupported []string     `json:"unsupported,omitempty"`
 }
@@ -29,6 +30,15 @@ type SymbolInfo struct {
 	Name    string `json:"name"`
 	Defined bool   `json:"defined"`
 	Weak    bool   `json:"weak,omitempty"`
+}
+
+// ImportInfo describes a COFF short import without opening its DLL.
+type ImportInfo struct {
+	DLL     string `json:"dll"`
+	Symbol  string `json:"symbol"`         // Normalized public linker name.
+	Name    string `json:"name,omitempty"` // DLL export name, absent for ordinals.
+	Ordinal uint16 `json:"ordinal,omitempty"`
+	Kind    string `json:"kind"` // code, data, or const.
 }
 
 // Inspect reads metadata only; it can inspect foreign targets on any host.
@@ -72,6 +82,7 @@ type file struct {
 }
 type object struct {
 	info      Info
+	directory string     // Search origin for DLL dependencies of staged imports.
 	timestamp uint32     // COFF header time stamp, used by NEWEST COMDAT selection.
 	sections  []*section // Original section indices (zero reserved).
 	symbols   []symbol   // Original symbol table indices.
@@ -97,13 +108,14 @@ type section struct {
 	priority              uint32
 }
 
-// section: 0 undefined, -1 absolute, -2 common, -3 ignored/debug/unsupported.
+// section: 0 undefined, -1 absolute, -2 common, -3 ignored/debug, -4 DLL import.
 type symbol struct {
 	name               string
 	section            int
 	value, size, align uint64
 	global, weak       bool
 	alias              *weakAlias
+	imported           *coffImportSymbol
 }
 
 // COFF weak externals reference a fallback by original symbol-table index.
@@ -144,7 +156,11 @@ func parse(name string, b []byte) (*file, error) {
 	case bytes.HasPrefix(b, []byte("MZ")) || len(b) >= 20 && (binary.LittleEndian.Uint16(b) == 0x8664 || binary.LittleEndian.Uint16(b) == 0xaa64 || binary.LittleEndian.Uint16(b) == 0x14c):
 		f, err = parseCOFF(name, b)
 	case len(b) >= 4 && binary.LittleEndian.Uint32(b) == 0xffff0000:
-		f, err = parseCOFF(name, b)
+		if len(b) >= 6 && binary.LittleEndian.Uint16(b[4:]) == 0 {
+			f, err = parseCOFFImport(name, b)
+		} else {
+			f, err = parseCOFF(name, b)
+		}
 	case bytes.HasPrefix(b, []byte("BC\xc0\xde")) || bytes.HasPrefix(b, []byte{0xde, 0xc0, 0x17, 0x0b}):
 		err = fmt.Errorf("LLVM bitcode: compile to a native object with clang -c first")
 	default:
