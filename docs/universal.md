@@ -28,11 +28,13 @@ load a different slice from the one validated here. Extract a supported
 baseline slice when a dylib contains several variants for the same CPU.
 
 Container validation checks table bounds, alignment, nonempty ranges, overlap,
-duplicate CPU/subtype pairs, FAT64 reserved bits, payload architecture, and
+duplicate CPU/subtype pairs, payload architecture, and
 consistent image types. Each archive slice must contain relocatable Mach-O
 objects matching its declared CPU/subtype; non-macOS archive members prevent
 native selection. Archive/image mixtures are rejected. The existing 256 MiB
 file and 64 MiB linked-image limits apply, with at most 64 slices per container.
+FAT64 reserved words are ignored because Apple's `lipo` can leave them
+uninitialized; they do not affect slice selection or bounds.
 
 Selection adds no relocation, language runtime, TLS or raw unwind support.
 Only the selected slice supplies object code and symbols. OS libraries retain

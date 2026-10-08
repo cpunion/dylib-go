@@ -37,9 +37,7 @@ func parseUniversal(name string, b []byte) (*file, error) {
 		align := be.Uint32(h[16:])
 		if width == 32 {
 			a.offset, a.size, align = be.Uint64(h[8:]), be.Uint64(h[16:]), be.Uint32(h[24:])
-			if be.Uint32(h[28:]) != 0 {
-				return nil, fmt.Errorf("universal slice %d has nonzero reserved bits", i)
-			}
+			// Ignore reserved: Apple's lipo can leave this word uninitialized.
 		}
 		if a.offset < tableEnd || a.offset > uint64(len(b)) || a.size == 0 || a.size > uint64(len(b))-a.offset || align >= 64 || a.offset&((uint64(1)<<align)-1) != 0 {
 			return nil, fmt.Errorf("universal slice %d has invalid range/alignment", i)

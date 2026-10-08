@@ -209,9 +209,11 @@ func TestMalformedUniversalMachO(t *testing.T) {
 		}
 		if large {
 			b := append([]byte(nil), base...)
-			be.PutUint32(b[36:], 1)
-			if _, err := parse("reserved bits", b); err == nil {
-				t.Fatal("reserved fat64 bits accepted")
+			// Apple's lipo does not consistently initialize the reserved words.
+			be.PutUint32(b[36:], 0xdeadbeef)
+			be.PutUint32(b[68:], ^uint32(0))
+			if f, err := parse("lipo reserved words", b); err != nil || len(f.slices) != 2 {
+				t.Fatalf("ignored fat64 reserved words: %v", err)
 			}
 		}
 	}
