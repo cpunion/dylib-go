@@ -27,6 +27,9 @@ func (s *Session) Bind(name string, signature abi.Signature) (*Function, error) 
 	if s.closed {
 		return nil, ErrClosed
 	}
+	if s.initErr != nil {
+		return nil, s.initErr
+	}
 	if len(signature.Args) == 0 {
 		signature.Args = nil
 	}

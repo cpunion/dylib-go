@@ -152,7 +152,9 @@ func parseCOFF(name string, b []byte) (*file, error) {
 			o.unsupported("TLS section " + s.name)
 		}
 		kind := lifecycleKind(0)
-		if strings.HasPrefix(s.name, ".CRT$XC") {
+		if strings.HasPrefix(s.name, ".CRT$XI") {
+			kind = lifecycleCInit
+		} else if strings.HasPrefix(s.name, ".CRT$XC") {
 			kind = lifecycleInit
 		} else if strings.HasPrefix(s.name, ".CRT$XP") || strings.HasPrefix(s.name, ".CRT$XT") {
 			kind = lifecycleFini

@@ -14,9 +14,32 @@ type lifecycleKind uint8
 
 const (
 	lifecyclePreinit lifecycleKind = iota + 1
+	lifecycleCInit
 	lifecycleInit
 	lifecycleFini
 )
+
+// InitializationError reports a nonzero result from a COFF C initializer.
+// The session cannot retry initialization and must be closed.
+type InitializationError struct {
+	Object  string
+	Section string
+	Offset  uint64
+	Code    int32
+}
+
+func (e *InitializationError) Error() string {
+	return fmt.Sprintf("%s: %s+%#x: C initializer returned %d: %v", e.Object, e.Section, e.Offset, e.Code, ErrInitialization)
+}
+
+func (*InitializationError) Unwrap() error { return ErrInitialization }
+
+type cInitializer struct {
+	address uintptr
+	object  string
+	section string
+	offset  uint64
+}
 
 func configureLifecycle(s *section, bits int) error {
 	width := uint64(bits / 8)
@@ -196,6 +219,8 @@ func (im *image) prepareLifecycle() error {
 			}
 			if s.lifecycle == lifecycleFini {
 				fini = append(fini, uintptr(address))
+			} else if s.lifecycle == lifecycleCInit {
+				im.cInitializers = append(im.cInitializers, cInitializer{uintptr(address), a.object.info.Name, s.name, pos})
 			} else {
 				im.initializers = append(im.initializers, uintptr(address))
 			}
@@ -224,11 +249,17 @@ func (im *image) executableAddress(address uintptr) bool {
 	return false
 }
 
-func (im *image) initialize() {
+func (im *image) initialize() error {
+	for _, init := range im.cInitializers {
+		if code := native.CallInitializer(init.address); code != 0 {
+			return &InitializationError{Object: init.object, Section: init.section, Offset: init.offset, Code: code}
+		}
+	}
 	for _, address := range im.initializers {
 		native.CallVoid(address)
 	}
 	im.initialized = true
+	return nil
 }
 
 func runtimeHelper(name string) bool {

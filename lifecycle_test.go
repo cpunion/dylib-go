@@ -224,7 +224,7 @@ func TestLifecycleDependencyCycles(t *testing.T) {
 func TestRejectUnsupportedLifecycleForms(t *testing.T) {
 	for _, tc := range []struct{ triple, source string }{
 		{"x86_64-linux-gnu", ".section .init,\"ax\",@progbits\n.byte 0\n"},
-		{"x86_64-pc-windows-msvc", ".section .CRT$XIA,\"dr\"\n.quad 0\n"},
+		{"x86_64-pc-windows-msvc", ".section .CRT$XLA,\"dr\"\n.quad 0\n"},
 	} {
 		file := filepath.Join(t.TempDir(), "unsupported.s")
 		if err := os.WriteFile(file, []byte(tc.source), 0600); err != nil {
