@@ -81,7 +81,7 @@ func archiveEntries(b []byte, thin bool) ([]archiveEntry, error) {
 			}
 			o, e := strconv.Atoi(reference)
 			if e != nil || o < 0 || o >= len(names) {
-				return nil, fmt.Errorf("invalid archive name offset")
+				return nil, fmt.Errorf("invalid archive name offset %q (table size %d)", reference, len(names))
 			}
 			// GNU long names end with /\n; COFF long names end with NUL.
 			// Both use the // member and /decimal-offset references.

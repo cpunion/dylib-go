@@ -138,6 +138,11 @@ func TestNativeThinArchiveExtractionAndSnapshot(t *testing.T) {
 	}
 	i, err := Inspect(p)
 	if err != nil || !i.Thin || len(i.Members) != 2 {
+		b, _ := os.ReadFile(p)
+		if len(b) > 1024 {
+			b = b[:1024]
+		}
+		t.Logf("archiver %s; container prefix %q", cmd.Path, b)
 		t.Fatalf("genuine thin archive: %+v, %v", i, err)
 	}
 	s := New(Options{})
