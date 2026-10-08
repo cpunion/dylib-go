@@ -16,7 +16,7 @@ In that snapshot, [DefaultRegistry.d](https://github.com/Marenz/ddl/blob/3bf531e
 | `ar/ArchiveReader` / `ArchiveLibrary` | `archive.go` | GNU/SysV, BSD, and COFF long names; rebuild indexes and extract on demand |
 | Per-module `resolveFixups` | `relocate*.go` | 64-bit ELF/Mach-O/COFF and i386 ELF/COFF subsets, bounds checks, GOT, branch stubs |
 | `host` / `insitu` | `Define`, explicit shared libraries, optional host symbols | Native addresses without D MAP/ModuleInfo |
-| `Memory` and object lifetime | `internal/native`, `Session.Close`, `Symbol.WithAddress` | W^X, rollback, explicit ownership, serialized access |
+| `Memory` and object lifetime | `internal/native`, `Session.Close`, `Symbol.WithAddress` | W^X, rollback, explicit ownership, in-flight call guards |
 | Template binding and D reflection | `Resolve`, caller-defined adapters, `abi.Signature`, `Function` | Explicit native signatures; no D ABI |
 | D ModuleInfo constructors/destructors | Native lifecycle tables and session-owned exit registrations | ELF/Mach-O/COFF initialization and cleanup; no D module metadata |
 
@@ -36,9 +36,9 @@ Lookup does not infer types. Raw addresses from `Lookup` are valid only while th
 
 ## Generic binding and lifetime
 
-`Resolve(name)` returns an untyped `Symbol` associated with its owning session. `Symbol.WithAddress` invokes a Go adapter while holding the session lock, so `Close` cannot release code or libraries during address use. The adapter may invoke a native function with a known signature or access native data with a known layout. It must finish all address use before returning and must not re-enter the session's locking methods.
+`Resolve(name)` returns an untyped `Symbol` associated with its owning session. `Symbol.WithAddress` counts active address users and releases the session mutex before invoking a Go adapter. Concurrent or nested calls retain the same code and library handles. `Close` retires the session first, rejects new uses, and waits for active users before cleanup. Finalizers run without the session mutex and observe `ErrClosed` if they query it. Finish address use before returning and close the owner outside its own calls or finalizers. See [concurrency and retirement](concurrency.md).
 
-`Bind(name, abi.Signature)` builds a `Function` on the same symbol lifetime guard. It validates and copies the caller's signature and owns a prepared libffi CIF/type graph for repeated scalar and ordinary C struct calls. Variadic tails receive default C promotions; fixed Windows 386 stdcall/fastcall signatures select an explicit native convention. Session close frees plans before releasing code. Standalone `abi.Prepare` plans require explicit close and do not own code. Neither API infers types from names or demangled strings.
+`Bind(name, abi.Signature)` builds a `Function` on the same symbol lifetime guard. It validates and copies the caller's signature and owns a prepared libffi CIF/type graph for repeated scalar and ordinary C struct calls. Variadic tails receive default C promotions; fixed Windows 386 stdcall/fastcall signatures select an explicit native convention. Session close frees plans before releasing code. Prepared plans share immutable CIF/type layouts while invocation storage remains separate. Standalone `abi.Prepare` plans require explicit close and do not own code. Neither API infers types from names or demangled strings.
 
 The independent `abi/signature` package converts Go-style declarations and typed invocations into explicit `abi.Signature` and `abi.Value` descriptions using Go's standard parser. It has no native backend dependency. The CLI consumes that metadata through `Bind`; syntax parsing does not replace native prototype or calling-convention knowledge. See the [CLI reference](cli.md).
 
