@@ -27,9 +27,10 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 | --- | --- |
 | Supported ELF/Mach-O/COFF 64-bit objects and i386 ELF32/COFF relocatable objects | Go links implemented relocations directly without first producing an OS shared library |
 | Ordinary GNU/BSD ar (`.a`, ordinary COFF `.lib`) | Inspect all members, but map only needed members; unresolved dependencies in unused members do not affect linking |
+| COFF bigobj, directly or inside ordinary `.lib` archives | 32-bit section numbers and 20-byte symbols; the same relocation and lifecycle limits as ordinary COFF |
 | `.so`, `.dylib`, PE DLL | Host OS loads complete images, dependencies, TLS, and initialization |
 | PE EXE, ELF EXEC/PIE, Mach-O EXEC | Identified and rejected as library inputs |
-| Thin archives, fat Mach-O, COFF import libraries/bigobj | Rejected or unsupported; use an ordinary target slice/object, or load the DLL directly |
+| Thin archives, fat Mach-O, COFF import libraries | Rejected or unsupported; use an ordinary target slice/object, or load the DLL directly |
 | OMF, D `.ddl`, Go gc `.a`, LLVM bitcode, raw LLVM IR | Not directly loaded; matching toolchains can first compile IR/bitcode to native `.o` |
 
 Implemented relocation families:
@@ -47,6 +48,8 @@ Implemented relocation families:
 Unknown relocations, overflow, writes outside sections, incompatible targets, and duplicate non-COMDAT strong symbols fail without publishing a partial executable image. Exception metadata is skipped without registering an unwinder: the raw object path therefore does not support throwing exceptions or stack unwinding. Modern lifecycle tables and image-owned `atexit`/`__cxa_atexit` registrations are supported; see [initialization and cleanup](lifecycle.md) for ordering, tests, and remaining forms. Objects with recognized TLS, unsupported lifecycle forms, unsupported COMDAT selections, or Swift/ObjC registration requirements are rejected.
 
 ELF `GRP_COMDAT` groups retain the first signature-matched group. COFF supports NODUPLICATES, ANY, SAME_SIZE, EXACT_MATCH, ASSOCIATIVE, LARGEST, and timestamp-based NEWEST. Selection drops whole groups and their relocation dependencies before archive extraction, follows associative chains, and snapshots inputs for retry. Conflicting rules, content/size mismatches, and association cycles fail. COFF weak externals support NOLIBRARY, LIBRARY, and ALIAS fallback chains, strong overrides, archive search policy, and initialization dependencies; malformed records and used alias cycles fail. See [COFF rules and tests](coff.md). Cross-group references to discarded local symbols fail rather than guessing a corresponding symbol. Mach-O coalesced sections remain unsupported. COFF SECTION ordinals describe this loader's separate input sections, not a generated PE section table.
+
+COFF bigobj retains full 32-bit section references and associative parent numbers. Ordinary COFF retains legal unsigned section numbers above 32767. Both readers support extended relocation tables, including the overflow-count marker. A 16-bit SECTION relocation still cannot represent an image ordinal above 65535; bigobj does not change the width of individual relocation fields. File/image size and page-alignment limits still apply.
 
 ## Language outputs
 

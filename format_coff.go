@@ -1,21 +1,19 @@
 package dylib
 
 import (
-	"bytes"
 	"debug/pe"
 	"fmt"
 	"strings"
 )
 
 func parseCOFF(name string, b []byte) (*file, error) {
-	f, err := pe.NewFile(bytes.NewReader(b))
+	f, err := readCOFF(b)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
-	o := &object{info: Info{Name: name, Format: "COFF", Kind: "object", Bits: 64}, timestamp: f.TimeDateStamp}
+	o := &object{info: Info{Name: name, Format: "COFF", Kind: f.kind, Bits: 64}, timestamp: f.timestamp}
 	o.info.OS = "windows"
-	switch f.Machine {
+	switch f.machine {
 	case pe.IMAGE_FILE_MACHINE_AMD64:
 		o.info.Arch = "amd64"
 	case pe.IMAGE_FILE_MACHINE_ARM64:
@@ -24,25 +22,22 @@ func parseCOFF(name string, b []byte) (*file, error) {
 		o.info.Arch = "386"
 		o.info.Bits = 32
 	default:
-		o.info.Arch = fmt.Sprintf("machine-%x", f.Machine)
+		o.info.Arch = fmt.Sprintf("machine-%x", f.machine)
 		o.info.Bits = 32
 		o.unsupported("32-bit COFF relocation")
 	}
-	if f.OptionalHeader != nil {
+	if f.kind != "object" {
 		o.info.Format = "PE"
-		o.info.Kind = "executable"
-		if f.Characteristics&pe.IMAGE_FILE_DLL != 0 {
-			o.info.Kind = "shared"
-		}
 	}
-	o.symbols = make([]symbol, len(f.COFFSymbols))
+	count := len(f.records) / f.entrySize
+	o.symbols = make([]symbol, count)
 	comdats := make(map[int]sectionGroup)
-	for i := 0; i < len(f.COFFSymbols); {
-		s := f.COFFSymbols[i]
-		if i+int(s.NumberOfAuxSymbols) >= len(f.COFFSymbols) {
+	for i := 0; i < count; {
+		s := f.symbol(i)
+		if i+int(s.aux) >= count {
 			return nil, fmt.Errorf("invalid COFF auxiliary symbol count")
 		}
-		n, e := s.FullName(f.StringTable)
+		n, e := (&pe.COFFSymbol{Name: s.name}).FullName(f.strings)
 		if e != nil {
 			return nil, e
 		}
@@ -55,48 +50,54 @@ func parseCOFF(name string, b []byte) (*file, error) {
 				n = strings.TrimPrefix(n, "_")
 			}
 		}
-		v := symbol{name: n, section: int(s.SectionNumber), value: uint64(s.Value), global: s.StorageClass == 2 || s.StorageClass == 105, weak: s.StorageClass == 105}
-		if v.section == 0 && s.Value != 0 {
+		v := symbol{name: n, section: int(s.section), value: uint64(s.value), global: s.class == 2 || s.class == 105, weak: s.class == 105}
+		if o.info.Kind == "object" && (s.section < -2 || s.section > int32(len(f.sections))) {
+			return nil, fmt.Errorf("invalid COFF symbol section number")
+		}
+		if s.section == -2 { // IMAGE_SYM_DEBUG is not tentative/common data.
+			v.section = -3
+		}
+		if v.section == 0 && s.value != 0 {
 			v.section = -2
-			v.size = uint64(s.Value)
+			v.size = uint64(s.value)
 			v.value = 0
 			v.align = 16
 		}
-		if s.StorageClass == 105 && o.info.Kind == "object" {
-			if s.SectionNumber != 0 || s.Value != 0 || s.NumberOfAuxSymbols != 1 {
+		if s.class == 105 && o.info.Kind == "object" {
+			if s.section != 0 || s.value != 0 || s.aux != 1 {
 				return nil, fmt.Errorf("invalid COFF weak external record")
 			}
-			aux := f.COFFSymbols[i+1].Name
-			v.alias = &weakAlias{target: int(le.Uint32(aux[:4])), search: le.Uint32(aux[4:])}
-			if v.alias.target < 0 || v.alias.target >= len(f.COFFSymbols) || v.alias.target == i || v.alias.search < 1 || v.alias.search > 3 {
+			aux := f.record(i + 1)
+			v.alias = &weakAlias{target: int(le.Uint32(aux[:4])), search: le.Uint32(aux[4:8])}
+			if v.alias.target < 0 || v.alias.target >= count || v.alias.target == i || v.alias.search < 1 || v.alias.search > 3 {
 				return nil, fmt.Errorf("invalid COFF weak external fallback or search mode")
 			}
 		}
 		o.symbols[i] = v
-		if o.info.Kind == "object" && s.StorageClass == 3 && s.Value == 0 && s.Type == 0 && s.NumberOfAuxSymbols != 0 && s.SectionNumber > 0 {
-			sectionIndex := int(s.SectionNumber)
-			if sectionIndex > len(f.Sections) {
+		if o.info.Kind == "object" && s.class == 3 && s.value == 0 && s.typ == 0 && s.aux != 0 && s.section > 0 {
+			sectionIndex := int(s.section)
+			if sectionIndex > len(f.sections) {
 				return nil, fmt.Errorf("invalid COFF section definition")
 			}
-			if f.Sections[sectionIndex-1].Characteristics&0x1000 != 0 {
-				aux, err := f.COFFSymbolReadSectionDefAux(i)
-				if err != nil {
-					return nil, err
-				}
+			if f.sections[sectionIndex-1].flags&0x1000 != 0 {
+				aux := f.record(i + 1)
 				if _, exists := comdats[sectionIndex]; exists {
 					return nil, fmt.Errorf("duplicate COFF COMDAT section definition")
 				}
-				g := sectionGroup{sections: []int{sectionIndex}, selection: aux.Selection}
-				if aux.Selection == 5 {
-					g.parent = int(aux.SecNum)
+				g := sectionGroup{sections: []int{sectionIndex}, selection: aux[14]}
+				if aux[14] == 5 {
+					g.parent = int(le.Uint16(aux[12:]))
+					if f.big {
+						g.parent |= int(le.Uint16(aux[16:])) << 16
+					}
 				}
 				comdats[sectionIndex] = g
 			}
 		}
-		for j := 1; j <= int(s.NumberOfAuxSymbols); j++ {
+		for j := 1; j <= int(s.aux); j++ {
 			o.symbols[i+j].section = -3
 		}
-		i += 1 + int(s.NumberOfAuxSymbols)
+		i += 1 + int(s.aux)
 	}
 	if o.info.Kind != "object" {
 		return finish(o), nil
@@ -106,10 +107,10 @@ func parseCOFF(name string, b []byte) (*file, error) {
 			return nil, fmt.Errorf("COFF weak fallback must reference an external symbol")
 		}
 	}
-	o.sections = make([]*section, len(f.Sections)+1)
-	for i, s := range f.Sections {
-		flags := s.Characteristics
-		if flags&0x200 != 0 || strings.HasPrefix(s.Name, ".debug") || s.Name == ".drectve" || s.Name == ".pdata" || s.Name == ".xdata" {
+	o.sections = make([]*section, len(f.sections)+1)
+	for i, s := range f.sections {
+		flags := s.flags
+		if flags&0x200 != 0 || strings.HasPrefix(s.name, ".debug") || s.name == ".drectve" || s.name == ".pdata" || s.name == ".xdata" {
 			continue
 		}
 		if flags&0x1000 != 0 {
@@ -130,34 +131,34 @@ func parseCOFF(name string, b []byte) (*file, error) {
 					return nil, fmt.Errorf("COFF COMDAT has no external key")
 				}
 			case 5:
-				if g.parent == i+1 || g.parent <= 0 || g.parent > len(f.Sections) {
+				if g.parent == i+1 || g.parent <= 0 || g.parent > len(f.sections) {
 					return nil, fmt.Errorf("invalid associative COFF COMDAT parent")
 				}
 				if _, exists := comdats[g.parent]; !exists {
 					return nil, fmt.Errorf("associative COFF parent is not COMDAT")
 				}
 			default:
-				o.unsupported(fmt.Sprintf("COFF COMDAT selection %d in %s", g.selection, s.Name))
+				o.unsupported(fmt.Sprintf("COFF COMDAT selection %d in %s", g.selection, s.name))
 			}
 			o.groups = append(o.groups, g)
 		}
-		if strings.HasPrefix(s.Name, ".tls") {
-			o.unsupported("TLS section " + s.Name)
+		if strings.HasPrefix(s.name, ".tls") {
+			o.unsupported("TLS section " + s.name)
 		}
 		kind := lifecycleKind(0)
-		if strings.HasPrefix(s.Name, ".CRT$XC") {
+		if strings.HasPrefix(s.name, ".CRT$XC") {
 			kind = lifecycleInit
-		} else if strings.HasPrefix(s.Name, ".CRT$XP") || strings.HasPrefix(s.Name, ".CRT$XT") {
+		} else if strings.HasPrefix(s.name, ".CRT$XP") || strings.HasPrefix(s.name, ".CRT$XT") {
 			kind = lifecycleFini
-		} else if strings.HasPrefix(s.Name, ".CRT") {
-			o.unsupported("automatic initialization/finalization: " + s.Name)
+		} else if strings.HasPrefix(s.name, ".CRT") {
+			o.unsupported("automatic initialization/finalization: " + s.name)
 		}
 		align := uint64(16)
 		a := (flags >> 20) & 15
 		if a != 0 {
 			align = uint64(1) << (a - 1)
 		}
-		v := &section{name: s.Name, size: uint64(s.Size), align: align, exec: flags&0x20000000 != 0, write: flags&0x80000000 != 0}
+		v := &section{name: s.name, size: uint64(s.size), align: align, exec: flags&0x20000000 != 0, write: flags&0x80000000 != 0}
 		v.lifecycle = kind
 		if kind != 0 {
 			if err := configureLifecycle(v, o.info.Bits); err != nil {
@@ -168,13 +169,13 @@ func parseCOFF(name string, b []byte) (*file, error) {
 			return nil, err
 		}
 		if flags&0x80 == 0 {
-			v.data, err = s.Data()
+			v.data, err = s.contents()
 			if err != nil {
 				return nil, err
 			}
 		}
 		o.sections[i+1] = v
-		for _, r := range s.Relocs {
+		for _, r := range s.relocs {
 			o.relocs = append(o.relocs, relocation{section: i + 1, offset: uint64(r.VirtualAddress), typ: uint32(r.Type), symbol: int(r.SymbolTableIndex), pair: -1})
 		}
 	}

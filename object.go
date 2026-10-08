@@ -144,7 +144,7 @@ func parse(name string, b []byte) (*file, error) {
 	case bytes.HasPrefix(b, []byte("MZ")) || len(b) >= 20 && (binary.LittleEndian.Uint16(b) == 0x8664 || binary.LittleEndian.Uint16(b) == 0xaa64 || binary.LittleEndian.Uint16(b) == 0x14c):
 		f, err = parseCOFF(name, b)
 	case len(b) >= 4 && binary.LittleEndian.Uint32(b) == 0xffff0000:
-		err = fmt.Errorf("COFF import objects/bigobj are unsupported; load the DLL directly")
+		f, err = parseCOFF(name, b)
 	case bytes.HasPrefix(b, []byte("BC\xc0\xde")) || bytes.HasPrefix(b, []byte{0xde, 0xc0, 0x17, 0x0b}):
 		err = fmt.Errorf("LLVM bitcode: compile to a native object with clang -c first")
 	default:
