@@ -118,9 +118,9 @@ call. Native argument packing also reuses its owned block, including above 32
 arguments; the old large-call path allocated and freed packing storage each
 time. Warm calls use one C transition, with cleanup in Go. Native allocation
 still occurs on a cache miss, and oversized contexts are freed on return.
-The measured llgo runtime retains other dynamic-call allocations, including
-additional cleanup state for small calls; its zero allocation-count report does
-not mean zero allocation. Latency samples varied substantially across runs, so
+The measured llgo runtime retains other dynamic-call allocations, and the
+small-call measurements report 16 additional bytes; its zero allocation-count
+report does not mean zero allocation. Latency samples varied substantially across runs, so
 this comparison reports stable allocation measurements without a latency claim.
 Variadic promotion, callbacks and temporary pointees can still allocate.
 
