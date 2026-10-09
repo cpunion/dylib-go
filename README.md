@@ -419,6 +419,10 @@ against generated llgo storage before resolving symbols. Methods call through
 owns the session, pointer storage and returned native entry lifetimes. Run the [tested direct example](examples/directdeclarations/main.go)
 with `examples/run.sh llgo directdeclarations <library>`.
 
+The qualified llgo compiler has a macOS ARM64 signed narrow-argument issue
+([#2767](https://github.com/xgo-dev/llgo/issues/2767)). Use `CgoSource` or dynamic
+`Session.Bind` for affected signatures until the compiler fix is qualified.
+
 This complements [llcppg](https://github.com/goplus/llcppg)'s static bindings.
 
 ## Dynamic C callbacks

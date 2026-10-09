@@ -144,6 +144,14 @@ fixed arrays. Fixed cdecl function-pointer parameters/results retain their typed
 prototypes. Variadic outer/inner signatures, other conventions and unqualified
 386 targets fail generation explicitly.
 
+The qualified compiler does not sign-extend negative `int8`/`int16` arguments
+correctly for some optimized macOS ARM64 C calls, including native function
+pointers ([llgo #2767](https://github.com/xgo-dev/llgo/issues/2767)). Narrow-result
+round trips alone do not detect this: a C `int` result exposes the incorrect
+positive value. Use `CgoSource`'s 32-bit transport or dynamic `Session.Bind` for
+affected signatures until an upstream fix is qualified. The supported direct
+fixture subset does not establish correctness for every scalar signature.
+
 The constructor checks `Target.CheckHost` and compares generated record
 `unsafe.Sizeof`, `unsafe.Alignof` and `unsafe.Offsetof` values with the saved Clang
 layout before resolving any exports. This validates llgo storage without loading

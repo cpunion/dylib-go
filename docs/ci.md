@@ -69,6 +69,13 @@ On Linux, llgo v1.0.6 misparses newline-only `pkg-config --cflags libffi` output
 
 Runner labels follow [GitHub's official list](https://docs.github.com/en/actions/reference/runners/github-hosted-runners): ubuntu-24.04, ubuntu-24.04-arm, macos-15-intel, macos-15, windows-2022, and windows-11-arm.
 
+The qualified llgo compiler also has a macOS ARM64 signed narrow-argument issue
+([#2767](https://github.com/xgo-dev/llgo/issues/2767)). The generated cgo bridge
+uses 32-bit integer transport and restores the C widths, with negative arguments
+and variadic promotions checked at runtime. Direct `LLGoSource` adapters retain
+the compiler limitation; use `CgoSource` or dynamic `Session.Bind` for affected
+signatures.
+
 Raw lifecycle fixtures run in every native Go and llgo job, without requiring libffi: C++ dependency initialization/destruction, ordinary archive selection, C termination tables, `atexit`/`__cxa_atexit`, selective and recursive `__cxa_finalize`, two-image isolation, validation rollback, and close idempotence. A retained observer library verifies callbacks after raw-image release. Pure Go jobs cross-inspect the eight target lifecycle table formats. See [lifecycle coverage](lifecycle.md).
 
 Linux jobs also execute real Clang `-fno-use-init-array` `.ctors/.dtors` output, including 386 Go. Tests cover reversed constructor entries, forward destructor entries, `0/-1` sentinels, normalized priorities mixed with modern arrays, C++ dependency/ordinary-archive selection, retry, and finalizer validation before initialization. All pure Go jobs inspect legacy ELF tables for amd64, arm64, and 386 and check malformed tables and priorities.
