@@ -176,7 +176,7 @@ func (s *Session) Define(name string, address uintptr) error {
 	if runtimeHelper(strings.TrimPrefix(name, "__imp_")) {
 		return fmt.Errorf("%s is reserved for session-owned object lifecycle", name)
 	}
-	if hostARMELFOwnedGOT(name) {
+	if hostELFOwnedGOT(name) {
 		return fmt.Errorf("%s is reserved for the image-owned GOT", name)
 	}
 	if _, ok := s.defined[name]; ok {
@@ -216,7 +216,7 @@ func checkTarget(o *object) error {
 	if len(o.info.Unsupported) > 0 {
 		return fmt.Errorf("%s: unsupported: %s", o.info.Name, strings.Join(o.info.Unsupported, ", "))
 	}
-	return checkARMELFGOTDefinitions(o)
+	return checkELFGOTDefinitions(o)
 }
 
 func (s *Session) external(name string) uintptr {
@@ -294,7 +294,7 @@ func references(o *object) ([]symbol, error) {
 		}
 	}
 	for _, r := range o.relocs {
-		if elfNoRelocation(o, r.typ) {
+		if elfNoRelocation(o, r.typ) || elfGOTBaseRelocation(o, r.typ) {
 			continue
 		}
 		if !r.local {
@@ -302,7 +302,7 @@ func references(o *object) ([]symbol, error) {
 				return nil, fmt.Errorf("%s: invalid relocation symbol %d", o.info.Name, r.symbol)
 			}
 			v := o.symbols[r.symbol]
-			if v.global && v.section == 0 && armELFOwnedGOT(o.info, v.name) {
+			if v.global && v.section == 0 && elfOwnedGOT(o.info, v.name) {
 				continue // The image owns this base; no archive provider is needed.
 			}
 			out = append(out, v)
@@ -344,7 +344,7 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 		probe := &image{defs: defs, aliases: aliases, external: s.external}
 		var wanted []string
 		for _, name := range roots {
-			if hostARMELFOwnedGOT(name) {
+			if hostELFOwnedGOT(name) {
 				continue
 			}
 			if _, weak := aliases[name]; !weak {
@@ -803,7 +803,7 @@ func (im *image) close() error {
 	return e
 }
 func (im *image) lookup(n string) (uintptr, error) {
-	if len(im.objects) != 0 && armELFOwnedGOT(im.objects[0].info, n) {
+	if len(im.objects) != 0 && elfOwnedGOT(im.objects[0].info, n) {
 		return im.gotBase(), nil
 	}
 	if d, ok := im.defs[n]; ok {
@@ -862,10 +862,7 @@ func (im *image) symbol(o *object, index int, local bool) (uintptr, error) {
 		}
 		return p, nil
 	case 0:
-		if s.global && armELFOwnedGOT(o.info, s.name) {
-			return im.gotBase(), nil
-		}
-		if o.info.Format == "ELF" && o.info.Arch == "386" && s.name == "_GLOBAL_OFFSET_TABLE_" {
+		if s.global && elfOwnedGOT(o.info, s.name) {
 			return im.gotBase(), nil
 		}
 		if p, ok := im.resolved[s.name]; ok {

@@ -183,35 +183,6 @@ func TestARM64ELFPLTData(t *testing.T) {
 	}
 }
 
-func TestARM64ELFOwnedGOTBase(t *testing.T) {
-	o := &object{info: Info{Format: "ELF", Arch: "arm64"}, symbols: []symbol{{name: elfGOTBaseName, global: true}}, relocs: []relocation{{symbol: 0, pair: -1}}}
-	im := &image{base: 0x10000000, gotStart: 64, objects: []*object{o}, external: func(string) uintptr { t.Fatal("owned GOT base looked up externally"); return 0 }}
-	if p, err := im.symbol(o, 0, false); err != nil || p != im.gotBase() {
-		t.Fatalf("owned GOT symbol: %#x, %v", p, err)
-	}
-	if p, err := im.lookup(elfGOTBaseName); err != nil || p != im.gotBase() {
-		t.Fatalf("owned GOT lookup: %#x, %v", p, err)
-	}
-	if refs, err := references(o); err != nil || len(refs) != 0 {
-		t.Fatalf("owned base became an archive dependency: %v, %v", refs, err)
-	}
-	for _, section := range []int{-2, -1, 1} {
-		o.symbols[0].section = section
-		if err := checkARMELFGOTDefinitions(o); err == nil {
-			t.Fatal("reserved GOT definition accepted")
-		}
-	}
-	o.symbols[0].global = false
-	if err := checkARMELFGOTDefinitions(o); err != nil {
-		t.Fatal("local label with the same spelling was reserved")
-	}
-	for _, info := range []Info{{Format: "ELF", Arch: "386"}, {Format: "ELF", Arch: "amd64"}, {Format: "COFF", Arch: "arm64"}, {Format: "Mach-O", Arch: "arm64"}} {
-		if armELFOwnedGOT(info, elfGOTBaseName) {
-			t.Fatal("ARM64 ELF GOT rule applied to another target")
-		}
-	}
-}
-
 func TestARM64ELFGOTMetadata(t *testing.T) {
 	path := compile(t, "testdata/elf_arm_got.s", filepath.Join(t.TempDir(), "got.o"), "--target=aarch64-linux-gnu")
 	b, err := readFile(path)
@@ -240,15 +211,15 @@ func TestNativeARM64ELFGOTOffsets(t *testing.T) {
 	needNative(t)
 	dir := t.TempDir()
 	consumer := compile(t, "testdata/elf_arm_got.s", filepath.Join(dir, "consumer.o"))
-	provider := compile(t, "testdata/elf_arm_got_provider.c", filepath.Join(dir, "provider.o"))
-	badBase := compile(t, "testdata/elf_arm_got_redefine.s", filepath.Join(dir, "badbase.o"))
+	provider := compile(t, "testdata/elf_got_provider.c", filepath.Join(dir, "provider.o"))
+	badBase := compile(t, "testdata/elf_got_redefine.s", filepath.Join(dir, "badbase.o"))
 	unused := compile(t, "testdata/missing.c", filepath.Join(dir, "unused.o"))
 	archive := filepath.Join(dir, "provider.a")
 	command(t, "ar", "rcs", archive, provider, badBase, unused)
 	rootArchive := filepath.Join(dir, "root.a")
 	command(t, "ar", "rcs", rootArchive, consumer, provider, badBase, unused)
 	shared := filepath.Join(dir, "provider.so")
-	command(t, compiler(), "-shared", "-fPIC", "testdata/elf_arm_got_provider.c", "-o", shared)
+	command(t, compiler(), "-shared", "-fPIC", "testdata/elf_got_provider.c", "-o", shared)
 	for _, tc := range []struct {
 		name   string
 		inputs []string
@@ -319,7 +290,7 @@ func TestNativeARM64ELFGOTOffsets(t *testing.T) {
 	// Compare the actual small-PIC C producer with its system-linked library.
 	// System linkers do not implement every explicit GOTOFF MOVW fixture form.
 	system := filepath.Join(dir, "system.so")
-	command(t, "gcc", "-shared", "-fpic", "testdata/elf_arm_large.c", "testdata/elf_arm_got_provider.c", "-o", system)
+	command(t, "gcc", "-shared", "-fpic", "testdata/elf_arm_large.c", "testdata/elf_got_provider.c", "-o", system)
 	s := New(Options{})
 	defer s.Close()
 	load(t, s, system)

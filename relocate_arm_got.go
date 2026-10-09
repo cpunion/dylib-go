@@ -1,30 +1,6 @@
 package dylib
 
-import (
-	"fmt"
-	"runtime"
-)
-
-const elfGOTBaseName = "_GLOBAL_OFFSET_TABLE_"
-
-func armELFOwnedGOT(i Info, name string) bool {
-	return i.Format == "ELF" && i.Arch == "arm64" && name == elfGOTBaseName
-}
-
-func hostARMELFOwnedGOT(name string) bool {
-	return runtime.GOOS == "linux" && armELFOwnedGOT(Info{Format: "ELF", Arch: runtime.GOARCH}, name)
-}
-
-func checkARMELFGOTDefinitions(o *object) error {
-	for _, s := range o.symbols {
-		if s.global && s.section != 0 && armELFOwnedGOT(o.info, s.name) {
-			return fmt.Errorf("%s: cannot redefine linker-owned symbol %s", o.info.Name, s.name)
-		}
-	}
-	return nil
-}
-
-func (im *image) gotBase() uintptr { return im.base + uintptr(im.gotStart) }
+import "fmt"
 
 func armGOTOffset15(b []byte, slot, base, place uintptr) error {
 	ins := le.Uint32(b)

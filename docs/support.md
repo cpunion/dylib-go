@@ -45,7 +45,7 @@ Implemented relocation families:
 - COFF i386: ABSOLUTE, DIR32, DIR32NB, REL32, SECTION, SECREL. Leading C linker underscores are normalized; stdcall/fastcall decorations remain. Dynamic calls support explicit cdecl, stdcall, and fastcall on Windows 386.
 - COFF ARM64: ABSOLUTE, ADDR32/ADDR32NB/ADDR64, BRANCH26, PAGEBASE_REL21, REL21, PAGEOFFSET_12A/12L, BRANCH19/14, REL32, SECTION, SECREL, SECREL_LOW12A/HIGH12A/LOW12L. Conditional branches must fit their architectural displacement.
 
-- ELF x86-64: NONE, 64, PC32, PLT32, GOTPCREL/GOTPCRELX/REX_GOTPCRELX, 32/32S, PC64, SIZE32/SIZE64. See [symbol-size rules](elf.md).
+- ELF x86-64: NONE, 64, PC32, PLT32, GOTPCREL/GOTPCRELX/REX_GOTPCRELX, GOT32/GOT64, GOTOFF64, GOTPC32/GOTPC64, GOTPCREL64, deprecated GOTPLT64, PLTOFF64, 32/32S, PC64, SIZE32/SIZE64. See [GOT and large-code rules](elf.md#amd64-got-offsets-and-large-code-models) and [symbol-size rules](elf.md#symbol-size-relocations).
 - ELF AArch64: NONE (0/256), ABS64/32/16, PREL64/32/16, MOVW_UABS/SABS/PREL/GOTOFF groups, ADR/ADRP page, ADD/LDST8/16/32/64/128 low12, literal loads, CALL26/JUMP26, CONDBR19/TSTBR14, GOT literal/page/load64, GOTREL64/32, GOTPCREL32, 15-bit GOT/GOT-page loads, and PLT32 function data. See [instruction ranges and addends](elf.md#aarch64-instruction-relocations), [wide moves/data](elf.md#aarch64-wide-moves-and-narrow-data), and [GOT offsets](elf.md#aarch64-got-offsets-and-function-data).
   Unresolved weak references use the [AArch64 relative/call rules](elf.md#aarch64-unresolved-weak-references); absolute references and GOT targets remain zero.
 - Mach-O x86-64: UNSIGNED, SIGNED, BRANCH, GOT_LOAD/GOT, external SUBTRACTOR+UNSIGNED, SIGNED_1/2/4.
