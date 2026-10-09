@@ -34,7 +34,7 @@ func TestGeneratedDeclarationsAndNativeCalls(t *testing.T) {
 	}
 	header, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{
 		Compiler: compiler, Target: Declarations.Target.Triple,
-		Functions: []string{"add", "mixed", "truth", "pointer", "variable", "sum_pair", "echo_pair", "swap_pair"},
+		Functions: []string{"add", "mixed", "truth", "pointer", "variable", "sum_pair", "echo_pair", "swap_pair", "callback_pair"},
 	})
 	if err != nil {
 		t.Fatal(err)

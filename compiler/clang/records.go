@@ -66,26 +66,28 @@ func (h *Header) validateDescriptions() error {
 	}
 	budget := maxDescriptionNodes
 	for _, function := range h.Functions {
-		s := function.Signature
-		if len(s.Args) > 256 {
-			return fmt.Errorf("clang: at most 256 declared parameters are supported")
-		}
-		for _, description := range s.ArgTypes {
-			if err := consumeDescription(description, &budget, 0); err != nil {
-				return err
-			}
-		}
-		if s.ResultType != nil {
-			if err := consumeDescription(*s.ResultType, &budget, 0); err != nil {
-				return err
-			}
-		}
-		budget -= len(s.Args) + 1
-		if budget < 0 {
-			return fmt.Errorf("clang: descriptions exceed %d nodes", maxDescriptionNodes)
-		}
-		if err := s.Validate(); err != nil {
+		if err := validateSignature(function.Signature, &budget); err != nil {
 			return err
+		}
+		if len(function.FunctionPointers) > len(function.Signature.Args)+1 {
+			return fmt.Errorf("clang: too many function-pointer declarations")
+		}
+		seen := make(map[int]bool)
+		for _, pointer := range function.FunctionPointers {
+			if pointer.Position < -1 || pointer.Position >= len(function.Signature.Args) || seen[pointer.Position] {
+				return fmt.Errorf("clang: invalid or duplicate function-pointer position")
+			}
+			seen[pointer.Position] = true
+			description := function.Signature.ReturnType()
+			if pointer.Position >= 0 {
+				description = function.Signature.ArgumentType(pointer.Position)
+			}
+			if description.Type != abi.Pointer || description.Elem != nil {
+				return fmt.Errorf("clang: function-pointer position must be an opaque pointer")
+			}
+			if err := validateSignature(pointer.Signature, &budget); err != nil {
+				return err
+			}
 		}
 	}
 	for _, record := range h.Records {
@@ -100,6 +102,27 @@ func (h *Header) validateDescriptions() error {
 		}
 	}
 	return nil
+}
+
+func validateSignature(s abi.Signature, budget *int) error {
+	if len(s.Args) > 256 {
+		return fmt.Errorf("clang: at most 256 declared parameters are supported")
+	}
+	for _, description := range s.ArgTypes {
+		if err := consumeDescription(description, budget, 0); err != nil {
+			return err
+		}
+	}
+	if s.ResultType != nil {
+		if err := consumeDescription(*s.ResultType, budget, 0); err != nil {
+			return err
+		}
+	}
+	*budget -= len(s.Args) + 1
+	if *budget < 0 {
+		return fmt.Errorf("clang: descriptions exceed %d nodes", maxDescriptionNodes)
+	}
+	return s.Validate()
 }
 
 func validRecordLayout(record Record) error {

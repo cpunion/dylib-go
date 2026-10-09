@@ -36,6 +36,8 @@ type Target struct {
 type Declaration struct {
 	Name, Symbol string
 	Signature    abi.Signature
+	// FunctionPointers records prototypes for native addresses, not registrations.
+	FunctionPointers []FunctionPointer
 }
 
 type Header struct {
@@ -52,8 +54,7 @@ func (h *Header) Lookup(name string) (Declaration, error) {
 		}
 		for _, function := range h.Functions {
 			if function.Name == name {
-				function.Signature = function.Signature.Clone()
-				return function, nil
+				return function.clone(), nil
 			}
 		}
 	}
@@ -78,16 +79,21 @@ func (h *Header) ForHost(name string) (Declaration, error) {
 	if err := h.validateHostRecords(declaration.Signature); err != nil {
 		return Declaration{}, err
 	}
+	for _, pointer := range declaration.FunctionPointers {
+		if err := h.validateHostRecords(pointer.Signature); err != nil {
+			return Declaration{}, err
+		}
+	}
 	return declaration, nil
 }
 
 // WithTail adds concrete variadic argument descriptors to a declaration prefix.
 // Ordinary declarations reject tails. abi.Prepare performs C default promotions.
 func (d Declaration) WithTail(types ...abi.Type) (Declaration, error) {
-	if err := d.Signature.Validate(); err != nil {
+	if err := (&Header{Functions: []Declaration{d}}).validateDescriptions(); err != nil {
 		return Declaration{}, err
 	}
-	d.Signature = d.Signature.Clone()
+	d = d.clone()
 	if !d.Signature.Variadic || len(d.Signature.Args) != d.Signature.FixedArgs {
 		return Declaration{}, fmt.Errorf("clang: expected an unexpanded variadic prefix")
 	}
@@ -110,10 +116,10 @@ const maxFunctions = 256
 
 // Parse asks Clang to preprocess a C17 header and evaluate primitive size probes.
 // It extracts only requested external prototypes, supported scalars/typedefs,
-// ordinary records, array members and pointers. Record layouts are compiler
+// ordinary records, array members, pointers and function-pointer prototypes. Record layouts are compiler
 // evaluated; ForHost checks the native backend before calls. Unions, bitfields,
-// packed/aligned records, enums, function pointers, inline/static functions and
-// unsupported calling conventions are rejected. Headers and their includes
+// packed/aligned records, enums, higher-order function pointers, inline/static
+// functions and unsupported calling conventions are rejected. Headers and their includes
 // must stay stable during parsing; they are read by Clang at their original paths.
 func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 	if ctx == nil {
@@ -165,7 +171,7 @@ func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 		return nil, err
 	}
 	args := append(flags, "-x", "c", "-std=c17", "-include", path, "-Xclang", "-ast-dump=json", "-fsyntax-only", "-")
-	data, err := runCompiler(ctx, compiler, args, sizeProbe, maxASTSize)
+	data, err := runCompiler(ctx, compiler, args, functionProbes(opts.Functions), maxASTSize)
 	if err != nil {
 		return nil, err
 	}

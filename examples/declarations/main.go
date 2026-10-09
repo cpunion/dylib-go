@@ -11,7 +11,7 @@ import (
 )
 
 func call(input string) (abi.Value, error) {
-	declaration, err := Declarations.ForHost("sum_pair")
+	declaration, err := Declarations.ForHost("callback_pair")
 	if err != nil {
 		return abi.Value{}, err
 	}
@@ -35,7 +35,25 @@ func call(input string) (abi.Value, error) {
 	if err != nil {
 		return abi.Value{}, err
 	}
-	return fn.Call(argument)
+	pointer, err := declaration.LookupFunctionPointer(0)
+	if err != nil {
+		return abi.Value{}, err
+	}
+	callback, err := abi.NewCallback(pointer.Signature, func(args []abi.Value) (abi.Value, error) { return args[0], nil })
+	if err != nil {
+		return abi.Value{}, err
+	}
+	defer callback.Close()
+	var result abi.Value
+	err = callback.WithAddress(func(address uintptr) error {
+		var err error
+		result, err = fn.Call(abi.Ptr(address), argument)
+		return err
+	})
+	if err == nil {
+		err = callback.Err()
+	}
+	return result, err
 }
 
 func main() {

@@ -122,8 +122,6 @@ func TestCallingConventionsAndUnsupportedDeclarations(t *testing.T) {
 		{"long double f(long double);", "unsupported C type"},
 		{"union Pair{int a,b;}; union Pair f(union Pair);", "unsupported C type"},
 		{"enum Kind{A,B}; enum Kind f(enum Kind);", "unsupported C type"},
-		{"void f(int(*)(int));", "unsupported C type"},
-		{"typedef int Fn(int); void f(Fn *);", "unsupported pointer alias"},
 		{"int __attribute__((vectorcall)) f(int);", "unsupported function"},
 	} {
 		path := headerFile(t, test.source)
@@ -165,7 +163,7 @@ func TestIncludesPreprocessingAndDeclarationSelection(t *testing.T) {
 		t.Fatalf("include/flag/requested declaration: %+v, %v", header, err)
 	}
 	opts.Flags = nil
-	if _, err := Parse(context.Background(), path, opts); err == nil || !strings.Contains(err.Error(), "no external") {
+	if _, err := Parse(context.Background(), path, opts); err == nil || !strings.Contains(err.Error(), "selected") {
 		t.Fatal("preprocessor-disabled declaration selected:", err)
 	}
 }
