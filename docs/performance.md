@@ -75,6 +75,29 @@ the signature key. Larger descriptors still require validation and encoding.
 This removes the scan through existing signatures without changing invocation
 storage or merging logically different signatures.
 
+## Aggregate buffer reuse comparison
+
+Using the same host/toolchains on 2026-10-09, medians of three 200 ms runs compare
+aggregate calls before and after bounded argument/result buffer reuse. Run
+`go test -tags libffi -run '^$' -bench '^BenchmarkNativeCalls/(Struct|Pointer)/(Bound|Prepared)$' -benchmem -benchtime=200ms -count=3 .`
+and repeat with `llgo`. Lazy buffer acquisition is included and amortized over
+the repeated calls. Fixture compilation, loading and plan preparation remain
+outside the measured loop.
+
+| Shape / mode | Go before → reused ns/op | llgo before → reused ns/op | Go before → reused B/op | Go before → reused allocs/op |
+| --- | ---: | ---: | ---: | ---: |
+| Struct / Bound | 748.9 → 346.6 | 1712 → 1122 | 168 → 0 | 6 → 0 |
+| Struct / Prepared | 781.1 → 336.2 | 1689 → 1029 | 168 → 0 | 6 → 0 |
+| Pointer / Bound | 1976 → 907.7 | 3757 → 2541 | 1576 → 464 | 17 → 7 |
+| Pointer / Prepared | 2232 → 904.1 | 3642 → 2488 | 1576 → 464 | 17 → 7 |
+
+These figures cover the small fixtures above. Returned aggregates still require
+logical Go values, temporary pointees still use per-call native allocation, and
+large contexts exceeding the idle budget are freed rather than retained. The
+scalar-only path is unchanged. Native allocations are excluded from the Go
+allocation counters; llgo's reported allocation count has the limitation
+described above.
+
 ## Storage and cache scope
 
 CIF argument types and aggregate layouts are owned by each prepared plan. Bindings
@@ -88,15 +111,24 @@ metadata is rejected before lookup, and failed symbol resolution does not cache
 a newly prepared plan. No resources are shared across sessions.
 Scalar argument bits use a Go slice sized to the call. Native scalar packing
 uses a 32-slot stack buffer for small calls and overflow-checked heap storage
-for larger calls. Struct calls allocate a native argument vector for their
-actual count, plus independent marshaling buffers. Callbacks use the same
+for larger calls. Aggregate calls borrow an exclusive native argument vector
+and fixed argument/result buffers from their plan. Idle storage is limited to
+four contexts and 1 MiB of native buffers per plan; extra contexts are freed
+on return. Arguments/results, including padding, are zeroed before reuse.
+An immutable argument address table restores a separate libffi vector before
+every call: some backends replace argument pointers with temporary struct copies.
+Retirement waits for active calls and frees every retained context. No pool
+lock is held during native execution or callbacks. Callbacks use the same
 prepared type storage. No fixed 32-argument limit remains; native ABI limits
 and available memory still bound call size.
 
 Equal aggregate descriptors reuse a plan-owned layout. Declared temporary
 pointee layouts are constructed lazily, shared after preparation, and freed
-with the plan. Unannotated temporary shapes remain invocation-owned, and value
-buffers are always independent. Sharing physical ABI resources between logically
-distinct signatures, buffer pooling and cross-session sharing remain future work.
+with the plan. Temporary pointee memory and unannotated type layouts remain
+invocation-owned and are freed after copy-back. Alias maps, descriptors and
+errors are cleared before a context returns to its plan. Reuse never shares
+storage between overlapping or nested calls. Sharing physical ABI resources
+between logically distinct signatures, scalar buffer pooling, temporary pointee
+buffer pooling and cross-session sharing remain future work.
 These measurements do not establish universal
 latency guarantees or remove pointer lifetime and synchronization requirements.
