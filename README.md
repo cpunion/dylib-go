@@ -386,9 +386,11 @@ The [CI-tested example](examples/declarations/main.go) uses generated, target-qu
 declarations and checks them with `ForHost` before calling. Run
 `examples/run.sh <go|llgo> declarations <library>`.
 
-Generation covers supported scalars, typedefs, opaque pointers, variadic prefixes,
-C cdecl, and Windows 386 stdcall/fastcall. Aggregate values, enums and function
-pointers need separate validated adapters. See [types, targets and limits](docs/clang.md).
+Generation covers supported scalars, typedefs, ordinary structs, fixed array
+members, typed struct pointers, variadic prefixes, C cdecl, and Windows 386
+stdcall/fastcall. `ForHost` checks compiler record sizes, alignments and offsets
+against the actual backend before calls. Unions, packed records, enums and function
+pointers need separate adapters. See [types, targets and limits](docs/clang.md).
 This complements [llcppg](https://github.com/goplus/llcppg)'s static bindings.
 
 ## Dynamic C callbacks

@@ -90,8 +90,9 @@ Headers / Clang / llcppg                 Apple runtime / ABIBridge adapter
 ```
 
 An optional [Clang declaration generator](clang.md) now supplies target-qualified
-scalar/typedef/opaque-pointer signatures for dynamic binding. Full record/callback
-generation, C++ and direct llgo adapters remain separate work.
+scalar/typedef/record/pointer signatures for dynamic binding, including compiler/
+backend layout validation, array members and typed struct pointers. Callback
+declarations, C++ and direct llgo adapters remain separate work.
 
 The following integrations remain proposals:
 

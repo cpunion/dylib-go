@@ -1,3 +1,5 @@
+#include "exports.h"
+
 int datum = 42;
 int add(int a, int b) { return a + b; }
 double mixed(float a, double b) { return a + b; }
@@ -10,4 +12,12 @@ int variable(int first, ...) {
     double third = __builtin_va_arg(ap, double);
     __builtin_va_end(ap);
     return first + second + (int)third;
+}
+int sum_pair(Pair pair) { return pair.a + pair.b; }
+Pair echo_pair(Pair pair) { return pair; }
+Pair *swap_pair(Pair *pair) {
+    int old = pair->a;
+    pair->a = pair->b;
+    pair->b = old;
+    return pair;
 }

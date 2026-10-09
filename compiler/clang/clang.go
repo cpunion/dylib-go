@@ -41,16 +41,17 @@ type Declaration struct {
 type Header struct {
 	Target    Target
 	Functions []Declaration
+	Records   []Record
 }
 
 // Lookup returns an independent declaration snapshot, including its signature.
 func (h *Header) Lookup(name string) (Declaration, error) {
 	if h != nil {
+		if err := h.validateDescriptions(); err != nil {
+			return Declaration{}, err
+		}
 		for _, function := range h.Functions {
 			if function.Name == name {
-				if err := function.Signature.Validate(); err != nil {
-					return Declaration{}, err
-				}
 				function.Signature = function.Signature.Clone()
 				return function, nil
 			}
@@ -59,7 +60,8 @@ func (h *Header) Lookup(name string) (Declaration, error) {
 	return Declaration{}, fmt.Errorf("clang: no declaration for %q", name)
 }
 
-// ForHost rejects foreign target metadata before returning a call declaration.
+// ForHost rejects foreign targets and compiler/backend record layout mismatches
+// before returning a call declaration. Record checks require the native backend.
 // The loaded export must still match the header and preprocessing flags.
 func (h *Header) ForHost(name string) (Declaration, error) {
 	if h == nil {
@@ -69,7 +71,14 @@ func (h *Header) ForHost(name string) (Declaration, error) {
 	if err != nil || target != h.Target || target.OS != runtime.GOOS || target.Arch != runtime.GOARCH || target.PointerSize != strconv.IntSize/8 {
 		return Declaration{}, fmt.Errorf("clang: declaration target does not match %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
-	return h.Lookup(name)
+	declaration, err := h.Lookup(name)
+	if err != nil {
+		return Declaration{}, err
+	}
+	if err := h.validateHostRecords(declaration.Signature); err != nil {
+		return Declaration{}, err
+	}
+	return declaration, nil
 }
 
 // WithTail adds concrete variadic argument descriptors to a declaration prefix.
@@ -83,6 +92,11 @@ func (d Declaration) WithTail(types ...abi.Type) (Declaration, error) {
 		return Declaration{}, fmt.Errorf("clang: expected an unexpanded variadic prefix")
 	}
 	d.Signature.Args = append(d.Signature.Args, types...)
+	if len(d.Signature.ArgTypes) != 0 {
+		for _, typ := range types {
+			d.Signature.ArgTypes = append(d.Signature.ArgTypes, abi.TypeDesc{Type: typ})
+		}
+	}
 	if err := d.Signature.Validate(); err != nil {
 		return Declaration{}, err
 	}
@@ -95,9 +109,11 @@ const maxDiagnostics = 32 << 10
 const maxFunctions = 256
 
 // Parse asks Clang to preprocess a C17 header and evaluate primitive size probes.
-// It extracts only requested external prototypes, supported scalars/typedefs and
-// opaque pointers. Aggregates, enums, function pointers, inline/static functions
-// and unsupported calling conventions are rejected. Headers and their includes
+// It extracts only requested external prototypes, supported scalars/typedefs,
+// ordinary records, array members and pointers. Record layouts are compiler
+// evaluated; ForHost checks the native backend before calls. Unions, bitfields,
+// packed/aligned records, enums, function pointers, inline/static functions and
+// unsupported calling conventions are rejected. Headers and their includes
 // must stay stable during parsing; they are read by Clang at their original paths.
 func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 	if ctx == nil {
@@ -156,6 +172,18 @@ func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 	header, err := decodeDeclarations(data, string(triple), opts.Functions)
 	if err != nil {
 		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if len(header.Records) != 0 {
+		data, err := runCompiler(ctx, compiler, args, header.recordProbes(), maxASTSize)
+		if err != nil {
+			return nil, err
+		}
+		if err := header.decodeRecordLayouts(data); err != nil {
+			return nil, err
+		}
 	}
 	if err := ctx.Err(); err != nil {
 		return nil, err
