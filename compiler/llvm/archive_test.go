@@ -110,7 +110,7 @@ func TestArchiveInvalidInputAndRollback(t *testing.T) {
 		})
 	}
 	dir := t.TempDir()
-	for _, data := range [][]byte{[]byte("unknown"), []byte("!<thin>\n"), []byte("!<arch>\nx")} {
+	for _, data := range [][]byte{[]byte("unknown"), []byte("!<thin>\nx"), []byte("!<arch>\nx")} {
 		path := filepath.Join(dir, "bad.a")
 		if err := os.WriteFile(path, data, 0600); err != nil {
 			t.Fatal(err)
@@ -163,6 +163,20 @@ func TestArchiveCancellationAndMemberLimit(t *testing.T) {
 	files, err := os.ReadDir(dir)
 	if err != nil || len(files) != 1 {
 		t.Fatalf("canceled compilation leaked files: %v, %v", files, err)
+	}
+	module := filepath.Join(dir, "waiting.bc")
+	if err := os.WriteFile(module, []byte("BC\xc0\xde"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	thinArchive(t, path, thinReference{name: "waiting.bc"})
+	ctx, cancel = context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	if _, err := CompileArchive(ctx, path, Options{Compiler: executable, TempDir: dir}); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatal("thin member compiler cancellation:", err)
+	}
+	files, err = os.ReadDir(dir)
+	if err != nil || len(files) != 2 {
+		t.Fatalf("canceled thin compilation leaked files: %v, %v", files, err)
 	}
 	names := make([]string, maxArchiveMembers+1)
 	members := make([][]byte, len(names))
@@ -242,6 +256,39 @@ func TestBitcodeArchiveTargetMetadataAndLateCompilerFailure(t *testing.T) {
 			member := archive.Info.Members[0]
 			if member.Format != target.format || member.Arch != target.arch || len(archive.Info.Members) != 2 {
 				t.Fatalf("archive member was retargeted/lost: %+v", archive.Info)
+			}
+			foreign := filepath.Join(dir, "foreign-native.o")
+			if err := os.WriteFile(module, data, 0600); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(foreign, emptyCOFF(), 0600); err != nil {
+				t.Fatal(err)
+			}
+			inputData, err := os.ReadFile(input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			entries, err := ar.Decode(inputData, false, maxInputSize, maxArchiveMembers)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, references := range [][]thinReference{
+				{{name: "module.bc"}, {name: "foreign-native.o"}},
+				{{name: "input.a", offset: entries[0].Offset}, {name: "input.a", offset: entries[1].Offset}},
+			} {
+				thin := filepath.Join(dir, "thin.a")
+				thinArchive(t, thin, references...)
+				compiled, err := CompileArchive(context.Background(), thin, Options{Compiler: llc, TempDir: dir})
+				if err != nil {
+					t.Fatal(err)
+				}
+				member := compiled.Info.Members[0]
+				if member.Format != target.format || member.Arch != target.arch || compiled.Info.Thin || len(compiled.Info.Members) != 2 {
+					t.Fatalf("thin/proxy target was changed: %+v", compiled.Info)
+				}
+				if err := compiled.Close(); err != nil {
+					t.Fatal(err)
+				}
 			}
 		})
 	}

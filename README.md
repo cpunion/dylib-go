@@ -319,7 +319,7 @@ func main() {
 
 ```
 
-`compiler/llvm.CompileArchive` converts ordinary GNU/COFF/BSD archives containing
+`compiler/llvm.CompileArchive` converts ordinary GNU/COFF/BSD and GNU thin/proxy archives containing
 bitcode, native objects, or both into a native archive. Members retain their order
 and names; `Link` selects dependencies and runs only selected initializers.
 The [CI-tested archive example](examples/llvmarchive/call.go) requests an explicit
@@ -336,7 +336,6 @@ package main
 import (
 	"context"
 	"os"
-	"path/filepath"
 
 	dylib "github.com/cpunion/dylib-go"
 	"github.com/cpunion/dylib-go/abi"
@@ -349,7 +348,7 @@ func call(input string) (abi.Value, error) {
 		return abi.Value{}, err
 	}
 	defer archive.Close()
-	session := dylib.New(dylib.Options{LibraryPaths: []string{filepath.Dir(input)}})
+	session := dylib.New(dylib.Options{LibraryPaths: archive.SourceDirectories})
 	defer session.Close()
 	if err := session.Load(archive.Path); err != nil {
 		return abi.Value{}, err
@@ -369,8 +368,9 @@ func call(input string) (abi.Value, error) {
 
 ```
 
-Thin bitcode archives and LLVM module merging remain pending; see
-[container and ownership limits](docs/llvm.md).
+External thin members are snapshotted. `Archive.SourceDirectories` exposes their
+original dependency directories for explicit `dylib.Options.LibraryPaths`.
+LLVM module merging remains pending; see [container and ownership limits](docs/llvm.md).
 
 ## Dynamic C callbacks
 

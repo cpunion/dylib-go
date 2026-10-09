@@ -20,9 +20,15 @@ const maxArchiveMembers = 4096
 // names and order are retained, including duplicate names. The native loader
 // rebuilds its symbol index and selects members on demand at Link.
 type Archive struct {
-	Path    string
-	Info    dylib.Info
-	storage *artifactStorage
+	Path string
+	Info dylib.Info
+	// SourceDirectories lists unique original dependency directories in member
+	// order, adding the input container's directory if absent. Set
+	// dylib.Options.LibraryPaths explicitly; compilation does not copy DLLs or
+	// choose among conflicting DLLs with the same basename. The paths outlive
+	// compilation storage.
+	SourceDirectories []string
+	storage           *artifactStorage
 }
 
 // Close removes owned compiler files without unloading a session. It is
@@ -34,11 +40,12 @@ func (a *Archive) Close() error {
 	return a.storage.close()
 }
 
-// CompileArchive converts an ordinary GNU/COFF/BSD archive into a native ar
+// CompileArchive converts a GNU/COFF/BSD or GNU thin archive into a native ar
 // container. Each bitcode member is compiled independently using Compile;
 // relocatable native members are preserved. Modules are never merged, so
 // unused members' unresolved symbols and initializers remain unselected.
-// Thin archives, nested archives and text IR members are not accepted. Use
+// Thin inputs snapshot external objects and regular archive proxies. Nested
+// archives and text IR members are not accepted. Use SourceDirectories with
 // dylib.Options.LibraryPaths on the destination session for original dependencies.
 // The input/output limits are 256 MiB with at most 4096 object members.
 func CompileArchive(ctx context.Context, path string, opts Options) (_ *Archive, err error) {
@@ -48,14 +55,20 @@ func CompileArchive(ctx context.Context, path string, opts Options) (_ *Archive,
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
+	path, err = filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
 	data, err := readRegular(path, maxInputSize)
 	if err != nil {
 		return nil, err
 	}
+	var entries []ar.Entry
 	if bytes.HasPrefix(data, []byte("!<thin>\n")) {
-		return nil, fmt.Errorf("llvm: thin bitcode archives are not yet supported; use an ordinary archive")
+		entries, err = ar.Snapshot(ctx, path, data, maxInputSize, maxArchiveMembers, readRegular)
+	} else {
+		entries, err = ar.Decode(data, false, maxInputSize, maxArchiveMembers)
 	}
-	entries, err := ar.Decode(data, false, maxInputSize, maxArchiveMembers)
 	if err != nil {
 		return nil, fmt.Errorf("llvm: archive: %w", err)
 	}
@@ -64,6 +77,19 @@ func CompileArchive(ctx context.Context, path string, opts Options) (_ *Archive,
 		return nil, err
 	}
 	archive := &Archive{Path: filepath.Join(dir, "output.a"), storage: &artifactStorage{dir: dir}}
+	seen := make(map[string]bool)
+	addDirectory := func(directory string) {
+		if !seen[directory] {
+			seen[directory] = true
+			archive.SourceDirectories = append(archive.SourceDirectories, directory)
+		}
+	}
+	for _, entry := range entries {
+		if entry.Source != "" {
+			addDirectory(filepath.Dir(entry.Source))
+		}
+	}
+	addDirectory(filepath.Dir(path))
 	defer func() {
 		if err != nil {
 			if cleanup := archive.Close(); cleanup != nil {
@@ -83,6 +109,9 @@ func CompileArchive(ctx context.Context, path string, opts Options) (_ *Archive,
 	for i, entry := range entries {
 		if err := ctx.Err(); err != nil {
 			return nil, err
+		}
+		if entry.DisplayName != "" {
+			entry.Name = entry.DisplayName
 		}
 		// An archive name is metadata, never an extraction path. Indexes keep
 		// duplicate names distinct and cannot escape the owned directory.
