@@ -250,6 +250,75 @@ Ordinary Go's default build does not require libffi. The llgo compiler's own run
 
 On Linux with llgo v1.0.6, set `export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1` before enabling libffi. This avoids that version's newline-only pkg-config CFLAGS parsing bug ([upstream issue #2749](https://github.com/xgo-dev/llgo/issues/2749)). The qualified CI compiler includes the upstream fix; ordinary Go does not require this workaround.
 
+## Compiling LLVM IR and bitcode
+
+The optional [`compiler/llvm`](compiler/llvm) package compiles `.ll` or `.bc`
+input through an installed `llc` and returns an owned native object. The module's
+target and data layout are preserved; the input version must be compatible with
+the LLVM reader. The core loader keeps its Go implementation and does not depend
+on LLVM. See [compiler scope and target coverage](docs/llvm.md).
+
+This [example](examples/llvm/main.go) loads the object snapshot, removes compiler
+files, and calls a C export through the library. CI runs this source with Go and
+llgo. Run `examples/run.sh <go|llgo> llvm <module.ll|module.bc>` for a module
+exporting `add` with this signature.
+
+<!-- embedme examples/llvm/main.go -->
+
+```go
+//go:build libffi && cgo && (linux || darwin || windows)
+
+// This example compiles a module exporting the C function add(int32, int32).
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+
+	dylib "github.com/cpunion/dylib-go"
+	"github.com/cpunion/dylib-go/abi"
+	"github.com/cpunion/dylib-go/compiler/llvm"
+)
+
+func call(input string) (abi.Value, error) {
+	object, err := llvm.Compile(context.Background(), input, llvm.Options{Compiler: os.Getenv("DYLIB_LLC")})
+	if err != nil {
+		return abi.Value{}, err
+	}
+	defer object.Close()
+	session := dylib.New(dylib.Options{LibraryPaths: []string{filepath.Dir(input)}})
+	defer session.Close()
+	if err := session.Load(object.Path); err != nil {
+		return abi.Value{}, err
+	}
+	if err := object.Close(); err != nil {
+		return abi.Value{}, err
+	}
+	if err := session.Link(); err != nil {
+		return abi.Value{}, err
+	}
+	fn, err := session.Bind("add", abi.Signature{Result: abi.I32, Args: []abi.Type{abi.I32, abi.I32}})
+	if err != nil {
+		return abi.Value{}, err
+	}
+	return fn.Call(abi.Int32(20), abi.Int32(22))
+}
+
+func main() {
+	if len(os.Args) != 2 {
+		panic("usage: llvm <module.ll|module.bc>")
+	}
+	value, err := call(os.Args[1])
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(int32(value.Bits))
+}
+
+```
+
 ## Dynamic C callbacks
 
 `abi.NewCallback` turns an explicit fixed C signature and a Go handler into a native function pointer through libffi. It supports the same scalars, pointers, and ordinary struct values as dynamic calls. This complete [callback example](examples/callback/main.go) captures a Go value, passes its entry to a C function, and prints 42. CI executes it with Go on eight targets and llgo on six targets:

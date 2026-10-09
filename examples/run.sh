@@ -3,7 +3,7 @@ set -euo pipefail
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
 
 usage() {
-  echo 'usage: examples/run.sh <go|llgo> {call ARGS...|inspect FILE|library|quickstart|dynamic|structs}' >&2
+  echo 'usage: examples/run.sh <go|llgo> {call ARGS...|inspect FILE|llvm MODULE|library|quickstart|dynamic|structs}' >&2
   exit 1
 }
 
@@ -17,7 +17,7 @@ case "$compiler" in
 esac
 
 case "$action" in
-  call|inspect)
+  call|inspect|llvm)
     [[ $# -ge 1 ]] || usage
     cli_dir=$(mktemp -d)
     trap 'rm -rf "$cli_dir"' EXIT
@@ -26,10 +26,18 @@ case "$action" in
       MINGW*|MSYS*) binary="$binary.exe" ;;
     esac
     build_args=(-o "$binary" ./cmd/ddlgo)
-    if [[ "$action" == call ]]; then
+    if [[ "$action" == call || "$action" == llvm ]]; then
       build_args=(-tags libffi "${build_args[@]}")
     fi
+    if [[ "$action" == llvm ]]; then
+      [[ $# -eq 1 ]] || usage
+      build_args=(-tags libffi -o "$binary" ./examples/llvm)
+    fi
     (cd "$repo_root" && "$compiler" build "${build_args[@]}" >&2)
+    if [[ "$action" == llvm ]]; then
+      "$binary" "$@"
+      exit $?
+    fi
     "$binary" "$action" "$@"
     exit $?
     ;;
