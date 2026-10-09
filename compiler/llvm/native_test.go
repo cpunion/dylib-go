@@ -19,11 +19,7 @@ func TestNativeIRAndBitcodeCalls(t *testing.T) {
 		t.Skip("no native call adapter for this architecture")
 	}
 	llc := tool(t, "DYLIB_LLC", "llc")
-	clangFallback := os.Getenv("CLANG")
-	if clangFallback == "" {
-		clangFallback = "clang"
-	}
-	clang := tool(t, "DYLIB_LLVM_CLANG", clangFallback)
+	clang := nativeClang(t)
 	for _, kind := range []string{"ir", "bitcode"} {
 		t.Run(kind, func(t *testing.T) {
 			dir := t.TempDir()
@@ -33,19 +29,9 @@ func TestNativeIRAndBitcodeCalls(t *testing.T) {
 				t.Fatal(err)
 			}
 			input := filepath.Join(dir, "module")
-			flags := []string{"-emit-llvm", "-c", "-O0", "-fno-stack-protector", source, "-o", input}
-			if runtime.GOOS != "windows" {
-				flags = append(flags, "-fPIC")
-			}
+			flags := append(nativeCFlags(source, input), "-emit-llvm")
 			if kind == "ir" {
 				flags = append(flags, "-S")
-			}
-			if runtime.GOARCH == "386" {
-				flags = append(flags, "-m32")
-			}
-			if runtime.GOOS == "windows" {
-				arch := map[string]string{"amd64": "x86_64", "arm64": "aarch64", "386": "i686"}[runtime.GOARCH]
-				flags = append(flags, "--target="+arch+"-pc-windows-msvc", "-ffreestanding")
 			}
 			if data, err := exec.Command(clang, flags...).CombinedOutput(); err != nil {
 				t.Fatalf("IR producer: %v\n%s", err, data)
@@ -88,4 +74,28 @@ func TestNativeIRAndBitcodeCalls(t *testing.T) {
 			}
 		})
 	}
+}
+
+func nativeClang(t *testing.T) string {
+	t.Helper()
+	clangFallback := os.Getenv("CLANG")
+	if clangFallback == "" {
+		clangFallback = "clang"
+	}
+	return tool(t, "DYLIB_LLVM_CLANG", clangFallback)
+}
+
+func nativeCFlags(source, output string) []string {
+	flags := []string{"-c", "-O0", "-fno-stack-protector", source, "-o", output}
+	if runtime.GOOS != "windows" {
+		flags = append(flags, "-fPIC")
+	}
+	if runtime.GOARCH == "386" {
+		flags = append(flags, "-m32")
+	}
+	if runtime.GOOS == "windows" {
+		arch := map[string]string{"amd64": "x86_64", "arm64": "aarch64", "386": "i686"}[runtime.GOARCH]
+		flags = append(flags, "--target="+arch+"-pc-windows-msvc", "-ffreestanding")
+	}
+	return flags
 }

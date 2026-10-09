@@ -44,7 +44,7 @@ func (s *thinSource) member(offset uint64) (archiveEntry, error) {
 		}
 		s.entries = make(map[uint64]archiveEntry, len(entries))
 		for _, entry := range entries {
-			s.entries[entry.offset] = entry
+			s.entries[entry.Offset] = entry
 		}
 	}
 	entry, ok := s.entries[offset]
@@ -63,7 +63,7 @@ func parseThinArchive(name string, b []byte) (*file, error) {
 	r := thinReader{remaining: maxFile - int64(len(b)), sources: make(map[string]*thinSource)}
 	remainingObjects := maxFile
 	for _, entry := range entries {
-		path := filepath.FromSlash(entry.name)
+		path := filepath.FromSlash(entry.Name)
 		if !filepath.IsAbs(path) {
 			path = filepath.Join(filepath.Dir(name), path)
 		}
@@ -75,14 +75,14 @@ func parseThinArchive(name string, b []byte) (*file, error) {
 		if err != nil {
 			return nil, err
 		}
-		member, memberName := source.data, name+"("+entry.name+")"
-		if entry.origin != 0 {
-			inner, err := source.member(entry.origin)
+		member, memberName := source.data, name+"("+entry.Name+")"
+		if entry.Origin != 0 {
+			inner, err := source.member(entry.Origin)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", path, err)
 			}
-			member = inner.data
-			memberName = fmt.Sprintf("%s(%s:%d(%s))", name, entry.name, entry.origin, inner.name)
+			member = inner.Data
+			memberName = fmt.Sprintf("%s(%s:%d(%s))", name, entry.Name, entry.Origin, inner.Name)
 		}
 		if len(member) > remainingObjects {
 			return nil, fmt.Errorf("thin archive decoded object bytes exceed %d", maxFile)

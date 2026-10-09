@@ -69,9 +69,9 @@ func parseUniversal(name string, b []byte) (*file, error) {
 				return nil, e
 			}
 			for _, entry := range entries {
-				cpu, subcpu, _, e := machoHeader(entry.data)
+				cpu, subcpu, _, e := machoHeader(entry.Data)
 				if e != nil || cpu != a.cpu || subcpu != a.subcpu {
-					return nil, fmt.Errorf("%s: archive member %s disagrees with universal CPU/subtype", sliceName, entry.name)
+					return nil, fmt.Errorf("%s: archive member %s disagrees with universal CPU/subtype", sliceName, entry.Name)
 				}
 			}
 			child, err = parseArchive(sliceName, data)

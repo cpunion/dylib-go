@@ -57,7 +57,7 @@ interprets file names or compiler paths. Successful object output is inspected
 under the existing parser limits. Unsupported features can still be reported
 in `Info.Unsupported` or rejected when linking.
 
-Use `Session.LibraryPaths` for dependencies located beside the original module;
+Use `dylib.Options.LibraryPaths` for dependencies located beside the original module;
 the compiler's temporary directory is the staged object's default search origin.
 The [tested library example](../examples/llvm/main.go) makes that path explicit.
 It runs through `examples/run.sh <go|llgo> llvm <module.ll|module.bc>` and uses a
@@ -72,7 +72,45 @@ TLS, exception machinery, garbage collector registration or language ABI
 adaptation. Existing object initialization, imports, unwind and relocation
 restrictions still apply. Keep exports at a supported C boundary.
 
-Compile individual modules explicitly. `Session.Load` still does not directly
-load IR, bitcode or archives containing bitcode members. This helper does not
+Compile modules or archives explicitly. `Session.Load` still does not directly
+load IR, bitcode or archives containing bitcode members. These helpers do not
 merge modules, infer signatures, generate language facades or translate an
 already lowered ABI between operating systems.
+
+## Bitcode archive compilation
+
+`CompileArchive(ctx, path, options)` converts ordinary GNU/SysV, COFF and BSD
+archives containing raw/wrapped LLVM bitcode, native objects, or both. Each
+bitcode member goes through `Compile` independently. Native members retain their
+bytes, even when they contain embedded bitcode sections; this is not an LTO
+pipeline. Native-only archives do not require an installed compiler.
+
+The output is an owned `Archive` with `Path`, `Info` and idempotent `Close`.
+Load its path into a session, close compilation storage, then link requested
+roots. Members retain order and names, including duplicates and long names.
+Compilation does not interpret names as filesystem extraction paths.
+
+The loader rebuilds native symbol indexes and selects members on demand. Unused
+members' unresolved native symbols and initializers remain unselected, while
+all member contents must be valid for compilation/inspection. Heterogeneous
+native targets can be inspected; execution still checks each selected member.
+The input's bitcode index is discarded. The generated BSD-style ar has no ranlib
+index; it targets this loader, and external static linkers may require indexing.
+
+Input and generated archives each have a 256 MiB limit, including headers and
+names; at most 4096 object members are decoded. Context cancellation terminates
+an active compiler and stops further members. Any failure removes owned files.
+Thin/proxy bitcode archives, nested archives and text IR archive members are
+rejected. Thin compilation and LLVM module merging remain future work.
+
+Set `dylib.Options.LibraryPaths` for original dependency directories; compiling
+an archive does not copy DLLs or keep the original archive directory as the
+session's search origin. The [tested archive example](../examples/llvmarchive/call.go)
+makes this explicit. Native Go and llgo tests use genuine GNU/BSD archives with
+mixed native/bitcode members, duplicate names, dependencies in reverse order,
+selected/unused initialization, and source/artifact deletion before linking.
+They run on the same execution targets in the coverage table above. Metadata
+tests also preserve all eight targets and exercise raw/wrapped bitcode.
+
+References: [LLVM archive containers and bitcode indexes](https://llvm.org/docs/CommandGuide/llvm-ar.html),
+[LLVM bitcode wrappers](https://llvm.org/docs/BitCodeFormat.html#bitcode-wrapper-format).

@@ -319,6 +319,59 @@ func main() {
 
 ```
 
+`compiler/llvm.CompileArchive` converts ordinary GNU/COFF/BSD archives containing
+bitcode, native objects, or both into a native archive. Members retain their order
+and names; `Link` selects dependencies and runs only selected initializers.
+The [CI-tested archive example](examples/llvmarchive/call.go) requests an explicit
+root and closes compiler storage before execution. Run
+`examples/run.sh <go|llgo> llvmarchive <library.a>`.
+
+<!-- embedme examples/llvmarchive/call.go -->
+
+```go
+//go:build libffi && cgo && (linux || darwin || windows)
+
+package main
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+
+	dylib "github.com/cpunion/dylib-go"
+	"github.com/cpunion/dylib-go/abi"
+	"github.com/cpunion/dylib-go/compiler/llvm"
+)
+
+func call(input string) (abi.Value, error) {
+	archive, err := llvm.CompileArchive(context.Background(), input, llvm.Options{Compiler: os.Getenv("DYLIB_LLC")})
+	if err != nil {
+		return abi.Value{}, err
+	}
+	defer archive.Close()
+	session := dylib.New(dylib.Options{LibraryPaths: []string{filepath.Dir(input)}})
+	defer session.Close()
+	if err := session.Load(archive.Path); err != nil {
+		return abi.Value{}, err
+	}
+	if err := archive.Close(); err != nil {
+		return abi.Value{}, err
+	}
+	if err := session.Link("add"); err != nil {
+		return abi.Value{}, err
+	}
+	fn, err := session.Bind("add", abi.Signature{Result: abi.I32, Args: []abi.Type{abi.I32, abi.I32}})
+	if err != nil {
+		return abi.Value{}, err
+	}
+	return fn.Call(abi.Int32(20), abi.Int32(22))
+}
+
+```
+
+Thin bitcode archives and LLVM module merging remain pending; see
+[container and ownership limits](docs/llvm.md).
+
 ## Dynamic C callbacks
 
 `abi.NewCallback` turns an explicit fixed C signature and a Go handler into a native function pointer through libffi. It supports the same scalars, pointers, and ordinary struct values as dynamic calls. This complete [callback example](examples/callback/main.go) captures a Go value, passes its entry to a C function, and prints 42. CI executes it with Go on eight targets and llgo on six targets:

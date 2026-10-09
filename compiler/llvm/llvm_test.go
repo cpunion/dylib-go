@@ -59,19 +59,21 @@ func writeIR(t *testing.T, dir, triple string) string {
 	return path
 }
 
+var objectTargets = []struct{ triple, format, arch, os string }{
+	// ELF OSABI_NONE does not uniquely identify an OS in object metadata.
+	{"x86_64-unknown-linux-gnu", "ELF", "amd64", ""},
+	{"aarch64-unknown-linux-gnu", "ELF", "arm64", ""},
+	{"i386-unknown-linux-gnu", "ELF", "386", ""},
+	{"x86_64-apple-macosx11", "Mach-O", "amd64", "darwin"},
+	{"arm64-apple-macosx11", "Mach-O", "arm64", "darwin"},
+	{"x86_64-pc-windows-msvc", "COFF", "amd64", "windows"},
+	{"aarch64-pc-windows-msvc", "COFF", "arm64", "windows"},
+	{"i686-pc-windows-msvc", "COFF", "386", "windows"},
+}
+
 func TestCompilePreservesTargetsAndClose(t *testing.T) {
 	llc := tool(t, "DYLIB_LLC", "llc")
-	for _, target := range []struct{ triple, format, arch, os string }{
-		// ELF OSABI_NONE does not uniquely identify an OS in object metadata.
-		{"x86_64-unknown-linux-gnu", "ELF", "amd64", ""},
-		{"aarch64-unknown-linux-gnu", "ELF", "arm64", ""},
-		{"i386-unknown-linux-gnu", "ELF", "386", ""},
-		{"x86_64-apple-macosx11", "Mach-O", "amd64", "darwin"},
-		{"arm64-apple-macosx11", "Mach-O", "arm64", "darwin"},
-		{"x86_64-pc-windows-msvc", "COFF", "amd64", "windows"},
-		{"aarch64-pc-windows-msvc", "COFF", "arm64", "windows"},
-		{"i686-pc-windows-msvc", "COFF", "386", "windows"},
-	} {
+	for _, target := range objectTargets {
 		t.Run(target.triple, func(t *testing.T) {
 			dir := t.TempDir()
 			input := writeIR(t, dir, target.triple)
