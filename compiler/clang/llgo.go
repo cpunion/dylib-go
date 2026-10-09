@@ -21,15 +21,8 @@ import (
 // layouts. Fixed native function pointers retain their C prototypes; callers own
 // their code and registration lifetimes. Variadic and other conventions are rejected.
 func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
-	if h == nil || !validGoName(bindingType) {
-		return nil, fmt.Errorf("clang: expected a header and valid binding type name")
-	}
-	if types.Universe.Lookup(bindingType) != nil {
-		return nil, fmt.Errorf("clang: binding type conflicts with a predeclared Go name")
-	}
-	switch bindingType {
-	case "abi", "clang", "dylib", "unsafe", "fmt":
-		return nil, fmt.Errorf("clang: binding type conflicts with generated imports")
+	if err := validateBindingName(h, bindingType); err != nil {
+		return nil, err
 	}
 	if h.Target.Arch != "amd64" && h.Target.Arch != "arm64" {
 		return nil, fmt.Errorf("clang: direct llgo adapters require a qualified amd64/arm64 target")
@@ -128,4 +121,18 @@ func directGoType(description abi.TypeDesc) (string, error) {
 		return "", fmt.Errorf("direct llgo generation supports scalars and opaque native pointers")
 	}
 	return map[abi.Type]string{abi.Void: "", abi.I8: "int8", abi.U8: "uint8", abi.I16: "int16", abi.U16: "uint16", abi.I32: "int32", abi.U32: "uint32", abi.I64: "int64", abi.U64: "uint64", abi.F32: "float32", abi.F64: "float64", abi.Bool: "bool", abi.Pointer: "unsafe.Pointer"}[description.Type], nil
+}
+
+func validateBindingName(h *Header, bindingType string) error {
+	if h == nil || !validGoName(bindingType) {
+		return fmt.Errorf("clang: expected a header and valid binding type name")
+	}
+	if types.Universe.Lookup(bindingType) != nil {
+		return fmt.Errorf("clang: binding type conflicts with a predeclared Go name")
+	}
+	switch bindingType {
+	case "C", "abi", "clang", "dylib", "unsafe", "fmt":
+		return fmt.Errorf("clang: binding type conflicts with generated imports")
+	}
+	return nil
 }

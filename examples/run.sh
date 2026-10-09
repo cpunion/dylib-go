@@ -3,7 +3,7 @@ set -euo pipefail
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
 
 usage() {
-  echo 'usage: examples/run.sh <go|llgo> {call ARGS...|inspect FILE|llvm MODULE|llvmarchive ARCHIVE|llvmmodules MODULE...|declarations LIBRARY|directdeclarations LIBRARY|library|quickstart|dynamic|structs}' >&2
+  echo 'usage: examples/run.sh <go|llgo> {call ARGS...|inspect FILE|llvm MODULE|llvmarchive ARCHIVE|llvmmodules MODULE...|declarations LIBRARY|cgodeclarations LIBRARY|directdeclarations LIBRARY|library|quickstart|dynamic|structs}' >&2
   exit 1
 }
 
@@ -17,7 +17,7 @@ case "$compiler" in
 esac
 
 case "$action" in
-  call|inspect|llvm|llvmarchive|llvmmodules|declarations|directdeclarations)
+  call|inspect|llvm|llvmarchive|llvmmodules|declarations|cgodeclarations|directdeclarations)
     [[ $# -ge 1 ]] || usage
     cli_dir=$(mktemp -d)
     trap 'rm -rf "$cli_dir"' EXIT
@@ -27,7 +27,7 @@ case "$action" in
     esac
     example=""
     case "$action" in
-      llvm|llvmarchive|llvmmodules|declarations|directdeclarations) example="./examples/$action" ;;
+      llvm|llvmarchive|llvmmodules|declarations|cgodeclarations|directdeclarations) example="./examples/$action" ;;
     esac
     if [[ -n "$example" ]]; then
       [[ "$action" == llvmmodules || $# -eq 1 ]] || usage
@@ -36,7 +36,7 @@ case "$action" in
     else
       build_args=(-o "$binary" ./cmd/ddlgo)
     fi
-    if [[ "$action" != inspect && "$action" != directdeclarations ]]; then
+    if [[ "$action" != inspect && "$action" != directdeclarations && "$action" != cgodeclarations ]]; then
       build_args=(-tags libffi "${build_args[@]}")
     fi
     (cd "$repo_root" && "$compiler" build "${build_args[@]}" >&2)
