@@ -142,7 +142,7 @@ func parseMachO(name string, b []byte) (*file, error) {
 		if s.Align > 26 {
 			return nil, fmt.Errorf("section alignment too large")
 		}
-		v := &section{name: s.Name, size: s.Size, align: uint64(1) << s.Align, original: s.Addr, exec: s.Flags&(0x80000000|0x400) != 0, write: s.Seg == "__DATA" || s.Seg == "__DATA_CONST"}
+		v := &section{name: s.Name, size: s.Size, align: uint64(1) << s.Align, original: s.Addr, exec: t == 8 || s.Flags&(0x80000000|0x400) != 0, write: s.Seg == "__DATA" || s.Seg == "__DATA_CONST"}
 		if t == 9 {
 			v.lifecycle = lifecycleInit
 		} else if t == 10 {
@@ -191,6 +191,9 @@ func parseMachO(name string, b []byte) (*file, error) {
 			}
 			o.relocs = append(o.relocs, v)
 		}
+	}
+	if err := bindMachOIndirectTables(o, f); err != nil {
+		return nil, err
 	}
 	return finish(o), nil
 }

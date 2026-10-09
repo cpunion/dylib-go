@@ -33,7 +33,8 @@ func (im *image) relocate(o *object, r relocation) error {
 	switch o.info.Format {
 	case "Mach-O":
 		w = r.width
-		if w != 4 && w != 8 {
+		stub := r.typ == machoStubFixup && (o.info.Arch == "amd64" && w == 6 || o.info.Arch == "arm64" && w == 12)
+		if r.typ == machoStubFixup && !stub || w != 4 && w != 8 && !stub {
 			return fmt.Errorf("unsupported Mach-O relocation width %d", w)
 		}
 	case "ELF":
@@ -71,6 +72,9 @@ func (im *image) relocate(o *object, r relocation) error {
 	s, e := im.symbol(o, r.symbol, r.local)
 	if e != nil {
 		return e
+	}
+	if o.info.Format == "Mach-O" && (r.typ == machoPointerFixup || r.typ == machoStubFixup) {
+		return im.relocateMachOIndirect(o, r, b, s, p)
 	}
 	if r.pair >= 0 {
 		if r.local || r.pcrel {

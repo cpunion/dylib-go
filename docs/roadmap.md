@@ -10,7 +10,7 @@ The CLI now accepts Go-style signature declarations and typed invocations throug
 
 | Coverage area | Work still required |
 | --- | --- |
-| Current 64-bit raw targets | Remaining relocations, Mach-O coalescing/indirect pointer and stub sections, remaining lifecycle forms, TLS, and remaining POSIX/Mach-O unwind registration; external `N_INDR` aliases and optional Windows/Linux/macOS C frame tables are implemented |
+| Current 64-bit raw targets | Remaining relocations, Mach-O general coalescing/custom stubs, remaining lifecycle forms, TLS, and remaining POSIX/Mach-O unwind registration; external `N_INDR` aliases, eager indirect pointers/standard stubs, and optional Windows/Linux/macOS C frame tables are implemented |
 | Windows ARM64 raw objects | Nonstandard import tables, remaining relocations/lifecycle forms, and language exception handlers; C frame tables are optional |
 | 386 and additional ISAs | 386 executes C cdecl on Linux/Windows with Go; Windows 386 stdcall/fastcall are implemented; other conventions and llgo qualification remain. Additional ISAs need linker/ABI backends and execution tests |
 | BSD and Apple mobile hosts | Native OS backend, ABI/runtime integration, platform policy compatibility, and device tests |
@@ -48,7 +48,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Standard GNU COFF long import libraries, including MinGW consumer and genuine GNU dlltool fixture execution.
 - [ ] Mixed/custom COFF import layouts and delay import tables.
 - [x] Mach-O external `N_INDR` forwarding aliases, chains, archive dependencies, and native macOS object/archive calls.
-- [ ] Remaining relocations on existing targets; Mach-O indirect pointer/stub sections and general coalescing.
+- [x] Mach-O eager indirect pointer binding, local/absolute markers, and standard amd64/arm64 stubs with native scalar/large-record calls.
+- [ ] Remaining relocations on existing targets; Mach-O custom stubs and general coalescing.
 - [x] Legacy ELF `.ctors/.dtors` pointer tables, priorities, sentinels, and mixed modern-array execution.
 - [x] COFF integer-returning CRT initializers, permanent failure state, and owned exit-registration cleanup.
 - [ ] ELF `.init/.fini` executable startup fragments and Mach-O initializer offsets.
