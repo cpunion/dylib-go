@@ -11,7 +11,7 @@ import (
 )
 
 func call(input string) (abi.Value, error) {
-	declaration, err := Declarations.ForHost("add")
+	declaration, err := Declarations.ForHost("sum_pair")
 	if err != nil {
 		return abi.Value{}, err
 	}
@@ -27,7 +27,15 @@ func call(input string) (abi.Value, error) {
 	if err != nil {
 		return abi.Value{}, err
 	}
-	return fn.Call(abi.Int32(20), abi.Int32(22))
+	record, err := Declarations.LookupRecord("Pair")
+	if err != nil {
+		return abi.Value{}, err
+	}
+	argument, err := abi.StructValue(record.Description, abi.Int32(20), abi.Int32(22))
+	if err != nil {
+		return abi.Value{}, err
+	}
+	return fn.Call(argument)
 }
 
 func main() {

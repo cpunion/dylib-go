@@ -120,7 +120,7 @@ func TestCallingConventionsAndUnsupportedDeclarations(t *testing.T) {
 		{"static int f(int);", "static/inline"},
 		{"inline int f(int);", "static/inline"},
 		{"long double f(long double);", "unsupported C type"},
-		{"struct Pair{int a,b;}; struct Pair f(struct Pair);", "unsupported C type"},
+		{"union Pair{int a,b;}; union Pair f(union Pair);", "unsupported C type"},
 		{"enum Kind{A,B}; enum Kind f(enum Kind);", "unsupported C type"},
 		{"void f(int(*)(int));", "unsupported C type"},
 		{"typedef int Fn(int); void f(Fn *);", "unsupported pointer alias"},

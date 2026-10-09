@@ -37,10 +37,11 @@ func (t nodeType) spelling() string {
 }
 
 type astNode struct {
-	Kind, Name, MangledName, StorageClass, Value string
-	Type                                         nodeType
-	Inline, Variadic                             bool
-	Inner                                        []astNode
+	ID, Kind, Name, MangledName, StorageClass, Value, TagUsed string
+	Type                                                      nodeType
+	Inline, Variadic, CompleteDefinition, IsBitfield          bool
+	Decl                                                      *astNode
+	Inner                                                     []astNode
 }
 
 func decodeDeclarations(data []byte, triple string, names []string) (*Header, error) {
@@ -85,11 +86,12 @@ func decodeDeclarations(data []byte, triple string, names []string) (*Header, er
 		requested[name] = true
 	}
 	found := make(map[string]Declaration)
+	resolver := newTypeResolver(root, aliases, sizes)
 	for _, node := range root.Inner {
 		if node.Kind != "FunctionDecl" || !requested[node.Name] {
 			continue
 		}
-		declaration, err := decodeFunction(node, target, aliases, sizes)
+		declaration, err := decodeFunction(node, target, resolver)
 		if err != nil {
 			return nil, fmt.Errorf("clang: %s: %w", node.Name, err)
 		}
@@ -98,13 +100,16 @@ func decodeDeclarations(data []byte, triple string, names []string) (*Header, er
 		}
 		found[node.Name] = declaration
 	}
-	header := &Header{Target: target}
+	header := &Header{Target: target, Records: resolver.records}
 	for _, name := range names {
 		declaration, ok := found[name]
 		if !ok {
 			return nil, fmt.Errorf("clang: no external function declaration for %q", name)
 		}
 		header.Functions = append(header.Functions, declaration)
+	}
+	if err := header.validateDescriptions(); err != nil {
+		return nil, err
 	}
 	return header, nil
 }
@@ -147,7 +152,7 @@ func parseTarget(triple string, pointerSize int) (Target, error) {
 	return target, nil
 }
 
-func decodeFunction(node astNode, target Target, aliases map[string]string, sizes map[string]int) (Declaration, error) {
+func decodeFunction(node astNode, target Target, resolver *typeResolver) (Declaration, error) {
 	if node.StorageClass == "static" || node.Inline {
 		return Declaration{}, fmt.Errorf("static/inline functions require an exported facade")
 	}
@@ -187,23 +192,33 @@ func decodeFunction(node astNode, target Target, aliases map[string]string, size
 	if convention != abi.CDecl && (target.OS != "windows" || target.Arch != "386") {
 		return Declaration{}, fmt.Errorf("calling convention requires Windows 386")
 	}
-	result, err := scalarType(spelling[:open], aliases, sizes, 0)
+	result, err := resolver.describe(spelling[:open], true, 0)
 	if err != nil {
 		return Declaration{}, err
 	}
-	signature := abi.Signature{Result: result, Convention: convention, Variadic: node.Variadic}
+	signature := abi.Signature{Result: result.Type, Convention: convention, Variadic: node.Variadic}
+	if complexDescription(result) {
+		signature.ResultType = &result
+	}
+	var arguments []abi.TypeDesc
+	complex := false
 	for _, parameter := range node.Inner {
 		if parameter.Kind != "ParmVarDecl" {
 			continue
 		}
-		typeID, err := scalarType(parameter.Type.spelling(), aliases, sizes, 0)
+		description, err := resolver.describe(parameter.Type.QualType, true, 0)
 		if err != nil {
 			return Declaration{}, err
 		}
-		signature.Args = append(signature.Args, typeID)
+		signature.Args = append(signature.Args, description.Type)
+		arguments = append(arguments, description)
+		complex = complex || complexDescription(description)
 		if len(signature.Args) > 256 {
 			return Declaration{}, fmt.Errorf("at most 256 declared parameters are supported")
 		}
+	}
+	if complex {
+		signature.ArgTypes = arguments
 	}
 	if node.Variadic {
 		signature.FixedArgs = len(signature.Args)

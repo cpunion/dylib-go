@@ -3,3 +3,7 @@ double mixed(float, double);
 _Bool truth(_Bool);
 void *pointer(void *);
 int variable(int, ...);
+typedef struct { int a, b; } Pair;
+int sum_pair(Pair);
+Pair echo_pair(Pair);
+Pair *swap_pair(Pair *);

@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"testing"
 
@@ -33,7 +34,7 @@ func TestGeneratedDeclarationsAndNativeCalls(t *testing.T) {
 	}
 	header, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{
 		Compiler: compiler, Target: Declarations.Target.Triple,
-		Functions: []string{"add", "mixed", "truth", "pointer", "variable"},
+		Functions: []string{"add", "mixed", "truth", "pointer", "variable", "sum_pair", "echo_pair", "swap_pair"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -88,13 +89,35 @@ func TestGeneratedDeclarationsAndNativeCalls(t *testing.T) {
 			t.Fatal(err)
 		}
 		got, err := fn.Call(args...)
-		if err != nil || got != want {
+		if err != nil || !reflect.DeepEqual(got, want) {
 			t.Fatalf("generated %s: %+v, %v; want %+v", name, got, err, want)
 		}
 	}
 	invoke("mixed", []abi.Value{abi.Float32(20.5), abi.Float64(21.5)}, abi.Float64(42))
 	invoke("truth", []abi.Value{abi.Boolean(false)}, abi.Boolean(true))
 	invoke("variable", []abi.Value{abi.Int32(20), abi.Int8(10), abi.Float32(12)}, abi.Int32(42), abi.I8, abi.F32)
+	pair, err := Declarations.LookupRecord("Pair")
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, err := abi.StructValue(pair.Description, abi.Int32(20), abi.Int32(22))
+	if err != nil {
+		t.Fatal(err)
+	}
+	invoke("sum_pair", []abi.Value{value}, abi.Int32(42))
+	invoke("echo_pair", []abi.Value{value}, value)
+	declaration, err := Declarations.ForHost("swap_pair")
+	if err != nil {
+		t.Fatal(err)
+	}
+	function, err := session.Bind(declaration.Symbol, declaration.Signature)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := function.Call(abi.AddressOf(&value))
+	if err != nil || got.Pointee != &value || value.Aggregate.Fields[0] != abi.Int32(22) || value.Aggregate.Fields[1] != abi.Int32(20) {
+		t.Fatalf("generated struct pointer mutation/identity: %+v, %v", got, err)
+	}
 	datum, err := session.Resolve("datum")
 	if err != nil {
 		t.Fatal(err)
