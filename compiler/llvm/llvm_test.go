@@ -35,6 +35,11 @@ func init() {
 			}
 		}
 		os.Exit(1)
+	case "diagnostics":
+		data := bytes.Repeat([]byte("x"), maxDiagnosticSize+1)
+		os.Stdout.Write(data)
+		os.Stderr.Write(data)
+		os.Exit(1)
 	}
 }
 
@@ -52,6 +57,18 @@ func tool(t *testing.T, variable, fallback string) string {
 		t.Skipf("optional LLVM tool unavailable: %v", err)
 	}
 	return path
+}
+
+func TestCompilerDiagnosticsAcrossPipes(t *testing.T) {
+	executable, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("DYLIB_LLVM_COMPILER_HELPER", "diagnostics")
+	input := writeIR(t, t.TempDir(), "x86_64-unknown-linux-gnu")
+	if _, err := Compile(context.Background(), input, Options{Compiler: executable}); err == nil || !strings.Contains(err.Error(), "[diagnostics truncated]") || len(err.Error()) > maxDiagnosticSize+4096 {
+		t.Fatal("unbounded subprocess diagnostics:", err)
+	}
 }
 
 func writeIR(t *testing.T, dir, triple string) string {
@@ -167,7 +184,7 @@ func TestCompilerDiagnosticsAreBounded(t *testing.T) {
 		t.Fatal(n, err)
 	}
 	output.Write(data)
-	if output.Len() != maxDiagnosticSize || !strings.HasSuffix(output.String(), "[diagnostics truncated]") {
+	if output.buffer.Len() != maxDiagnosticSize || !strings.HasSuffix(output.String(), "[diagnostics truncated]") {
 		t.Fatal("compiler diagnostics were not bounded")
 	}
 }

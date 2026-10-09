@@ -89,6 +89,10 @@ Headers / Clang / llcppg                 Apple runtime / ABIBridge adapter
        caller-defined adapter / optional scalar/struct libffi call
 ```
 
+An optional [Clang declaration generator](clang.md) now supplies target-qualified
+scalar/typedef/opaque-pointer signatures for dynamic binding. Full record/callback
+generation, C++ and direct llgo adapters remain separate work.
+
 The following integrations remain proposals:
 
 1. Add an optional dynamic mode to llcppg. Preserve its generated types, names, and layouts, and generate binding fields owned by a session. Known signatures can use caller-defined `//llgo:type C` function types through `Symbol.WithAddress`. The loader need not duplicate header parsing.

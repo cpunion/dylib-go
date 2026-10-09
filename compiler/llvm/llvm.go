@@ -173,22 +173,22 @@ func makeTempDir(parent, prefix string) (string, error) {
 }
 
 type limitedDiagnostics struct {
-	bytes.Buffer
+	buffer    bytes.Buffer
 	truncated bool
 }
 
 func (d *limitedDiagnostics) Write(p []byte) (int, error) {
 	n := len(p)
-	if remaining := maxDiagnosticSize - d.Len(); n > remaining {
+	if remaining := maxDiagnosticSize - d.buffer.Len(); n > remaining {
 		p, d.truncated = p[:remaining], true
 	}
-	d.Buffer.Write(p)
+	d.buffer.Write(p)
 	return n, nil
 }
 
 func (d *limitedDiagnostics) String() string {
 	if d.truncated {
-		return d.Buffer.String() + "\n[diagnostics truncated]"
+		return d.buffer.String() + "\n[diagnostics truncated]"
 	}
-	return d.Buffer.String()
+	return d.buffer.String()
 }

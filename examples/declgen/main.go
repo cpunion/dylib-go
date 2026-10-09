@@ -1,0 +1,34 @@
+// This utility emits declarations for the dynamic ABI, complementing static
+// llcppg bindings. The library API is compiler/clang.Parse and Header.GoSource.
+package main
+
+import (
+	"context"
+	"flag"
+	"os"
+
+	"github.com/cpunion/dylib-go/compiler/clang"
+)
+
+func main() {
+	compiler := flag.String("clang", "", "Clang executable")
+	target := flag.String("target", "", "Clang target triple")
+	output := flag.String("out", "", "output Go source path")
+	packageName := flag.String("package", "main", "Go package name")
+	variable := flag.String("var", "Declarations", "Go declaration variable")
+	flag.Parse()
+	if flag.NArg() < 2 || *output == "" {
+		panic("usage: declgen -out=<file.go> [-target=<triple>] <header.h> <function>...")
+	}
+	header, err := clang.Parse(context.Background(), flag.Arg(0), clang.Options{Compiler: *compiler, Target: *target, Functions: flag.Args()[1:]})
+	if err != nil {
+		panic(err)
+	}
+	source, err := header.GoSource(*packageName, *variable)
+	if err != nil {
+		panic(err)
+	}
+	if err := os.WriteFile(*output, source, 0600); err != nil {
+		panic(err)
+	}
+}
