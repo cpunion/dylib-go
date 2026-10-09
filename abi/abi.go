@@ -1,6 +1,7 @@
 // Package abi describes C ABI signatures independently of object-file
-// formats. Dynamic calls and C callbacks are optional: build with -tags libffi. For statically
-// known signatures llgo can call a typed C function pointer directly.
+// formats. Dynamic calls, C callbacks and native layout queries are optional:
+// build with -tags libffi. For statically known signatures llgo can call a typed
+// C function pointer directly.
 package abi
 
 import (
