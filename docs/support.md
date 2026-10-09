@@ -37,7 +37,7 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 | Mach-O external `N_INDR` symbols | Strong forwarding aliases, chains, private-external names, archive target extraction, and dependency ordering. See [alias rules](macho.md) |
 | Mach-O indirect symbol tables | Eager non-lazy/lazy/lazy-dylib pointer binding and standard 6-byte amd64 / 12-byte arm64 stubs; local/absolute pointer markers supported. See [binding rules](macho.md) |
 | Nonstandard/delay import tables | Rejected or unsupported; use a supported import library, an ordinary target slice/object, or load the DLL directly |
-| LLVM bitcode and text IR | Explicit optional `compiler/llvm` compilation to native objects, followed by normal loading; see [coverage and limits](llvm.md) |
+| LLVM bitcode and text IR | Explicit optional `compiler/llvm` compilation to native objects; ordinary bitcode/native mixed archives compile to native ar, followed by normal loading; see [coverage and limits](llvm.md) |
 | OMF, D `.ddl`, Go gc `.a` | Not directly loaded |
 
 Implemented relocation families:

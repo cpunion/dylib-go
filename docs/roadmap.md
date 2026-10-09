@@ -14,7 +14,7 @@ The CLI now accepts Go-style signature declarations and typed invocations throug
 | Windows ARM64 raw objects | Nonstandard import tables, remaining relocations/lifecycle forms, and language exception handlers; C frame tables are optional |
 | 386 and additional ISAs | 386 executes C cdecl on Linux/Windows with Go; Windows 386 stdcall/fastcall are implemented; other conventions and llgo qualification remain. Additional ISAs need linker/ABI backends and execution tests |
 | BSD and Apple mobile hosts | Native OS backend, ABI/runtime integration, platform policy compatibility, and device tests |
-| Additional containers | Nonstandard import tables; optional IR compilation |
+| Additional containers | Nonstandard import tables, thin bitcode compilation and LLVM module merging |
 | Full dynamic C/C++ interfaces | Unions, packed structs, bitfields, additional callback conventions/aggregates, and generated declaration validation |
 | Swift, ObjC, and other language ABIs | Dedicated metadata, ownership, calling-convention, initialization, and runtime adapters |
 | Foreign CPU or OS execution | An appropriate emulator/system process plus RPC; native relocation cannot supply OS services |
@@ -29,13 +29,13 @@ Future extensions need explicit implementation and tests:
 1. **Windows object coverage:** native Go and llgo objects, archives, and DLLs are covered for AMD64/ARM64, plus Go for i386. Weak aliases, COMDAT selections 1–7, bigobj, extended relocation tables, short/GNU long import libraries, and optional C frame unwind registration are implemented. Further work includes nonstandard import tables, remaining lifecycle forms, language exception handlers, and additional architecture-specific relocations.
 2. **Object initialization and exceptions:** modern platform tables, legacy ELF `.ctors/.dtors`, COFF integer-returning initialization/failure cleanup, dependency ordering, cycle handling, validation rollback, session-owned exit registration, and optional Windows/Linux/macOS C frame tables are implemented. Add ELF executable startup fragments and Mach-O relative offsets; extend the implemented libgcc `.eh_frame` subset, extend Mach-O DWARF and add compact unwind, and extend Windows unwind records. Complete OS libraries already use their native runtime registration.
 3. **TLS and more relocations:** define each target's TLS model and thread registration/destruction; extend ARM64 COFF coverage and add RISC-V, LoongArch, and other relocation backends. Parser support alone does not provide execution support.
-4. **Archive and object containers:** GNU/LLVM thin archives, GNU member-offset references, universal Mach-O object/archive/library selection, and explicit optional LLVM bitcode/IR compilation are implemented. Bitcode archive members and merged modules remain pending. OMF and D `.ddl` compatibility remain outside scope.
+4. **Archive and object containers:** GNU/LLVM thin archives, GNU member-offset references, universal Mach-O object/archive/library selection, and explicit optional LLVM bitcode/IR compilation are implemented. Ordinary bitcode/native mixed archive compilation is implemented; thin bitcode archives and merged modules remain pending. OMF and D `.ddl` compatibility remain outside scope.
 5. **llcppg dynamic generation:** complement its static `go:linkname` output with adapters using `Resolve` and `WithAddress`, preserving declaration-based ABI validation.
 6. **ABIBridge adapters:** expose Apple Swift/ObjC values and calls through opaque C ABI handles. Platform, runtime version, and pointer-authentication coverage need separate tests.
 7. **Advanced signatures and callbacks:** extend the implemented libffi structs, fixed-length array members/pointees, and callbacks with unions and other aggregate forms; evaluate compiler-generated llgo entries for known signatures. Fixed native C callbacks, leases/retirement, Go captures, foreign-thread integration, variadic call promotion, Windows 386 stdcall/fastcall, owned reusable CIFs/layouts, indexed session-owned logical signature caches, lazy typed pointee layouts, bounded scalar/aggregate/pointee buffer reuse, and call/allocation benchmarks are implemented; sharing physical ABI resources between logically distinct signatures remains pending. Known signatures can already use caller-defined adapters.
 8. **Independent execution backends:** isolated/remote processes, Wasm, and GPU execution need separate interfaces appropriate to their execution models.
 
-Keep the parser and linker in Go and extend llgo or small native adapters when lower-level facilities are required. A future optional LLVM backend should preserve the independent Go backend rather than make LLVM a default dependency.
+Keep the parser and linker in Go and extend llgo or small native adapters when lower-level facilities are required. Optional LLVM tools preserve the independent Go backend and do not make LLVM a default dependency.
 
 ## Development checklist
 
@@ -86,5 +86,6 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [ ] Optional Apple C facades for ABIBridge Swift/ObjC integration.
 - [ ] BSD backends, additional ISAs, and llgo 386 qualification when toolchains/runners are available.
 - [x] Optional Go-managed LLVM IR/bitcode object compiler, input snapshots, owned artifacts, cancellation/cleanup, and native call/initializer tests.
-- [ ] LLVM module merging and compilation of bitcode archive members.
+- [x] Ordinary GNU/COFF/BSD bitcode/native mixed archive compilation, duplicate member names/order, lazy selection, source/artifact snapshots and owned cleanup.
+- [ ] LLVM module merging and compilation of thin/proxy bitcode archives.
 - [ ] Separate process/RPC and Wasm executors; GPU/eBPF require domain-specific executors.

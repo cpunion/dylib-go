@@ -30,13 +30,17 @@ type Options struct {
 
 // Object owns a compiled object file. Load Path into a session before Close;
 // the session snapshots native object bytes and can outlive this artifact.
-// Keep directory-dependent imports available through Session.LibraryPaths.
+// Keep directory-dependent imports available through dylib.Options.LibraryPaths.
 // Path must not be read concurrently with Close. Do not copy Object.
 type Object struct {
-	Path string
-	Info dylib.Info
-	mu   sync.Mutex
-	dir  string
+	Path    string
+	Info    dylib.Info
+	storage *artifactStorage
+}
+
+type artifactStorage struct {
+	mu  sync.Mutex
+	dir string
 }
 
 // Close deletes compiler input/output storage. It does not unload a session
@@ -45,15 +49,22 @@ func (o *Object) Close() error {
 	if o == nil {
 		return nil
 	}
-	o.mu.Lock()
-	defer o.mu.Unlock()
-	if o.dir == "" {
+	return o.storage.close()
+}
+
+func (a *artifactStorage) close() error {
+	if a == nil {
 		return nil
 	}
-	if err := os.RemoveAll(o.dir); err != nil {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.dir == "" {
+		return nil
+	}
+	if err := os.RemoveAll(a.dir); err != nil {
 		return err
 	}
-	o.dir = ""
+	a.dir = ""
 	return nil
 }
 
@@ -83,7 +94,7 @@ func Compile(ctx context.Context, path string, opts Options) (_ *Object, err err
 	if err != nil {
 		return nil, err
 	}
-	object := &Object{dir: dir, Path: filepath.Join(dir, "output.o")}
+	object := &Object{storage: &artifactStorage{dir: dir}, Path: filepath.Join(dir, "output.o")}
 	defer func() {
 		if err != nil {
 			if cleanup := object.Close(); cleanup != nil {

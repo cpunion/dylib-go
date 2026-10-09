@@ -3,7 +3,10 @@
 Ordinary GNU/SysV, BSD and COFF archives embed their object bytes. GNU/LLVM
 thin archives (`!<thin>`) reference external files instead. Both use the same
 object parsers, symbol selection, relocation backends and session ownership.
-The filename extension does not determine the format.
+The filename extension does not determine the format. Ordinary archives with
+LLVM bitcode members can first be converted using the optional
+[`compiler/llvm.CompileArchive`](llvm.md#bitcode-archive-compilation) helper.
+Thin bitcode compilation remains pending; native thin archives are supported.
 
 | Container form | Behavior |
 | --- | --- |
