@@ -32,7 +32,7 @@ Future extensions need explicit implementation and tests:
 4. **Archive and object containers:** GNU/LLVM thin archives, GNU member-offset references, and universal Mach-O object/archive/library selection are implemented. Add optional LLVM bitcode/IR compilation. OMF and D `.ddl` compatibility remain outside scope.
 5. **llcppg dynamic generation:** complement its static `go:linkname` output with adapters using `Resolve` and `WithAddress`, preserving declaration-based ABI validation.
 6. **ABIBridge adapters:** expose Apple Swift/ObjC values and calls through opaque C ABI handles. Platform, runtime version, and pointer-authentication coverage need separate tests.
-7. **Advanced signatures and callbacks:** extend the implemented libffi structs, fixed-length array members/pointees, and callbacks with unions and other aggregate forms; evaluate compiler-generated llgo entries for known signatures. Fixed native C callbacks, leases/retirement, Go captures, foreign-thread integration, variadic call promotion, Windows 386 stdcall/fastcall, owned reusable CIFs/layouts, indexed session-owned logical signature caches, lazy typed pointee layouts, bounded scalar/aggregate call buffer reuse, and call/allocation benchmarks are implemented; sharing physical ABI resources between logically distinct signatures and temporary-pointee buffer pooling remain pending. Known signatures can already use caller-defined adapters.
+7. **Advanced signatures and callbacks:** extend the implemented libffi structs, fixed-length array members/pointees, and callbacks with unions and other aggregate forms; evaluate compiler-generated llgo entries for known signatures. Fixed native C callbacks, leases/retirement, Go captures, foreign-thread integration, variadic call promotion, Windows 386 stdcall/fastcall, owned reusable CIFs/layouts, indexed session-owned logical signature caches, lazy typed pointee layouts, bounded scalar/aggregate/pointee buffer reuse, and call/allocation benchmarks are implemented; sharing physical ABI resources between logically distinct signatures remains pending. Known signatures can already use caller-defined adapters.
 8. **Independent execution backends:** isolated/remote processes, Wasm, and GPU execution need separate interfaces appropriate to their execution models.
 
 Keep the parser and linker in Go and extend llgo or small native adapters when lower-level facilities are required. A future optional LLVM backend should preserve the independent Go backend rather than make LLVM a default dependency.
@@ -74,7 +74,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Indexed signature lookup and canonical omitted/explicit scalar metadata, preserving logical type distinctions.
 - [x] Bounded aggregate call buffer reuse, independent nested/concurrent storage, zeroing and owned cleanup.
 - [x] Bounded scalar call buffer reuse, independent nested/concurrent storage, foreign value/address clearing, and owned cleanup.
-- [ ] Shared physical ABI resources for logically distinct signatures and temporary-pointee buffer pooling.
+- [x] Bounded native pointee buffer reuse, full-capacity zeroing/range guards, transient owner/type cleanup and shared aggregate byte budgeting.
+- [ ] Shared physical ABI resources for logically distinct signatures.
 - [x] GNU/LLVM thin archives, relative paths, regular-member proxies and object snapshots.
 - [x] Universal Mach-O FAT32/FAT64 inspection and baseline macOS object/archive/library selection.
 - [ ] Clang/llcppg declaration-based dynamic adapter generation.

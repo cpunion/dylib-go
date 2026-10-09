@@ -91,9 +91,10 @@ outside the measured loop.
 | Pointer / Bound | 1976 → 907.7 | 3757 → 2541 | 1576 → 464 | 17 → 7 |
 | Pointer / Prepared | 2232 → 904.1 | 3642 → 2488 | 1576 → 464 | 17 → 7 |
 
-These figures cover the small fixtures above. Returned aggregates still require
-logical Go values, temporary pointees still use per-call native allocation, and
-large contexts exceeding the idle budget are freed rather than retained. The
+These figures cover the small fixtures above. At the time of this measurement,
+returned aggregates still required logical Go values and temporary pointees
+still used per-call native allocation. Large contexts exceeding the idle budget
+were freed rather than retained. The
 scalar-only path was unchanged by that aggregate optimization. Native allocations are excluded from the Go
 allocation counters; llgo's reported allocation count has the limitation
 described above.
@@ -124,6 +125,27 @@ report does not mean zero allocation. Latency samples varied substantially acros
 this comparison reports stable allocation measurements without a latency claim.
 Variadic promotion, callbacks and temporary pointees can still allocate.
 
+## Temporary pointee buffer reuse
+
+The pointer benchmark above copies a typed struct into native memory and copies
+it back after the call. With bounded context-owned pointee buffers, repeated
+calls reuse those native bytes instead of allocating/freeing them each time.
+Logical aggregate construction during copy-back still allocates Go values.
+On the same host/toolchains on 2026-10-09, three 200 ms samples measured:
+
+| Pointer mode | Go before → reused B/op | Go before → reused allocs/op | llgo before → reused B/op (approximate) |
+| --- | ---: | ---: | ---: |
+| Bound | 464 → 464 | 7 → 7 | 5296 → 5232 |
+| Prepared | 464 → 464 | 7 → 7 | 5072 → 5008 |
+
+Reproduce with
+`go test -tags libffi -run '^$' -bench '^BenchmarkNativeCalls/Pointer/(Bound|Prepared)$' -benchmem -benchtime=200ms -count=3 .`
+and repeat with `llgo`. These counters exclude native value allocations and do
+not quantify the removed native allocation/free operations. Buffer identity,
+zeroing, budgets and cleanup are checked by tests. Cold calls, cache overflow
+and ephemeral layouts for opaque pointer shapes still allocate native storage.
+Latency samples were unstable, so this comparison makes no latency claim.
+
 ## Storage and cache scope
 
 CIF argument types and aggregate layouts are owned by each prepared plan. Bindings
@@ -144,6 +166,12 @@ Aggregate calls borrow an exclusive native argument vector and fixed argument/re
 buffers from their plan, with arguments/results including padding zeroed before
 reuse. Each plan has separate scalar and aggregate caches, each limited to four
 idle contexts and 1 MiB; extra or oversized contexts are freed on return.
+The aggregate budget includes retained temporary pointee storage. Each exclusive
+record context may retain up to 32 cleared pointee buffers and 256 KiB inside
+that budget. It borrows the smallest sufficient capacity, and no other active
+context can borrow the same bytes. The entire capacity is cleared in Go before
+return, including padding and pointer words. Returned pointers into unused
+capacity remain subject to the same temporary lifetime checks.
 An immutable aggregate argument address table restores a separate libffi vector before
 every call: some backends replace argument pointers with temporary struct copies.
 Retirement waits for active calls and frees every retained context. No pool
@@ -153,11 +181,11 @@ and available memory still bound call size.
 
 Equal aggregate descriptors reuse a plan-owned layout. Declared temporary
 pointee layouts are constructed lazily, shared after preparation, and freed
-with the plan. Temporary pointee memory and unannotated type layouts remain
-invocation-owned and are freed after copy-back. Alias maps, descriptors and
+with the plan. Temporary pointee views are valid only for their invocation;
+after copy-back, cleared native bytes may be retained while unannotated type
+layouts are freed. Alias maps, descriptors and
 errors are cleared before a context returns to its plan. Reuse never shares
 storage between overlapping or nested calls. Sharing physical ABI resources
-between logically distinct signatures, temporary pointee buffer pooling and
-cross-session sharing remain future work.
+between logically distinct signatures and cross-session sharing remain future work.
 These measurements do not establish universal
 latency guarantees or remove pointer lifetime and synchronization requirements.

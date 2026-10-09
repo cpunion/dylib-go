@@ -89,6 +89,60 @@ func TestNativeRecordOpaqueTemporaryShapes(t *testing.T) {
 	}
 }
 
+func TestNativePointeeBufferShapesAndPadding(t *testing.T) {
+	for _, input := range []string{"object", "archive", "library"} {
+		t.Run(input, func(t *testing.T) {
+			session := nativeABILibrary(t, "testdata/record_buffers.c", input)
+			sig := abi.Signature{Result: abi.I32, Args: []abi.Type{abi.Pointer}}
+			fill, err := session.Bind("fill_wide", sig)
+			if err != nil {
+				t.Fatal(err)
+			}
+			check, err := session.Bind("check_padded", sig)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if fill.plan != check.plan {
+				t.Fatal("equal opaque signatures did not share a call plan")
+			}
+			wide := abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "a", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "b", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "c", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "d", Type: abi.TypeDesc{Type: abi.U64}}}}
+			padded := abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.U64}}}}
+			for i := 0; i < 10; i++ {
+				large := abi.Zero(wide)
+				if got, err := fill.Call(abi.AddressOf(&large)); err != nil || got != abi.Int32(42) {
+					t.Fatalf("wide native write: %+v, %v", got, err)
+				}
+				for _, member := range large.Aggregate.Fields {
+					if member != abi.Uint64(0xa5a5a5a5a5a5a5a5) {
+						t.Fatal("wide pointer copy-back lost native data")
+					}
+				}
+				value, err := abi.StructValue(padded, abi.Uint8(20), abi.Uint64(22))
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got, err := check.Call(abi.AddressOf(&value)); err != nil || got != abi.Int32(42) || value.Aggregate.Fields[0] != abi.Uint8(22) || value.Aggregate.Fields[1] != abi.Uint64(20) {
+					t.Fatalf("smaller shape padding/copy-back: %+v, %v", got, err)
+				}
+			}
+			alias, err := session.Bind("alias_padded", callbackSignature(t, "func alias_padded(*struct{tag uint8;value uint64},*struct{tag uint8;value uint64})*struct{tag uint8;value uint64}"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			for i := 0; i < 5; i++ {
+				value, err := abi.StructValue(padded, abi.Uint8(20), abi.Uint64(40))
+				if err != nil {
+					t.Fatal(err)
+				}
+				got, err := alias.Call(abi.AddressOf(&value), abi.AddressOf(&value))
+				if err != nil || got.Bits != 0 || got.Pointee != &value || value.Aggregate.Fields[1] != abi.Uint64(42) {
+					t.Fatalf("reused native alias/returned owner: %+v, %v", got, err)
+				}
+			}
+		})
+	}
+}
+
 func TestNativeRecordMarshalingFailureRecovery(t *testing.T) {
 	session := nativeABILibrary(t, "testdata/many_arguments.c", "object")
 	fn, err := session.Bind("identity_pointer", abi.Signature{Result: abi.Pointer, Args: []abi.Type{abi.Pointer}})

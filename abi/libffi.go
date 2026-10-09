@@ -271,6 +271,64 @@ const maxIdleRecordBuffers = 4
 const maxIdleRecordBytes = 1 << 20
 const maxIdleScalarBuffers = 4
 const maxIdleScalarBytes = 1 << 20
+const maxIdlePointeeBuffers = 32
+const maxIdlePointeeBytes = 256 << 10
+
+// Each active record context owns its value cache. Only cleared native bytes
+// survive a call; logical values, aliases and ephemeral layouts never do.
+type nativeValueBuffer struct {
+	memory unsafe.Pointer
+	size   uint64
+}
+
+func (v *nativeValueBuffer) close() {
+	C.free(v.memory)
+	v.memory = nil
+}
+
+type nativeValueCache struct {
+	idle  []*nativeValueBuffer
+	bytes uint64
+}
+
+func (c *nativeValueCache) acquire(size uint64) (*nativeValueBuffer, error) {
+	best := -1
+	for i, value := range c.idle {
+		if value.size >= size && (best == -1 || value.size < c.idle[best].size) {
+			best = i
+		}
+	}
+	if best != -1 {
+		value := c.idle[best]
+		last := len(c.idle) - 1
+		c.idle[best], c.idle[last] = c.idle[last], nil
+		c.idle = c.idle[:last]
+		c.bytes -= value.size
+		return value, nil
+	}
+	mem := C.calloc(1, C.size_t(size))
+	if mem == nil {
+		return nil, fmt.Errorf("native allocation failed")
+	}
+	return &nativeValueBuffer{memory: mem, size: size}, nil
+}
+
+func (c *nativeValueCache) release(value *nativeValueBuffer) {
+	clear(unsafe.Slice((*byte)(value.memory), int(value.size)))
+	if len(c.idle) < maxIdlePointeeBuffers && value.size <= maxIdlePointeeBytes-c.bytes {
+		c.idle = append(c.idle, value)
+		c.bytes += value.size
+	} else {
+		value.close()
+	}
+}
+
+func (c *nativeValueCache) close() {
+	for _, value := range c.idle {
+		value.close()
+	}
+	c.idle, c.bytes = nil, 0
+}
 
 type scalarBuffer struct {
 	call    *C.dylib_scalar_call
@@ -330,12 +388,14 @@ func (w *scalarBuffer) close() {
 }
 
 type recordBuffer struct {
-	call  *C.dylib_record_call
-	args  []unsafe.Pointer
-	out   unsafe.Pointer
-	roots nativePool // Fixed argument/result storage; lives until eviction/Close.
-	pool  nativePool // Per-call types, pointees, aliases and lifetime checks.
-	size  uint64
+	call      *C.dylib_record_call
+	args      []unsafe.Pointer
+	out       unsafe.Pointer
+	roots     nativePool // Fixed argument/result storage; lives until eviction/Close.
+	pool      nativePool // Per-call types, pointees, aliases and lifetime checks.
+	pointees  nativeValueCache
+	fixedSize uint64
+	size      uint64 // Fixed storage plus idle pointees; counts toward plan budget.
 }
 
 func (b *ffiBackend) acquireRecords() (*recordBuffer, error) {
@@ -350,6 +410,7 @@ func (b *ffiBackend) acquireRecords() (*recordBuffer, error) {
 	b.recordMu.Unlock()
 	if work == nil {
 		work = &recordBuffer{pool: nativePool{abi: b.pool.abi, types: b, pointers: make(map[*Value]nativeCopy), owners: make(map[uint64]*Value)}}
+		work.pool.valueCache = &work.pointees
 		work.call = C.dylib_record_new(C.uint(len(b.args)))
 		if work.call == nil {
 			return nil, fmt.Errorf("native call allocation failed")
@@ -374,6 +435,7 @@ func (b *ffiBackend) acquireRecords() (*recordBuffer, error) {
 		for _, buffer := range work.roots.buffers {
 			work.size += buffer.size
 		}
+		work.fixedSize = work.size
 	}
 	// Native code may inspect struct padding; restore calloc's zeroing guarantee.
 	for i, mem := range work.roots.allocations {
@@ -384,9 +446,10 @@ func (b *ffiBackend) acquireRecords() (*recordBuffer, error) {
 }
 
 func (b *ffiBackend) releaseRecords(work *recordBuffer) {
-	// Copy-back has completed. Free temporary types/pointees and drop every Go
-	// owner before caching this context, including on marshaling/read errors.
+	// Copy-back has completed. Free ephemeral types, drop every Go owner and
+	// return cleared pointees to this context, including on marshaling/read errors.
 	work.pool.reset()
+	work.size = work.fixedSize + work.pointees.bytes
 	b.recordMu.Lock()
 	keep := len(b.records) < maxIdleRecordBuffers && work.size <= maxIdleRecordBytes-b.recordBytes
 	if keep {
@@ -401,6 +464,7 @@ func (b *ffiBackend) releaseRecords(work *recordBuffer) {
 
 func (w *recordBuffer) close() {
 	w.pool.close()
+	w.pointees.close()
 	w.roots.close()
 	C.free(unsafe.Pointer(w.call))
 	w.call, w.args, w.out = nil, nil, nil
@@ -528,6 +592,8 @@ type nativePool struct {
 	pointers    map[*Value]nativeCopy
 	owners      map[uint64]*Value
 	err         error
+	valueCache  *nativeValueCache // Only per-call record pools reuse native values.
+	values      []*nativeValueBuffer
 }
 type nativeLayout struct {
 	desc   TypeDesc
@@ -535,15 +601,23 @@ type nativeLayout struct {
 }
 type nativeBuffer struct{ base, size uint64 }
 
-func (p *nativePool) close() {
+func (p *nativePool) freeAllocations() {
 	for i := len(p.allocations) - 1; i >= 0; i-- {
 		C.free(p.allocations[i])
 	}
 	clear(p.allocations)
 	p.allocations = p.allocations[:0]
 }
+func (p *nativePool) close() {
+	p.freeAllocations()
+	for _, value := range p.values {
+		value.close()
+	}
+	clear(p.values)
+	p.values = p.values[:0]
+}
 func (p *nativePool) reset() {
-	p.close()
+	p.freeAllocations()
 	clear(p.layouts)
 	p.layouts = p.layouts[:0]
 	clear(p.buffers)
@@ -551,6 +625,11 @@ func (p *nativePool) reset() {
 	clear(p.pointers)
 	clear(p.owners)
 	p.err = nil
+	for _, value := range p.values {
+		p.valueCache.release(value)
+	}
+	clear(p.values)
+	p.values = p.values[:0]
 }
 func (p *nativePool) allocate(size uint64) (unsafe.Pointer, error) {
 	if size > 65536 {
@@ -558,6 +637,16 @@ func (p *nativePool) allocate(size uint64) (unsafe.Pointer, error) {
 	}
 	if size < 8 {
 		size = 8
+	}
+	if p.valueCache != nil {
+		value, err := p.valueCache.acquire(size)
+		if err != nil {
+			return nil, err
+		}
+		p.values = append(p.values, value)
+		// Include the entire capacity, also when a smaller shape reuses it.
+		p.buffers = append(p.buffers, nativeBuffer{uint64(uintptr(value.memory)), value.size})
+		return value.memory, nil
 	}
 	mem := C.calloc(1, C.size_t(size))
 	if mem == nil {
