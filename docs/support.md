@@ -47,6 +47,7 @@ Implemented relocation families:
 
 - ELF x86-64: NONE, 64, PC32, PLT32, GOTPCREL/GOTPCRELX/REX_GOTPCRELX, 32/32S, PC64, SIZE32/SIZE64. See [symbol-size rules](elf.md).
 - ELF AArch64: NONE (0/256), ABS64/32/16, PREL64/32/16, MOVW_UABS/SABS/PREL groups, ADR/ADRP page, ADD/LDST8/16/32/64/128 low12, literal loads, CALL26/JUMP26, CONDBR19/TSTBR14, GOT literal/page/load64. See [instruction ranges and addends](elf.md#aarch64-instruction-relocations) and [wide moves/data](elf.md#aarch64-wide-moves-and-narrow-data).
+  Unresolved weak references use the [AArch64 relative/call rules](elf.md#aarch64-unresolved-weak-references); absolute references and GOT targets remain zero.
 - Mach-O x86-64: UNSIGNED, SIGNED, BRANCH, GOT_LOAD/GOT, external SUBTRACTOR+UNSIGNED, SIGNED_1/2/4.
 - Mach-O arm64: UNSIGNED, external SUBTRACTOR+UNSIGNED, BRANCH26, PAGE21/PAGEOFF12, GOT page/offset, POINTER_TO_GOT, paired ADDEND. Local section-ordinal instruction relocations remain unsupported.
 - COFF AMD64: ABSOLUTE, ADDR64, ADDR32, ADDR32NB, REL32 through REL32_5. SECTION/SECREL encode logical image-section ordinals and offsets. `__imp_` names use GOT slots for explicit DLL symbols.
