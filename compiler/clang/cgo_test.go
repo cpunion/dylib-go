@@ -54,7 +54,7 @@ func TestCgoRejectsUnsupportedDeclarations(t *testing.T) {
 			t.Fatal("unsupported bridge emitted:", prototype)
 		}
 	}
-	h, err := Parse(context.Background(), headerFile(t, "int f(int);"), Options{Compiler: compilerTool(t), Functions: []string{"f"}})
+	h, err := Parse(context.Background(), headerFile(t, "int f(int);"), Options{Compiler: compilerTool(t), Target: "x86_64-unknown-linux-gnu", Functions: []string{"f"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,6 +71,38 @@ func TestCgoRejectsUnsupportedDeclarations(t *testing.T) {
 	h.Functions = append(h.Functions, Declaration{Name: "F", Symbol: "F", Signature: h.Functions[0].Signature})
 	if _, err := h.CgoSource("bindings", "Bindings"); err == nil {
 		t.Fatal("ambiguous method emitted")
+	}
+}
+
+func TestCgoCallingConventionTargets(t *testing.T) {
+	path := headerFile(t, "int f(int (*)(int),int);")
+	for _, target := range targets {
+		for _, convention := range []abi.Convention{abi.StdCall, abi.FastCall} {
+			h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Target: target.triple, Functions: []string{"f"}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, outer := range []bool{false, true} {
+				h.Functions[0].FunctionPointers[0].Signature.Convention = convention
+				if outer {
+					h.Functions[0].Signature.Convention = convention
+				}
+				source, err := h.CgoSource("bindings", "Bindings")
+				qualified := target.os == "windows" && target.arch == "386"
+				if (err == nil) != qualified {
+					t.Fatalf("%s convention %d outer %t: %v", target.triple, convention, outer, err)
+				}
+				if qualified {
+					attribute := "stdcall"
+					if convention == abi.FastCall {
+						attribute = "fastcall"
+					}
+					if !strings.Contains(string(source), "__attribute__(("+attribute+"))") {
+						t.Fatal("native convention lost")
+					}
+				}
+			}
+		}
 	}
 }
 

@@ -28,7 +28,7 @@ All eight Go execution targets and six llgo targets set `DYLIB_TEST_REQUIRE_NATI
 | Caller-defined `double(int32,double,float,uint64)` | `examples/cgo` on all eight library targets | `examples/llgo` on all six library targets |
 | libffi mixed integer/floating-point signatures, variadic promotions/records/pointers, reusable plan lifetime | Eight Go targets; race checks on the five Go native amd64/arm64 jobs (Go race does not support 386) | Six targets; raw COFF constant-pool COMDAT exercised |
 | C++ inline COMDAT/shared state from objects and archives | Eight targets | Six targets |
-| Windows 386 stdcall/fastcall fixed calls and callback entries | Native Windows 386 C fixtures | Not qualified |
+| Windows 386 stdcall/fastcall fixed calls and callback entries | Native C fixtures; generated cgo bridges also execute mixed scalars, decorated exports and same/opposite-convention native function-pointer factories/consumers with and without libffi | Not qualified |
 | Fixed C callbacks: scalars/structs, errors, captures, leases, C-created threads with allocation/GC | Eight targets; object/archive/library and native worker fixtures | Six targets; collector-aware foreign-thread entry |
 | Foreign ELF/COFF COMDAT discard; COFF SECTION/SECREL; weak external search/aliases | Parser/relocation fixtures independent of host; Windows executes weak overrides and EXACT_MATCH/NEWEST selection | Same fixtures and native Windows execution |
 | COFF high section indexes, bigobj, and extended relocation tables | Foreign fixtures on every host; Windows executes objects/archives and checks the final extended relocation | Same fixtures and Windows AMD64/ARM64 execution |
