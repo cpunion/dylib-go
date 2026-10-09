@@ -129,6 +129,11 @@ static int dylib_struct_layout(dylib_struct_type *t, int abi) { return ffi_get_s
 static ffi_type *dylib_struct_ffi(dylib_struct_type *t) { return &t->type; }
 static size_t dylib_struct_offset(dylib_struct_type *t, unsigned i) { return t->offsets[i]; }
 static size_t dylib_type_size(ffi_type *t) { return t->size; }
+static unsigned short dylib_type_alignment(ffi_type *t) { return t->alignment; }
+static int dylib_scalar_layout(ffi_type *t, int abi) {
+    ffi_cif cif;
+    return ffi_prep_cif(&cif,(ffi_abi)abi,0,t,NULL);
+}
 static void *dylib_field_address(void *p, size_t offset) { return (char *)p+offset; }
 static void dylib_store(void *p, uint8_t t, uint64_t bits) {
     switch(t) {
@@ -577,6 +582,32 @@ type nativeType struct {
 	fields  []*nativeType
 	offsets []C.size_t
 }
+
+func layoutOf(d TypeDesc, convention Convention) (Layout, error) {
+	nativeABI := C.dylib_abi(C.uint8_t(convention))
+	if nativeABI < 0 {
+		return Layout{}, fmt.Errorf("calling convention %d is unavailable on this host", convention)
+	}
+	pool := nativePool{abi: nativeABI}
+	defer pool.close()
+	native, err := pool.build(d)
+	if err != nil {
+		return Layout{}, err
+	}
+	// Aggregates were initialized by ffi_get_struct_offsets in build. Prepare
+	// scalar types before reading metadata, as required by libffi's ABI contract.
+	if d.Type != Struct && d.Type != Array {
+		if rc := C.dylib_scalar_layout(native.ffi, nativeABI); rc != 0 {
+			return Layout{}, fmt.Errorf("ffi scalar layout failed: %d", rc)
+		}
+	}
+	layout := Layout{Size: uint64(C.dylib_type_size(native.ffi)), Alignment: uint64(C.dylib_type_alignment(native.ffi))}
+	for _, offset := range native.offsets {
+		layout.Offsets = append(layout.Offsets, uint64(offset))
+	}
+	return layout, nil
+}
+
 type nativeCopy struct {
 	value  *Value
 	desc   TypeDesc

@@ -43,7 +43,8 @@ declarations and executes through `Session.Bind`. Run
 
 Aggregate calls and typed struct/array pointees already work through manually
 declared `abi.TypeDesc` signatures. This initial generator does not guess their
-layout. Compiler record layouts must be checked against the ABI backend before
+layout. [`abi.LayoutOf`](layout.md) exposes the actual backend's size, alignment
+and offsets. Compiler record layouts must be checked against those values before
 generated aggregate declarations can be supported.
 
 Headers describe declarations rather than proving actual exports. The loaded
