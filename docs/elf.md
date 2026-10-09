@@ -57,3 +57,18 @@ Both AArch64 null relocation codes, 0 and the older 256, are accepted. Null refe
 `TestARM64ELFMOVWMetadata` checks every implemented MOVW form in real assembler output and a Clang `-mcmodel=large -fno-pic` C object. `TestNativeARM64ELFMOVW` executes all those forms, signed SHN_ABS constants, and narrow data on Linux arm64 with Go and llgo. Object order reversal exercises negative relative values; archive roots, unused dependencies, and failed-link retry exercise ownership and selection. Arithmetic, encoded-field replacement, invalid inputs, byte bounds, and both null encodings are also tested on the other CI hosts, including 386.
 
 TLS, GOT-relative MOVW, and authenticated relocations are not added by this extension.
+
+## AArch64 unresolved weak references
+
+| Reference | Selected symbol value or action |
+| --- | --- |
+| Absolute data/MOVW | `S=0`, followed by the ordinary addend and encoding |
+| PREL data, ADR/ADRP, literal loads, conditional/test-bit branches, MOVW_PREL | `S=P`, followed by the ordinary addend and encoding |
+| CALL26 / JUMP26 | Validate the aligned BL/B instruction, then replace it with NOP |
+| GOT | Allocate an owned slot holding zero; keep the slot's ordinary relative address |
+
+These rules apply only when a weak reference remains undefined after selecting definitions and checking external providers. A weak or strong SHN_ABS definition at zero is still a definition. A selected object, explicitly rooted archive member, `Define`, or OS library uses its resolved address normally. Weak references alone do not extract archive members.
+
+CALL26's no-op behavior follows AAELF64 for a link without dynamic preemption. JUMP26 follows GNU ld's compatible extension; the ABI leaves that case unspecified. Conditional/test-bit branches use GNU ld's `P+A` rule, including a self-target for zero addends; LLVM lld instead selects `P+4+A`. The loader does not invent a return value for a missing weak function.
+
+Native Linux arm64 tests execute an unconditional weak C call with no provider, unselected/rooted archives, both object orders, an OS library, and an explicitly defined provider. A counter verifies that provided calls actually run. Separate native tests verify PREL16/32/64 and absolute pointer data with missing and selected weak definitions. Unit tests cover all implemented relative families, zero definitions, GOT ownership, addends, invalid opcodes, and alignment. The behavior follows [AAELF64 weak references](https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst#weak-references) and the [GNU AArch64 linker](https://sourceware.org/git/?p=binutils-gdb.git;a=blob;f=bfd/elfnn-aarch64.c).

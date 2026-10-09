@@ -83,6 +83,13 @@ func (im *image) relocate(o *object, r relocation) error {
 	if e != nil {
 		return e
 	}
+	if o.info.Format == "ELF" && o.info.Arch == "arm64" && s == 0 {
+		var done bool
+		s, done, e = im.elfARM64Weak(o, r, b, p)
+		if e != nil || done {
+			return e
+		}
+	}
 	if o.info.Format == "Mach-O" && (r.typ == machoPointerFixup || r.typ == machoStubFixup) {
 		return im.relocateMachOIndirect(o, r, b, s, p)
 	}
