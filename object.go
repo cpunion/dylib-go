@@ -115,15 +115,21 @@ type section struct {
 	legacyLifecycle       bool // ELF .ctors/.dtors: reverse entries and -1 sentinels.
 }
 
-// section: 0 undefined, -1 absolute, -2 common, -3 ignored/debug, -4 DLL import.
+// section: 0 undefined, -1 absolute, -2 common, -3 ignored/debug, -4 DLL import,
+// -5 forwarding definition.
 type symbol struct {
 	name               string
 	section            int
 	value, size, align uint64
 	global, weak       bool
 	alias              *weakAlias
+	forward            *symbolForward
 	imported           *coffImportSymbol
 }
+
+// A forwarding definition owns its name but takes the address of its target.
+// Unlike a COFF weak fallback, it cannot be overridden by an external address.
+type symbolForward struct{ target int }
 
 // COFF weak externals reference a fallback by original symbol-table index.
 type weakAlias struct {

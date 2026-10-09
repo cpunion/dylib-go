@@ -47,7 +47,7 @@ Known native signatures can use caller-defined cgo or llgo adapters. For dynamic
 - `abi.NewCallback(signature, handler)`: create a native C entry for a Go closure; acquire a lease before publishing its address.
 - `Close()`: free the object image and release system library references; subsequent symbol access and bound calls return `ErrClosed`.
 
-Mach-O and i386 COFF C names omit one leading linker underscore. i386 stdcall/fastcall decorations remain; select the matching convention explicitly when binding. C++ names still require their exact mangled linkage name.
+Mach-O and i386 COFF C names omit one leading linker underscore. Mach-O external `N_INDR` aliases support target chains, archive dependencies, and private-external names; see [Mach-O alias rules](docs/macho.md). i386 stdcall/fastcall decorations remain; select the matching convention explicitly when binding. C++ names still require their exact mangled linkage name.
 
 ## Library usage with typed adapters
 

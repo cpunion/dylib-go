@@ -281,6 +281,15 @@ func definitions(objs []*object) (map[string]definition, error) {
 
 func references(o *object) ([]symbol, error) {
 	var out []symbol
+	for _, v := range o.symbols {
+		if v.forward != nil {
+			index := v.forward.target
+			if index < 0 || index >= len(o.symbols) {
+				return nil, fmt.Errorf("%s: invalid forwarding target %d", o.info.Name, index)
+			}
+			out = append(out, o.symbols[index])
+		}
+	}
 	for _, r := range o.relocs {
 		if !r.local {
 			if r.symbol < 0 || r.symbol >= len(o.symbols) {
@@ -402,6 +411,15 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 			}
 		}
 		if !changed {
+			for _, o := range selected {
+				for i, v := range o.symbols {
+					if v.forward != nil {
+						if _, err := probe.resolveDefinition(o, i); err != nil {
+							return nil, err
+						}
+					}
+				}
+			}
 			return selected, nil
 		}
 	}
@@ -690,11 +708,11 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	if e := im.prepareRuntimeHelpers(); e != nil {
 		return nil, e
 	}
-	// Populate every selected IAT slot before its pages become read-only,
-	// including imports selected by roots with no object relocations.
+	// Populate every selected IAT slot and validate forwarding targets before
+	// publication, including definitions with no object relocations.
 	for _, o := range objs {
 		for i, v := range o.symbols {
-			if v.imported != nil {
+			if v.imported != nil || v.forward != nil {
 				if _, err := im.symbol(o, i, false); err != nil {
 					return nil, err
 				}
