@@ -1,5 +1,32 @@
 # ELF relocations
 
+## amd64 GOT offsets and large code models
+
+`GOT` is the image-owned table base and `slot(S)` is an owned pointer slot containing the resolved address `S`.
+
+| Relocation | Computed value | Field / range |
+| --- | --- | --- |
+| GOT32 (3) | `slot(S)-GOT+A` | Checked signed 32 bits, matching GNU ld |
+| GOTOFF64 (25) | `S+A-GOT` | 64 bits |
+| GOTPC32 (26) | `GOT+A-P` | Checked signed 32 bits |
+| GOT64 (27) | `slot(S)-GOT+A` | 64 bits |
+| GOTPCREL64 (28) | `slot(S)+A-P` | 64 bits |
+| GOTPC64 (29) | `GOT+A-P` | 64 bits |
+| GOTPLT64 (30, deprecated) | `slot(S)-GOT+A` | 64 bits; GNU's compatibility behavior treats it as GOT64 |
+| PLTOFF64 (31) | `S+A-GOT` | 64 bits; the session binds function providers eagerly |
+
+RELA replaces the encoded field and applies its explicit addend. A GOT addend biases the field, never the slot's contents. Eight-byte fields preserve the full modulo-2^64 result. Data fields may be byte-aligned; bounds and checked overflow fail before publication. Existing GOTPCREL/GOTPCRELX/REX_GOTPCRELX still use owned slots without instruction relaxation.
+
+GOTPC32/GOTPC64 have no symbol operand: the null symbol and named undefined symbols do not need resolution or introduce archive dependencies. Parsing still validates the record's symbol index. The same rule applies to i386 GOTPC, retaining its implicit REL or explicit RELA addend and modulo-2^32 arithmetic.
+
+For all implemented ELF targets (amd64, arm64 and 386), a global undefined `_GLOBAL_OFFSET_TABLE_` resolves to the image's table. It cannot be overridden by object definitions, `Define`, or OS libraries. A requested root can resolve the base after objects have been selected, without extracting an archive member that attempts to define it. Local definitions with the same spelling retain object scope. The loader uses a single eager GOT rather than GNU's separate `.got`/`.got.plt` output layout.
+
+PLTOFF64 uses a directly resolved function address because session providers are fixed before publication; there is no dynamic preemption or lazy PLT. Its full-width offset can reach a distant OS function without a 32-bit branch thunk. Missing weak symbols remain zero, including zero-filled owned GOT slots. Direct offsets to a missing function do not make that function callable.
+
+Unit tests cover all eight types, signed bounds, full-width wrapping, unaligned field replacement, slot reuse, field biases, missing weak values, ignored GOTPC symbols, and reserved bases on all CI hosts, including 386. Native Linux amd64 Go and llgo tests execute every family with both object orders, archives/roots, failed-link retry, an OS library and `Define`. Actual GCC and Clang `-mcmodel=large -fPIC` objects are inspected and executed, then compared with OS-linked libraries; GCC's PLTOFF64 and Clang's GOT function call both run. Linux Go 386 also executes PIC C code with an explicitly rooted owned base and an unused archive redefinition.
+
+These contracts follow the [x86-64 psABI relocation tables](https://gitlab.com/x86-psABIs/x86-64-ABI/-/blob/master/x86-64-ABI/object-files.tex), [GNU x86-64 relocation handling](https://sourceware.org/git/?p=binutils-gdb.git;a=blob;f=bfd/elf64-x86-64.c), and [LLVM's linker-owned symbols](https://github.com/llvm/llvm-project/blob/main/lld/ELF/Writer.cpp). TLS, IFUNC, dynamic-loader relocations and APX instruction qualification remain separate extensions.
+
 ## Symbol-size relocations
 
 `R_X86_64_SIZE32`, `R_X86_64_SIZE64`, and `R_386_SIZE32` write the selected symbol's size plus the relocation addend. They do not write a process address or a section size.
@@ -73,7 +100,7 @@ TLS and authenticated relocations are not added by this extension.
 
 GOT instruction/MOVW forms require zero addends. The 15-bit forms check the whole offset, including offsets beyond 4 KiB; they do not truncate to PAGEOFF12. Out-of-range data references still fail. PLT32's addend is retained when a function thunk is needed, rather than moving the thunk's jump target into the function.
 
-An undefined global `_GLOBAL_OFFSET_TABLE_` in an AArch64 ELF object resolves to this image's GOT and introduces no archive dependency. An explicit root can resolve that base once objects are selected. Object and host redefinitions are rejected, and OS providers cannot override it. Existing i386 base handling is unchanged. See [LLVM's linker-owned symbol rule](https://github.com/llvm/llvm-project/blob/main/lld/ELF/Writer.cpp).
+An undefined global `_GLOBAL_OFFSET_TABLE_` resolves to this image's GOT using the [shared ELF base rules](#amd64-got-offsets-and-large-code-models). It introduces no archive dependency and cannot be overridden by object, host or OS providers.
 
 Missing weak GOT targets stay zero inside owned slots. GOTREL data retains `S=0`; its 32-bit form can overflow when zero is far from the table. For unresolved weak PLT32 data, the loader chooses `S=P`, matching LLVM lld; AAELF64 leaves that function-offset case unspecified. A selected absolute-zero definition remains a real definition. No missing weak function is executed by the tests.
 

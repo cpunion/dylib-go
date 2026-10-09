@@ -10,7 +10,7 @@ func (im *image) relocELF386(r relocation, b []byte, s, p uintptr) error {
 	if r.implicit {
 		add += le.Uint32(b)
 	}
-	got := im.base + uintptr(im.gotStart)
+	got := im.gotBase()
 	var value uint32
 	switch r.typ {
 	case 1: // R_386_32

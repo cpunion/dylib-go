@@ -45,7 +45,7 @@ func (im *image) relocate(o *object, r relocation) error {
 			return fmt.Errorf("unsupported Mach-O relocation width %d", w)
 		}
 	case "ELF":
-		if o.info.Arch == "amd64" && (r.typ == 1 || r.typ == 24 || r.typ == elfSize64) || o.info.Arch == "arm64" && (r.typ == 257 || r.typ == 260 || r.typ == 307) {
+		if o.info.Arch == "amd64" && (r.typ == 1 || r.typ == 24 || r.typ == 25 || r.typ >= 27 && r.typ <= 31 || r.typ == elfSize64) || o.info.Arch == "arm64" && (r.typ == 257 || r.typ == 260 || r.typ == 307) {
 			w = 8
 		}
 		if o.info.Arch == "arm64" && (r.typ == 259 || r.typ == 262) {
@@ -69,6 +69,9 @@ func (im *image) relocate(o *object, r relocation) error {
 	p := im.base + uintptr(sec.offset+r.offset)
 	if o.info.Format == "ELF" && elfSizeRelocation(o, r) {
 		return im.relocELFSize(o, r, b)
+	}
+	if elfGOTBaseRelocation(o, r.typ) {
+		return im.relocELF(o, r, b, 0, p)
 	}
 	if o.info.Format == "COFF" {
 		sectionRelocation := r.typ == 10 || r.typ == 11
@@ -205,6 +208,30 @@ func (im *image) relocELF(o *object, r relocation, b []byte, s, p uintptr) error
 	v := int64(s) + r.addend
 	if o.info.Arch == "amd64" {
 		switch r.typ {
+		case 3, 27, 28, 30: // GOT32, GOT64, GOTPCREL64, obsolete GOTPLT64.
+			g, e := im.gotSlot(s)
+			if e != nil {
+				return e
+			}
+			d := int64(g) - int64(im.gotBase()) + r.addend
+			if r.typ == 3 {
+				return signed32(b, d)
+			}
+			if r.typ == 28 {
+				d = int64(g) - int64(p) + r.addend
+			}
+			le.PutUint64(b, uint64(d))
+			return nil
+		case 25, 31: // GOTOFF64 / PLTOFF64; all providers bind eagerly.
+			le.PutUint64(b, uint64(v)-uint64(im.gotBase()))
+			return nil
+		case 26, 29: // GOTPC32 / GOTPC64; the symbol is not an operand.
+			d := int64(im.gotBase()) - int64(p) + r.addend
+			if r.typ == 26 {
+				return signed32(b, d)
+			}
+			le.PutUint64(b, uint64(d))
+			return nil
 		case 1:
 			le.PutUint64(b, uint64(v))
 			return nil
