@@ -398,7 +398,7 @@ separate adapters. See [types, targets and limits](docs/clang.md).
 | Generator | Host compiler | Native calls | libffi required |
 | --- | --- | --- | --- |
 | `Header.GoSource` | Go / llgo | Dynamic `Session.Bind`, including supported records and variadic shapes | Yes |
-| `Header.CgoSource` | Go / llgo | Typed cdecl scalars, native addresses and concrete variadic shapes through static C bridges | No |
+| `Header.CgoSource` | Go / llgo | Typed scalars, native addresses and concrete cdecl variadic shapes; fixed Windows 386 stdcall/fastcall | No |
 | `Header.LLGoSource` | llgo | Typed fixed cdecl scalars, ordinary records and fixed native function pointers | No |
 
 `Header.CgoSource(packageName, bindingType)` generates typed methods usable with
@@ -406,7 +406,8 @@ Go on all eight native targets and llgo on the six 64-bit targets. Expand variad
 declarations with `Declaration.WithTail` before generation; the C compiler applies
 default argument promotions. Native function-pointer parameters/results remain
 caller-owned addresses, with their C prototypes preserved inside the bridge.
-Records and non-cdecl conventions require another adapter. Run the
+Fixed stdcall/fastcall exports and native function-pointer prototypes are also
+supported with Go on Windows 386. Records and other conventions require another adapter. Run the
 [tested variadic example](examples/cgodeclarations/main.go) with
 `examples/run.sh <go|llgo> cgodeclarations <library>`.
 
@@ -509,7 +510,7 @@ Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cde
 | Language / interface | Calling convention / ABI | Current support | Verified coverage / limits |
 | --- | --- | --- | --- |
 | C | Host default C ABI | Supported subset | Eight Go targets; six llgo targets. Fixed-width scalars, pointers, ordinary structs, struct pointers, and concrete variadic shapes |
-| C with x86 conventions | Windows 386 stdcall / fastcall | Supported subset | Explicit `Convention`; fixed calls, exact decorated symbol names; tested with C fixtures |
+| C with x86 conventions | Windows 386 stdcall / fastcall | Supported subset | Explicit `Convention` or generated `CgoSource`; fixed calls and native function pointers, exact decorated symbols; tested with C fixtures |
 | C callbacks into Go / llgo | Fixed host C ABI; Windows 386 stdcall / fastcall | Supported subset | Scalars, pointers, ordinary struct values, captures, explicit leases, and C-created threads; no variadic callbacks |
 | C with other conventions | vectorcall and other non-default ABIs | Not implemented | Use a compiled adapter matching the convention |
 | C++ C exports | `extern "C"`, host C ABI | Verified subset | C exports and global construction/destruction on native targets; raw fixtures disable exceptions and RTTI |

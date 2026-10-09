@@ -9,12 +9,13 @@ import (
 	"github.com/cpunion/dylib-go/abi"
 )
 
-// CgoSource emits typed C cdecl bindings using fixed cgo bridges, without libffi.
+// CgoSource emits typed C bindings using fixed cgo bridges, without libffi.
 // Go and llgo can compile the generated source. Scalars, opaque native pointers
 // and function-pointer addresses are supported. WithTail specifies a concrete
 // variadic call shape; the C compiler performs default argument promotions.
-// Records and non-cdecl conventions require another adapter. The caller owns the
-// Session, native storage and any returned or passed function-pointer lifetimes.
+// Windows 386 also supports fixed stdcall/fastcall prototypes. Records require
+// another adapter. The caller owns the Session, native storage and any returned
+// or passed function-pointer lifetimes.
 func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
 	if err := validateBindingName(h, bindingType); err != nil {
 		return nil, err
@@ -88,9 +89,27 @@ func cgoTransportType(kind abi.Type) string {
 	return name
 }
 
-func cgoPrototype(s abi.Signature) (string, string, error) {
-	if s.Convention != abi.Default && s.Convention != abi.CDecl {
-		return "", "", fmt.Errorf("cgo bridges require cdecl prototypes")
+func (h *Header) cgoAttribute(s abi.Signature) (string, error) {
+	if s.Convention == abi.Default || s.Convention == abi.CDecl {
+		if h.Target.OS == "windows" && h.Target.Arch == "386" {
+			return "__attribute__((cdecl)) ", nil
+		}
+		return "", nil
+	}
+	if h.Target.OS == "windows" && h.Target.Arch == "386" && !s.Variadic {
+		switch s.Convention {
+		case abi.StdCall:
+			return "__attribute__((stdcall)) ", nil
+		case abi.FastCall:
+			return "__attribute__((fastcall)) ", nil
+		}
+	}
+	return "", fmt.Errorf("cgo bridges require cdecl or fixed Windows 386 stdcall/fastcall prototypes")
+}
+
+func (h *Header) cgoPrototype(s abi.Signature) (string, string, error) {
+	if _, err := h.cgoAttribute(s); err != nil {
+		return "", "", err
 	}
 	result, err := cgoScalarType(s.ReturnType())
 	if err != nil {
@@ -118,24 +137,22 @@ func cgoPrototype(s abi.Signature) (string, string, error) {
 
 func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, bindingType, method, helper string, index int) error {
 	s := function.Signature
-	resultC, _, err := cgoPrototype(s)
+	resultC, _, err := h.cgoPrototype(s)
 	if err != nil {
 		return err
 	}
 	resultGo, _ := directGoType(s.ReturnType())
-	// Force cdecl on Windows i386 even if the surrounding C flags change defaults.
-	attribute := ""
-	if h.Target.OS == "windows" && h.Target.Arch == "386" {
-		attribute = "__attribute__((cdecl)) "
-	}
+	// Native entries retain their convention independently of the fixed cgo bridge.
+	attribute, _ := h.cgoAttribute(s)
 	boundaryC := make(map[int]string)
 	for _, pointer := range function.FunctionPointers {
-		result, parameters, err := cgoPrototype(pointer.Signature)
+		result, parameters, err := h.cgoPrototype(pointer.Signature)
 		if err != nil {
 			return fmt.Errorf("function pointer %d: %w", pointer.Position, err)
 		}
 		name := fmt.Sprintf("%s_pointer%d", helper, pointer.Position+1)
-		fmt.Fprintf(c, "typedef %s (%s*%s)(%s);\n", result, attribute, name, parameters)
+		pointerAttribute, _ := h.cgoAttribute(pointer.Signature)
+		fmt.Fprintf(c, "typedef %s (%s*%s)(%s);\n", result, pointerAttribute, name, parameters)
 		boundaryC[pointer.Position] = name
 	}
 	var prototype, bridge, callArgs, goParams, goArgs, conversions []string

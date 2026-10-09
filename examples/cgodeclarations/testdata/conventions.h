@@ -1,0 +1,12 @@
+int __attribute__((stdcall)) std_add(int, int);
+double __attribute__((stdcall)) std_mixed(int, double, float, unsigned long long);
+int __attribute__((fastcall)) fast_add(int, int);
+double __attribute__((fastcall)) fast_mixed(int, int, double, float);
+typedef int (__attribute__((stdcall)) *StdEntry)(int, int);
+typedef int (__attribute__((fastcall)) *FastEntry)(int, int);
+StdEntry std_factory(void);
+FastEntry fast_factory(void);
+int apply_std(StdEntry, int, int);
+int apply_fast(FastEntry, int, int);
+int __attribute__((stdcall)) std_apply_fast(FastEntry, int, int);
+int __attribute__((fastcall)) fast_apply_std(StdEntry, int, int);

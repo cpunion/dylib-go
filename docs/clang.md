@@ -97,7 +97,8 @@ No language runtime, C++ ownership or exception adaptation is inferred.
 `Header.CgoSource(packageName, bindingType)` emits typed methods with static C
 bridges in an `import "C"` preamble. It supports cdecl scalar and opaque native
 pointer arguments/results on all eight native Go targets and six qualified llgo
-targets, without the optional libffi backend. A C toolchain is needed when building
+targets, without the optional libffi backend. Fixed Windows 386 stdcall/fastcall
+exports and function-pointer prototypes are supported with Go. A C toolchain is needed when building
 the generated package; neither Clang nor the original header is required at runtime.
 
 For a variadic export, replace its declaration with the result of
@@ -120,8 +121,12 @@ C bridges inside `Symbol.WithAddress`, retaining the image for the call and
 rejecting closed sessions. Nil/zero bindings return `dylib.ErrClosed`. Bridge
 parameters/results use 32-bit integer transport for smaller integer types and
 Boolean values; C restores declared widths before the native call. This avoids
-depending on narrow-parameter extension across the Go/C boundary. Records, typed
-struct pointees and non-cdecl conventions fail generation. Use dynamic
+depending on narrow-parameter extension across the Go/C boundary. Native pointer
+typedefs carry explicit cdecl/stdcall/fastcall attributes on Windows 386,
+independently for each outer/inner prototype. The static cgo bridge keeps the
+ordinary host C convention. Records, typed struct pointees and other conventions
+fail generation. Non-cdecl variadic calls and stdcall/fastcall on other targets
+are rejected. Use dynamic
 `Session.Bind` or the direct llgo record adapter for those supported interfaces.
 
 The [generation utility](../examples/declgen/main.go) accepts `-cgo -var=Bindings`
@@ -132,7 +137,11 @@ Boolean/native pointers, zero/void calls, fixed/variadic mixed floating-point
 arguments, narrow integer/float/Boolean promotions, wide values and native pointers
 in a variadic tail, fixed/variadic native factories and address forwarding.
 `examples/run.sh <go|llgo> cgodeclarations <library>` builds and runs it without
-`-tags libffi`; the standard example suite checks that it prints 42.
+`-tags libffi`; the standard example suite checks that it prints 42. Native
+Windows 386 CI also executes repeated stdcall/fastcall mixed scalar calls and
+native factory/consumer round trips, including opposite outer/inner conventions.
+It checks fresh decorated symbols against the committed generated bindings and
+runs the convention tests both with and without the libffi build tag.
 
 ## Direct llgo bindings
 

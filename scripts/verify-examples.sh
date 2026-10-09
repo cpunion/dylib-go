@@ -53,6 +53,10 @@ result=$(bash examples/run.sh "$compiler" cgodeclarations "$object")
 test "$result" = 42
 echo "$compiler generated variadic C bridge without libffi: 42"
 
+if [[ "$compiler" == go && "$(go env GOOS)/$(go env GOARCH)" == windows/386 ]]; then
+  go test -count=1 -run '^TestGeneratedWindows386Conventions$' ./examples/cgodeclarations
+fi
+
 if [[ "$compiler" == llgo ]]; then
   object="$example_dir/direct.o"
   "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -c -fno-stack-protector examples/directdeclarations/testdata/exports.c -o "$object"
