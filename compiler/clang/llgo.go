@@ -17,7 +17,8 @@ import (
 // LLGoSource emits typed, fixed C cdecl bindings for qualified 64-bit llgo hosts.
 // Scalar and opaque pointer calls use llgo's public C function-pointer directive
 // without libffi. The caller owns the Session; each method retains its symbol for
-// the native call. Records, callbacks, variadic and other conventions are rejected.
+// the native call. Ordinary records and typed native pointers use compiler-checked
+// layouts. Callbacks, variadic signatures and other conventions are rejected.
 func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 	if h == nil || !validGoName(bindingType) {
 		return nil, fmt.Errorf("clang: expected a header and valid binding type name")
@@ -26,7 +27,7 @@ func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 		return nil, fmt.Errorf("clang: binding type conflicts with a predeclared Go name")
 	}
 	switch bindingType {
-	case "abi", "clang", "dylib", "unsafe":
+	case "abi", "clang", "dylib", "unsafe", "fmt":
 		return nil, fmt.Errorf("clang: binding type conflicts with generated imports")
 	}
 	if h.Target.Arch != "amd64" && h.Target.Arch != "arm64" {
@@ -37,27 +38,26 @@ func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	mapper, err := newDirectTypes(h.Records, bindingType)
+	if err != nil {
+		return nil, err
+	}
 	methodNames := make(map[string]bool)
 	var methods []string
 	for _, function := range h.Functions {
 		s := function.Signature
 		if s.Variadic || (s.Convention != abi.Default && s.Convention != abi.CDecl) || len(function.FunctionPointers) != 0 {
-			return nil, fmt.Errorf("clang: %s requires a fixed scalar/opaque-pointer cdecl adapter", function.Name)
+			return nil, fmt.Errorf("clang: %s requires a fixed cdecl adapter", function.Name)
 		}
-		if _, err := directGoType(s.ReturnType()); err != nil {
+		if _, err := mapper.goType(s.ReturnType()); err != nil {
 			return nil, fmt.Errorf("clang: %s result: %w", function.Name, err)
 		}
 		for i := range s.Args {
-			if _, err := directGoType(s.ArgumentType(i)); err != nil {
+			if _, err := mapper.goType(s.ArgumentType(i)); err != nil {
 				return nil, fmt.Errorf("clang: %s argument %d: %w", function.Name, i, err)
 			}
 		}
-		name := function.Name
-		if name[0] >= 'a' && name[0] <= 'z' {
-			name = strings.ToUpper(name[:1]) + name[1:]
-		} else if name[0] == '_' {
-			name = "X" + name
-		}
+		name := directName(function.Name)
 		if methodNames[name] {
 			return nil, fmt.Errorf("clang: generated method name %s is ambiguous", name)
 		}
@@ -78,26 +78,31 @@ func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 				}
 				imports.Specs = append(imports.Specs, spec)
 			}
+			if len(h.Records) != 0 {
+				imports.Specs = append(imports.Specs, &ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote("fmt")}})
+			}
 		}
 	}
 	var output bytes.Buffer
 	if err := format.Node(&output, set, file); err != nil {
 		return nil, err
 	}
+	mapper.writeRecords(&output)
 	fmt.Fprintf(&output, "\n// %s retains symbol handles; its caller owns the Session.\ntype %s struct {\n", bindingType, bindingType)
 	for i := range h.Functions {
 		fmt.Fprintf(&output, "symbol%d *dylib.Symbol\n", i)
 	}
-	fmt.Fprintf(&output, "}\n\n// New%s validates the host and resolves each requested export.\nfunc New%s(session *dylib.Session) (*%s,error) {\nif session == nil { return nil,dylib.ErrClosed }\nb := &%s{}\n", bindingType, bindingType, bindingType, bindingType)
+	fmt.Fprintf(&output, "}\n\n// New%s validates the host and resolves each requested export.\nfunc New%s(session *dylib.Session) (*%s,error) {\nif session == nil { return nil,dylib.ErrClosed }\nif err := %s.Target.CheckHost(); err != nil { return nil,err }\nb := &%s{}\n", bindingType, bindingType, bindingType, metadata, bindingType)
+	mapper.writeLayoutChecks(&output)
 	for i, function := range h.Functions {
-		fmt.Fprintf(&output, "if _,err := %s.ForHost(%q); err != nil { return nil,err }\nsymbol%d,err := session.Resolve(%q)\nif err != nil { return nil,err }\nb.symbol%d = symbol%d\n", metadata, function.Name, i, function.Symbol, i, i)
+		fmt.Fprintf(&output, "symbol%d,err := session.Resolve(%q)\nif err != nil { return nil,err }\nb.symbol%d = symbol%d\n", i, function.Symbol, i, i)
 	}
 	fmt.Fprint(&output, "return b,nil\n}\n")
 	for i, function := range h.Functions {
-		result, _ := directGoType(function.Signature.ReturnType())
+		result, _ := mapper.goType(function.Signature.ReturnType())
 		var parameters, arguments []string
 		for j := range function.Signature.Args {
-			kind, _ := directGoType(function.Signature.ArgumentType(j))
+			kind, _ := mapper.goType(function.Signature.ArgumentType(j))
 			parameters = append(parameters, fmt.Sprintf("p%d %s", j, kind))
 			arguments = append(arguments, fmt.Sprintf("p%d", j))
 		}

@@ -90,8 +90,12 @@ func TestNativeAndForeignPrimitiveDeclarations(t *testing.T) {
 					t.Fatalf("%s: %+v, want %+v", names[i], header.Functions[i], want[i])
 				}
 			}
+			matching := target.os == runtime.GOOS && target.arch == runtime.GOARCH
+			if err := header.Target.CheckHost(); (err == nil) != matching {
+				t.Fatal("target-only host guard:", err)
+			}
 			_, err = header.ForHost("add")
-			if (err == nil) != (target.os == runtime.GOOS && target.arch == runtime.GOARCH) {
+			if (err == nil) != matching {
 				t.Fatal("foreign target host guard:", err)
 			}
 			function, err := header.Lookup("variable")

@@ -5,6 +5,7 @@
 package main
 
 import (
+	"fmt"
 	dylib "github.com/cpunion/dylib-go"
 	"github.com/cpunion/dylib-go/abi"
 	clang "github.com/cpunion/dylib-go/compiler/clang"
@@ -12,7 +13,7 @@ import (
 )
 
 var _BindingsDeclarations = clang.Header{
-	Target: clang.Target{Triple: "x86_64-apple-macosx11", OS: "darwin", Arch: "amd64", PointerSize: 8},
+	Target: clang.Target{Triple: "x86_64-apple-darwin", OS: "darwin", Arch: "amd64", PointerSize: 8},
 	Functions: []clang.Declaration{
 		{Name: "s8", Symbol: "s8", Signature: abi.Signature{Result: abi.I8, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I8}}},
 		{Name: "u8", Symbol: "u8", Signature: abi.Signature{Result: abi.U8, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.U8}}},
@@ -29,7 +30,61 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "zero", Symbol: "zero", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}},
 		{Name: "empty", Symbol: "empty", Signature: abi.Signature{Result: abi.Void, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}},
 		{Name: "mixed", Symbol: "mixed", Signature: abi.Signature{Result: abi.F64, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.F64, abi.F32, abi.U64}}},
+		{Name: "echo_pair", Symbol: "echo_pair", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}},
+		{Name: "mutate_pair", Symbol: "mutate_pair", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}},
+		{Name: "echo_outer", Symbol: "echo_outer", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 3, Elem: &abi.TypeDesc{Type: abi.I32}}}}, {Name: "next", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 3, Elem: &abi.TypeDesc{Type: abi.I32}}}}, {Name: "next", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
+		{Name: "echo_floats", Symbol: "echo_floats", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 4, Elem: &abi.TypeDesc{Type: abi.F32}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 4, Elem: &abi.TypeDesc{Type: abi.F32}}}}}}},
+		{Name: "echo_small", Symbol: "echo_small", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "a", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "b", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "a", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "b", Type: abi.TypeDesc{Type: abi.I32}}}}}},
+		{Name: "echo_mixed", Symbol: "echo_mixed", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tag", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tag", Type: abi.TypeDesc{Type: abi.I32}}}}}},
 	},
+	Records: []clang.Record{
+		{Name: "Pair", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}, Layout: abi.Layout{Size: 24, Alignment: 8, Offsets: []uint64{0, 8, 16}}},
+		{Name: "Outer", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 3, Elem: &abi.TypeDesc{Type: abi.I32}}}}, {Name: "next", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 80, Alignment: 8, Offsets: []uint64{0, 48, 72}}},
+		{Name: "FloatVector", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 4, Elem: &abi.TypeDesc{Type: abi.F32}}}}}, Layout: abi.Layout{Size: 16, Alignment: 4, Offsets: []uint64{0}}},
+		{Name: "Small", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "a", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "b", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 8, Alignment: 4, Offsets: []uint64{0, 4}}},
+		{Name: "MixedPair", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tag", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 16, Alignment: 8, Offsets: []uint64{0, 8}}},
+	},
+}
+
+// BindingsRecord0 describes Pair; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord0 struct {
+	Tag   int8
+	Value float64
+	Tail  int16
+}
+
+// BindingsRecord1 describes Outer; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord1 struct {
+	Items  [2]BindingsRecord0
+	Values [2][3]int32
+	Next   unsafe.Pointer
+}
+
+// BindingsRecord2 describes FloatVector; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord2 struct {
+	Values [4]float32
+}
+
+// BindingsRecord3 describes Small; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord3 struct {
+	A int32
+	B int32
+}
+
+// BindingsRecord4 describes MixedPair; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord4 struct {
+	Value float64
+	Tag   int32
 }
 
 // Bindings retains symbol handles; its caller owns the Session.
@@ -49,6 +104,12 @@ type Bindings struct {
 	symbol12 *dylib.Symbol
 	symbol13 *dylib.Symbol
 	symbol14 *dylib.Symbol
+	symbol15 *dylib.Symbol
+	symbol16 *dylib.Symbol
+	symbol17 *dylib.Symbol
+	symbol18 *dylib.Symbol
+	symbol19 *dylib.Symbol
+	symbol20 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -56,127 +117,130 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 	if session == nil {
 		return nil, dylib.ErrClosed
 	}
-	b := &Bindings{}
-	if _, err := _BindingsDeclarations.ForHost("s8"); err != nil {
+	if err := _BindingsDeclarations.Target.CheckHost(); err != nil {
 		return nil, err
+	}
+	b := &Bindings{}
+	if uint64(unsafe.Sizeof(BindingsRecord0{})) != 24 || uint64(unsafe.Alignof(BindingsRecord0{})) != 8 || uint64(unsafe.Offsetof(BindingsRecord0{}.Tag)) != 0 || uint64(unsafe.Offsetof(BindingsRecord0{}.Value)) != 8 || uint64(unsafe.Offsetof(BindingsRecord0{}.Tail)) != 16 {
+		return nil, fmt.Errorf("clang: compiler/llgo layout mismatch for Pair")
+	}
+	if uint64(unsafe.Sizeof(BindingsRecord1{})) != 80 || uint64(unsafe.Alignof(BindingsRecord1{})) != 8 || uint64(unsafe.Offsetof(BindingsRecord1{}.Items)) != 0 || uint64(unsafe.Offsetof(BindingsRecord1{}.Values)) != 48 || uint64(unsafe.Offsetof(BindingsRecord1{}.Next)) != 72 {
+		return nil, fmt.Errorf("clang: compiler/llgo layout mismatch for Outer")
+	}
+	if uint64(unsafe.Sizeof(BindingsRecord2{})) != 16 || uint64(unsafe.Alignof(BindingsRecord2{})) != 4 || uint64(unsafe.Offsetof(BindingsRecord2{}.Values)) != 0 {
+		return nil, fmt.Errorf("clang: compiler/llgo layout mismatch for FloatVector")
+	}
+	if uint64(unsafe.Sizeof(BindingsRecord3{})) != 8 || uint64(unsafe.Alignof(BindingsRecord3{})) != 4 || uint64(unsafe.Offsetof(BindingsRecord3{}.A)) != 0 || uint64(unsafe.Offsetof(BindingsRecord3{}.B)) != 4 {
+		return nil, fmt.Errorf("clang: compiler/llgo layout mismatch for Small")
+	}
+	if uint64(unsafe.Sizeof(BindingsRecord4{})) != 16 || uint64(unsafe.Alignof(BindingsRecord4{})) != 8 || uint64(unsafe.Offsetof(BindingsRecord4{}.Value)) != 0 || uint64(unsafe.Offsetof(BindingsRecord4{}.Tag)) != 8 {
+		return nil, fmt.Errorf("clang: compiler/llgo layout mismatch for MixedPair")
 	}
 	symbol0, err := session.Resolve("s8")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol0 = symbol0
-	if _, err := _BindingsDeclarations.ForHost("u8"); err != nil {
-		return nil, err
-	}
 	symbol1, err := session.Resolve("u8")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol1 = symbol1
-	if _, err := _BindingsDeclarations.ForHost("s16"); err != nil {
-		return nil, err
-	}
 	symbol2, err := session.Resolve("s16")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol2 = symbol2
-	if _, err := _BindingsDeclarations.ForHost("u16"); err != nil {
-		return nil, err
-	}
 	symbol3, err := session.Resolve("u16")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol3 = symbol3
-	if _, err := _BindingsDeclarations.ForHost("s32"); err != nil {
-		return nil, err
-	}
 	symbol4, err := session.Resolve("s32")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol4 = symbol4
-	if _, err := _BindingsDeclarations.ForHost("u32"); err != nil {
-		return nil, err
-	}
 	symbol5, err := session.Resolve("u32")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol5 = symbol5
-	if _, err := _BindingsDeclarations.ForHost("s64"); err != nil {
-		return nil, err
-	}
 	symbol6, err := session.Resolve("s64")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol6 = symbol6
-	if _, err := _BindingsDeclarations.ForHost("u64"); err != nil {
-		return nil, err
-	}
 	symbol7, err := session.Resolve("u64")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol7 = symbol7
-	if _, err := _BindingsDeclarations.ForHost("f32"); err != nil {
-		return nil, err
-	}
 	symbol8, err := session.Resolve("f32")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol8 = symbol8
-	if _, err := _BindingsDeclarations.ForHost("f64"); err != nil {
-		return nil, err
-	}
 	symbol9, err := session.Resolve("f64")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol9 = symbol9
-	if _, err := _BindingsDeclarations.ForHost("truth"); err != nil {
-		return nil, err
-	}
 	symbol10, err := session.Resolve("truth")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol10 = symbol10
-	if _, err := _BindingsDeclarations.ForHost("pointer"); err != nil {
-		return nil, err
-	}
 	symbol11, err := session.Resolve("pointer")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol11 = symbol11
-	if _, err := _BindingsDeclarations.ForHost("zero"); err != nil {
-		return nil, err
-	}
 	symbol12, err := session.Resolve("zero")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol12 = symbol12
-	if _, err := _BindingsDeclarations.ForHost("empty"); err != nil {
-		return nil, err
-	}
 	symbol13, err := session.Resolve("empty")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol13 = symbol13
-	if _, err := _BindingsDeclarations.ForHost("mixed"); err != nil {
-		return nil, err
-	}
 	symbol14, err := session.Resolve("mixed")
 	if err != nil {
 		return nil, err
 	}
 	b.symbol14 = symbol14
+	symbol15, err := session.Resolve("echo_pair")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol15 = symbol15
+	symbol16, err := session.Resolve("mutate_pair")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol16 = symbol16
+	symbol17, err := session.Resolve("echo_outer")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol17 = symbol17
+	symbol18, err := session.Resolve("echo_floats")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol18 = symbol18
+	symbol19, err := session.Resolve("echo_small")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol19 = symbol19
+	symbol20, err := session.Resolve("echo_mixed")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol20 = symbol20
 	return b, nil
 }
 
@@ -399,6 +463,96 @@ func (b *Bindings) Mixed(p0 int32, p1 float64, p2 float32, p3 uint64) (result fl
 	err = b.symbol14.WithAddress(func(address uintptr) error {
 		function := *(*_BindingsFunction14)(unsafe.Pointer(&address))
 		result = function(p0, p1, p2, p3)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction15 func(p0 BindingsRecord0) BindingsRecord0
+
+func (b *Bindings) Echo_pair(p0 BindingsRecord0) (result BindingsRecord0, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol15.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction15)(unsafe.Pointer(&address))
+		result = function(p0)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction16 func(p0 *BindingsRecord0) *BindingsRecord0
+
+func (b *Bindings) Mutate_pair(p0 *BindingsRecord0) (result *BindingsRecord0, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol16.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction16)(unsafe.Pointer(&address))
+		result = function(p0)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction17 func(p0 BindingsRecord1) BindingsRecord1
+
+func (b *Bindings) Echo_outer(p0 BindingsRecord1) (result BindingsRecord1, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol17.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction17)(unsafe.Pointer(&address))
+		result = function(p0)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction18 func(p0 BindingsRecord2) BindingsRecord2
+
+func (b *Bindings) Echo_floats(p0 BindingsRecord2) (result BindingsRecord2, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol18.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction18)(unsafe.Pointer(&address))
+		result = function(p0)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction19 func(p0 BindingsRecord3) BindingsRecord3
+
+func (b *Bindings) Echo_small(p0 BindingsRecord3) (result BindingsRecord3, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol19.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction19)(unsafe.Pointer(&address))
+		result = function(p0)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction20 func(p0 BindingsRecord4) BindingsRecord4
+
+func (b *Bindings) Echo_mixed(p0 BindingsRecord4) (result BindingsRecord4, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol20.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction20)(unsafe.Pointer(&address))
+		result = function(p0)
 		return nil
 	})
 	return result, err

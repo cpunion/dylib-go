@@ -44,8 +44,6 @@ func TestDirectLLGoRejectsUnsupportedDeclarations(t *testing.T) {
 	compiler := compilerTool(t)
 	for _, source := range []string{
 		"int f(int,...);",
-		"struct S{int a;}; struct S f(struct S);",
-		"struct S{int a;}; void f(struct S *);",
 		"void f(int (*)(int));",
 	} {
 		h, err := Parse(context.Background(), headerFile(t, source), Options{Compiler: compiler, Functions: []string{"f"}})
@@ -60,7 +58,7 @@ func TestDirectLLGoRejectsUnsupportedDeclarations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"", "_", "type", "abi", "clang", "dylib", "unsafe", "int32", "bool", "error", "nil"} {
+	for _, name := range []string{"", "_", "type", "abi", "clang", "dylib", "unsafe", "fmt", "int32", "bool", "error", "nil"} {
 		if _, err := h.LLGoSource("bindings", name); err == nil {
 			t.Fatal("invalid binding type accepted:", name)
 		}

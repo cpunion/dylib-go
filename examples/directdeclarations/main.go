@@ -6,21 +6,39 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 
 	dylib "github.com/cpunion/dylib-go"
 )
 
 func call(input string) (float64, error) {
-	session := dylib.New(dylib.Options{})
-	defer session.Close()
-	if err := session.Load(input); err != nil {
+	session, err := load(input)
+	if err != nil {
 		return 0, err
 	}
+	defer session.Close()
 	bindings, err := NewBindings(session)
 	if err != nil {
 		return 0, err
 	}
-	return bindings.Mixed(10, 20.5, 1.5, 10)
+	value, err := bindings.Echo_small(BindingsRecord3{A: 20, B: 22})
+	return float64(value.A + value.B), err
+}
+
+func load(input string) (*dylib.Session, error) {
+	session := dylib.New(dylib.Options{ProcessSymbols: runtime.GOOS != "windows"})
+	if runtime.GOOS == "windows" {
+		if err := session.Load(filepath.Join(os.Getenv("SystemRoot"), "System32", "msvcrt.dll")); err != nil {
+			session.Close()
+			return nil, err
+		}
+	}
+	if err := session.Load(input); err != nil {
+		session.Close()
+		return nil, err
+	}
+	return session, nil
 }
 
 func main() {

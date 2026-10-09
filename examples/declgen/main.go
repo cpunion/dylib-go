@@ -15,13 +15,18 @@ func main() {
 	target := flag.String("target", "", "Clang target triple")
 	output := flag.String("out", "", "output Go source path")
 	packageName := flag.String("package", "main", "Go package name")
-	direct := flag.Bool("llgo", false, "emit direct fixed-scalar llgo bindings; -var names the binding type")
+	packing := flag.Bool("pack", false, "generate with Clang -fpack-struct=1")
+	direct := flag.Bool("llgo", false, "emit direct fixed-cdecl llgo bindings; -var names the binding type")
 	variable := flag.String("var", "Declarations", "Go declaration variable")
 	flag.Parse()
 	if flag.NArg() < 2 || *output == "" {
 		panic("usage: declgen -out=<file.go> [-target=<triple>] <header.h> <function>...")
 	}
-	header, err := clang.Parse(context.Background(), flag.Arg(0), clang.Options{Compiler: *compiler, Target: *target, Functions: flag.Args()[1:]})
+	var flags []string
+	if *packing {
+		flags = append(flags, "-fpack-struct=1")
+	}
+	header, err := clang.Parse(context.Background(), flag.Arg(0), clang.Options{Compiler: *compiler, Target: *target, Flags: flags, Functions: flag.Args()[1:]})
 	if err != nil {
 		panic(err)
 	}
