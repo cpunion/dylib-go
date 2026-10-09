@@ -35,6 +35,9 @@ func machoIndirectTarget(f *macho.File, data []byte, s macho.Symbol) (string, er
 }
 
 func bindMachOIndirect(o *object, indirect []machoIndirect) {
+	if len(indirect) == 0 {
+		return
+	}
 	// N_INDR targets use external names. Local symbols with the same spelling
 	// cannot satisfy them. Keep original nlist indices for all relocations;
 	// append a synthetic undefined external only when no record names a target.
