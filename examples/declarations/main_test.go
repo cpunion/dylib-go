@@ -44,8 +44,13 @@ func TestGeneratedDeclarationsAndNativeCalls(t *testing.T) {
 	}
 	fresh = bytes.Replace(fresh, []byte("\npackage main"), []byte("\n//go:build libffi && cgo\n\npackage main"), 1)
 	committed, err := os.ReadFile(fmt.Sprintf("generated_%s_%s.go", runtime.GOOS, runtime.GOARCH))
-	if err != nil || !bytes.Equal(fresh, committed) {
-		t.Fatalf("generated declarations are stale: %v", err)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Windows Git checkouts may use CRLF; compare canonical source bytes.
+	committed = bytes.ReplaceAll(committed, []byte("\r\n"), []byte("\n"))
+	if !bytes.Equal(fresh, committed) {
+		t.Fatalf("generated declarations are stale:\ncommitted:\n%s\nfresh:\n%s", committed, fresh)
 	}
 	object := filepath.Join(t.TempDir(), "exports.o")
 	flags := []string{"--target=" + Declarations.Target.Triple, "-c", "-fno-stack-protector", "testdata/exports.c", "-o", object}
