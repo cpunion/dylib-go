@@ -1,5 +1,22 @@
 # ELF relocations
 
+## i386 GOT instruction forms
+
+`R_386_GOT32` and `R_386_GOT32X` use an owned four-byte slot containing the resolved symbol address. Both relocation codes retain the original instruction; the loader does not perform GOT32X relaxation.
+
+| Instruction / field form | Relocated value |
+| --- | --- |
+| Register-relative load or indirect call/jump | `slot(S)-GOT+A` |
+| Baseless memory load or indirect call/jump | `slot(S)+A` |
+| Baseless `LEA ...@GOT` | `slot(S)-GOT+A`, following GNU ld |
+| GOT offset fields without the baseless instruction pattern | `slot(S)-GOT+A` |
+
+The GNU instruction convention recognizes a baseless displacement when the preceding ModRM byte has `mod=00, r/m=101`. Its LEA exception retains the offset. LLVM lld instead treats that baseless LEA as absolute; this loader follows GNU's behavior. Original input bytes determine the form, so relocation writes cannot change that classification. An addend biases the field without changing the pointer stored in the slot. REL includes its encoded word; RELA replaces the field. Arithmetic remains modulo 2^32, and four-byte writes must remain inside the section.
+
+Unit tests cover both codes, REL/RELA addends, register bits, MOV/CALL/JMP/LEA, incomplete prefixes, and unchanged instructions. Native Go Linux 386 tests execute real Clang GOT32 and GNU assembler GOT32X output with both object orders, archives/roots, failed-link retry, OS-library and `Define` providers, plus guarded zero weak slots. They compare all instruction forms with GNU-linked fixed executables. GNU rejects baseless GOT memory accesses when building a shared library; an OS library can still provide their eagerly bound function/data targets to this raw loader.
+
+The behavior follows [GNU i386 GOT relocation handling](https://sourceware.org/git/?p=binutils-gdb.git;a=blob;f=bfd/elf32-i386.c) and documents the [LLVM i386 instruction distinction](https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/X86.cpp). It does not qualify llgo 386 or introduce 16-bit execution.
+
 ## amd64 GOT offsets and large code models
 
 `GOT` is the image-owned table base and `slot(S)` is an owned pointer slot containing the resolved address `S`.

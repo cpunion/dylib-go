@@ -71,7 +71,7 @@ func TestI386RelocationsAndGOT(t *testing.T) {
 	} {
 		b := make([]byte, 4)
 		le.PutUint32(b, tc.add)
-		err := im.relocELF386(relocation{typ: tc.typ, implicit: tc.implicit, addend: tc.explicit}, b, 0x10000100, 0x10000020)
+		err := im.relocELF386(&object{}, relocation{typ: tc.typ, implicit: tc.implicit, addend: tc.explicit}, b, 0x10000100, 0x10000020)
 		if err != nil || le.Uint32(b) != tc.expected {
 			t.Fatalf("relocation %d: got %#x %v; want %#x", tc.typ, le.Uint32(b), err, tc.expected)
 		}
@@ -84,15 +84,15 @@ func TestI386RelocationsAndGOT(t *testing.T) {
 	}
 	b := make([]byte, 4)
 	// A displacement crossing 0x80000000 is valid modulo 2^32 on i386.
-	if err := im.relocELF386(relocation{typ: 2}, b, 0xf0000000, 0x10000000); err != nil || le.Uint32(b) != 0xe0000000 {
+	if err := im.relocELF386(&object{}, relocation{typ: 2}, b, 0xf0000000, 0x10000000); err != nil || le.Uint32(b) != 0xe0000000 {
 		t.Fatal("PC32 wrap rejected")
 	}
-	if err := im.relocELF386(relocation{typ: 0xffff}, b, 0, 0); err == nil {
+	if err := im.relocELF386(&object{}, relocation{typ: 0xffff}, b, 0, 0); err == nil {
 		t.Fatal("unsupported relocation accepted")
 	}
 	if uint64(^uintptr(0)) > math.MaxUint32 {
 		large := uint64(math.MaxUint32) + 1
-		if err := im.relocELF386(relocation{typ: 1}, b, uintptr(large), 0); err == nil {
+		if err := im.relocELF386(&object{}, relocation{typ: 1}, b, uintptr(large), 0); err == nil {
 			t.Fatal("64-bit address accepted in ELF32")
 		}
 	}

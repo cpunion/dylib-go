@@ -5,7 +5,18 @@ import (
 	"math"
 )
 
-func (im *image) relocELF386(r relocation, b []byte, s, p uintptr) error {
+// GNU uses a baseless memory displacement as an absolute GOT address, but
+// keeps a baseless LEA's displacement relative to the table. Inspect original
+// bytes so earlier relocation writes cannot change this instruction context.
+func elf386AbsoluteGOT(o *object, r relocation) bool {
+	if r.section <= 0 || r.section >= len(o.sections) || o.sections[r.section] == nil {
+		return false
+	}
+	b := o.sections[r.section].data
+	return r.offset > 1 && r.offset <= uint64(len(b)) && b[r.offset-1]&0xc7 == 5 && b[r.offset-2] != 0x8d
+}
+
+func (im *image) relocELF386(o *object, r relocation, b []byte, s, p uintptr) error {
 	add := uint32(r.addend)
 	if r.implicit {
 		add += le.Uint32(b)
@@ -26,6 +37,9 @@ func (im *image) relocELF386(r relocation, b []byte, s, p uintptr) error {
 			return err
 		}
 		value = uint32(slot) + add - uint32(got)
+		if elf386AbsoluteGOT(o, r) {
+			value += uint32(got)
+		}
 	case 9: // R_386_GOTOFF
 		value = uint32(s) + add - uint32(got)
 	case 10: // R_386_GOTPC

@@ -203,7 +203,7 @@ func (im *image) relocCOFFSection(o *object, r relocation, b []byte) error {
 
 func (im *image) relocELF(o *object, r relocation, b []byte, s, p uintptr) error {
 	if o.info.Arch == "386" {
-		return im.relocELF386(r, b, s, p)
+		return im.relocELF386(o, r, b, s, p)
 	}
 	v := int64(s) + r.addend
 	if o.info.Arch == "amd64" {
