@@ -29,7 +29,10 @@ func TestNativeIRAndBitcodeCalls(t *testing.T) {
 				t.Fatal(err)
 			}
 			input := filepath.Join(dir, "module")
-			flags := []string{"-emit-llvm", "-c", "-O0", "-fno-stack-protector", "-fPIC", source, "-o", input}
+			flags := []string{"-emit-llvm", "-c", "-O0", "-fno-stack-protector", source, "-o", input}
+			if runtime.GOOS != "windows" {
+				flags = append(flags, "-fPIC")
+			}
 			if kind == "ir" {
 				flags = append(flags, "-S")
 			}
