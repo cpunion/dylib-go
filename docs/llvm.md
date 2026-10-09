@@ -79,7 +79,7 @@ already lowered ABI between operating systems.
 
 ## Bitcode archive compilation
 
-`CompileArchive(ctx, path, options)` converts ordinary GNU/SysV, COFF and BSD
+`CompileArchive(ctx, path, options)` converts ordinary GNU/SysV, COFF and BSD, and GNU thin/proxy
 archives containing raw/wrapped LLVM bitcode, native objects, or both. Each
 bitcode member goes through `Compile` independently. Native members retain their
 bytes, even when they contain embedded bitcode sections; this is not an LTO
@@ -98,19 +98,36 @@ The input's bitcode index is discarded. The generated BSD-style ar has no ranlib
 index; it targets this loader, and external static linkers may require indexing.
 
 Input and generated archives each have a 256 MiB limit, including headers and
-names; at most 4096 object members are decoded. Context cancellation terminates
-an active compiler and stops further members. Any failure removes owned files.
-Thin/proxy bitcode archives, nested archives and text IR archive members are
-rejected. Thin compilation and LLVM module merging remain future work.
+names. For thin inputs, the container plus unique external reads has the input
+limit; decoded member bytes (including repeated references) have another
+256 MiB limit. A referenced regular archive is charged at its full size.
+At most 4096 object members are decoded per container, including proxy archives.
+Context cancellation stops further external reads/members and terminates an
+active compiler. Any failure removes owned files. Nested/recursive archives and
+text IR archive members are rejected. LLVM module merging remains future work.
 
-Set `dylib.Options.LibraryPaths` for original dependency directories; compiling
-an archive does not copy DLLs or keep the original archive directory as the
-session's search origin. The [tested archive example](../examples/llvmarchive/call.go)
-makes this explicit. Native Go and llgo tests use genuine GNU/BSD archives with
+`Archive.SourceDirectories` contains unique absolute original member directories
+in member order, adding the input container's directory if absent. It remains available after `Close`.
+Set `dylib.Options.LibraryPaths` explicitly with these directories or your own
+search policy. Compilation does not copy DLLs or automatically preserve
+per-member search origins in the output archive. If different source directories
+contain DLLs with the same basename, choose the intended library explicitly.
+The [tested archive example](../examples/llvmarchive/call.go) passes these paths
+to the session. Native Go and llgo tests use genuine GNU/BSD/thin archives with
 mixed native/bitcode members, duplicate names, dependencies in reverse order,
 selected/unused initialization, and source/artifact deletion before linking.
-They run on the same execution targets in the coverage table above. Metadata
-tests also preserve all eight targets and exercise raw/wrapped bitcode.
+They run on the same execution targets in the coverage table above. Tests delete
+external thin members before loading the compiled archive, resolve regular
+archive proxies by validated header offsets, and execute Windows DLL exports
+whose import members live in another directory. Metadata tests preserve all
+eight targets in ordinary/thin/proxy inputs and exercise raw/wrapped bitcode.
+
+Thin containers validate their full headers before external I/O, snapshot each
+path once, retain member order and interpret relative paths from the original
+container. Missing or invalid external members fail even if unused. The source
+files can be removed after successful compilation; required DLLs must remain
+available for the later native load. The core native thin loader continues to
+retain per-object search origins independently of this compilation helper.
 
 References: [LLVM archive containers and bitcode indexes](https://llvm.org/docs/CommandGuide/llvm-ar.html),
 [LLVM bitcode wrappers](https://llvm.org/docs/BitCodeFormat.html#bitcode-wrapper-format).

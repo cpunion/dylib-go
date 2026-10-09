@@ -13,6 +13,7 @@ import (
 
 	dylib "github.com/cpunion/dylib-go"
 	examplecall "github.com/cpunion/dylib-go/examples/call"
+	"github.com/cpunion/dylib-go/internal/ar"
 )
 
 func TestNativeBitcodeArchivesAndLazySelection(t *testing.T) {
@@ -61,11 +62,44 @@ func TestNativeBitcodeArchivesAndLazySelection(t *testing.T) {
 		}
 		return path
 	}
-	bias, provider = duplicate(bias, "native"), duplicate(provider, "bitcode")
-	for _, format := range []string{"gnu", "bsd"} {
+	bias, provider = duplicate(bias, "native objects"), duplicate(provider, "bitcode modules")
+	for _, format := range []string{"gnu", "bsd", "thin", "proxy"} {
 		input := filepath.Join(dir, format+".a")
-		if data, err := exec.Command(archiver, "--format="+format, "qcs", input, unused, bias, provider).CombinedOutput(); err != nil {
-			t.Fatalf("llvm-ar: %v\n%s", err, data)
+		switch format {
+		case "thin":
+			// Use real relative references, including spaces, independently
+			// of the current working directory used for compilation.
+			args := []string{"--thin", "qcs", "thin.a"}
+			for _, source := range []string{unused, bias, provider} {
+				relative, err := filepath.Rel(dir, source)
+				if err != nil {
+					t.Fatal(err)
+				}
+				args = append(args, filepath.ToSlash(relative))
+			}
+			command := exec.Command(archiver, args...)
+			command.Dir = dir
+			if data, err := command.CombinedOutput(); err != nil {
+				t.Fatalf("thin llvm-ar: %v\n%s", err, data)
+			}
+		case "proxy":
+			data, err := os.ReadFile(filepath.Join(dir, "gnu.a"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			entries, err := ar.Decode(data, false, maxInputSize, maxArchiveMembers)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var references []thinReference
+			for _, entry := range entries {
+				references = append(references, thinReference{name: "gnu.a", offset: entry.Offset})
+			}
+			thinArchive(t, input, references...)
+		default:
+			if data, err := exec.Command(archiver, "--format="+format, "qcs", input, unused, bias, provider).CombinedOutput(); err != nil {
+				t.Fatalf("llvm-ar: %v\n%s", err, data)
+			}
 		}
 		inputData, err := os.ReadFile(input)
 		if err != nil {
@@ -78,8 +112,41 @@ func TestNativeBitcodeArchivesAndLazySelection(t *testing.T) {
 			}
 			t.Run(name, func(t *testing.T) {
 				source := filepath.Join(t.TempDir(), "archive.a")
-				if err := os.WriteFile(source, inputData, 0600); err != nil {
-					t.Fatal(err)
+				if format == "thin" || format == "proxy" {
+					// Relocate the thin container while retaining valid relative
+					// origins, rather than silently making references absolute.
+					folder := filepath.Join(dir, name)
+					if err := os.Mkdir(folder, 0700); err != nil {
+						t.Fatal(err)
+					}
+					source = filepath.Join(folder, "archive.a")
+					var references []thinReference
+					if format == "thin" {
+						for _, file := range []string{unused, bias, provider} {
+							relative, err := filepath.Rel(folder, file)
+							if err != nil {
+								t.Fatal(err)
+							}
+							references = append(references, thinReference{name: relative})
+						}
+					} else {
+						data, err := os.ReadFile(filepath.Join(dir, "gnu.a"))
+						if err != nil {
+							t.Fatal(err)
+						}
+						entries, err := ar.Decode(data, false, maxInputSize, maxArchiveMembers)
+						if err != nil {
+							t.Fatal(err)
+						}
+						for _, entry := range entries {
+							references = append(references, thinReference{name: "../gnu.a", offset: entry.Offset})
+						}
+					}
+					thinArchive(t, source, references...)
+				} else {
+					if err := os.WriteFile(source, inputData, 0600); err != nil {
+						t.Fatal(err)
+					}
 				}
 				archive, err := CompileArchive(context.Background(), source, Options{Compiler: llc})
 				if err != nil {
@@ -92,7 +159,9 @@ func TestNativeBitcodeArchivesAndLazySelection(t *testing.T) {
 				if err := os.Remove(source); err != nil {
 					t.Fatal(err)
 				}
-				if data, err := exec.Command(archiver, "t", archive.Path).CombinedOutput(); err != nil || strings.ReplaceAll(string(data), "\r\n", "\n") != "unused.o\nsame.o\nsame.o\n" {
+				data, err := exec.Command(archiver, "t", archive.Path).CombinedOutput()
+				names := strings.Split(strings.TrimSpace(string(data)), "\n")
+				if err != nil || len(names) != 3 || !strings.Contains(names[0], "unused.o") || !strings.Contains(names[1], "same.o") || !strings.Contains(names[2], "same.o") {
 					t.Fatalf("native archive names/order: %q, %v", data, err)
 				}
 				session := dylib.New(dylib.Options{})
@@ -133,5 +202,39 @@ func TestNativeBitcodeArchivesAndLazySelection(t *testing.T) {
 				}
 			})
 		}
+	}
+	archive, err := CompileArchive(context.Background(), filepath.Join(dir, "thin.a"), Options{Compiler: llc})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer archive.Close()
+	for _, path := range []string{unused, bias, provider, filepath.Join(dir, "thin.a")} {
+		if err := os.Remove(path); err != nil {
+			t.Fatal(err)
+		}
+	}
+	session := dylib.New(dylib.Options{})
+	defer session.Close()
+	if err := session.Load(archive.Path); err != nil {
+		t.Fatal(err)
+	}
+	if err := archive.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := session.Link("add"); err != nil {
+		t.Fatal(err)
+	}
+	fn, err := session.Resolve("add")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := fn.WithAddress(func(address uintptr) error {
+		got, err := examplecall.Int32(address, 20, 22)
+		if err != nil || got != 52 {
+			t.Fatalf("deleted thin sources: %d, %v", got, err)
+		}
+		return err
+	}); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -15,6 +15,8 @@ type Entry struct {
 	Name           string
 	Data           []byte
 	Offset, Origin uint64
+	Source         string // Absolute external path, populated by Snapshot.
+	DisplayName    string // Thin reference including selected proxy member name.
 }
 
 // Decode validates GNU/SysV, COFF and BSD headers before external I/O.

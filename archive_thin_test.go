@@ -328,20 +328,4 @@ func TestMalformedThinArchives(t *testing.T) {
 	if _, err := Inspect(self); err == nil || !strings.Contains(err.Error(), "nested archives") {
 		t.Fatalf("self-reference: %v", err)
 	}
-	r := thinReader{remaining: 4, sources: make(map[string]*thinSource)}
-	if _, err := r.read(inner); err == nil || !strings.Contains(err.Error(), "at most 4 bytes") || len(r.sources) != 0 || r.remaining != 4 {
-		t.Fatalf("read budget before allocation: %v", err)
-	}
-	r.remaining = maxFile
-	first, err := r.read(inner)
-	if err != nil {
-		t.Fatal(err)
-	}
-	remaining := r.remaining
-	if err := os.Remove(inner); err != nil {
-		t.Fatal(err)
-	}
-	if again, err := r.read(inner); err != nil || again != first || r.remaining != remaining {
-		t.Fatalf("external snapshot charged/read more than once: %v", err)
-	}
 }

@@ -52,4 +52,11 @@ func TestREADMEBitcodeArchiveExample(t *testing.T) {
 	if got, err := call(archive); err != nil || got != abi.Int32(42) {
 		t.Fatalf("README LLVM archive example: %+v, %v", got, err)
 	}
+	thin := filepath.Join(t.TempDir(), "thin.a")
+	if data, err := exec.Command(filepath.Join(filepath.Dir(compiler), "llvm-ar"), "--thin", "rcs", thin, module).CombinedOutput(); err != nil {
+		t.Fatalf("thin llvm-ar: %v\n%s", err, data)
+	}
+	if got, err := call(thin); err != nil || got != abi.Int32(42) {
+		t.Fatalf("README LLVM thin archive example: %+v, %v", got, err)
+	}
 }

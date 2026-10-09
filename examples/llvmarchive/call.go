@@ -5,7 +5,6 @@ package main
 import (
 	"context"
 	"os"
-	"path/filepath"
 
 	dylib "github.com/cpunion/dylib-go"
 	"github.com/cpunion/dylib-go/abi"
@@ -18,7 +17,7 @@ func call(input string) (abi.Value, error) {
 		return abi.Value{}, err
 	}
 	defer archive.Close()
-	session := dylib.New(dylib.Options{LibraryPaths: []string{filepath.Dir(input)}})
+	session := dylib.New(dylib.Options{LibraryPaths: archive.SourceDirectories})
 	defer session.Close()
 	if err := session.Load(archive.Path); err != nil {
 		return abi.Value{}, err
