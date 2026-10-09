@@ -204,6 +204,10 @@ func parseELF(name string, b []byte) (*file, error) {
 		for len(data) > 0 {
 			if is386 {
 				info := f.ByteOrder.Uint32(data[4:])
+				if elfNoRelocation(o, info&0xff) {
+					data = data[entrySize:]
+					continue
+				}
 				si := uint64(info >> 8)
 				if si >= uint64(len(o.symbols)) {
 					return nil, fmt.Errorf("invalid relocation symbol %d", si)
@@ -217,6 +221,10 @@ func parseELF(name string, b []byte) (*file, error) {
 				continue
 			}
 			info := f.ByteOrder.Uint64(data[8:])
+			if elfNoRelocation(o, uint32(info)) {
+				data = data[entrySize:]
+				continue
+			}
 			si := uint64(info >> 32)
 			if si >= uint64(len(o.symbols)) {
 				return nil, fmt.Errorf("invalid relocation symbol %d", si)

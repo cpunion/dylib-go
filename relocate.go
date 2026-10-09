@@ -24,7 +24,14 @@ func unsigned32(b []byte, v int64) error {
 }
 func signExtend(v uint32, bits uint) int64 { return int64(int32(v<<(32-bits)) >> (32 - bits)) }
 
+func elfNoRelocation(o *object, typ uint32) bool {
+	return o.info.Format == "ELF" && (typ == 0 || o.info.Arch == "arm64" && typ == 256)
+}
+
 func (im *image) relocate(o *object, r relocation) error {
+	if elfNoRelocation(o, r.typ) {
+		return nil
+	}
 	if r.section <= 0 || r.section >= len(o.sections) || o.sections[r.section] == nil {
 		return fmt.Errorf("invalid target section")
 	}
@@ -38,11 +45,11 @@ func (im *image) relocate(o *object, r relocation) error {
 			return fmt.Errorf("unsupported Mach-O relocation width %d", w)
 		}
 	case "ELF":
-		if r.typ == 0 {
-			return nil
-		}
 		if o.info.Arch == "amd64" && (r.typ == 1 || r.typ == 24 || r.typ == elfSize64) || o.info.Arch == "arm64" && (r.typ == 257 || r.typ == 260) {
 			w = 8
+		}
+		if o.info.Arch == "arm64" && (r.typ == 259 || r.typ == 262) {
+			w = 2
 		}
 	case "COFF":
 		if r.typ == 0 {
@@ -225,13 +232,17 @@ func (im *image) relocELF(o *object, r relocation, b []byte, s, p uintptr) error
 		case 257:
 			le.PutUint64(b, uint64(v))
 			return nil
-		case 258:
-			return unsigned32(b, v)
+		case 258, 259:
+			return armDataRelocation(b, v, false)
 		case 260:
 			le.PutUint64(b, uint64(v-int64(p)))
 			return nil
 		case 261:
 			return signed32(b, v-int64(p))
+		case 262:
+			return armDataRelocation(b, v-int64(p), true)
+		case 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 287, 288, 289, 290, 291, 292, 293:
+			return armELFMOVW(b, r.typ, uint64(v), p)
 		case 273: // LD_PREL_LO19
 			return armLiteralLoad(b, uintptr(v), p)
 		case 274: // ADR_PREL_LO21

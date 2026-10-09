@@ -291,6 +291,9 @@ func references(o *object) ([]symbol, error) {
 		}
 	}
 	for _, r := range o.relocs {
+		if elfNoRelocation(o, r.typ) {
+			continue
+		}
 		if !r.local {
 			if r.symbol < 0 || r.symbol >= len(o.symbols) {
 				return nil, fmt.Errorf("%s: invalid relocation symbol %d", o.info.Name, r.symbol)
