@@ -1,0 +1,15 @@
+signed char s8(signed char);
+unsigned char u8(unsigned char);
+short s16(short);
+unsigned short u16(unsigned short);
+int s32(int);
+unsigned int u32(unsigned int);
+long long s64(long long);
+unsigned long long u64(unsigned long long);
+float f32(float);
+double f64(double);
+_Bool truth(_Bool);
+void *pointer(void *);
+int zero(void);
+void empty(void);
+double mixed(int, double, float, unsigned long long);

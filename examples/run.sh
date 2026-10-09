@@ -3,7 +3,7 @@ set -euo pipefail
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
 
 usage() {
-  echo 'usage: examples/run.sh <go|llgo> {call ARGS...|inspect FILE|llvm MODULE|llvmarchive ARCHIVE|llvmmodules MODULE...|declarations LIBRARY|library|quickstart|dynamic|structs}' >&2
+  echo 'usage: examples/run.sh <go|llgo> {call ARGS...|inspect FILE|llvm MODULE|llvmarchive ARCHIVE|llvmmodules MODULE...|declarations LIBRARY|directdeclarations LIBRARY|library|quickstart|dynamic|structs}' >&2
   exit 1
 }
 
@@ -17,7 +17,7 @@ case "$compiler" in
 esac
 
 case "$action" in
-  call|inspect|llvm|llvmarchive|llvmmodules|declarations)
+  call|inspect|llvm|llvmarchive|llvmmodules|declarations|directdeclarations)
     [[ $# -ge 1 ]] || usage
     cli_dir=$(mktemp -d)
     trap 'rm -rf "$cli_dir"' EXIT
@@ -25,16 +25,22 @@ case "$action" in
     case "$(uname -s)" in
       MINGW*|MSYS*) binary="$binary.exe" ;;
     esac
-    build_args=(-o "$binary" ./cmd/ddlgo)
-    if [[ "$action" != inspect ]]; then
+    example=""
+    case "$action" in
+      llvm|llvmarchive|llvmmodules|declarations|directdeclarations) example="./examples/$action" ;;
+    esac
+    if [[ -n "$example" ]]; then
+      [[ "$action" == llvmmodules || $# -eq 1 ]] || usage
+      [[ "$action" != directdeclarations || "$compiler" == llgo ]] || usage
+      build_args=(-o "$binary" "$example")
+    else
+      build_args=(-o "$binary" ./cmd/ddlgo)
+    fi
+    if [[ "$action" != inspect && "$action" != directdeclarations ]]; then
       build_args=(-tags libffi "${build_args[@]}")
     fi
-    if [[ "$action" == llvm || "$action" == llvmarchive || "$action" == llvmmodules || "$action" == declarations ]]; then
-      [[ "$action" == llvmmodules || $# -eq 1 ]] || usage
-      build_args=(-tags libffi -o "$binary" "./examples/$action")
-    fi
     (cd "$repo_root" && "$compiler" build "${build_args[@]}" >&2)
-    if [[ "$action" == llvm || "$action" == llvmarchive || "$action" == llvmmodules || "$action" == declarations ]]; then
+    if [[ -n "$example" ]]; then
       "$binary" "$@"
       exit $?
     fi

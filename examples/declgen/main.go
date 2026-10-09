@@ -15,6 +15,7 @@ func main() {
 	target := flag.String("target", "", "Clang target triple")
 	output := flag.String("out", "", "output Go source path")
 	packageName := flag.String("package", "main", "Go package name")
+	direct := flag.Bool("llgo", false, "emit direct fixed-scalar llgo bindings; -var names the binding type")
 	variable := flag.String("var", "Declarations", "Go declaration variable")
 	flag.Parse()
 	if flag.NArg() < 2 || *output == "" {
@@ -24,7 +25,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	source, err := header.GoSource(*packageName, *variable)
+	var source []byte
+	if *direct {
+		source, err = header.LLGoSource(*packageName, *variable)
+	} else {
+		source, err = header.GoSource(*packageName, *variable)
+	}
 	if err != nil {
 		panic(err)
 	}

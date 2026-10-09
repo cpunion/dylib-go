@@ -93,7 +93,9 @@ An optional [Clang declaration generator](clang.md) now supplies target-qualifie
 scalar/typedef/record/pointer signatures for dynamic binding, including compiler/
 backend layout validation, array members, typed struct pointers and function-pointer
 parameter/result prototypes. Generated struct callbacks and native factories are
-executed with Go/llgo. C++ and direct llgo adapters remain separate work.
+executed with Go/llgo. Fixed scalar/opaque-pointer cdecl methods can also be
+generated for direct llgo calls without libffi. C++ and direct record/callback/
+variadic adapters remain separate work.
 
 The following integrations remain proposals:
 

@@ -46,3 +46,11 @@ echo "$compiler dynamic C callback with Go capture: $result"
 result=$("$binary" "$library")
 test "$result" = 42
 echo "$compiler dynamic C struct with array members: $result"
+
+if [[ "$compiler" == llgo ]]; then
+  object="$example_dir/direct.o"
+  "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -c -fno-stack-protector examples/directdeclarations/testdata/exports.c -o "$object"
+  result=$(bash examples/run.sh llgo directdeclarations "$object")
+  test "$result" = 42
+  echo 'llgo generated direct C adapter without libffi: 42'
+fi
