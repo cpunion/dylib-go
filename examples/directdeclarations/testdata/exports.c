@@ -21,3 +21,15 @@ FloatVector echo_floats(FloatVector value){return value;}
 
 Small echo_small(Small value) { return value; }
 MixedPair echo_mixed(MixedPair value) { return value; }
+
+static int add(int a, int b) { return a + b; }
+Adder adder_factory(void) { return add; }
+int apply_adder(Adder callback, int a, int b) { return callback(a, b); }
+int apply_anonymous(int (*callback)(int, int), int a, int b) { return callback(a, b); }
+int apply_decayed(int callback(int, int), int a, int b) { return callback(a, b); }
+SmallFn small_factory(void) { return echo_small; }
+Small apply_small(SmallFn callback, Small value) { return callback(value); }
+OuterFn outer_factory(void) { return echo_outer; }
+Outer apply_outer(OuterFn callback, Outer value) { return callback(value); }
+Mutator mutator_factory(void) { return mutate_pair; }
+Pair *apply_mutator(Mutator callback, Pair *value) { return callback(value); }

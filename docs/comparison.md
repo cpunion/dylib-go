@@ -95,7 +95,9 @@ backend layout validation, array members, typed struct pointers and function-poi
 parameter/result prototypes. Generated struct callbacks and native factories are
 executed with Go/llgo. Fixed scalar/record/native-pointer cdecl methods can also
 be generated for direct llgo calls without libffi, with Clang/llgo storage checks.
-C++ and direct callback/variadic adapters remain separate work.
+Fixed cdecl function-pointer parameters/results retain typed native prototypes and
+explicit code ownership; managed captures and foreign-thread callback entries
+still use owned adapters. C++ and direct variadic adapters remain separate work.
 
 The following integrations remain proposals:
 

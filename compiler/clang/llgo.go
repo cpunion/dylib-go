@@ -18,7 +18,8 @@ import (
 // Scalar and opaque pointer calls use llgo's public C function-pointer directive
 // without libffi. The caller owns the Session; each method retains its symbol for
 // the native call. Ordinary records and typed native pointers use compiler-checked
-// layouts. Callbacks, variadic signatures and other conventions are rejected.
+// layouts. Fixed native function pointers retain their C prototypes; callers own
+// their code and registration lifetimes. Variadic and other conventions are rejected.
 func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 	if h == nil || !validGoName(bindingType) {
 		return nil, fmt.Errorf("clang: expected a header and valid binding type name")
@@ -42,18 +43,21 @@ func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := mapper.addCallbacks(h.Functions); err != nil {
+		return nil, err
+	}
 	methodNames := make(map[string]bool)
 	var methods []string
 	for _, function := range h.Functions {
 		s := function.Signature
-		if s.Variadic || (s.Convention != abi.Default && s.Convention != abi.CDecl) || len(function.FunctionPointers) != 0 {
+		if s.Variadic || (s.Convention != abi.Default && s.Convention != abi.CDecl) {
 			return nil, fmt.Errorf("clang: %s requires a fixed cdecl adapter", function.Name)
 		}
-		if _, err := mapper.goType(s.ReturnType()); err != nil {
+		if _, err := mapper.boundaryType(function, -1); err != nil {
 			return nil, fmt.Errorf("clang: %s result: %w", function.Name, err)
 		}
 		for i := range s.Args {
-			if _, err := mapper.goType(s.ArgumentType(i)); err != nil {
+			if _, err := mapper.boundaryType(function, i); err != nil {
 				return nil, fmt.Errorf("clang: %s argument %d: %w", function.Name, i, err)
 			}
 		}
@@ -88,6 +92,7 @@ func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 		return nil, err
 	}
 	mapper.writeRecords(&output)
+	mapper.writeCallbacks(&output)
 	fmt.Fprintf(&output, "\n// %s retains symbol handles; its caller owns the Session.\ntype %s struct {\n", bindingType, bindingType)
 	for i := range h.Functions {
 		fmt.Fprintf(&output, "symbol%d *dylib.Symbol\n", i)
@@ -99,10 +104,10 @@ func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 	}
 	fmt.Fprint(&output, "return b,nil\n}\n")
 	for i, function := range h.Functions {
-		result, _ := mapper.goType(function.Signature.ReturnType())
+		result, _ := mapper.boundaryType(function, -1)
 		var parameters, arguments []string
 		for j := range function.Signature.Args {
-			kind, _ := mapper.goType(function.Signature.ArgumentType(j))
+			kind, _ := mapper.boundaryType(function, j)
 			parameters = append(parameters, fmt.Sprintf("p%d %s", j, kind))
 			arguments = append(arguments, fmt.Sprintf("p%d", j))
 		}
