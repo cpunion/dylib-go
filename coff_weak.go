@@ -41,7 +41,7 @@ func (im *image) externalSymbol(o *object, name string) uintptr {
 	return 0
 }
 
-// resolveDefinition is shared by address and section-relative relocations.
+// resolveDefinition is shared by address, section-relative and size relocations.
 // Mach-O forwarding definitions follow their target names. A strong definition
 // or explicitly provided native symbol wins over a COFF weak fallback.
 // Cycles are detected after archive selection has stabilized.

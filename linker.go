@@ -587,7 +587,7 @@ type image struct {
 	defs                                   map[string]definition
 	aliases                                map[string]definition
 	imports                                map[*coffImport]uintptr
-	common                                 map[string]uint64
+	common                                 map[string]commonAllocation
 	external                               func(string) uintptr
 	resolved                               map[string]uintptr
 	got, stubs                             map[uintptr]uintptr
@@ -602,6 +602,8 @@ type image struct {
 	initialized                            bool
 }
 
+type commonAllocation struct{ offset, size uint64 }
+
 func alignUp(n, a uint64) uint64 {
 	if a < 1 {
 		return n
@@ -609,7 +611,7 @@ func alignUp(n, a uint64) uint64 {
 	return (n + a - 1) &^ (a - 1)
 }
 func newImage(objs []*object, defs map[string]definition, external func(string) uintptr, imports map[*coffImport]uintptr) (*image, error) {
-	im := &image{objects: objs, defs: defs, external: external, imports: imports, common: map[string]uint64{}, resolved: map[string]uintptr{}, got: map[uintptr]uintptr{}, stubs: map[uintptr]uintptr{}, page: uint64(os.Getpagesize())}
+	im := &image{objects: objs, defs: defs, external: external, imports: imports, common: map[string]commonAllocation{}, resolved: map[string]uintptr{}, got: map[uintptr]uintptr{}, stubs: map[uintptr]uintptr{}, page: uint64(os.Getpagesize())}
 	var err error
 	im.aliases, err = weakAliases(objs)
 	if err != nil {
@@ -674,7 +676,7 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 			return nil, fmt.Errorf("invalid common symbol %s", n)
 		}
 		size = alignUp(size, v.align)
-		im.common[n] = size
+		im.common[n] = commonAllocation{offset: size, size: v.size}
 		size += v.size
 		if size > maxImage {
 			return nil, fmt.Errorf("common data exceeds image limit")
@@ -874,11 +876,11 @@ func (im *image) symbol(o *object, index int, local bool) (uintptr, error) {
 	case -1:
 		return uintptr(s.value), nil
 	case -2:
-		off, ok := im.common[s.name]
+		allocation, ok := im.common[s.name]
 		if !ok {
 			return 0, fmt.Errorf("unallocated common %s", s.name)
 		}
-		return im.base + uintptr(off), nil
+		return im.base + uintptr(allocation.offset), nil
 	default:
 		if s.section < 0 || s.section >= len(o.sections) || o.sections[s.section] == nil {
 			return 0, fmt.Errorf("symbol %s refers to an unsupported section", s.name)

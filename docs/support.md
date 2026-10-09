@@ -41,11 +41,11 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 
 Implemented relocation families:
 
-- ELF i386: NONE, 32, PC32, PLT32, GOT32/GOT32X, GOTOFF, GOTPC; implicit REL and explicit RELA addends. GOT slots are 4 bytes, and relative arithmetic wraps within the 32-bit address space.
+- ELF i386: NONE, 32, PC32, PLT32, GOT32/GOT32X, GOTOFF, GOTPC, SIZE32; implicit REL and explicit RELA addends. GOT slots are 4 bytes, and relative/size arithmetic wraps within the 32-bit address space.
 - COFF i386: ABSOLUTE, DIR32, DIR32NB, REL32, SECTION, SECREL. Leading C linker underscores are normalized; stdcall/fastcall decorations remain. Dynamic calls support explicit cdecl, stdcall, and fastcall on Windows 386.
 - COFF ARM64: ABSOLUTE, ADDR32/ADDR32NB/ADDR64, BRANCH26, PAGEBASE_REL21, REL21, PAGEOFFSET_12A/12L, BRANCH19/14, REL32, SECTION, SECREL, SECREL_LOW12A/HIGH12A/LOW12L. Conditional branches must fit their architectural displacement.
 
-- ELF x86-64: NONE, 64, PC32, PLT32, GOTPCREL/GOTPCRELX/REX_GOTPCRELX, 32/32S, PC64.
+- ELF x86-64: NONE, 64, PC32, PLT32, GOTPCREL/GOTPCRELX/REX_GOTPCRELX, 32/32S, PC64, SIZE32/SIZE64. See [symbol-size rules](elf.md).
 - ELF AArch64: NONE, ABS64/ABS32, PREL64/PREL32, ADRP page, ADD/LDST8/16/32/64/128 low12, CALL26/JUMP26, GOT page/load64.
 - Mach-O x86-64: UNSIGNED, SIGNED, BRANCH, GOT_LOAD/GOT, external SUBTRACTOR+UNSIGNED, SIGNED_1/2/4.
 - Mach-O arm64: UNSIGNED, external SUBTRACTOR+UNSIGNED, BRANCH26, PAGE21/PAGEOFF12, GOT page/offset, POINTER_TO_GOT, paired ADDEND. Local section-ordinal instruction relocations remain unsupported.

@@ -41,7 +41,7 @@ func (im *image) relocate(o *object, r relocation) error {
 		if r.typ == 0 {
 			return nil
 		}
-		if o.info.Arch == "amd64" && (r.typ == 1 || r.typ == 24) || o.info.Arch == "arm64" && (r.typ == 257 || r.typ == 260) {
+		if o.info.Arch == "amd64" && (r.typ == 1 || r.typ == 24 || r.typ == elfSize64) || o.info.Arch == "arm64" && (r.typ == 257 || r.typ == 260) {
 			w = 8
 		}
 	case "COFF":
@@ -60,6 +60,9 @@ func (im *image) relocate(o *object, r relocation) error {
 	}
 	b := im.mem[sec.offset+r.offset : sec.offset+r.offset+uint64(w)]
 	p := im.base + uintptr(sec.offset+r.offset)
+	if o.info.Format == "ELF" && elfSizeRelocation(o, r) {
+		return im.relocELFSize(o, r, b)
+	}
 	if o.info.Format == "COFF" {
 		sectionRelocation := r.typ == 10 || r.typ == 11
 		if o.info.Arch == "arm64" {
