@@ -49,6 +49,8 @@ Known native signatures can use caller-defined cgo or llgo adapters. For dynamic
 
 Mach-O and i386 COFF C names omit one leading linker underscore. Mach-O supports external `N_INDR` aliases, eager indirect pointer binding, and standard amd64/arm64 symbol stubs; see [Mach-O symbol rules](docs/macho.md). i386 stdcall/fastcall decorations remain; select the matching convention explicitly when binding. C++ names still require their exact mangled linkage name.
 
+ELF amd64/i386 size relocations use the selected object definition's size, including merged common storage. Address-only host symbols cannot supply size metadata; see [ELF size rules](docs/elf.md).
+
 ## Library usage with typed adapters
 
 `Resolve` returns an untyped symbol handle. `WithAddress` keeps the owning session alive while a caller-defined adapter uses its address. This complete [cgo example](examples/cgo/main.go) calls the C signature `double(int32_t,double,float,uint64_t)` and prints 42:

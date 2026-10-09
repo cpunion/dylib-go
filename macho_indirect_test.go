@@ -191,7 +191,7 @@ func TestMachOIndirectArchiveAndLifecycleDependencies(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	im := &image{objects: selected, defs: defs, common: map[string]uint64{"eval": 64}, base: 0x1000}
+	im := &image{objects: selected, defs: defs, common: map[string]commonAllocation{"eval": {offset: 64, size: 4}}, base: 0x1000}
 	if got, err := im.lookup("alias_chain"); err != nil || got != 0x1040 {
 		t.Fatalf("common alias: %#x, %v", got, err)
 	}

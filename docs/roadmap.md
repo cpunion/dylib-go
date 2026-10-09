@@ -49,6 +49,7 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [ ] Mixed/custom COFF import layouts and delay import tables.
 - [x] Mach-O external `N_INDR` forwarding aliases, chains, archive dependencies, and native macOS object/archive calls.
 - [x] Mach-O eager indirect pointer binding, local/absolute markers, and standard amd64/arm64 stubs with native scalar/large-record calls.
+- [x] ELF amd64 SIZE32/SIZE64 and i386 SIZE32, selected weak/strong/common sizes, archive dependencies, and native Linux calls.
 - [ ] Remaining relocations on existing targets; Mach-O custom stubs and general coalescing.
 - [x] Legacy ELF `.ctors/.dtors` pointer tables, priorities, sentinels, and mixed modern-array execution.
 - [x] COFF integer-returning CRT initializers, permanent failure state, and owned exit-registration cleanup.
