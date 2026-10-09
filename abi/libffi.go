@@ -45,21 +45,38 @@ static ffi_type *dylib_ffi_type(uint8_t t) {
     default: return NULL;
     }
 }
-static int dylib_ffi_call(dylib_call_plan *plan, uintptr_t address, uint8_t result, unsigned n,
-    const uint64_t *bits, uint64_t *out) {
-    if (n != plan->cif.nargs) return -1;
-    dylib_scalar small_storage[32]; void *small_args[32];
-    dylib_scalar *storage=small_storage; void **args=small_args;
-    void *allocation=NULL;
-    if (n > 32) {
-        size_t size=dylib_array_size(0,n,sizeof(dylib_scalar)+sizeof(void *));
-        if (!size) return -2;
-        allocation=malloc(size);
-        if (!allocation) return -2;
-        storage=(dylib_scalar *)allocation;
-        args=(void **)(storage+n);
+typedef struct {
+    dylib_scalar ret;
+    unsigned n;
+    int status;
+    dylib_scalar *storage;
+    uint64_t *bits;
+    void **args;
+} dylib_scalar_call;
+static size_t dylib_scalar_size(unsigned n) {
+    return dylib_array_size(sizeof(dylib_scalar_call),n,sizeof(dylib_scalar)+sizeof(uint64_t)+sizeof(void *));
+}
+static dylib_scalar_call *dylib_scalar_new(unsigned n) {
+    size_t size=dylib_scalar_size(n);
+    if (!size) return NULL;
+    dylib_scalar_call *c=(dylib_scalar_call *)calloc(1,size);
+    if (c) {
+        c->n=n;
+        c->storage=(dylib_scalar *)(c+1);
+        c->bits=(uint64_t *)(c->storage+n);
+        // Keep 64-bit values before pointers: pointer alignment can be smaller.
+        c->args=(void **)(c->bits+n);
     }
-    for (unsigned i=0;i<n;i++) {
+    return c;
+}
+static uint64_t dylib_scalar_execute(dylib_call_plan *plan, dylib_scalar_call *c,
+    uintptr_t address, uint8_t result) {
+    c->status=-1;
+    if (c->n != plan->cif.nargs) return 0;
+    dylib_scalar *storage=c->storage; void **args=c->args;
+    const uint64_t *bits=c->bits;
+    for (unsigned i=0;i<c->n;i++) {
+        // Rebuild the mutable libffi vector on every invocation.
         args[i]=&storage[i];
         // Prepared CIF types are immutable and already validated.
         switch(plan->cif.arg_types[i]->type) {
@@ -74,23 +91,25 @@ static int dylib_ffi_call(dylib_call_plan *plan, uintptr_t address, uint8_t resu
         case FFI_TYPE_UINT8: storage[i].u8=(uint8_t)bits[i]; break;
         case FFI_TYPE_SINT16: storage[i].i16=(int16_t)bits[i]; break;
         case FFI_TYPE_UINT16: storage[i].u16=(uint16_t)bits[i]; break;
-        default: free(allocation); return -1;
+        default: return 0;
         }
     }
-    dylib_scalar ret; memset(&ret,0,sizeof(ret));
-    ffi_call(&plan->cif,FFI_FN(address),&ret,args);
+    memset(&c->ret,0,sizeof(c->ret));
+    ffi_call(&plan->cif,FFI_FN(address),&c->ret,args);
+    uint64_t out=0;
     switch(result) {
-    case 0: *out=0; break;
-    case 1: case 2: *out=(uint32_t)ret.word; break;
-    case 3: case 4: *out=ret.u64; break;
-    case 5: { uint32_t b; memcpy(&b,&ret.f32,4); *out=b; break; }
-    case 6: memcpy(out,&ret.f64,8); break;
-    case 7: *out=(uintptr_t)ret.ptr; break;
-    case 8: case 9: case 12: *out=(uint8_t)ret.word; break;
-    case 10: case 11: *out=(uint16_t)ret.word; break;
+    case 0: break;
+    case 1: case 2: out=(uint32_t)c->ret.word; break;
+    case 3: case 4: out=c->ret.u64; break;
+    case 5: { uint32_t b; memcpy(&b,&c->ret.f32,4); out=b; break; }
+    case 6: memcpy(&out,&c->ret.f64,8); break;
+    case 7: out=(uintptr_t)c->ret.ptr; break;
+    case 8: case 9: case 12: out=(uint8_t)c->ret.word; break;
+    case 10: case 11: out=(uint16_t)c->ret.word; break;
+    default: return 0;
     }
-    free(allocation);
-    return 0;
+    c->status=0;
+    return out;
 }
 typedef struct {
     ffi_type type;
@@ -241,12 +260,74 @@ type ffiBackend struct {
 	recordMu    sync.Mutex // Protect idle buffers, never native execution.
 	records     []*recordBuffer
 	recordBytes uint64
+	scalarMu    sync.Mutex // Protect idle buffers, never native execution.
+	scalars     []*scalarBuffer
+	scalarBytes uint64
 }
 
 // Explicit ownership is needed for native allocations: a sync.Pool could drop
 // them during GC without freeing them. Keep a bounded, plan-owned idle cache.
 const maxIdleRecordBuffers = 4
 const maxIdleRecordBytes = 1 << 20
+const maxIdleScalarBuffers = 4
+const maxIdleScalarBytes = 1 << 20
+
+type scalarBuffer struct {
+	call    *C.dylib_scalar_call
+	bits    []C.uint64_t
+	payload []byte // Native storage, value bits and mutable argument addresses.
+	size    uint64
+}
+
+func (b *ffiBackend) acquireScalars() (*scalarBuffer, error) {
+	b.scalarMu.Lock()
+	var work *scalarBuffer
+	if n := len(b.scalars); n != 0 {
+		work = b.scalars[n-1]
+		b.scalars[n-1] = nil
+		b.scalars = b.scalars[:n-1]
+		b.scalarBytes -= work.size
+	}
+	b.scalarMu.Unlock()
+	if work != nil {
+		return work, nil
+	}
+	size := uint64(C.dylib_scalar_size(C.uint(len(b.args))))
+	if size == 0 || size > uint64(^uint(0)>>1) {
+		return nil, fmt.Errorf("native scalar call allocation failed")
+	}
+	call := C.dylib_scalar_new(C.uint(len(b.args)))
+	if call == nil {
+		return nil, fmt.Errorf("native scalar call allocation failed")
+	}
+	return &scalarBuffer{
+		call: call, bits: unsafe.Slice(call.bits, len(b.args)), size: size,
+		payload: unsafe.Slice((*byte)(unsafe.Add(unsafe.Pointer(call), C.sizeof_dylib_scalar_call)), int(size)-C.sizeof_dylib_scalar_call),
+	}, nil
+}
+
+func (b *ffiBackend) releaseScalars(work *scalarBuffer) {
+	// No Go pointers enter these native buffers. Clear foreign values/addresses
+	// before caching, including after errors, without another cgo transition.
+	clear(work.payload)
+	clear(unsafe.Slice((*byte)(unsafe.Pointer(&work.call.ret)), C.sizeof_dylib_scalar))
+	work.call.status = 0
+	b.scalarMu.Lock()
+	keep := len(b.scalars) < maxIdleScalarBuffers && work.size <= maxIdleScalarBytes-b.scalarBytes
+	if keep {
+		b.scalars = append(b.scalars, work)
+		b.scalarBytes += work.size
+	}
+	b.scalarMu.Unlock()
+	if !keep {
+		work.close()
+	}
+}
+
+func (w *scalarBuffer) close() {
+	C.free(unsafe.Pointer(w.call))
+	w.call, w.bits, w.payload = nil, nil, nil
+}
 
 type recordBuffer struct {
 	call  *C.dylib_record_call
@@ -386,6 +467,13 @@ func prepare(s Signature) (callBackend, error) {
 }
 
 func (b *ffiBackend) close() {
+	b.scalarMu.Lock()
+	scalars := b.scalars
+	b.scalars, b.scalarBytes = nil, 0
+	b.scalarMu.Unlock()
+	for _, work := range scalars {
+		work.close()
+	}
 	b.recordMu.Lock()
 	works := b.records
 	b.records, b.recordBytes = nil, 0
@@ -405,17 +493,17 @@ func (b *ffiBackend) invoke(address uintptr, s Signature, args []Value) (Value, 
 	if records {
 		return b.invokeRecords(address, s, args)
 	}
-	bits := make([]C.uint64_t, len(args))
+	work, err := b.acquireScalars()
+	if err != nil {
+		return Value{}, err
+	}
+	defer b.releaseScalars(work)
 	for i, v := range args {
-		bits[i] = C.uint64_t(v.Bits)
+		work.bits[i] = C.uint64_t(v.Bits)
 	}
-	var out C.uint64_t
-	rc := C.dylib_ffi_call(b.plan, C.uintptr_t(address), C.uint8_t(s.Result), C.uint(len(args)), unsafe.SliceData(bits), &out)
-	if rc == -2 {
-		return Value{}, fmt.Errorf("native scalar call allocation failed")
-	}
-	if rc != 0 {
-		return Value{}, fmt.Errorf("ffi scalar invocation failed: %d", rc)
+	out := C.dylib_scalar_execute(b.plan, work.call, C.uintptr_t(address), C.uint8_t(s.Result))
+	if work.call.status != 0 {
+		return Value{}, fmt.Errorf("ffi scalar invocation failed: %d", work.call.status)
 	}
 	return Value{Type: s.Result, Bits: uint64(out)}, nil
 }
