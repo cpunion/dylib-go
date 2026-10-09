@@ -53,6 +53,7 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] ELF AArch64 ADR, literal/GOT loads, conditional/test-bit branches, zero GOT addends and unchecked ADRP semantics, with native Linux calls.
 - [x] ELF AArch64 MOVW_UABS/SABS/PREL, large-code C objects, ABS16/PREL16, signed-or-unsigned ABS32, and both null relocation encodings.
 - [x] ELF AArch64 unresolved weak relative values and call/jump NOPs, preserving selected zero definitions and external providers, with native Linux calls/data.
+- [x] Missing weak references cannot satisfy later strong references through cached zero addresses or COFF import slots; native ELF failure/retry tests cover both object orders and archives.
 - [ ] Remaining relocations on existing targets; Mach-O custom stubs and general coalescing.
 - [x] Legacy ELF `.ctors/.dtors` pointer tables, priorities, sentinels, and mixed modern-array execution.
 - [x] COFF integer-returning CRT initializers, permanent failure state, and owned exit-registration cleanup.
