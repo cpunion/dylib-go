@@ -394,6 +394,12 @@ against the actual backend before calls, including callback records.
 `LookupFunctionPointer` supplies signatures for `abi.NewCallback` or returned native
 addresses. Unions, packed records, enums and higher-order function pointers need
 separate adapters. See [types, targets and limits](docs/clang.md).
+`Header.LLGoSource(packageName, bindingType)` generates typed methods for fixed
+scalar/opaque-pointer C cdecl signatures on the six qualified 64-bit llgo hosts.
+They call through `//llgo:type C` pointers inside `Symbol.WithAddress`, without
+libffi. The caller owns the session. Run the [tested direct example](examples/directdeclarations/main.go)
+with `examples/run.sh llgo directdeclarations <library>`.
+
 This complements [llcppg](https://github.com/goplus/llcppg)'s static bindings.
 
 ## Dynamic C callbacks
@@ -524,7 +530,7 @@ The former experimental `BindInt32`, `CallInt32`, and `Int32Func` APIs have been
 | `comdat.go` | COMDAT selection before dependency discovery |
 | `abi/` | Go signatures, reusable libffi calls, and leased native C callbacks |
 | `abi/signature/` | Pure Go declaration, typed-invocation, and typed literal parsing |
-| `compiler/clang/` | Optional validated C prototypes and target-qualified dynamic declaration generation |
+| `compiler/clang/` | Optional validated C prototypes, dynamic descriptors and direct llgo adapter generation |
 | `internal/native/` | OS memory, instruction cache, and shared-library operations |
 | `examples/call/` | Fixed-signature adapter used only by the CLI and tests |
 | `examples/cgo/`, `examples/llgo/`, `examples/bind/`, `examples/callback/` | Executable README examples |
@@ -549,6 +555,7 @@ See the [design and DDL mapping](docs/design.md), [ABIBridge / llcppg comparison
 | Inspect | `examples/run.sh go inspect <library>` |
 | Scalar declaration | `examples/run.sh go call "func add(int32,int32)int32" 20 22 <library>` |
 | Generated C declarations | `examples/run.sh go declarations <library>` |
+| Generated direct llgo bindings | `examples/run.sh llgo directdeclarations <library>` |
 | Typed invocation | `examples/run.sh go call "add(20:int32 22:int32)int32" <library>` |
 | Struct value | `examples/run.sh go call "func sum_pair(struct{a,b int32})int32" "{a:20,b:22}" <library>` |
 | Struct pointer | `examples/run.sh go call "sum_pair_ptr(&{a:20,b:22}:*struct{a,b int32})int32" <library>` |

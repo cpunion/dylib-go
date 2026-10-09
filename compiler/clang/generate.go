@@ -13,10 +13,7 @@ import (
 // generated source uses ForHost and Session.Bind like declarations parsed at
 // runtime; it adds no linkname directives or implicit library dependencies.
 func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
-	validName := func(name string) bool {
-		return name != "_" && token.IsIdentifier(name) && !token.Lookup(name).IsKeyword()
-	}
-	if h == nil || !validName(packageName) || !validName(variableName) || len(h.Functions) == 0 {
+	if h == nil || !validGoName(packageName) || !validGoName(variableName) || len(h.Functions) == 0 {
 		return nil, fmt.Errorf("clang: expected declarations and valid Go package/variable names")
 	}
 	target, err := parseTarget(h.Target.Triple, h.Target.PointerSize)
@@ -117,4 +114,8 @@ func typeName(id abi.Type) string {
 
 func conventionName(id abi.Convention) string {
 	return map[abi.Convention]string{abi.Default: "Default", abi.CDecl: "CDecl", abi.StdCall: "StdCall", abi.FastCall: "FastCall"}[id]
+}
+
+func validGoName(name string) bool {
+	return name != "_" && token.IsIdentifier(name) && !token.Lookup(name).IsKeyword()
 }
