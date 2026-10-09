@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"strings"
 	"testing"
 	"unsafe"
 
@@ -33,7 +34,7 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 		}
 		t.Skip(err)
 	}
-	names := []string{"s8", "u8", "s16", "u16", "s32", "u32", "s64", "u64", "f32", "f64", "truth", "pointer", "zero", "empty", "mixed"}
+	names := []string{"s8", "u8", "s16", "u16", "s32", "u32", "s64", "u64", "f32", "f64", "truth", "pointer", "zero", "empty", "mixed", "echo_pair", "mutate_pair", "echo_outer", "echo_floats", "echo_small", "echo_mixed"}
 	header, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -50,21 +51,21 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 		t.Fatalf("generated direct declarations are stale:\n%s", fresh)
 	}
 	object := filepath.Join(t.TempDir(), "exports.o")
-	flags := []string{"--target=" + header.Target.Triple, "-O0", "-c", "-fno-stack-protector", "testdata/exports.c", "-o", object}
+	flags := []string{"--target=" + header.Target.Triple, "-O0", "-c", "-fno-stack-protector", "testdata/exports.c"}
 	if runtime.GOOS != "windows" {
 		flags = append(flags, "-fPIC")
 	}
-	if data, err := exec.Command(compiler, flags...).CombinedOutput(); err != nil {
+	if data, err := exec.Command(compiler, append(flags, "-o", object)...).CombinedOutput(); err != nil {
 		t.Fatalf("direct C producer: %v\n%s", err, data)
 	}
 	if got, err := call(object); err != nil || got != 42 {
 		t.Fatal("direct library example:", got, err)
 	}
-	session := dylib.New(dylib.Options{})
-	defer session.Close()
-	if err := session.Load(object); err != nil {
+	session, err := load(object)
+	if err != nil {
 		t.Fatal(err)
 	}
+	defer session.Close()
 	b, err := NewBindings(session)
 	if err != nil {
 		t.Fatal(err)
@@ -119,6 +120,58 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	pair := BindingsRecord0{Tag: 1, Value: 20.5, Tail: 2}
+	echoed, err := b.Echo_pair(pair)
+	check("padded record", echoed, pair, err)
+	mutated, err := b.Mutate_pair(&pair)
+	if err != nil || mutated != &pair || pair != (BindingsRecord0{Tag: 2, Value: 21.5, Tail: 3}) {
+		t.Fatal("typed record pointer:", pair, mutated, err)
+	}
+	outer := BindingsRecord1{Items: [2]BindingsRecord0{pair, pair}, Values: [2][3]int32{{1, 2, 3}, {20, 22, 42}}, Next: unsafe.Pointer(&pair)}
+	echoedOuter, err := b.Echo_outer(outer)
+	check("nested arrays/large return", echoedOuter, outer, err)
+	floats := BindingsRecord2{Values: [4]float32{10.5, 11.5, 12.5, 13.5}}
+	echoedFloats, err := b.Echo_floats(floats)
+	check("floating-point aggregate", echoedFloats, floats, err)
+	small := BindingsRecord3{A: 20, B: 22}
+	echoedSmall, err := b.Echo_small(small)
+	check("integer aggregate", echoedSmall, small, err)
+	mixed := BindingsRecord4{Value: 20.5, Tag: 22}
+	echoedMixed, err := b.Echo_mixed(mixed)
+	check("mixed register aggregate", echoedMixed, mixed, err)
+	// A separately generated packed binding must fail before symbol resolution.
+	packed, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: header.Target.Triple, Flags: []string{"-fpack-struct=1"}, Functions: []string{"echo_pair"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	packedSource, err := packed.LLGoSource("main", "PackedBindings")
+	if err != nil {
+		t.Fatal(err)
+	}
+	packedCommitted, err := os.ReadFile(fmt.Sprintf("packed_%s_%s.go", runtime.GOOS, runtime.GOARCH))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(packedSource, bytes.ReplaceAll(packedCommitted, []byte("\r\n"), []byte("\n"))) {
+		t.Fatal("packed declarations are stale")
+	}
+	packedObject := filepath.Join(t.TempDir(), "packed.o")
+	packedFlags := append(append([]string(nil), flags...), "-fpack-struct=1", "-o", packedObject)
+	if data, err := exec.Command(compiler, packedFlags...).CombinedOutput(); err != nil {
+		t.Fatalf("packed producer: %v\n%s", err, data)
+	}
+	packedSession := dylib.New(dylib.Options{})
+	defer packedSession.Close()
+	if _, err := NewPackedBindings(packedSession); err == nil || !strings.Contains(err.Error(), "layout mismatch") {
+		t.Fatal("layout must be checked before resolving a missing symbol:", err)
+	}
+	if err := packedSession.Load(packedObject); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := NewPackedBindings(packedSession); err == nil || !strings.Contains(err.Error(), "layout mismatch") {
+		t.Fatal("compiler/llgo mismatch:", err)
+	}
+
 	if err := session.Close(); err != nil {
 		t.Fatal(err)
 	}

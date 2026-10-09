@@ -14,3 +14,10 @@ void *pointer(void *x){return x;}
 int zero(void){return 42;}
 void empty(void){}
 double mixed(int a,double b,float c,unsigned long long d){return a+b+c+d;}
+Pair echo_pair(Pair pair){return pair;}
+Pair *mutate_pair(Pair *pair){pair->tag++;pair->value++;pair->tail++;return pair;}
+Outer echo_outer(Outer value){return value;}
+FloatVector echo_floats(FloatVector value){return value;}
+
+Small echo_small(Small value) { return value; }
+MixedPair echo_mixed(MixedPair value) { return value; }

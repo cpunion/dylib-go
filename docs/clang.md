@@ -96,27 +96,40 @@ No language runtime, C++ ownership or exception adaptation is inferred.
 
 `Header.LLGoSource(packageName, bindingType)` emits a binding type, a
 `New<bindingType>(session)` constructor and typed methods. Fixed C cdecl scalars,
-Boolean and opaque native pointers are supported on Linux/macOS/Windows amd64
-and arm64. Records, typed pointees, function-pointer metadata, variadic shapes,
-other conventions and unqualified 386 targets fail generation explicitly.
+Boolean, native pointers, ordinary records and typed struct pointers are supported
+on Linux/macOS/Windows amd64 and arm64. Record fields support nested records and
+fixed arrays. Function-pointer metadata, variadic shapes, other conventions and
+unqualified 386 targets fail generation explicitly.
 
-The constructor checks the target through `ForHost` and resolves every requested
-export into a `Symbol`. Each method casts the address to its generated
+The constructor checks `Target.CheckHost` and compares generated record
+`unsafe.Sizeof`, `unsafe.Alignof` and `unsafe.Offsetof` values with the saved Clang
+layout before resolving any exports. This validates llgo storage without loading
+libffi; dynamic `ForHost` still validates its own libffi layouts. Packed layouts
+that differ from llgo storage fail construction. The constructor then resolves
+every requested export into a `Symbol`. Each method casts the address to its generated
 `//llgo:type C` function type inside `Symbol.WithAddress`. Calls therefore retain
 code/library handles and reject a closed session; nil/zero bindings also return
 `dylib.ErrClosed`. The caller continues to own the session and native pointer
-storage. The adapter adds no library registrations, callback captures or returned
-pointer ownership. Build the generated source with llgo and cgo, without libffi.
+storage. Typed pointers refer to actual native-compatible storage; there are no
+`abi.AddressOf` temporary copies on this path. Native code must not retain borrowed
+Go storage or managed pointers. The adapter adds no library registrations,
+callback captures or returned pointer ownership. Build the generated source with llgo and cgo, without libffi.
 The source includes a `llgo && cgo` build constraint; use target file suffixes for
 several generated variants in one package.
 
-Method names capitalize an initial ASCII lowercase letter, or prefix a leading
-underscore with `X`; ambiguous names fail. Binding type names must not shadow Go
+Methods and record fields capitalize an initial ASCII lowercase letter, or prefix
+a leading underscore with `X`; ambiguous names fail. Record names are generated
+as `<bindingType>Record<index>` in metadata order. Binding type names must not shadow Go
 predeclared names or generated imports. The generator itself remains Go code.
 The [direct example](../examples/directdeclarations/main.go) and its tests execute
 all integer widths, float/double, Boolean, native/null pointers, zero arguments,
-void results and mixed calls. CI compares fresh output with six committed target
-variants and executes the library example without libffi.
+void results and mixed calls, plus padded records, nested arrays, large and
+floating-point aggregate returns, typed pointer mutation/identity and rejection
+of a separately generated packed binding. CI compares fresh output with six
+committed normal and packed target variants and executes the library example
+without libffi. Raw aggregate copies can import C runtime helpers such as `memcpy`;
+the example supplies process symbols on POSIX and explicitly loads the Windows
+CRT. The core loader does not infer these dependencies.
 `examples/run.sh llgo directdeclarations <library>` runs it;
 `examples/declgen -llgo -var=Bindings` selects direct generation in the utility.
 
@@ -154,7 +167,7 @@ explicitly. No temporary compilation files are created by `Parse`.
 This complements [llcppg](https://github.com/goplus/llcppg): its Clang-based static
 bindings can use direct llgo C entries, while these generated descriptors resolve
 symbols dynamically through this loader. Full C++ adapters, additional
-function-pointer forms and direct record/callback/variadic adapters remain separate
+function-pointer forms and direct callback/variadic adapters remain separate
 work. Clang's
 syntax and type information
 come from its [AST interface](https://clang.llvm.org/docs/IntroductionToTheClangAST.html).

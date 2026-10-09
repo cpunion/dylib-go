@@ -13,3 +13,15 @@ void *pointer(void *);
 int zero(void);
 void empty(void);
 double mixed(int, double, float, unsigned long long);
+typedef struct {signed char tag;double value;short tail;} Pair;
+Pair echo_pair(Pair);
+Pair *mutate_pair(Pair *);
+typedef struct {Pair items[2];int values[2][3];void *next;} Outer;
+Outer echo_outer(Outer);
+typedef struct {float values[4];} FloatVector;
+FloatVector echo_floats(FloatVector);
+
+typedef struct { int a, b; } Small;
+Small echo_small(Small);
+typedef struct { double value; int tag; } MixedPair;
+MixedPair echo_mixed(MixedPair);

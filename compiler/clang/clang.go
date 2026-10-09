@@ -30,6 +30,16 @@ type Target struct {
 	PointerSize int
 }
 
+// CheckHost checks the complete target identity and native pointer width. It
+// validates the target only; each call backend must also validate its own types.
+func (t Target) CheckHost() error {
+	target, err := parseTarget(t.Triple, t.PointerSize)
+	if err != nil || target != t || t.OS != runtime.GOOS || t.Arch != runtime.GOARCH || t.PointerSize != strconv.IntSize/8 {
+		return fmt.Errorf("clang: declaration target does not match %s/%s", runtime.GOOS, runtime.GOARCH)
+	}
+	return nil
+}
+
 // Declaration describes a C name, the loader's object symbol spelling and a
 // fixed signature or variadic prefix. It does not establish that an image exports
 // the symbol, or describe native pointer ownership.
@@ -68,9 +78,8 @@ func (h *Header) ForHost(name string) (Declaration, error) {
 	if h == nil {
 		return Declaration{}, fmt.Errorf("clang: nil header")
 	}
-	target, err := parseTarget(h.Target.Triple, h.Target.PointerSize)
-	if err != nil || target != h.Target || target.OS != runtime.GOOS || target.Arch != runtime.GOARCH || target.PointerSize != strconv.IntSize/8 {
-		return Declaration{}, fmt.Errorf("clang: declaration target does not match %s/%s", runtime.GOOS, runtime.GOARCH)
+	if err := h.Target.CheckHost(); err != nil {
+		return Declaration{}, err
 	}
 	declaration, err := h.Lookup(name)
 	if err != nil {

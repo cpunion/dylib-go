@@ -395,9 +395,11 @@ against the actual backend before calls, including callback records.
 addresses. Unions, packed records, enums and higher-order function pointers need
 separate adapters. See [types, targets and limits](docs/clang.md).
 `Header.LLGoSource(packageName, bindingType)` generates typed methods for fixed
-scalar/opaque-pointer C cdecl signatures on the six qualified 64-bit llgo hosts.
-They call through `//llgo:type C` pointers inside `Symbol.WithAddress`, without
-libffi. The caller owns the session. Run the [tested direct example](examples/directdeclarations/main.go)
+C cdecl scalars, ordinary records with fixed array fields, and native struct
+pointers on the six qualified 64-bit llgo hosts. Constructors check Clang layouts
+against generated llgo storage before resolving symbols. Methods call through
+`//llgo:type C` pointers inside `Symbol.WithAddress`, without libffi. The caller
+owns the session and pointer storage. Run the [tested direct example](examples/directdeclarations/main.go)
 with `examples/run.sh llgo directdeclarations <library>`.
 
 This complements [llcppg](https://github.com/goplus/llcppg)'s static bindings.
