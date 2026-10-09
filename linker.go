@@ -867,6 +867,7 @@ func (im *image) symbol(o *object, index int, local bool) (uintptr, error) {
 		if p == 0 && !s.weak {
 			return 0, fmt.Errorf("unresolved symbol %s", s.name)
 		}
+		found := p != 0
 		if indirect {
 			var e error
 			p, e = im.gotSlot(p)
@@ -874,7 +875,11 @@ func (im *image) symbol(o *object, index int, local bool) (uintptr, error) {
 				return 0, e
 			}
 		}
-		im.resolved[s.name] = p
+		// A missing weak target cannot satisfy a later strong reference. In
+		// COFF, even a nonzero import slot can hold that missing target zero.
+		if found {
+			im.resolved[s.name] = p
+		}
 		return p, nil
 	case -1:
 		return uintptr(s.value), nil

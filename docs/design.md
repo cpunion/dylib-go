@@ -34,6 +34,8 @@ This is a functional reimplementation rather than a line-by-line syntax translat
 
 Lookup does not infer types. Raw addresses from `Lookup` are valid only while the session remains open. There is no finalizer that unloads code at an arbitrary GC-selected time.
 
+A missing weak reference is optional only for that reference. It cannot satisfy a strong reference to the same name in another object. Only successful external resolutions enter the address cache; a COFF import slot holding zero is still a missing target. Zero-target GOT slots remain deduplicated. Mixed weak/strong references reject the missing provider in either object order, before initialization or publication, and allow dependency fixes followed by retry.
+
 ## Generic binding and lifetime
 
 `Resolve(name)` returns an untyped `Symbol` associated with its owning session. `Symbol.WithAddress` counts active address users and releases the session mutex before invoking a Go adapter. Concurrent or nested calls retain the same code and library handles. `Close` retires the session first, rejects new uses, and waits for active users before cleanup. Finalizers run without the session mutex and observe `ErrClosed` if they query it. Finish address use before returning and close the owner outside its own calls or finalizers. See [concurrency and retirement](concurrency.md).
