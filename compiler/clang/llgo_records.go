@@ -10,9 +10,11 @@ import (
 )
 
 type directTypes struct {
-	records []Record
-	prefix  string
-	fields  [][]string
+	records         []Record
+	prefix          string
+	fields          [][]string
+	callbacks       []abi.Signature
+	callbackIndexes map[string]int
 }
 
 func directName(name string) string {

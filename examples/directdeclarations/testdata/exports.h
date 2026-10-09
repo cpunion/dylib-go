@@ -25,3 +25,18 @@ typedef struct { int a, b; } Small;
 Small echo_small(Small);
 typedef struct { double value; int tag; } MixedPair;
 MixedPair echo_mixed(MixedPair);
+
+typedef int (*Adder)(int, int);
+Adder adder_factory(void);
+int apply_adder(Adder, int, int);
+int apply_anonymous(int (*)(int, int), int, int);
+int apply_decayed(int callback(int, int), int, int);
+typedef Small (*SmallFn)(Small);
+SmallFn small_factory(void);
+Small apply_small(SmallFn, Small);
+typedef Outer (*OuterFn)(Outer);
+OuterFn outer_factory(void);
+Outer apply_outer(OuterFn, Outer);
+typedef Pair *(*Mutator)(Pair *);
+Mutator mutator_factory(void);
+Pair *apply_mutator(Mutator, Pair *);

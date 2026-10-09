@@ -34,7 +34,7 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 		}
 		t.Skip(err)
 	}
-	names := []string{"s8", "u8", "s16", "u16", "s32", "u32", "s64", "u64", "f32", "f64", "truth", "pointer", "zero", "empty", "mixed", "echo_pair", "mutate_pair", "echo_outer", "echo_floats", "echo_small", "echo_mixed"}
+	names := []string{"s8", "u8", "s16", "u16", "s32", "u32", "s64", "u64", "f32", "f64", "truth", "pointer", "zero", "empty", "mixed", "echo_pair", "mutate_pair", "echo_outer", "echo_floats", "echo_small", "echo_mixed", "adder_factory", "apply_adder", "apply_anonymous", "apply_decayed", "small_factory", "apply_small", "outer_factory", "apply_outer", "mutator_factory", "apply_mutator"}
 	header, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -139,6 +139,60 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 	mixed := BindingsRecord4{Value: 20.5, Tag: 22}
 	echoedMixed, err := b.Echo_mixed(mixed)
 	check("mixed register aggregate", echoedMixed, mixed, err)
+	// Keep the producer image leased while using returned native entries.
+	factory, err := session.Resolve("adder_factory")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = factory.WithAddress(func(_ uintptr) error {
+		adder, err := b.Adder_factory()
+		if err != nil || adder == nil {
+			t.Fatal("native factory:", err)
+		}
+		check("native scalar entry", adder(20, 22), int32(42), nil)
+		for _, apply := range []func(BindingsCallback0, int32, int32) (int32, error){b.Apply_adder, b.Apply_anonymous, b.Apply_decayed} {
+			got, err := apply(adder, 20, 22)
+			check("typed scalar callback", got, int32(42), err)
+		}
+		smallEntry, err := b.Small_factory()
+		if err != nil || smallEntry == nil {
+			t.Fatal("small factory:", err)
+		}
+		check("native record entry", smallEntry(small), small, nil)
+		gotSmall, err := b.Apply_small(smallEntry, small)
+		check("typed record callback", gotSmall, small, err)
+		outerEntry, err := b.Outer_factory()
+		if err != nil || outerEntry == nil {
+			t.Fatal("large factory:", err)
+		}
+		check("native large entry", outerEntry(outer), outer, nil)
+		gotOuter, err := b.Apply_outer(outerEntry, outer)
+		check("typed large callback", gotOuter, outer, err)
+		mutator, err := b.Mutator_factory()
+		if err != nil || mutator == nil {
+			t.Fatal("pointer factory:", err)
+		}
+		gotPointer, err := b.Apply_mutator(mutator, &pair)
+		if err != nil || gotPointer != &pair || pair != (BindingsRecord0{Tag: 3, Value: 22.5, Tail: 4}) {
+			t.Fatal("typed pointer callback:", pair, err)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Noncapturing C literals reenter the already registered Go calling thread.
+	// Foreign-thread entries and captures need separately owned callback adapters.
+	localAdder := BindingsCallback0(func(a, b int32) int32 { return a + b })
+	localSum, err := b.Apply_adder(localAdder, 20, 22)
+	check("Go to C to local Go entry", localSum, int32(42), err)
+	localRecord := BindingsCallback1(func(value BindingsRecord3) BindingsRecord3 {
+		value.A++
+		value.B--
+		return value
+	})
+	localPair, err := b.Apply_small(localRecord, small)
+	check("local Go record entry", localPair, BindingsRecord3{A: 21, B: 21}, err)
 	// A separately generated packed binding must fail before symbol resolution.
 	packed, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: header.Target.Triple, Flags: []string{"-fpack-struct=1"}, Functions: []string{"echo_pair"}})
 	if err != nil {
@@ -177,6 +231,9 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 	}
 	if _, err := b.Zero(); !errors.Is(err, dylib.ErrClosed) {
 		t.Fatal("closed binding:", err)
+	}
+	if entry, err := b.Adder_factory(); entry != nil || !errors.Is(err, dylib.ErrClosed) {
+		t.Fatal("closed native factory:", err)
 	}
 	if err := b.Empty(); !errors.Is(err, dylib.ErrClosed) {
 		t.Fatal("closed void binding:", err)

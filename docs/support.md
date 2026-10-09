@@ -67,7 +67,7 @@ File format support alone does not establish language support. A callable entry 
 
 | Producer | Boundary | Evidence and limits |
 | --- | --- | --- |
-| C (Clang; native GCC output may also work) | Ordinary C ABI; `-fPIC` where appropriate | Clang objects, data, BSS, common, cross-object calls and libraries tested; optional [prototype generation](clang.md) validates scalars, ordinary records/array members, struct/function pointers and supported conventions; fixed scalar/record/native-pointer direct llgo generation with compiler layout checks is optional; compiler-specific GCC extensions not comprehensively verified |
+| C (Clang; native GCC output may also work) | Ordinary C ABI; `-fPIC` where appropriate | Clang objects, data, BSS, common, cross-object calls and libraries tested; optional [prototype generation](clang.md) validates scalars, ordinary records/array members, struct/function pointers and supported conventions; fixed scalar/record/native-pointer/function-pointer direct llgo generation with compiler layout checks is optional; compiler-specific GCC extensions not comprehensively verified |
 | Assembly (llvm-mc/Clang/as) | C ABI entry points | ISA and relocation subset must match; arbitrary assembly packages are not automatically compatible |
 | C++ | `extern "C"` facade; simple C-compatible functions may use exact mangled names | C-export fixtures and global construction/destruction without exceptions/RTTI tested; direct mangled entry calls are unverified. Complete STL, class lifetime, and inheritance need libraries and adapters |
 | Rust | `extern "C"`, stable exported names, `panic=abort` | `no_std` leaf objects on both Linux/macOS architectures; Rust ABI, trait objects, and panic unwinding unsupported |

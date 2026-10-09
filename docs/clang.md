@@ -98,8 +98,9 @@ No language runtime, C++ ownership or exception adaptation is inferred.
 `New<bindingType>(session)` constructor and typed methods. Fixed C cdecl scalars,
 Boolean, native pointers, ordinary records and typed struct pointers are supported
 on Linux/macOS/Windows amd64 and arm64. Record fields support nested records and
-fixed arrays. Function-pointer metadata, variadic shapes, other conventions and
-unqualified 386 targets fail generation explicitly.
+fixed arrays. Fixed cdecl function-pointer parameters/results retain their typed
+prototypes. Variadic outer/inner signatures, other conventions and unqualified
+386 targets fail generation explicitly.
 
 The constructor checks `Target.CheckHost` and compares generated record
 `unsafe.Sizeof`, `unsafe.Alignof` and `unsafe.Offsetof` values with the saved Clang
@@ -113,7 +114,8 @@ code/library handles and reject a closed session; nil/zero bindings also return
 storage. Typed pointers refer to actual native-compatible storage; there are no
 `abi.AddressOf` temporary copies on this path. Native code must not retain borrowed
 Go storage or managed pointers. The adapter adds no library registrations,
-callback captures or returned pointer ownership. Build the generated source with llgo and cgo, without libffi.
+callback captures or returned pointer ownership. Build the generated source with
+llgo and cgo, without libffi.
 The source includes a `llgo && cgo` build constraint; use target file suffixes for
 several generated variants in one package.
 
@@ -121,10 +123,23 @@ Methods and record fields capitalize an initial ASCII lowercase letter, or prefi
 a leading underscore with `X`; ambiguous names fail. Record names are generated
 as `<bindingType>Record<index>` in metadata order. Binding type names must not shadow Go
 predeclared names or generated imports. The generator itself remains Go code.
+
+Function-pointer types are named `<bindingType>Callback<index>`; identical saved
+prototypes reuse a type. These are `//llgo:type C` native callable values. A factory
+method retains its symbol for the factory call only. Keep the producer image leased,
+for example through `Symbol.WithAddress`, during all later invocations or while
+passing the entry back to C. Returned entries and external callback addresses do
+not acquire a new code owner. Noncapturing C literals can reenter the already
+registered Go calling thread; this does not qualify them as foreign-thread entries.
+Use separately owned `abi.NewCallback` registrations and address leases for
+captures or C-created threads, with the optional libffi backend. Higher-order
+function pointers, multiple indirection and function-pointer record fields remain
+unsupported by declaration parsing.
 The [direct example](../examples/directdeclarations/main.go) and its tests execute
 all integer widths, float/double, Boolean, native/null pointers, zero arguments,
 void results and mixed calls, plus padded records, nested arrays, large and
-floating-point aggregate returns, typed pointer mutation/identity and rejection
+floating-point aggregate returns, typed pointer mutation/identity, scalar/record/
+large/pointer native factories, C callback invocation, local Go C entries and rejection
 of a separately generated packed binding. CI compares fresh output with six
 committed normal and packed target variants and executes the library example
 without libffi. Raw aggregate copies can import C runtime helpers such as `memcpy`;
@@ -167,7 +182,7 @@ explicitly. No temporary compilation files are created by `Parse`.
 This complements [llcppg](https://github.com/goplus/llcppg): its Clang-based static
 bindings can use direct llgo C entries, while these generated descriptors resolve
 symbols dynamically through this loader. Full C++ adapters, additional
-function-pointer forms and direct callback/variadic adapters remain separate
+function-pointer forms and direct variadic adapters remain separate
 work. Clang's
 syntax and type information
 come from its [AST interface](https://clang.llvm.org/docs/IntroductionToTheClangAST.html).

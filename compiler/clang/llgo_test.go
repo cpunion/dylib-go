@@ -44,7 +44,7 @@ func TestDirectLLGoRejectsUnsupportedDeclarations(t *testing.T) {
 	compiler := compilerTool(t)
 	for _, source := range []string{
 		"int f(int,...);",
-		"void f(int (*)(int));",
+		"void f(int (*)(int,...));",
 	} {
 		h, err := Parse(context.Background(), headerFile(t, source), Options{Compiler: compiler, Functions: []string{"f"}})
 		if err != nil {
