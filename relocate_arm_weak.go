@@ -6,7 +6,7 @@ import "fmt"
 // S=0 for absolute ones. This session has no dynamically preemptible PLT.
 func (im *image) elfARM64Weak(o *object, r relocation, b []byte, place uintptr) (uintptr, bool, error) {
 	switch r.typ {
-	case 260, 261, 262, 273, 274, 275, 276, 279, 280, 282, 283, 287, 288, 289, 290, 291, 292, 293:
+	case 260, 261, 262, 273, 274, 275, 276, 279, 280, 282, 283, 287, 288, 289, 290, 291, 292, 293, 314:
 	default:
 		return 0, false, nil // GOT slots still hold the absolute target zero.
 	}

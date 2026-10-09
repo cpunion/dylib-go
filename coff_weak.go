@@ -67,7 +67,7 @@ func (im *image) resolveDefinition(o *object, index int) (definition, error) {
 			index = v.forward.target
 			continue
 		}
-		if v.section != 0 || im.externalSymbol(o, v.name) != 0 {
+		if v.section != 0 || v.global && armELFOwnedGOT(o.info, v.name) || im.externalSymbol(o, v.name) != 0 {
 			return d, nil
 		}
 		alias, ok := im.aliases[v.name]
