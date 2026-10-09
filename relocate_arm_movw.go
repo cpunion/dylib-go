@@ -34,6 +34,9 @@ func armELFMOVW(b []byte, typ uint32, value uint64, place uintptr) error {
 		group = uint((typ - 287) / 2)
 		checked = typ&1 != 0
 		value -= uint64(place)
+	case typ >= 300 && typ <= 306: // MOVW_GOTOFF_G0..G3; value is slot-GOT.
+		group = uint((typ - 300) / 2)
+		checked = typ&1 == 0
 	default:
 		return fmt.Errorf("unsupported AArch64 MOVW relocation %d", typ)
 	}

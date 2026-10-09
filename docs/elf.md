@@ -34,7 +34,7 @@ The independently written implementation follows the [GNU x86-64 relocation defi
 
 ELF RELA uses the explicit addend and replaces the encoded immediate. Local symbol scope, selected definitions, archives, GOT ownership, and publication rollback follow the ordinary linker rules. ADR and conditional branch encoders are shared with COFF, which first supplies its implicit instruction addend. These ADR, literal and conditional instructions must be aligned to four bytes and use the expected opcode. Literal and conditional references outside their ranges fail; the loader does not synthesize arbitrary branch islands or rewrite loads into different instruction sequences.
 
-All AArch64 ELF relocations using `GDAT(S)` require zero addends, including the existing GOT page/load pair. The loader rejects nonzero addends before allocating the slot. Checked ADRP relocations retain their signed page range check; `ADR_PREL_PG_HI21_NC` truncates to the encoded field without a range diagnostic, as its non-checking contract requires. Unchecked encoding does not prove that the resulting instruction sequence addresses the caller's intended memory.
+AArch64 ELF GOT instruction relocations require zero addends, including the existing GOT page/load pair. The loader rejects nonzero addends before allocating the slot. `GOTPCREL32` data instead applies its explicit field bias after selecting the slot, as shown below. Checked ADRP relocations retain their signed page range check; `ADR_PREL_PG_HI21_NC` truncates to the encoded field without a range diagnostic, as its non-checking contract requires. Unchecked encoding does not prove that the resulting instruction sequence addresses the caller's intended memory.
 
 `TestARM64ELFInstructions` verifies opcodes, explicit-addend replacement, byte/scaled offsets, signed limits, register/bit-index preservation, bounds, and alignment. `TestARM64ELFGOTAndUncheckedPage` covers pointer slots, zero-addend validation, and checked/non-checking ADRP. `TestNativeARM64ELFInstructions` executes Clang-produced ADR/literal/GOT loads and both sides of B.cond/CBZ/CBNZ/TBZ/TBNZ branches on Linux arm64, including reversed objects, archive extraction/roots, unused members, and dependency retry. Both Go and llgo run these through the existing native CI suite.
 
@@ -56,7 +56,30 @@ Both AArch64 null relocation codes, 0 and the older 256, are accepted. Null refe
 
 `TestARM64ELFMOVWMetadata` checks every implemented MOVW form in real assembler output and a Clang `-mcmodel=large -fno-pic` C object. `TestNativeARM64ELFMOVW` executes all those forms, signed SHN_ABS constants, and narrow data on Linux arm64 with Go and llgo. Object order reversal exercises negative relative values; archive roots, unused dependencies, and failed-link retry exercise ownership and selection. Arithmetic, encoded-field replacement, invalid inputs, byte bounds, and both null encodings are also tested on the other CI hosts, including 386.
 
-TLS, GOT-relative MOVW, and authenticated relocations are not added by this extension.
+TLS and authenticated relocations are not added by this extension.
+
+## AArch64 GOT offsets and function data
+
+`GOT` below is the image's owned table base; `slot(S)` is the address of an owned pointer slot holding `S`.
+
+| Relocation | Computed value | Encoding / range |
+| --- | --- | --- |
+| MOVW_GOTOFF_G0/G1/G2/G3, with G0/G1/G2_NC (300–306) | `slot(S)-GOT` | Signed MOVZ/MOVN groups and MOVK NC groups, using the same signed bounds as MOVW_PREL |
+| GOTREL64 / GOTREL32 (307/308) | `S+A-GOT` | Byte-aligned 64-bit data / checked signed 32-bit data; these reference the symbol rather than its slot |
+| LD64_GOTOFF_LO15 (310) | `slot(S)-GOT` | 64-bit unsigned-offset load/store, aligned to four bytes; offset is a multiple of eight in `[0,32768)` |
+| LD64_GOTPAGE_LO15 (313) | `slot(S)-Page(GOT)` | Same scaled offset contract; `Page` uses the ABI's 4 KiB page |
+| PLT32 (314) | `S+A-P` | Byte-aligned signed 32-bit function offset; distant functions use a nearby tail stub with the original field bias |
+| GOTPCREL32 (315) | `slot(S)-P+A` | Byte-aligned signed 32-bit data; the addend biases the field, never the slot's target |
+
+GOT instruction/MOVW forms require zero addends. The 15-bit forms check the whole offset, including offsets beyond 4 KiB; they do not truncate to PAGEOFF12. Out-of-range data references still fail. PLT32's addend is retained when a function thunk is needed, rather than moving the thunk's jump target into the function.
+
+An undefined global `_GLOBAL_OFFSET_TABLE_` in an AArch64 ELF object resolves to this image's GOT and introduces no archive dependency. An explicit root can resolve that base once objects are selected. Object and host redefinitions are rejected, and OS providers cannot override it. Existing i386 base handling is unchanged. See [LLVM's linker-owned symbol rule](https://github.com/llvm/llvm-project/blob/main/lld/ELF/Writer.cpp).
+
+Missing weak GOT targets stay zero inside owned slots. GOTREL data retains `S=0`; its 32-bit form can overflow when zero is far from the table. For unresolved weak PLT32 data, the loader chooses `S=P`, matching LLVM lld; AAELF64 leaves that function-offset case unspecified. A selected absolute-zero definition remains a real definition. No missing weak function is executed by the tests.
+
+`TestARM64ELFGOTMetadata` checks all added types in real assembler output. Unit tests cover group encodings, replacement, signed boundaries, field biases, 15-bit ranges, distinct GOT/page bases, opcodes/alignment, zero definitions, missing weak slots, reserved bases, and far thunks, including 386 execution of the Go tests. Native Linux arm64 tests execute every added family with both object orders, archives/roots, failed-link retry, an OS library, and `Define` providers. They also load actual GCC `-fpic` output using GOTPAGE_LO15 and compare its result with a GCC system-linked library. Existing Go and llgo CI suites run these tests.
+
+These contracts follow [AAELF64 GOT-relative data](https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst#got-relative-data-relocations), [GOT-relative instructions](https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst#got-relative-instruction-relocations), and [LLVM lld function offsets](https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/AArch64.cpp). TLS, authenticated relocations, and newer specialized instruction/initialization relocations remain separate extensions.
 
 ## AArch64 unresolved weak references
 
@@ -66,6 +89,7 @@ TLS, GOT-relative MOVW, and authenticated relocations are not added by this exte
 | PREL data, ADR/ADRP, literal loads, conditional/test-bit branches, MOVW_PREL | `S=P`, followed by the ordinary addend and encoding |
 | CALL26 / JUMP26 | Validate the aligned BL/B instruction, then replace it with NOP |
 | GOT | Allocate an owned slot holding zero; keep the slot's ordinary relative address |
+| PLT32 data | `S=P`, followed by the field bias; this unspecified ABI case follows LLVM lld |
 
 These rules apply only when a weak reference remains undefined after selecting definitions and checking external providers. A weak or strong SHN_ABS definition at zero is still a definition. A selected object, explicitly rooted archive member, `Define`, or OS library uses its resolved address normally. Weak references alone do not extract archive members.
 

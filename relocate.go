@@ -45,7 +45,7 @@ func (im *image) relocate(o *object, r relocation) error {
 			return fmt.Errorf("unsupported Mach-O relocation width %d", w)
 		}
 	case "ELF":
-		if o.info.Arch == "amd64" && (r.typ == 1 || r.typ == 24 || r.typ == elfSize64) || o.info.Arch == "arm64" && (r.typ == 257 || r.typ == 260) {
+		if o.info.Arch == "amd64" && (r.typ == 1 || r.typ == 24 || r.typ == elfSize64) || o.info.Arch == "arm64" && (r.typ == 257 || r.typ == 260 || r.typ == 307) {
 			w = 8
 		}
 		if o.info.Arch == "arm64" && (r.typ == 259 || r.typ == 262) {
@@ -274,6 +274,17 @@ func (im *image) relocELF(o *object, r relocation, b []byte, s, p uintptr) error
 			return armConditionalBranch(b, uintptr(v), p, 19)
 		case 282, 283:
 			return im.armBranch(b, uintptr(v), p)
+		case 300, 301, 302, 303, 304, 305, 306:
+			g, e := im.elfARM64GOT(r, s)
+			if e != nil {
+				return e
+			}
+			return armELFMOVW(b, r.typ, uint64(g)-uint64(im.gotBase()), p)
+		case 307:
+			le.PutUint64(b, uint64(v)-uint64(im.gotBase()))
+			return nil
+		case 308:
+			return signed32(b, v-int64(im.gotBase()))
 		case 309: // GOT_LD_PREL19 must load a full native pointer.
 			if le.Uint32(b)&0xff000000 != 0x58000000 {
 				return fmt.Errorf("GOT_LD_PREL19 requires a 64-bit LDR literal")
@@ -295,6 +306,32 @@ func (im *image) relocELF(o *object, r relocation, b []byte, s, p uintptr) error
 				return e
 			}
 			return armPageOff(b, g, 3)
+		case 310, 313:
+			g, e := im.elfARM64GOT(r, s)
+			if e != nil {
+				return e
+			}
+			base := im.gotBase()
+			if r.typ == 313 {
+				base &^= 0xfff
+			}
+			return armGOTOffset15(b, g, base, p)
+		case 314: // PLT32 data: the addend is a field bias, not a thunk target.
+			d := v - int64(p)
+			if d < math.MinInt32 || d > math.MaxInt32 {
+				stub, e := im.stub(s, "arm64")
+				if e != nil {
+					return e
+				}
+				d = int64(stub) + r.addend - int64(p)
+			}
+			return signed32(b, d)
+		case 315: // GOTPCREL32: A biases the field, while the slot holds S.
+			g, e := im.gotSlot(s)
+			if e != nil {
+				return e
+			}
+			return signed32(b, int64(g)+r.addend-int64(p))
 		}
 	}
 	return fmt.Errorf("unsupported %s ELF relocation %d", o.info.Arch, r.typ)
