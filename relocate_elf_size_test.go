@@ -117,16 +117,16 @@ func elfSizeFixture(t *testing.T, arch string) string {
 	t.Helper()
 	dir := t.TempDir()
 	out := filepath.Join(dir, "sizes.o")
-	if arch == "386" {
-		if runtime.GOOS != "linux" || runtime.GOARCH != "amd64" && runtime.GOARCH != "386" {
-			t.Skip("i386 SIZE fixture requires GNU x86 as on Linux")
-		}
-		preprocessed := filepath.Join(dir, "sizes.s")
-		command(t, compiler(), "--target=i686-linux-gnu", "-E", "-P", "-x", "assembler-with-cpp", "testdata/elf_sizes.S", "-o", preprocessed)
-		command(t, "as", "--32", preprocessed, "-o", out)
-	} else {
-		command(t, compiler(), "--target=x86_64-linux-gnu", "-c", "testdata/elf_sizes.S", "-o", out)
+	if runtime.GOOS != "linux" || runtime.GOARCH != "amd64" && runtime.GOARCH != "386" {
+		return filepath.Join("testdata", "elfsizes", "linux_"+arch+".o")
 	}
+	triple, mode := "x86_64-linux-gnu", "--64"
+	if arch == "386" {
+		triple, mode = "i686-linux-gnu", "--32"
+	}
+	preprocessed := filepath.Join(dir, "sizes.s")
+	command(t, compiler(), "--target="+triple, "-E", "-P", "-x", "assembler-with-cpp", "testdata/elf_sizes.S", "-o", preprocessed)
+	command(t, "as", mode, preprocessed, "-o", out)
 	return out
 }
 
