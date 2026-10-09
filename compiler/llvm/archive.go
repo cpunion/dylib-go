@@ -72,24 +72,18 @@ func CompileArchive(ctx context.Context, path string, opts Options) (_ *Archive,
 	if err != nil {
 		return nil, fmt.Errorf("llvm: archive: %w", err)
 	}
-	dir, err := os.MkdirTemp(opts.TempDir, "dylib-go-llvm-ar-")
+	dir, err := makeTempDir(opts.TempDir, "dylib-go-llvm-ar-")
 	if err != nil {
 		return nil, err
 	}
 	archive := &Archive{Path: filepath.Join(dir, "output.a"), storage: &artifactStorage{dir: dir}}
-	seen := make(map[string]bool)
-	addDirectory := func(directory string) {
-		if !seen[directory] {
-			seen[directory] = true
-			archive.SourceDirectories = append(archive.SourceDirectories, directory)
-		}
-	}
+	var sources []string
 	for _, entry := range entries {
 		if entry.Source != "" {
-			addDirectory(filepath.Dir(entry.Source))
+			sources = append(sources, entry.Source)
 		}
 	}
-	addDirectory(filepath.Dir(path))
+	archive.SourceDirectories = sourceDirectories(append(sources, path))
 	defer func() {
 		if err != nil {
 			if cleanup := archive.Close(); cleanup != nil {

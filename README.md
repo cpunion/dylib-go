@@ -275,7 +275,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	dylib "github.com/cpunion/dylib-go"
 	"github.com/cpunion/dylib-go/abi"
@@ -288,7 +287,7 @@ func call(input string) (abi.Value, error) {
 		return abi.Value{}, err
 	}
 	defer object.Close()
-	session := dylib.New(dylib.Options{LibraryPaths: []string{filepath.Dir(input)}})
+	session := dylib.New(dylib.Options{LibraryPaths: object.SourceDirectories})
 	defer session.Close()
 	if err := session.Load(object.Path); err != nil {
 		return abi.Value{}, err
@@ -370,7 +369,11 @@ func call(input string) (abi.Value, error) {
 
 External thin members are snapshotted. `Archive.SourceDirectories` exposes their
 original dependency directories for explicit `dylib.Options.LibraryPaths`.
-LLVM module merging remains pending; see [container and ownership limits](docs/llvm.md).
+`compiler/llvm.CompileModules` explicitly merges IR/bitcode modules into one native
+object after validating their target triples and data layouts. The
+[CI-tested library example](examples/llvmmodules/main.go) calls a function whose
+implementation spans two modules. Run `examples/run.sh <go|llgo> llvmmodules <module>...`.
+See [container and ownership limits](docs/llvm.md).
 
 ## Dynamic C callbacks
 

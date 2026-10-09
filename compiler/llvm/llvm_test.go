@@ -18,6 +18,11 @@ import (
 func init() {
 	switch os.Getenv("DYLIB_LLVM_COMPILER_HELPER") {
 	case "wait":
+		if marker := os.Getenv("DYLIB_LLVM_WAIT_MARKER"); marker != "" {
+			if err := os.WriteFile(marker, []byte("started"), 0600); err != nil {
+				os.Exit(1)
+			}
+		}
 		time.Sleep(time.Minute)
 		os.Exit(0)
 	case "archive":

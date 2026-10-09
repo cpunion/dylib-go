@@ -57,7 +57,8 @@ interprets file names or compiler paths. Successful object output is inspected
 under the existing parser limits. Unsupported features can still be reported
 in `Info.Unsupported` or rejected when linking.
 
-Use `dylib.Options.LibraryPaths` for dependencies located beside the original module;
+`Object.SourceDirectories` retains unique absolute input directories in input order,
+including after `Close`. Use them explicitly with `dylib.Options.LibraryPaths` for original dependencies;
 the compiler's temporary directory is the staged object's default search origin.
 The [tested library example](../examples/llvm/main.go) makes that path explicit.
 It runs through `examples/run.sh <go|llgo> llvm <module.ll|module.bc>` and uses a
@@ -73,8 +74,9 @@ adaptation. Existing object initialization, imports, unwind and relocation
 restrictions still apply. Keep exports at a supported C boundary.
 
 Compile modules or archives explicitly. `Session.Load` still does not directly
-load IR, bitcode or archives containing bitcode members. These helpers do not
-merge modules, infer signatures, generate language facades or translate an
+load IR, bitcode or archives containing bitcode members. Only `CompileModules`
+merges modules explicitly; the other helpers retain separate object members.
+They do not infer signatures, generate language facades or translate an
 already lowered ABI between operating systems.
 
 ## Bitcode archive compilation
@@ -104,7 +106,7 @@ limit; decoded member bytes (including repeated references) have another
 At most 4096 object members are decoded per container, including proxy archives.
 Context cancellation stops further external reads/members and terminates an
 active compiler. Any failure removes owned files. Nested/recursive archives and
-text IR archive members are rejected. LLVM module merging remains future work.
+text IR archive members are rejected. Use `CompileModules` for explicitly selected modules.
 
 `Archive.SourceDirectories` contains unique absolute original member directories
 in member order, adding the input container's directory if absent. It remains available after `Close`.
@@ -131,3 +133,46 @@ retain per-object search origins independently of this compilation helper.
 
 References: [LLVM archive containers and bitcode indexes](https://llvm.org/docs/CommandGuide/llvm-ar.html),
 [LLVM bitcode wrappers](https://llvm.org/docs/BitCodeFormat.html#bitcode-wrapper-format).
+
+## Explicit module merging
+
+`CompileModules(ctx, inputs, MergeOptions{Options: options, Linker: linker})`
+snapshots an explicit list of text IR or raw/wrapped bitcode modules, invokes
+`llvm-link`, then emits one PIC native `Object` through `Compile`. The linker
+defaults to `llvm-link`; select a version compatible with the producers and
+`Options.Compiler`. It uses the same optional external-tool model as `llc`.
+
+Each module is validated independently by LLVM before any cross-module link.
+Every module must declare a nonempty target triple and data layout. The helper
+compares their exact canonical header strings, rejects mismatches, and checks
+the merged headers again. It does not silently choose the first module's target
+or override another module's ABI. Equivalent-looking triples or layouts with
+different strings are conservatively rejected. LLVM can upgrade legacy bitcode
+layouts during reading; use compatible producers and explicit current layouts.
+
+Merging is eager: all listed modules contribute their definitions and initializers
+to one object. LLVM handles internal symbol renaming and reports duplicate strong
+definitions. This differs from `CompileArchive`, whose separate members retain
+lazy extraction. Archives and native objects are not module inputs. Callers must
+select modules explicitly; there is no automatic LTO archive selection, runtime
+linking, signature inference or translation between language calling conventions.
+
+The limits are 1–256 modules, 256 MiB of combined input snapshots, 256 MiB of
+combined normalized IR, and 256 MiB of merged IR. Diagnostics stay bounded to
+32 KiB per process. All paths become owned indexed snapshots before any LLVM
+process starts; relative indexed arguments keep command lines bounded on Windows.
+Cancellation terminates active linker/compiler processes. Failures remove the
+whole owned tree; `Object.Close` removes successful snapshots, merged IR and object
+storage together. Caller inputs and dependency libraries are never removed.
+
+The [tested library example](../examples/llvmmodules/main.go) uses the original
+`Object.SourceDirectories` explicitly for dependency search and closes compilation
+storage before execution. Run `examples/run.sh <go|llgo> llvmmodules <module>...`.
+Native tests on all execution targets above merge Clang-produced text/bitcode,
+execute cross-module calls and initialization, preserve distinct internal
+functions with the same name, and delete source/artifact files before linking.
+Metadata tests preserve all eight targets; failure tests cover missing/conflicting
+headers, duplicate definitions, invalid inputs, budgets, and active linker/compiler
+cancellation.
+
+Reference: [LLVM bitcode linker and linkage options](https://llvm.org/docs/CommandGuide/llvm-link.html).
