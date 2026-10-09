@@ -21,3 +21,7 @@ Pair *swap_pair(Pair *pair) {
     pair->b = old;
     return pair;
 }
+int callback_pair(PairFn callback, Pair pair) {
+    Pair result = callback(pair);
+    return result.a + result.b;
+}

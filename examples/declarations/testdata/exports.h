@@ -7,3 +7,5 @@ typedef struct { int a, b; } Pair;
 int sum_pair(Pair);
 Pair echo_pair(Pair);
 Pair *swap_pair(Pair *);
+typedef Pair (*PairFn)(Pair);
+int callback_pair(PairFn, Pair);

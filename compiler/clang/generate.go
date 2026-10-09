@@ -35,25 +35,18 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 			return nil, fmt.Errorf("clang: invalid or duplicate declaration %q", function.Name)
 		}
 		seen[function.Name] = true
-		signature := function.Signature
-		fmt.Fprintf(&output, "{Name:%q, Symbol:%q, Signature:abi.Signature{Result:abi.%s, Convention:abi.%s, Variadic:%t, FixedArgs:%d, Args:[]abi.Type{", function.Name, function.Symbol, typeName(signature.Result), conventionName(signature.Convention), signature.Variadic, signature.FixedArgs)
-		for _, parameter := range signature.Args {
-			fmt.Fprintf(&output, "abi.%s,", typeName(parameter))
-		}
-		fmt.Fprint(&output, "}")
-		if len(signature.ArgTypes) != 0 {
-			fmt.Fprint(&output, ",ArgTypes:[]abi.TypeDesc{")
-			for _, description := range signature.ArgTypes {
-				writeDescription(&output, description)
-				fmt.Fprint(&output, ",")
+		fmt.Fprintf(&output, "{Name:%q,Symbol:%q,Signature:", function.Name, function.Symbol)
+		writeSignature(&output, function.Signature)
+		if len(function.FunctionPointers) != 0 {
+			fmt.Fprint(&output, ",FunctionPointers:[]clang.FunctionPointer{")
+			for _, pointer := range function.FunctionPointers {
+				fmt.Fprintf(&output, "{Position:%d,Signature:", pointer.Position)
+				writeSignature(&output, pointer.Signature)
+				fmt.Fprint(&output, "},")
 			}
 			fmt.Fprint(&output, "}")
 		}
-		if signature.ResultType != nil {
-			fmt.Fprint(&output, ",ResultType:&")
-			writeDescription(&output, *signature.ResultType)
-		}
-		fmt.Fprint(&output, "}},\n")
+		fmt.Fprint(&output, "},\n")
 	}
 	fmt.Fprint(&output, "},\n")
 	if len(h.Records) != 0 {
@@ -74,6 +67,27 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 	}
 	fmt.Fprint(&output, "}\n")
 	return format.Source(output.Bytes())
+}
+
+func writeSignature(output *bytes.Buffer, signature abi.Signature) {
+	fmt.Fprintf(output, "abi.Signature{Result:abi.%s, Convention:abi.%s, Variadic:%t, FixedArgs:%d, Args:[]abi.Type{", typeName(signature.Result), conventionName(signature.Convention), signature.Variadic, signature.FixedArgs)
+	for _, parameter := range signature.Args {
+		fmt.Fprintf(output, "abi.%s,", typeName(parameter))
+	}
+	fmt.Fprint(output, "}")
+	if len(signature.ArgTypes) != 0 {
+		fmt.Fprint(output, ",ArgTypes:[]abi.TypeDesc{")
+		for _, description := range signature.ArgTypes {
+			writeDescription(output, description)
+			fmt.Fprint(output, ",")
+		}
+		fmt.Fprint(output, "}")
+	}
+	if signature.ResultType != nil {
+		fmt.Fprint(output, ",ResultType:&")
+		writeDescription(output, *signature.ResultType)
+	}
+	fmt.Fprint(output, "}")
 }
 
 func writeDescription(output *bytes.Buffer, description abi.TypeDesc) {

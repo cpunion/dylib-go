@@ -383,14 +383,17 @@ See [container and ownership limits](docs/llvm.md).
 external Clang. Integer widths and plain `char` signedness come from compiler
 probes; `Header.GoSource` emits ordinary Go declarations for dynamic `Session.Bind`.
 The [CI-tested example](examples/declarations/main.go) uses generated, target-qualified
-declarations and checks them with `ForHost` before calling. Run
+declarations and checks them with `ForHost` before passing a generated struct
+callback to C. Run
 `examples/run.sh <go|llgo> declarations <library>`.
 
 Generation covers supported scalars, typedefs, ordinary structs, fixed array
-members, typed struct pointers, variadic prefixes, C cdecl, and Windows 386
-stdcall/fastcall. `ForHost` checks compiler record sizes, alignments and offsets
-against the actual backend before calls. Unions, packed records, enums and function
-pointers need separate adapters. See [types, targets and limits](docs/clang.md).
+members, typed struct pointers, function-pointer parameter/result prototypes,
+variadic prefixes, C cdecl, and Windows 386 stdcall/fastcall. `ForHost` checks compiler record sizes, alignments and offsets
+against the actual backend before calls, including callback records.
+`LookupFunctionPointer` supplies signatures for `abi.NewCallback` or returned native
+addresses. Unions, packed records, enums and higher-order function pointers need
+separate adapters. See [types, targets and limits](docs/clang.md).
 This complements [llcppg](https://github.com/goplus/llcppg)'s static bindings.
 
 ## Dynamic C callbacks

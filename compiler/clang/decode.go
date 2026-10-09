@@ -37,11 +37,11 @@ func (t nodeType) spelling() string {
 }
 
 type astNode struct {
-	ID, Kind, Name, MangledName, StorageClass, Value, TagUsed string
-	Type                                                      nodeType
-	Inline, Variadic, CompleteDefinition, IsBitfield          bool
-	Decl                                                      *astNode
-	Inner                                                     []astNode
+	ID, Kind, Name, MangledName, StorageClass, Value, TagUsed, CC string
+	Type                                                          nodeType
+	Inline, Variadic, CompleteDefinition, IsBitfield              bool
+	Decl                                                          *astNode
+	Inner                                                         []astNode
 }
 
 func decodeDeclarations(data []byte, triple string, names []string) (*Header, error) {
@@ -87,11 +87,21 @@ func decodeDeclarations(data []byte, triple string, names []string) (*Header, er
 	}
 	found := make(map[string]Declaration)
 	resolver := newTypeResolver(root, aliases, sizes)
+	prototypes := make(map[string]astNode)
+	for _, node := range root.Inner {
+		if node.Kind == "TypedefDecl" && strings.HasPrefix(node.Name, "dylib_function_probe_") {
+			prototypes[node.Name] = node
+		}
+	}
+	indices := make(map[string]int)
+	for i, name := range names {
+		indices[name] = i
+	}
 	for _, node := range root.Inner {
 		if node.Kind != "FunctionDecl" || !requested[node.Name] {
 			continue
 		}
-		declaration, err := decodeFunction(node, target, resolver)
+		declaration, err := decodeFunction(node, target, resolver, prototypes[fmt.Sprintf("dylib_function_probe_%d", indices[node.Name])])
 		if err != nil {
 			return nil, fmt.Errorf("clang: %s: %w", node.Name, err)
 		}
@@ -152,80 +162,19 @@ func parseTarget(triple string, pointerSize int) (Target, error) {
 	return target, nil
 }
 
-func decodeFunction(node astNode, target Target, resolver *typeResolver) (Declaration, error) {
+func decodeFunction(node astNode, target Target, resolver *typeResolver, probe astNode) (Declaration, error) {
 	if node.StorageClass == "static" || node.Inline {
 		return Declaration{}, fmt.Errorf("static/inline functions require an exported facade")
 	}
-	spelling := node.Type.spelling()
-	open := strings.IndexByte(spelling, '(')
-	if open < 0 {
-		return Declaration{}, fmt.Errorf("unsupported function type %q", spelling)
-	}
-	depth, close := 0, -1
-	for i := open; i < len(spelling); i++ {
-		switch spelling[i] {
-		case '(':
-			depth++
-		case ')':
-			depth--
-			if depth == 0 {
-				close = i
-			}
-		}
-		if close >= 0 {
-			break
-		}
-	}
-	if close < 0 || strings.TrimSpace(spelling[open+1:close]) == "" {
-		return Declaration{}, fmt.Errorf("C17 calls require an explicit prototype")
-	}
-	convention := abi.CDecl
-	switch strings.TrimSpace(spelling[close+1:]) {
-	case "", "__attribute__((cdecl))":
-	case "__attribute__((stdcall))":
-		convention = abi.StdCall
-	case "__attribute__((fastcall))":
-		convention = abi.FastCall
-	default:
-		return Declaration{}, fmt.Errorf("unsupported function calling convention/type %q", spelling)
-	}
-	if convention != abi.CDecl && (target.OS != "windows" || target.Arch != "386") {
-		return Declaration{}, fmt.Errorf("calling convention requires Windows 386")
-	}
-	result, err := resolver.describe(spelling[:open], true, 0)
+	prototype, err := resolver.effectiveType(probe)
 	if err != nil {
 		return Declaration{}, err
 	}
-	signature := abi.Signature{Result: result.Type, Convention: convention, Variadic: node.Variadic}
-	if complexDescription(result) {
-		signature.ResultType = &result
-	}
-	var arguments []abi.TypeDesc
-	complex := false
-	for _, parameter := range node.Inner {
-		if parameter.Kind != "ParmVarDecl" {
-			continue
-		}
-		description, err := resolver.describe(parameter.Type.QualType, true, 0)
-		if err != nil {
-			return Declaration{}, err
-		}
-		signature.Args = append(signature.Args, description.Type)
-		arguments = append(arguments, description)
-		complex = complex || complexDescription(description)
-		if len(signature.Args) > 256 {
-			return Declaration{}, fmt.Errorf("at most 256 declared parameters are supported")
-		}
-	}
-	if complex {
-		signature.ArgTypes = arguments
-	}
-	if node.Variadic {
-		signature.FixedArgs = len(signature.Args)
-	}
-	if err := signature.Validate(); err != nil {
+	signature, pointers, err := resolver.prototype(prototype, target, true)
+	if err != nil {
 		return Declaration{}, err
 	}
+
 	symbol := node.MangledName
 	if symbol == "" {
 		return Declaration{}, fmt.Errorf("missing compiler symbol spelling")
@@ -235,7 +184,7 @@ func decodeFunction(node astNode, target Target, resolver *typeResolver) (Declar
 	if target.OS == "darwin" || target.OS == "windows" && target.Arch == "386" {
 		symbol = strings.TrimPrefix(symbol, "_")
 	}
-	return Declaration{Name: node.Name, Symbol: symbol, Signature: signature}, nil
+	return Declaration{Name: node.Name, Symbol: symbol, Signature: signature, FunctionPointers: pointers}, nil
 }
 
 func scalarType(spelling string, aliases map[string]string, sizes map[string]int, depth int) (abi.Type, error) {

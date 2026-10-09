@@ -1,9 +1,10 @@
 # C declarations and generated dynamic bindings
 
 `compiler/clang.Parse(ctx, header, options)` uses an optional external Clang to
-preprocess a C17 header, evaluate primitive/record layout probes, and extract explicitly
-requested function declarations. Go decodes the AST and renders source; no libclang
-library or compiler dependency is added to the core loader.
+preprocess a C17 header, evaluate primitive/record layout probes, and extract
+explicitly requested function declarations and their type probes. Go decodes the
+AST and renders source; no libclang library or compiler dependency is added to the
+core loader.
 
 Set `Options.Functions` to the C names to inspect. `Options.Compiler` selects the
 executable; `Options.Target` defaults to the qualified native host triple.
@@ -26,7 +27,8 @@ variable with ordinary imports. It uses no `go:linkname` directives. Regenerate
 for each supported target; an incompatible generated header fails `ForHost`.
 The [generation utility](../examples/declgen/main.go) exercises this library API.
 The [tested library example](../examples/declarations/main.go) consumes generated
-declarations and executes a generated `sum_pair` struct binding through `Session.Bind`. Run
+declarations and passes a generated struct callback to C through `Session.Bind`.
+Run
 `examples/run.sh <go|llgo> declarations <library>`.
 
 ## Types and calling conventions
@@ -41,10 +43,11 @@ declarations and executes a generated `sum_pair` struct binding through `Session
 | Ordinary structs, including anonymous typedef records | Arguments/results; compiler-evaluated layout checked against the native backend |
 | Fixed array members | Scalars, pointers, records and nested arrays; positive evaluated lengths |
 | Function parameters/results pointing to a complete ordinary struct | Typed single-struct pointees; `abi.AddressOf` supplies a temporary copy, with mutation/return identity checks |
+| Function pointers at parameter/result boundaries | Typedefs, anonymous pointers and decayed function parameters; retain their exact prototype/convention independently of the outer pointer |
 | Variadic prototypes | Fixed prefix; `Declaration.WithTail` adds a concrete scalar/pointer tail; `abi.Prepare` applies promotions |
 | C cdecl | All eight qualified native targets |
 | stdcall / fastcall | Windows 386; retain compiler symbol decoration |
-| Unions, bitfields, attributed records/fields/typedefs, flexible/zero-length arrays, enums, function pointers, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
+| Unions, bitfields, attributed records/fields/typedefs, flexible/zero-length arrays, enums, function-pointer fields/multiple indirection/higher-order signatures, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
 | Static/inline functions and old-style declarations without prototypes | Rejected; provide an exported C facade/prototype |
 
 `Header.Records` saves the C type spelling, `abi.TypeDesc` and compiler layout for
@@ -61,6 +64,28 @@ pointers at function boundaries describe one pointee; array bounds, retained
 storage, allocation and ownership are not inferred from a pointer prototype.
 Use native addresses or an explicit manual descriptor for other pointee storage.
 C array parameters decay to pointers; bare arrays are not passed by value.
+
+`Declaration.FunctionPointers` stores each function-pointer signature with its
+zero-based parameter `Position`; `-1` identifies a function-pointer result.
+`LookupFunctionPointer(position)` returns a detached snapshot. The outer signature
+uses `abi.Pointer`, so pass a leased `abi.NewCallback` address to C. `ForHost`
+checks records used by both the outer call and each function-pointer signature.
+The generated example derives its struct callback signature from these metadata.
+
+Clang `__typeof__` probes expose `FunctionProtoType` nodes in the same AST
+invocation. Their parameter/result types and effective calling convention avoid
+parsing nested C declarator text. Function-pointer signatures support ordinary
+records and typed struct pointers, along with the existing primitive types.
+Pointers within records, multiple function-pointer indirection and callbacks that
+accept/return other function pointers require manual adapters.
+
+For native function-pointer results, retain the image while calling the returned
+address, for example inside the factory symbol's `Symbol.WithAddress` lease.
+`FunctionPointer.WithTail` expands a variadic native pointer's fixed prefix;
+`abi.NewCallback` still rejects variadic callback entries. Callback leases,
+registration removal, borrowed argument storage and returned native addresses
+follow the existing [callback lifetime contract](callbacks.md). No registration
+or address ownership is inferred from a C prototype.
 
 Headers describe declarations rather than proving actual exports. The loaded
 binary must match the header, compiler ABI and flags. DLL export aliases can
@@ -81,9 +106,10 @@ Native CI compares committed generated Go files with fresh Clang output, compile
 those declarations with Go/llgo, and executes integer, floating-point, Boolean,
 native-pointer, struct/struct-pointer and variadic calls. Runtime record parsing
 executes mixed/padded records, nested arrays, floating-point aggregate returns,
-large returns, variadic record prefixes, mutation and pointer identity. It also
-executes C `long`/plain
-`char` signatures using compiler-confirmed widths/signedness. Foreign-target
+large returns, variadic record prefixes, mutation and pointer identity.
+Function-pointer tests execute captured scalar handlers, struct/large-record callbacks, typed
+pointer mutation, native factories, variadic native pointers and Windows 386
+stdcall/fastcall callbacks. It also executes C `long`/plain `char` signatures using compiler-confirmed widths/signedness. Foreign-target
 tests inspect all eight targets without executing foreign code. Windows ARM64
 also runs an independent Go process in the llgo job.
 
@@ -99,6 +125,7 @@ explicitly. No temporary compilation files are created by `Parse`.
 
 This complements [llcppg](https://github.com/goplus/llcppg): its Clang-based static
 bindings can use direct llgo C entries, while these generated descriptors resolve
-symbols dynamically through this loader. Full C++ adapters, function-pointer/
-callback declarations and direct llgo generation remain separate work. Clang's syntax and type information
+symbols dynamically through this loader. Full C++ adapters, additional
+function-pointer forms and direct llgo generation remain separate work. Clang's
+syntax and type information
 come from its [AST interface](https://clang.llvm.org/docs/IntroductionToTheClangAST.html).
