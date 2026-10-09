@@ -39,3 +39,21 @@ All AArch64 ELF relocations using `GDAT(S)` require zero addends, including the 
 `TestARM64ELFInstructions` verifies opcodes, explicit-addend replacement, byte/scaled offsets, signed limits, register/bit-index preservation, bounds, and alignment. `TestARM64ELFGOTAndUncheckedPage` covers pointer slots, zero-addend validation, and checked/non-checking ADRP. `TestNativeARM64ELFInstructions` executes Clang-produced ADR/literal/GOT loads and both sides of B.cond/CBZ/CBNZ/TBZ/TBNZ branches on Linux arm64, including reversed objects, archive extraction/roots, unused members, and dependency retry. Both Go and llgo run these through the existing native CI suite.
 
 The encoding and addend contracts follow Arm's [AAELF64 specification](https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst#static-aarch64-relocations). Other AArch64 relocation families, TLS, and authenticated pointers remain outside this extension.
+
+## AArch64 wide moves and narrow data
+
+| Relocation family | Value and encoding | Overflow rule |
+| --- | --- | --- |
+| MOVW_UABS_G0/G1/G2/G3, with G0/G1/G2_NC | Select one 16-bit part of `S+A`; retain MOVZ/MOVK | Checked lower groups require an unsigned 16/32/48-bit value; NC and G3 truncate |
+| MOVW_SABS_G0/G1/G2 | Select one part of `S+A`; choose MOVZ for nonnegative values or MOVN with a complemented field for negative values | `-2^n <= X < 2^n`, with n = 16/32/48 |
+| MOVW_PREL_G0/G1/G2/G3, with G0/G1/G2_NC | Select one part of `S+A-P`; checked forms choose MOVZ/MOVN, NC forms retain MOVK | Same signed lower-group limits; NC and G3 truncate |
+| ABS16 / ABS32 | Write `S+A` to a byte-aligned data place | `-2^15 <= X < 2^16` / `-2^31 <= X < 2^32` |
+| PREL16 | Write `S+A-P` to a byte-aligned data place | `-2^15 <= X < 2^15` |
+
+These are ELF64 RELA relocations: encoded immediates do not add to the explicit addend. A MOVW relocation chooses source bits independently of the instruction's destination shift; the loader retains the valid instruction width, shift, and register. It rejects incompatible move-wide opcodes, invalid W-form shifts, misaligned instruction places, and checked overflows before changing the instruction. ABS16/PREL16 write exactly two bytes, including an unaligned place at the end of a section. ABS32 accepts the specification's negative range as well as unsigned positive values.
+
+Both AArch64 null relocation codes, 0 and the older 256, are accepted. Null references do not inspect ignored symbol/offset fields or pull unused archive members into the image. The same no-op handling applies to code 0 on the other ELF targets.
+
+`TestARM64ELFMOVWMetadata` checks every implemented MOVW form in real assembler output and a Clang `-mcmodel=large -fno-pic` C object. `TestNativeARM64ELFMOVW` executes all those forms, signed SHN_ABS constants, and narrow data on Linux arm64 with Go and llgo. Object order reversal exercises negative relative values; archive roots, unused dependencies, and failed-link retry exercise ownership and selection. Arithmetic, encoded-field replacement, invalid inputs, byte bounds, and both null encodings are also tested on the other CI hosts, including 386.
+
+TLS, GOT-relative MOVW, and authenticated relocations are not added by this extension.
