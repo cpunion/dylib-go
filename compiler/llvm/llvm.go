@@ -33,9 +33,12 @@ type Options struct {
 // Keep directory-dependent imports available through dylib.Options.LibraryPaths.
 // Path must not be read concurrently with Close. Do not copy Object.
 type Object struct {
-	Path    string
-	Info    dylib.Info
-	storage *artifactStorage
+	Path string
+	Info dylib.Info
+	// SourceDirectories lists unique absolute input directories in input order.
+	// Use them explicitly with dylib.Options.LibraryPaths for original dependencies.
+	SourceDirectories []string
+	storage           *artifactStorage
 }
 
 type artifactStorage struct {
@@ -78,6 +81,10 @@ func Compile(ctx context.Context, path string, opts Options) (_ *Object, err err
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
+	path, err = filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
 	source, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -90,11 +97,11 @@ func Compile(ctx context.Context, path string, opts Options) (_ *Object, err err
 	if !stat.Mode().IsRegular() || stat.Size() > maxInputSize {
 		return nil, fmt.Errorf("llvm: expected regular input of at most %d bytes", maxInputSize)
 	}
-	dir, err := os.MkdirTemp(opts.TempDir, "dylib-go-llvm-")
+	dir, err := makeTempDir(opts.TempDir, "dylib-go-llvm-")
 	if err != nil {
 		return nil, err
 	}
-	object := &Object{storage: &artifactStorage{dir: dir}, Path: filepath.Join(dir, "output.o")}
+	object := &Object{storage: &artifactStorage{dir: dir}, Path: filepath.Join(dir, "output.o"), SourceDirectories: sourceDirectories([]string{path})}
 	defer func() {
 		if err != nil {
 			if cleanup := object.Close(); cleanup != nil {
@@ -139,6 +146,30 @@ func Compile(ctx context.Context, path string, opts Options) (_ *Object, err err
 		return nil, fmt.Errorf("llvm: compiler output is %s, expected object", object.Info.Kind)
 	}
 	return object, nil
+}
+
+func sourceDirectories(paths []string) []string {
+	var directories []string
+	seen := make(map[string]bool)
+	for _, path := range paths {
+		directory := filepath.Dir(path)
+		if !seen[directory] {
+			seen[directory] = true
+			directories = append(directories, directory)
+		}
+	}
+	return directories
+}
+
+func makeTempDir(parent, prefix string) (string, error) {
+	if parent == "" {
+		parent = os.TempDir()
+	}
+	parent, err := filepath.Abs(parent)
+	if err != nil {
+		return "", err
+	}
+	return os.MkdirTemp(parent, prefix)
 }
 
 type limitedDiagnostics struct {

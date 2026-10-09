@@ -1,20 +1,26 @@
 //go:build libffi && cgo && (linux || darwin || windows)
 
-// This example compiles a module exporting the C function add(int32, int32).
 package main
 
 import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	dylib "github.com/cpunion/dylib-go"
 	"github.com/cpunion/dylib-go/abi"
 	"github.com/cpunion/dylib-go/compiler/llvm"
 )
 
-func call(input string) (abi.Value, error) {
-	object, err := llvm.Compile(context.Background(), input, llvm.Options{Compiler: os.Getenv("DYLIB_LLC")})
+func call(inputs []string) (abi.Value, error) {
+	compiler, linker := os.Getenv("DYLIB_LLC"), os.Getenv("DYLIB_LLVM_LINK")
+	if linker == "" && compiler != "" {
+		linker = filepath.Join(filepath.Dir(compiler), "llvm-link")
+	}
+	object, err := llvm.CompileModules(context.Background(), inputs, llvm.MergeOptions{
+		Options: llvm.Options{Compiler: compiler}, Linker: linker,
+	})
 	if err != nil {
 		return abi.Value{}, err
 	}
@@ -27,7 +33,7 @@ func call(input string) (abi.Value, error) {
 	if err := object.Close(); err != nil {
 		return abi.Value{}, err
 	}
-	if err := session.Link(); err != nil {
+	if err := session.Link("add"); err != nil {
 		return abi.Value{}, err
 	}
 	fn, err := session.Bind("add", abi.Signature{Result: abi.I32, Args: []abi.Type{abi.I32, abi.I32}})
@@ -38,10 +44,10 @@ func call(input string) (abi.Value, error) {
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		panic("usage: llvm <module.ll|module.bc>")
+	if len(os.Args) < 2 {
+		panic("usage: llvmmodules <module.ll|module.bc> ...")
 	}
-	value, err := call(os.Args[1])
+	value, err := call(os.Args[1:])
 	if err != nil {
 		panic(err)
 	}
