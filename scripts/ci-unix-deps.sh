@@ -12,8 +12,11 @@ case "$(uname -s)" in
     done
     echo "PKG_CONFIG_PATH=$(brew --prefix libffi)/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
     if ! command -v llc >/dev/null; then
-      brew list --versions llvm >/dev/null || brew install llvm
-      echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+      brew list --versions llvm@22 >/dev/null || brew install llvm@22
+      # Keep the IR producer/reader together without replacing other C tools.
+      llvm_bin=$(brew --prefix llvm@22)/bin
+      echo "DYLIB_LLC=$llvm_bin/llc" >> "$GITHUB_ENV"
+      echo "DYLIB_LLVM_CLANG=$llvm_bin/clang" >> "$GITHUB_ENV"
     fi
     # Runner images may provide a versioned gfortran executable only.
     fc=$(find "$(brew --prefix)/bin" -maxdepth 1 -name 'gfortran*' | sort | head -n 1)

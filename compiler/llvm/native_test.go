@@ -19,7 +19,11 @@ func TestNativeIRAndBitcodeCalls(t *testing.T) {
 		t.Skip("no native call adapter for this architecture")
 	}
 	llc := tool(t, "DYLIB_LLC", "llc")
-	clang := tool(t, "CLANG", "clang")
+	clangFallback := os.Getenv("CLANG")
+	if clangFallback == "" {
+		clangFallback = "clang"
+	}
+	clang := tool(t, "DYLIB_LLVM_CLANG", clangFallback)
 	for _, kind := range []string{"ir", "bitcode"} {
 		t.Run(kind, func(t *testing.T) {
 			dir := t.TempDir()

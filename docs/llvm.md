@@ -22,6 +22,10 @@ linking, and executes C exports and an initializer. Foreign-target tests inspect
 all eight object targets on each installed LLVM backend; they do not execute
 foreign code.
 
+`DYLIB_LLC` selects the test compiler; `DYLIB_LLVM_CLANG` selects its IR/bitcode
+producer (otherwise `CLANG` or `clang`). macOS Go jobs select a matched LLVM 22
+pair without changing the C compiler used by the other native fixtures.
+
 | Object target | Output | Go native call tests | llgo native call tests |
 | --- | --- | --- | --- |
 | Linux amd64 | ELF | Yes | Yes |
