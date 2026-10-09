@@ -34,6 +34,7 @@ jobs:
       DYLIB_TEST_REQUIRE_NATIVE: ${{ matrix.mode == 'native' && '1' || '0' }}
       DYLIB_TEST_REQUIRE_SHARED: '1'
       DYLIB_TEST_REQUIRE_TOOLS: '1'
+      DYLIB_TEST_REQUIRE_LLVM: '1'
       DYLIB_TEST_LANGUAGES: ${{ matrix.languages }}
     steps:
       - uses: actions/checkout@v7
