@@ -23,16 +23,7 @@ func (im *image) relocCOFFARM64(r relocation, b []byte, s, p uintptr) error {
 			// Mach-O's encoded page displacement. Match the COFF convention.
 			return armPage(b, target, p)
 		}
-		if ins&0x9f000000 != 0x10000000 {
-			return fmt.Errorf("REL21 does not reference ADR")
-		}
-		delta := int64(target) - int64(p)
-		if delta < -(1<<20) || delta >= (1<<20) {
-			return fmt.Errorf("ADR displacement overflow")
-		}
-		v := uint32(delta) & 0x1fffff
-		le.PutUint32(b, (ins&^uint32((3<<29)|(0x7ffff<<5)))|((v&3)<<29)|((v>>2)<<5))
-		return nil
+		return armADR(b, target, p)
 	case 6, 7: // PAGEOFFSET_12A / PAGEOFFSET_12L
 		scale, err := armOffsetScale(ins)
 		if err != nil {
@@ -46,19 +37,9 @@ func (im *image) relocCOFFARM64(r relocation, b []byte, s, p uintptr) error {
 		bits := uint(19)
 		if r.typ == 16 {
 			bits = 14
-			if ins&0x7e000000 != 0x36000000 {
-				return fmt.Errorf("BRANCH14 requires TBZ/TBNZ")
-			}
-		} else if ins&0xff000010 != 0x54000000 && ins&0x7e000000 != 0x34000000 {
-			return fmt.Errorf("BRANCH19 requires B.cond/CBZ/CBNZ")
 		}
 		mask := uint32((1<<bits)-1) << 5
-		delta := int64(s) - int64(p) + signExtend((ins&mask)>>5, bits)*4
-		if delta%4 != 0 || delta < -(1<<(bits+1)) || delta >= (1<<(bits+1)) {
-			return fmt.Errorf("conditional branch displacement overflow or misalignment")
-		}
-		le.PutUint32(b, (ins&^mask)|((uint32(delta>>2)<<5)&mask))
-		return nil
+		return armConditionalBranch(b, uintptr(int64(s)+signExtend((ins&mask)>>5, bits)*4), p, bits)
 	case 17: // REL32
 		return signed32(b, int64(s)-int64(p)-4+int64(int32(ins)))
 	default:

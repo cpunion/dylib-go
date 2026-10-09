@@ -232,8 +232,12 @@ func (im *image) relocELF(o *object, r relocation, b []byte, s, p uintptr) error
 			return nil
 		case 261:
 			return signed32(b, v-int64(p))
+		case 273: // LD_PREL_LO19
+			return armLiteralLoad(b, uintptr(v), p)
+		case 274: // ADR_PREL_LO21
+			return armADR(b, uintptr(v), p)
 		case 275, 276:
-			return armPage(b, uintptr(v), p)
+			return armPageRelocation(b, uintptr(v), p, r.typ == 275)
 		case 277:
 			return armPageOff(b, uintptr(v), 0)
 		case 278:
@@ -246,20 +250,33 @@ func (im *image) relocELF(o *object, r relocation, b []byte, s, p uintptr) error
 			return armPageOff(b, uintptr(v), 3)
 		case 299:
 			return armPageOff(b, uintptr(v), 4)
+		case 279: // TSTBR14
+			return armConditionalBranch(b, uintptr(v), p, 14)
+		case 280: // CONDBR19
+			return armConditionalBranch(b, uintptr(v), p, 19)
 		case 282, 283:
 			return im.armBranch(b, uintptr(v), p)
+		case 309: // GOT_LD_PREL19 must load a full native pointer.
+			if le.Uint32(b)&0xff000000 != 0x58000000 {
+				return fmt.Errorf("GOT_LD_PREL19 requires a 64-bit LDR literal")
+			}
+			g, e := im.elfARM64GOT(r, s)
+			if e != nil {
+				return e
+			}
+			return armLiteralLoad(b, g, p)
 		case 311:
-			g, e := im.gotSlot(s)
+			g, e := im.elfARM64GOT(r, s)
 			if e != nil {
 				return e
 			}
-			return armPage(b, uintptr(int64(g)+r.addend), p)
+			return armPage(b, g, p)
 		case 312:
-			g, e := im.gotSlot(s)
+			g, e := im.elfARM64GOT(r, s)
 			if e != nil {
 				return e
 			}
-			return armPageOff(b, uintptr(int64(g)+r.addend), 3)
+			return armPageOff(b, g, 3)
 		}
 	}
 	return fmt.Errorf("unsupported %s ELF relocation %d", o.info.Arch, r.typ)
@@ -431,12 +448,16 @@ func (im *image) relocCOFF(o *object, r relocation, b []byte, s, p uintptr) erro
 }
 
 func armPage(b []byte, target, p uintptr) error {
+	return armPageRelocation(b, target, p, true)
+}
+
+func armPageRelocation(b []byte, target, p uintptr, checkRange bool) error {
 	ins := le.Uint32(b)
 	if ins&0x9f000000 != 0x90000000 {
 		return fmt.Errorf("PAGE21 relocation does not reference ADRP")
 	}
 	d := (int64(target&^0xfff) - int64(p&^0xfff)) >> 12
-	if d < -(1<<20) || d >= (1<<20) {
+	if checkRange && (d < -(1<<20) || d >= (1<<20)) {
 		return fmt.Errorf("ADRP page displacement overflow")
 	}
 	v := uint32(d) & 0x1fffff

@@ -19,7 +19,9 @@ func TestARM64COFFInstructions(t *testing.T) {
 		{"LDR scaled page offset", 7, 0xf9400400, 0xf9402400, 0x10000040, 0x10000000},
 		{"BL cross section", 3, 0x94000000, 0x94000400, 0x10001000, 0x10000000},
 		{"conditional branch", 15, 0x54000000, 0x54000200, 0x10000040, 0x10000000},
+		{"conditional encoded addend", 15, 0x54ffffe0, 0x540001e0, 0x10000040, 0x10000000},
 		{"test bit branch", 16, 0x36000000, 0x36000200, 0x10000040, 0x10000000},
+		{"test bit encoded addend", 16, 0x3607ffe0, 0x360001e0, 0x10000040, 0x10000000},
 		{"relative data", 17, 4, 0x100, 0x10000100, 0x10000000},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
