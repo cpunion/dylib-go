@@ -375,6 +375,20 @@ object after validating their target triples and data layouts. The
 implementation spans two modules. Run `examples/run.sh <go|llgo> llvmmodules <module>...`.
 See [container and ownership limits](docs/llvm.md).
 
+## C header declarations
+
+`compiler/clang.Parse` extracts explicitly requested C prototypes using an optional
+external Clang. Integer widths and plain `char` signedness come from compiler
+probes; `Header.GoSource` emits ordinary Go declarations for dynamic `Session.Bind`.
+The [CI-tested example](examples/declarations/main.go) uses generated, target-qualified
+declarations and checks them with `ForHost` before calling. Run
+`examples/run.sh <go|llgo> declarations <library>`.
+
+Generation covers supported scalars, typedefs, opaque pointers, variadic prefixes,
+C cdecl, and Windows 386 stdcall/fastcall. Aggregate values, enums and function
+pointers need separate validated adapters. See [types, targets and limits](docs/clang.md).
+This complements [llcppg](https://github.com/goplus/llcppg)'s static bindings.
+
 ## Dynamic C callbacks
 
 `abi.NewCallback` turns an explicit fixed C signature and a Go handler into a native function pointer through libffi. It supports the same scalars, pointers, and ordinary struct values as dynamic calls. This complete [callback example](examples/callback/main.go) captures a Go value, passes its entry to a C function, and prints 42. CI executes it with Go on eight targets and llgo on six targets:
@@ -503,6 +517,7 @@ The former experimental `BindInt32`, `CallInt32`, and `Int32Func` APIs have been
 | `comdat.go` | COMDAT selection before dependency discovery |
 | `abi/` | Go signatures, reusable libffi calls, and leased native C callbacks |
 | `abi/signature/` | Pure Go declaration, typed-invocation, and typed literal parsing |
+| `compiler/clang/` | Optional validated C prototypes and target-qualified dynamic declaration generation |
 | `internal/native/` | OS memory, instruction cache, and shared-library operations |
 | `examples/call/` | Fixed-signature adapter used only by the CLI and tests |
 | `examples/cgo/`, `examples/llgo/`, `examples/bind/`, `examples/callback/` | Executable README examples |
@@ -526,6 +541,7 @@ See the [design and DDL mapping](docs/design.md), [ABIBridge / llcppg comparison
 | --- | --- |
 | Inspect | `examples/run.sh go inspect <library>` |
 | Scalar declaration | `examples/run.sh go call "func add(int32,int32)int32" 20 22 <library>` |
+| Generated C declarations | `examples/run.sh go declarations <library>` |
 | Typed invocation | `examples/run.sh go call "add(20:int32 22:int32)int32" <library>` |
 | Struct value | `examples/run.sh go call "func sum_pair(struct{a,b int32})int32" "{a:20,b:22}" <library>` |
 | Struct pointer | `examples/run.sh go call "sum_pair_ptr(&{a:20,b:22}:*struct{a,b int32})int32" <library>` |
