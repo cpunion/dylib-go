@@ -394,6 +394,22 @@ against the actual backend before calls, including callback records.
 `LookupFunctionPointer` supplies signatures for `abi.NewCallback` or returned native
 addresses. Unions, packed records, enums and higher-order function pointers need
 separate adapters. See [types, targets and limits](docs/clang.md).
+
+| Generator | Host compiler | Native calls | libffi required |
+| --- | --- | --- | --- |
+| `Header.GoSource` | Go / llgo | Dynamic `Session.Bind`, including supported records and variadic shapes | Yes |
+| `Header.CgoSource` | Go / llgo | Typed cdecl scalars, native addresses and concrete variadic shapes through static C bridges | No |
+| `Header.LLGoSource` | llgo | Typed fixed cdecl scalars, ordinary records and fixed native function pointers | No |
+
+`Header.CgoSource(packageName, bindingType)` generates typed methods usable with
+Go on all eight native targets and llgo on the six 64-bit targets. Expand variadic
+declarations with `Declaration.WithTail` before generation; the C compiler applies
+default argument promotions. Native function-pointer parameters/results remain
+caller-owned addresses, with their C prototypes preserved inside the bridge.
+Records and non-cdecl conventions require another adapter. Run the
+[tested variadic example](examples/cgodeclarations/main.go) with
+`examples/run.sh <go|llgo> cgodeclarations <library>`.
+
 `Header.LLGoSource(packageName, bindingType)` generates typed methods for fixed
 C cdecl scalars, ordinary records with fixed array fields, and native struct
 pointers and fixed cdecl function-pointer parameters/results on the six qualified
@@ -402,6 +418,10 @@ against generated llgo storage before resolving symbols. Methods call through
 `//llgo:type C` pointers inside `Symbol.WithAddress`, without libffi. The caller
 owns the session, pointer storage and returned native entry lifetimes. Run the [tested direct example](examples/directdeclarations/main.go)
 with `examples/run.sh llgo directdeclarations <library>`.
+
+The qualified llgo compiler has a macOS ARM64 signed narrow-argument issue
+([#2767](https://github.com/xgo-dev/llgo/issues/2767)). Use `CgoSource` or dynamic
+`Session.Bind` for affected signatures until the compiler fix is qualified.
 
 This complements [llcppg](https://github.com/goplus/llcppg)'s static bindings.
 
@@ -558,6 +578,7 @@ See the [design and DDL mapping](docs/design.md), [ABIBridge / llcppg comparison
 | Inspect | `examples/run.sh go inspect <library>` |
 | Scalar declaration | `examples/run.sh go call "func add(int32,int32)int32" 20 22 <library>` |
 | Generated C declarations | `examples/run.sh go declarations <library>` |
+| Generated typed C bridges | `examples/run.sh go cgodeclarations <library>` |
 | Generated direct llgo bindings | `examples/run.sh llgo directdeclarations <library>` |
 | Typed invocation | `examples/run.sh go call "add(20:int32 22:int32)int32" <library>` |
 | Struct value | `examples/run.sh go call "func sum_pair(struct{a,b int32})int32" "{a:20,b:22}" <library>` |

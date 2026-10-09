@@ -47,6 +47,12 @@ result=$("$binary" "$library")
 test "$result" = 42
 echo "$compiler dynamic C struct with array members: $result"
 
+object="$example_dir/cgodeclarations.o"
+"${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -c -fno-stack-protector examples/cgodeclarations/testdata/exports.c -o "$object"
+result=$(bash examples/run.sh "$compiler" cgodeclarations "$object")
+test "$result" = 42
+echo "$compiler generated variadic C bridge without libffi: 42"
+
 if [[ "$compiler" == llgo ]]; then
   object="$example_dir/direct.o"
   "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -c -fno-stack-protector examples/directdeclarations/testdata/exports.c -o "$object"

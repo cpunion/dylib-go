@@ -92,6 +92,48 @@ binary must match the header, compiler ABI and flags. DLL export aliases can
 differ from object symbol decoration; choose the actual exported name explicitly.
 No language runtime, C++ ownership or exception adaptation is inferred.
 
+## Typed cgo bridges for Go and llgo
+
+`Header.CgoSource(packageName, bindingType)` emits typed methods with static C
+bridges in an `import "C"` preamble. It supports cdecl scalar and opaque native
+pointer arguments/results on all eight native Go targets and six qualified llgo
+targets, without the optional libffi backend. A C toolchain is needed when building
+the generated package; neither Clang nor the original header is required at runtime.
+
+For a variadic export, replace its declaration with the result of
+`Declaration.WithTail(types...)` before generation. The method has typed parameters
+for that concrete shape, while the C bridge calls through the true variadic
+prototype. C applies integer and floating-point default argument promotions;
+fixed parameters retain their declared types. An unexpanded prefix generates a
+zero-tail call. It is the caller's responsibility to match any native format/count
+contract. Generate a separate binding type for a different tail shape.
+
+Function-pointer parameters/results use `unsafe.Pointer` on the Go boundary.
+The bridge restores the saved C prototype, including variadic native entries,
+before passing the address to C. It does not generate Go callbacks or acquire
+ownership of a returned address. Keep producer images and callback registrations
+leased throughout their later use. Borrowed pointers must refer to native storage
+or obey the host compiler's C pointer rules; C must not retain borrowed Go storage.
+
+Constructors check `Target.CheckHost` before resolving exports. Methods run their
+C bridges inside `Symbol.WithAddress`, retaining the image for the call and
+rejecting closed sessions. Nil/zero bindings return `dylib.ErrClosed`. Bridge
+parameters/results use 32-bit integer transport for smaller integer types and
+Boolean values; C restores declared widths before the native call. This avoids
+depending on narrow-parameter extension across the Go/C boundary. Records, typed
+struct pointees and non-cdecl conventions fail generation. Use dynamic
+`Session.Bind` or the direct llgo record adapter for those supported interfaces.
+
+The [generation utility](../examples/declgen/main.go) accepts `-cgo -var=Bindings`
+and repeated `-tail name=int8,float32` options. An empty `name=` supplies no tail.
+The [library example](../examples/cgodeclarations/main.go) and tests compare fresh
+Clang output with eight committed target variants and execute every scalar width,
+Boolean/native pointers, zero/void calls, fixed/variadic mixed floating-point
+arguments, narrow integer/float/Boolean promotions, wide values and native pointers
+in a variadic tail, fixed/variadic native factories and address forwarding.
+`examples/run.sh <go|llgo> cgodeclarations <library>` builds and runs it without
+`-tags libffi`; the standard example suite checks that it prints 42.
+
 ## Direct llgo bindings
 
 `Header.LLGoSource(packageName, bindingType)` emits a binding type, a
@@ -101,6 +143,14 @@ on Linux/macOS/Windows amd64 and arm64. Record fields support nested records and
 fixed arrays. Fixed cdecl function-pointer parameters/results retain their typed
 prototypes. Variadic outer/inner signatures, other conventions and unqualified
 386 targets fail generation explicitly.
+
+The qualified compiler does not sign-extend negative `int8`/`int16` arguments
+correctly for some optimized macOS ARM64 C calls, including native function
+pointers ([llgo #2767](https://github.com/xgo-dev/llgo/issues/2767)). Narrow-result
+round trips alone do not detect this: a C `int` result exposes the incorrect
+positive value. Use `CgoSource`'s 32-bit transport or dynamic `Session.Bind` for
+affected signatures until an upstream fix is qualified. The supported direct
+fixture subset does not establish correctness for every scalar signature.
 
 The constructor checks `Target.CheckHost` and compares generated record
 `unsafe.Sizeof`, `unsafe.Alignof` and `unsafe.Offsetof` values with the saved Clang
@@ -182,7 +232,7 @@ explicitly. No temporary compilation files are created by `Parse`.
 This complements [llcppg](https://github.com/goplus/llcppg): its Clang-based static
 bindings can use direct llgo C entries, while these generated descriptors resolve
 symbols dynamically through this loader. Full C++ adapters, additional
-function-pointer forms and direct variadic adapters remain separate
+function-pointer forms and direct llgo variadic adapters remain separate
 work. Clang's
 syntax and type information
 come from its [AST interface](https://clang.llvm.org/docs/IntroductionToTheClangAST.html).
