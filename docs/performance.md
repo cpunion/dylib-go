@@ -94,9 +94,35 @@ outside the measured loop.
 These figures cover the small fixtures above. Returned aggregates still require
 logical Go values, temporary pointees still use per-call native allocation, and
 large contexts exceeding the idle budget are freed rather than retained. The
-scalar-only path is unchanged. Native allocations are excluded from the Go
+scalar-only path was unchanged by that aggregate optimization. Native allocations are excluded from the Go
 allocation counters; llgo's reported allocation count has the limitation
 described above.
+
+## Scalar buffer reuse comparison
+
+On the same host/toolchains on 2026-10-09, three 200 ms runs compared the scalar
+path before and after bounded native buffer reuse. Run
+`go test -tags libffi -run '^$' -bench '^BenchmarkNativeCalls/Scalar(2|64)/(Bound|Prepared)$' -benchmem -benchtime=200ms -count=3 .`
+and repeat with `llgo`. Acquisition is lazy and amortized over repeated calls.
+Compilation, loading and plan preparation remain outside the measured loop.
+
+| Shape / mode | Go before → reused B/op | Go before → reused allocs/op | llgo before → reused B/op (rounded) |
+| --- | ---: | ---: | ---: |
+| Scalar2 / Bound | 24 → 0 | 2 → 0 | 640 → 656 |
+| Scalar2 / Prepared | 24 → 0 | 2 → 0 | 416 → 432 |
+| Scalar64 / Bound | 520 → 0 | 2 → 0 | 1184 → 656 |
+| Scalar64 / Prepared | 520 → 0 | 2 → 0 | 960 → 432 |
+
+Go no longer allocates an argument-bit slice or escaped result word per scalar
+call. Native argument packing also reuses its owned block, including above 32
+arguments; the old large-call path allocated and freed packing storage each
+time. Warm calls use one C transition, with cleanup in Go. Native allocation
+still occurs on a cache miss, and oversized contexts are freed on return.
+The measured llgo runtime retains other dynamic-call allocations, and the
+small-call measurements report 16 additional bytes; its zero allocation-count
+report does not mean zero allocation. Latency samples varied substantially across runs, so
+this comparison reports stable allocation measurements without a latency claim.
+Variadic promotion, callbacks and temporary pointees can still allocate.
 
 ## Storage and cache scope
 
@@ -109,13 +135,16 @@ including empty metadata slices, encode identically. Field names, pointee types,
 array lengths, conventions and variadic boundaries remain distinct. Invalid
 metadata is rejected before lookup, and failed symbol resolution does not cache
 a newly prepared plan. No resources are shared across sessions.
-Scalar argument bits use a Go slice sized to the call. Native scalar packing
-uses a 32-slot stack buffer for small calls and overflow-checked heap storage
-for larger calls. Aggregate calls borrow an exclusive native argument vector
-and fixed argument/result buffers from their plan. Idle storage is limited to
-four contexts and 1 MiB of native buffers per plan; extra contexts are freed
-on return. Arguments/results, including padding, are zeroed before reuse.
-An immutable argument address table restores a separate libffi vector before
+Scalar calls borrow an exclusive native block containing value bits, packed
+arguments, a mutable address vector and result storage. The C helper returns
+result bits by value, avoiding a per-call Go result allocation. Native allocation
+and slice lengths are overflow-checked. Scalar values, addresses and results
+are cleared in Go before the block is cached, without an extra cgo transition.
+Aggregate calls borrow an exclusive native argument vector and fixed argument/result
+buffers from their plan, with arguments/results including padding zeroed before
+reuse. Each plan has separate scalar and aggregate caches, each limited to four
+idle contexts and 1 MiB; extra or oversized contexts are freed on return.
+An immutable aggregate argument address table restores a separate libffi vector before
 every call: some backends replace argument pointers with temporary struct copies.
 Retirement waits for active calls and frees every retained context. No pool
 lock is held during native execution or callbacks. Callbacks use the same
@@ -128,7 +157,7 @@ with the plan. Temporary pointee memory and unannotated type layouts remain
 invocation-owned and are freed after copy-back. Alias maps, descriptors and
 errors are cleared before a context returns to its plan. Reuse never shares
 storage between overlapping or nested calls. Sharing physical ABI resources
-between logically distinct signatures, scalar buffer pooling, temporary pointee
-buffer pooling and cross-session sharing remain future work.
+between logically distinct signatures, temporary pointee buffer pooling and
+cross-session sharing remain future work.
 These measurements do not establish universal
 latency guarantees or remove pointer lifetime and synchronization requirements.
