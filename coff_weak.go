@@ -42,8 +42,9 @@ func (im *image) externalSymbol(o *object, name string) uintptr {
 }
 
 // resolveDefinition is shared by address and section-relative relocations.
-// A strong definition or explicitly provided native symbol wins over a COFF
-// weak fallback. Cycles are detected after archive selection has stabilized.
+// Mach-O forwarding definitions follow their target names. A strong definition
+// or explicitly provided native symbol wins over a COFF weak fallback.
+// Cycles are detected after archive selection has stabilized.
 func (im *image) resolveDefinition(o *object, index int) (definition, error) {
 	seen := make(map[definition]bool)
 	for {
@@ -54,8 +55,17 @@ func (im *image) resolveDefinition(o *object, index int) (definition, error) {
 		v := d.sym()
 		if v.global {
 			if strong, ok := im.defs[v.name]; ok {
-				return strong, nil
+				d = strong
+				o, index, v = d.o, d.index, d.sym()
 			}
+		}
+		if v.forward != nil {
+			if seen[d] {
+				return definition{}, fmt.Errorf("Mach-O indirect alias cycle at %s", v.name)
+			}
+			seen[d] = true
+			index = v.forward.target
+			continue
 		}
 		if v.section != 0 || im.externalSymbol(o, v.name) != 0 {
 			return d, nil

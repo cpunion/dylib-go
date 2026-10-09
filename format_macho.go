@@ -67,8 +67,14 @@ func parseMachO(name string, b []byte) (*file, error) {
 		o.info.Kind = "executable"
 	}
 	if f.Symtab != nil {
+		var indirect []machoIndirect
 		for _, s := range f.Symtab.Syms {
-			v := symbol{name: strings.TrimPrefix(s.Name, "_"), section: int(s.Sect), value: s.Value, global: s.Type&1 != 0, weak: s.Desc&(0x40|0x80) != 0}
+			name := s.Name
+			// debug/macho already removes one underscore from dotted names.
+			if !strings.Contains(name, ".") {
+				name = strings.TrimPrefix(name, "_")
+			}
+			v := symbol{name: name, section: int(s.Sect), value: s.Value, global: s.Type&1 != 0, weak: s.Desc&(0x40|0x80) != 0}
 			if s.Type&0xe0 != 0 {
 				v.section = -3
 				v.global = false
@@ -83,6 +89,17 @@ func parseMachO(name string, b []byte) (*file, error) {
 					}
 				case 2:
 					v.section = -1
+				case 0xa: // N_INDR: n_value indexes the target's string, not an address.
+					if !v.global {
+						v.section = -3
+						break
+					}
+					target, err := machoIndirectTarget(f, b, s)
+					if err != nil {
+						return nil, err
+					}
+					v.section, v.value, v.weak = -5, 0, false
+					indirect = append(indirect, machoIndirect{len(o.symbols), target})
 				case 0xe:
 					if int(s.Sect) == 0 || int(s.Sect) > len(f.Sections) {
 						return nil, fmt.Errorf("invalid symbol section")
@@ -99,6 +116,7 @@ func parseMachO(name string, b []byte) (*file, error) {
 			}
 			o.symbols = append(o.symbols, v)
 		}
+		bindMachOIndirect(o, indirect)
 	}
 	if o.info.Kind != "object" {
 		return finish(o), nil
