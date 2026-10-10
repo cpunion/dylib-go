@@ -95,8 +95,8 @@ No language runtime, C++ ownership or exception adaptation is inferred.
 ## Typed cgo bridges for Go and llgo
 
 `Header.CgoSource(packageName, bindingType)` emits typed methods with static C
-bridges in an `import "C"` preamble. It supports cdecl scalar and opaque native
-pointer arguments/results on all eight native Go targets and six qualified llgo
+bridges in an `import "C"` preamble. It supports cdecl scalars, ordinary record
+values and opaque native pointer arguments/results on all eight native Go targets and six qualified llgo
 targets, without the optional libffi backend. Fixed Windows 386 stdcall/fastcall
 exports and function-pointer prototypes are supported with Go. A C toolchain is needed when building
 the generated package; neither Clang nor the original header is required at runtime.
@@ -116,7 +116,17 @@ ownership of a returned address. Keep producer images and callback registrations
 leased throughout their later use. Borrowed pointers must refer to native storage
 or obey the host compiler's C pointer rules; C must not retain borrowed Go storage.
 
-Constructors check `Target.CheckHost` before resolving exports. Methods run their
+Record fields support nested records, fixed arrays and opaque native addresses.
+Generated public types use `<bindingType>Record<index>` and exported field names.
+Conversions copy fields recursively into separate C values; they do not cast Go
+struct storage or depend on Go padding/alignment. The C compiler determines
+aggregate argument/return classification, including hidden return storage.
+Constructors check each C record's `sizeof`, `_Alignof` and `offsetof` against the
+saved Clang layout. Packed or otherwise incompatible layouts fail before symbol
+resolution. A struct pointer requires native storage and an explicit adapter;
+the generator does not infer ownership or alias-preserving pointer conversions.
+
+Constructors check `Target.CheckHost` before layout checks and resolving exports. Methods run their
 C bridges inside `Symbol.WithAddress`, retaining the image for the call and
 rejecting closed sessions. Nil/zero bindings return `dylib.ErrClosed`. Bridge
 parameters/results use 32-bit integer transport for smaller integer types and
@@ -124,10 +134,10 @@ Boolean values; C restores declared widths before the native call. This avoids
 depending on narrow-parameter extension across the Go/C boundary. Native pointer
 typedefs carry explicit cdecl/stdcall/fastcall attributes on Windows 386,
 independently for each outer/inner prototype. The static cgo bridge keeps the
-ordinary host C convention. Records, typed struct pointees and other conventions
+ordinary host C convention. Typed struct pointees and other conventions
 fail generation. Non-cdecl variadic calls and stdcall/fastcall on other targets
 are rejected. Use dynamic
-`Session.Bind` or the direct llgo record adapter for those supported interfaces.
+`Session.Bind` or the direct llgo adapter for those supported interfaces.
 
 The [generation utility](../examples/declgen/main.go) accepts `-cgo -var=Bindings`
 and repeated `-tail name=int8,float32` options. An empty `name=` supplies no tail.
@@ -142,6 +152,15 @@ Windows 386 CI also executes repeated stdcall/fastcall mixed scalar calls and
 native factory/consumer round trips, including opposite outer/inner conventions.
 It checks fresh decorated symbols against the committed generated bindings and
 runs the convention tests both with and without the libffi build tag.
+
+The [record example](../examples/cgorecords/main.go) runs with
+`examples/run.sh <go|llgo> cgorecords <library>`. Fresh ordinary and packed
+variants are checked on all eight Go targets and six llgo targets. Native tests
+execute objects, archives and shared libraries at `-O0` and `-O2`: integer and
+floating-point aggregates, padded/narrow/Boolean fields, nested arrays, large
+returns, native address fields, record-valued native pointer prototypes and a
+concrete variadic record prefix/result. Nil/closed handles, incompatible targets
+and packed C layout rejection are also checked without requiring libffi.
 
 ## Direct llgo bindings
 

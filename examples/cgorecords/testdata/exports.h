@@ -1,0 +1,18 @@
+typedef struct { int a, b; } Small;
+Small echo_small(Small);
+typedef struct { signed char tag; double value; short tail; } Pair;
+Pair echo_pair(Pair);
+typedef struct { Pair items[2]; int values[2][3]; void *next; } Outer;
+Outer echo_outer(Outer);
+typedef struct { float values[4]; } FloatVector;
+FloatVector echo_floats(FloatVector);
+typedef struct { _Bool truth; unsigned char u8; unsigned short u16; long long s64; unsigned long long u64; } Flags;
+Flags echo_flags(Flags);
+typedef Small (*SmallFn)(Small);
+SmallFn small_factory(void);
+Small apply_small(SmallFn, Small);
+typedef Outer (*OuterFn)(Outer);
+OuterFn outer_factory(void);
+Outer apply_outer(OuterFn, Outer);
+Small record_variable(Small, ...);
+void *data_pointer(void);

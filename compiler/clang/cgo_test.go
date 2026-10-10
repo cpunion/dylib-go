@@ -42,9 +42,8 @@ func TestCgoGenerationAcrossTargets(t *testing.T) {
 
 func TestCgoRejectsUnsupportedDeclarations(t *testing.T) {
 	for _, prototype := range []string{
-		"typedef struct {int a,b;} Pair; Pair f(Pair);",
 		"typedef struct {int a,b;} Pair; Pair *f(Pair *);",
-		"typedef struct {int a,b;} Pair; void f(Pair (*)(Pair));",
+		"typedef struct {int a,b;} Pair; void f(Pair *(*)(Pair *));",
 	} {
 		h, err := Parse(context.Background(), headerFile(t, prototype), Options{Compiler: compilerTool(t), Functions: []string{"f"}})
 		if err != nil {
@@ -71,6 +70,40 @@ func TestCgoRejectsUnsupportedDeclarations(t *testing.T) {
 	h.Functions = append(h.Functions, Declaration{Name: "F", Symbol: "F", Signature: h.Functions[0].Signature})
 	if _, err := h.CgoSource("bindings", "Bindings"); err == nil {
 		t.Fatal("ambiguous method emitted")
+	}
+}
+
+func TestCgoRecordsAcrossTargets(t *testing.T) {
+	path := headerFile(t, "typedef struct {short a; double b;} Pair; typedef struct {Pair items[2]; int matrix[2][3]; _Bool truth; void *pointer;} Outer; Outer f(Outer); Pair apply(Pair (*)(Pair),Pair);")
+	for _, target := range targets {
+		t.Run(target.triple, func(t *testing.T) {
+			h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Target: target.triple, Functions: []string{"f", "apply"}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			// C typedef dependencies must work independently of metadata order.
+			h.Records[0], h.Records[1] = h.Records[1], h.Records[0]
+			source, err := h.CgoSource("bindings", "Bindings")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := parser.ParseFile(token.NewFileSet(), "generated.go", source, parser.AllErrors); err != nil {
+				t.Fatal(err)
+			}
+			for _, marker := range []string{"record1 f0[2]", "int32_t f1[2][3]", "_Bool f2", "void * f3", "_Alignof", "offsetof", "Record0ToC", "Record0FromC", "for i0 := range 2", "for i1 := range 3", "compiler/cgo layout mismatch"} {
+				if !strings.Contains(string(source), marker) {
+					t.Fatalf("missing %s:\n%s", marker, source)
+				}
+			}
+			if strings.Contains(string(source), "unsafe.Sizeof") || strings.Contains(string(source), "unsafe.Offsetof") {
+				t.Fatal("cgo record bindings must not depend on Go struct layout")
+			}
+			inner := strings.Index(string(source), "} dylib_go_42696e64696e6773_record1;")
+			outer := strings.Index(string(source), "} dylib_go_42696e64696e6773_record0;")
+			if inner < 0 || inner >= outer {
+				t.Fatal("C record dependencies emitted out of order")
+			}
+		})
 	}
 }
 
