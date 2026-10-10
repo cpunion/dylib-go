@@ -14,7 +14,8 @@ type callBackend interface {
 	close()
 }
 
-// CallPlan owns a prepared native call interface and its type layouts. It is
+// CallPlan retains a prepared native call interface and its type layouts. Share
+// can give other logical plans independent references to those resources. It is
 // independent of any code address; callers must keep the target image alive.
 // Concurrent and reentrant calls share its immutable prepared layout. Close
 // releases native resources after active calls return. Do not copy it.
@@ -32,8 +33,20 @@ type CallPlan struct {
 // receive C default argument promotions; the fixed prefix is left unchanged.
 // Close the result explicitly. Session.Bind manages plans automatically.
 func Prepare(s Signature) (*CallPlan, error) {
-	if err := s.Validate(); err != nil {
+	s, physical, err := planSignatures(s)
+	if err != nil {
 		return nil, err
+	}
+	b, err := prepare(physical)
+	if err != nil {
+		return nil, err
+	}
+	return &CallPlan{signature: s, physical: physical, backend: b}, nil
+}
+
+func planSignatures(s Signature) (Signature, Signature, error) {
+	if err := s.Validate(); err != nil {
+		return Signature{}, Signature{}, err
 	}
 	s = s.Clone()
 	physical := s.Clone()
@@ -50,11 +63,7 @@ func Prepare(s Signature) (*CallPlan, error) {
 			}
 		}
 	}
-	b, err := prepare(physical)
-	if err != nil {
-		return nil, err
-	}
-	return &CallPlan{signature: s, physical: physical, backend: b}, nil
+	return s, physical, nil
 }
 
 // Call invokes an exact native address with the plan's original logical types.

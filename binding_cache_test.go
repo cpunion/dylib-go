@@ -21,7 +21,7 @@ func TestNativeBindingCacheAddressesAndOwnership(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if add.plan != sub.plan || add.symbol.address == sub.symbol.address || len(s.plans) != 1 {
+			if add.plan != sub.plan || add.symbol.address == sub.symbol.address || len(s.plans) != 1 || len(s.physicalPlans) != 1 {
 				t.Fatal("equal signatures did not share only their call plan")
 			}
 			if _, err := s.Bind("missing_cache_symbol", sig); err == nil || len(s.plans) != 1 {
@@ -60,7 +60,7 @@ func TestNativeBindingCacheAddressesAndOwnership(t *testing.T) {
 			if err != nil || separate.plan == add.plan {
 				t.Fatalf("cache crossed session ownership: %v", err)
 			}
-			if err := s.Close(); err != nil || len(s.plans) != 0 {
+			if err := s.Close(); err != nil || len(s.plans) != 0 || len(s.physicalPlans) != 0 {
 				t.Fatalf("cache cleanup: %v", err)
 			}
 			if _, err := add.plan.Call(1, abi.Int32(20), abi.Int32(22)); !errors.Is(err, abi.ErrClosed) {
@@ -85,6 +85,17 @@ func TestNativeBindingCachePreservesLogicalMetadata(t *testing.T) {
 	second, err := s.Bind("echo_pair", sig)
 	if err != nil || first.plan == second.plan {
 		t.Fatalf("distinct logical metadata was conflated: %v", err)
+	}
+	if len(s.plans) != 2 || len(s.physicalPlans) != 1 {
+		t.Fatal("renamed fields did not share one physical call interface")
+	}
+	missing := sig.Clone()
+	missing.ArgTypes[0].Fields[1].Name = "missing"
+	if _, err := s.Bind("missing_shared_symbol", missing); err == nil || len(s.plans) != 2 || len(s.physicalPlans) != 1 {
+		t.Fatal("failed shared binding published a logical or physical plan")
+	}
+	if _, err := s.Bind("missing_new_shape", abi.Signature{Result: abi.F64}); err == nil || len(s.plans) != 2 || len(s.physicalPlans) != 1 {
+		t.Fatal("failed fresh binding published a physical plan")
 	}
 	v, err := abi.StructValue(desc, abi.Int32(20), abi.Int32(22))
 	if err != nil {
@@ -137,6 +148,9 @@ func TestNativeBindingCacheDistinguishesCallShapes(t *testing.T) {
 	if err != nil || float32.plan == float64.plan {
 		t.Fatalf("logical variadic types were conflated: %v", err)
 	}
+	if len(s.plans) != 3 || len(s.physicalPlans) != 2 {
+		t.Fatal("promoted variadic tails did not share a physical call interface")
+	}
 	for i, f := range []*Function{float32, float64} {
 		value := abi.Float32(42)
 		if i == 1 {
@@ -156,5 +170,8 @@ func TestNativeBindingCacheDistinguishesCallShapes(t *testing.T) {
 	convention, err := s.Bind("sum_many_variadic", base)
 	if err != nil || convention.plan == float64.plan {
 		t.Fatalf("conventions were conflated: %v", err)
+	}
+	if len(s.plans) != 5 || len(s.physicalPlans) != 3 {
+		t.Fatal("default/cdecl sharing or variadic boundary isolation failed")
 	}
 }

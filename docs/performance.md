@@ -148,15 +148,22 @@ Latency samples were unstable, so this comparison makes no latency claim.
 
 ## Storage and cache scope
 
-CIF argument types and aggregate layouts are owned by each prepared plan. Bindings
-with the same canonical logical signature share a plan within their session;
-each symbol retains its own address. A string-keyed map replaces comparisons
+CIF argument types and aggregate layouts are owned by prepared native resource
+groups. Bindings with the same canonical logical signature share a plan within
+their session; distinct logical plans with equal ABI shapes share native
+resources while preserving value validation and result metadata. Each symbol
+retains its own address. A string-keyed map replaces comparisons
 against every cached signature. Validation and key construction still depend on
 the size of the supplied signature. Omitted and explicit scalar descriptors,
 including empty metadata slices, encode identically. Field names, pointee types,
-array lengths, conventions and variadic boundaries remain distinct. Invalid
+array lengths, conventions and variadic boundaries remain distinct in the logical
+index. Invalid
 metadata is rejected before lookup, and failed symbol resolution does not cache
-a newly prepared plan. No resources are shared across sessions.
+a newly prepared/shared plan. A second index compares conservative ABI shapes:
+it removes field names/pointee metadata, applies variadic promotions and
+normalizes default/cdecl. Scalar kinds, aggregate structure and variadic
+boundaries remain distinct. See [shared call resources](shared-plans.md).
+No resources are shared across sessions.
 Scalar calls borrow an exclusive native block containing value bits, packed
 arguments, a mutable address vector and result storage. The C helper returns
 result bits by value, avoiding a per-call Go result allocation. Native allocation
@@ -164,8 +171,9 @@ and slice lengths are overflow-checked. Scalar values, addresses and results
 are cleared in Go before the block is cached, without an extra cgo transition.
 Aggregate calls borrow an exclusive native argument vector and fixed argument/result
 buffers from their plan, with arguments/results including padding zeroed before
-reuse. Each plan has separate scalar and aggregate caches, each limited to four
-idle contexts and 1 MiB; extra or oversized contexts are freed on return.
+reuse. Each native resource group has separate scalar and aggregate caches,
+each limited to four idle contexts and 1 MiB; extra or oversized contexts are
+freed on return.
 The aggregate budget includes retained temporary pointee storage. Each exclusive
 record context may retain up to 32 cleared pointee buffers and 256 KiB inside
 that budget. It borrows the smallest sufficient capacity, and no other active
@@ -185,7 +193,7 @@ with the plan. Temporary pointee views are valid only for their invocation;
 after copy-back, cleared native bytes may be retained while unannotated type
 layouts are freed. Alias maps, descriptors and
 errors are cleared before a context returns to its plan. Reuse never shares
-storage between overlapping or nested calls. Sharing physical ABI resources
-between logically distinct signatures and cross-session sharing remain future work.
+storage between overlapping or nested calls. The last logical plan's retirement
+releases its shared native resources; cross-session sharing remains future work.
 These measurements do not establish universal
 latency guarantees or remove pointer lifetime and synchronization requirements.
