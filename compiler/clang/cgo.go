@@ -93,7 +93,7 @@ func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
 
 func cgoScalarType(d abi.TypeDesc) (string, error) {
 	if d.Elem != nil || d.Type == abi.Struct || d.Type == abi.Array {
-		return "", fmt.Errorf("cgo generation supports scalars and opaque native pointers")
+		return "", fmt.Errorf("cgo scalar conversion requires a scalar or opaque native pointer")
 	}
 	return map[abi.Type]string{abi.Void: "void", abi.I8: "int8_t", abi.U8: "uint8_t", abi.I16: "int16_t", abi.U16: "uint16_t", abi.I32: "int32_t", abi.U32: "uint32_t", abi.I64: "int64_t", abi.U64: "uint64_t", abi.F32: "float", abi.F64: "double", abi.Bool: "_Bool", abi.Pointer: "void *"}[d.Type], nil
 }

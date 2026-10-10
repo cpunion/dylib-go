@@ -29,19 +29,38 @@ func compilerTool(t *testing.T) string {
 	if compiler == "" {
 		compiler = "clang"
 	}
-	for _, tool := range []string{compiler, "llvm-ar"} {
-		if _, err := exec.LookPath(tool); err != nil {
-			if os.Getenv("DYLIB_TEST_REQUIRE_TOOLS") == "1" {
-				t.Fatal(err)
-			}
-			t.Skip(err)
+	if _, err := exec.LookPath(compiler); err != nil {
+		if os.Getenv("DYLIB_TEST_REQUIRE_TOOLS") == "1" {
+			t.Fatal(err)
 		}
+		t.Skip(err)
 	}
 	return compiler
 }
 
+func archiveTool(t *testing.T, compiler string) string {
+	t.Helper()
+	path, _ := exec.LookPath(compiler)
+	candidates := []string{filepath.Join(filepath.Dir(path), "llvm-ar"), "llvm-ar", "ar"}
+	if override := os.Getenv("DYLIB_LLVM_AR"); override != "" {
+		candidates = []string{override}
+	}
+	for _, candidate := range candidates {
+		if path, err := exec.LookPath(candidate); err == nil {
+			return path
+		}
+	}
+	message := fmt.Sprintf("native archiver unavailable: %v", candidates)
+	if os.Getenv("DYLIB_TEST_REQUIRE_TOOLS") == "1" {
+		t.Fatal(message)
+	}
+	t.Skip(message)
+	return ""
+}
+
 func TestGeneratedCgoRecords(t *testing.T) {
 	compiler := compilerTool(t)
+	archiver := archiveTool(t, compiler)
 	names := []string{"echo_small", "echo_pair", "echo_outer", "echo_floats", "echo_flags", "small_factory", "apply_small", "outer_factory", "apply_outer", "record_variable", "data_pointer"}
 	header, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
@@ -90,7 +109,7 @@ func TestGeneratedCgoRecords(t *testing.T) {
 				flags = append(flags, "-fPIC")
 			}
 			compile(compiler, flags...)
-			compile("llvm-ar", "rcs", archive, object)
+			compile(archiver, "rcs", archive, object)
 			library, linkFlags := filepath.Join(dir, "exports.so"), []string{"-shared", "-fPIC"}
 			switch runtime.GOOS {
 			case "darwin":
