@@ -13,8 +13,8 @@ func (t *directTypes) addCallbacks(declarations []Declaration) error {
 	for _, declaration := range declarations {
 		for _, pointer := range declaration.FunctionPointers {
 			s := pointer.Signature
-			if s.Variadic || (s.Convention != abi.Default && s.Convention != abi.CDecl) {
-				return fmt.Errorf("clang: %s function pointer requires a fixed cdecl prototype", declaration.Name)
+			if s.Convention != abi.Default && s.Convention != abi.CDecl {
+				return fmt.Errorf("clang: %s function pointer requires a cdecl prototype", declaration.Name)
 			}
 			if _, err := t.goType(s.ReturnType()); err != nil {
 				return err
@@ -42,6 +42,13 @@ func (t *directTypes) callbackIndex(signature abi.Signature) int {
 
 // Reuse the deterministic declaration encoding instead of comparing every pair.
 func callbackKey(signature abi.Signature) string {
+	// Concrete tails describe calls, not the native function-pointer prototype.
+	if signature.Variadic {
+		signature.Args = signature.Args[:signature.FixedArgs]
+		if len(signature.ArgTypes) != 0 {
+			signature.ArgTypes = signature.ArgTypes[:signature.FixedArgs]
+		}
+	}
 	var key bytes.Buffer
 	writeSignature(&key, signature)
 	return key.String()
@@ -70,9 +77,19 @@ func (t *directTypes) boundaryType(declaration Declaration, position int) (strin
 func (t *directTypes) writeCallbacks(output *bytes.Buffer) {
 	for i, signature := range t.callbacks {
 		var parameters []string
-		for j := range signature.Args {
+		count := len(signature.Args)
+		if signature.Variadic {
+			count = signature.FixedArgs
+		}
+		for j := 0; j < count; j++ {
 			kind, _ := t.goType(signature.ArgumentType(j))
+			if signature.Variadic {
+				kind = fmt.Sprintf("p%d %s", j, kind)
+			}
 			parameters = append(parameters, kind)
+		}
+		if signature.Variadic {
+			parameters = append(parameters, "__llgo_va_list ...any")
 		}
 		result, _ := t.goType(signature.ReturnType())
 		name := t.callbackName(i)

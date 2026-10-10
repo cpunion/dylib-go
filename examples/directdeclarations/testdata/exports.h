@@ -40,3 +40,15 @@ Outer apply_outer(OuterFn, Outer);
 typedef Pair *(*Mutator)(Pair *);
 Mutator mutator_factory(void);
 Pair *apply_mutator(Mutator, Pair *);
+
+int variable(int, ...);
+int promotions(int, ...);
+int empty_variable(int, ...);
+double mixed_variable(float, int, ...);
+void void_variable(int *, ...);
+int *data_pointer(void);
+double many_variable(int, ...);
+Small record_variable(Small, ...);
+typedef int (*Variadic)(int, ...);
+Variadic variadic_factory(void);
+int forward_variadic(Variadic);

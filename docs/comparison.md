@@ -5,7 +5,7 @@
 - [DDL `3bf531e`](https://github.com/Marenz/ddl/tree/3bf531e9701469ccecd5c3c698036ef4ef72362b): model, registry, linker, and ELF/OMF/COFF/archive components.
 - [ABIBridge `4dfbda2`](https://github.com/lynnswap/ABIBridge/tree/4dfbda22afb9a1492e1c5c99933a9defbc5437a4): README, RuntimeArchitecture, CFunctionInvocation, CXXObjectInvocation, Architectures, and source responsibilities.
 - [llcppg `6098773`](https://github.com/goplus/llcppg/tree/6098773c3116609e61c26968b83eec83e32a976c): configuration, Clang/mangling entry points, function/class generation, and sample output.
-- Local llgo reference `8ac217053d0337b7261cebc923bb6b17955bf49a`; the original local compiler was a devel build. See the validation record; CI separately pins the [qualified compiler revision](ci.md), including public C-export thread guards.
+- Local llgo reference `8ac217053d0337b7261cebc923bb6b17955bf49a`; the original local compiler was a devel build. See the validation record; CI now builds llgo `main` and records its [resolved compiler revision](ci.md), including public C-export thread guards and indirect C varargs.
 
 ## Responsibilities
 
@@ -95,9 +95,10 @@ backend layout validation, array members, typed struct pointers and function-poi
 parameter/result prototypes. Generated struct callbacks and native factories are
 executed with Go/llgo. Fixed scalar/record/native-pointer cdecl methods can also
 be generated for direct llgo calls without libffi, with Clang/llgo storage checks.
-Fixed cdecl function-pointer parameters/results retain typed native prototypes and
+Fixed/variadic cdecl function-pointer parameters/results retain typed native prototypes and
 explicit code ownership; managed captures and foreign-thread callback entries
-still use owned adapters. C++ and direct variadic adapters remain separate work.
+still use owned adapters. Direct llgo methods support concrete variadic tails with
+C promotions without libffi. C++ adapters remain separate work.
 
 The following integrations remain proposals:
 

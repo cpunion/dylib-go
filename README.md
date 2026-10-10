@@ -399,7 +399,7 @@ separate adapters. See [types, targets and limits](docs/clang.md).
 | --- | --- | --- | --- |
 | `Header.GoSource` | Go / llgo | Dynamic `Session.Bind`, including supported records and variadic shapes | Yes |
 | `Header.CgoSource` | Go / llgo | Typed scalars, native addresses and concrete cdecl variadic shapes; fixed Windows 386 stdcall/fastcall | No |
-| `Header.LLGoSource` | llgo | Typed fixed cdecl scalars, ordinary records and fixed native function pointers | No |
+| `Header.LLGoSource` | llgo | Typed cdecl scalars, ordinary records, concrete variadic shapes and fixed/variadic native function pointers | No |
 
 `Header.CgoSource(packageName, bindingType)` generates typed methods usable with
 Go on all eight native targets and llgo on the six 64-bit targets. Expand variadic
@@ -411,14 +411,20 @@ supported with Go on Windows 386. Records and other conventions require another 
 [tested variadic example](examples/cgodeclarations/main.go) with
 `examples/run.sh <go|llgo> cgodeclarations <library>`.
 
-`Header.LLGoSource(packageName, bindingType)` generates typed methods for fixed
+`Header.LLGoSource(packageName, bindingType)` generates typed methods for
 C cdecl scalars, ordinary records with fixed array fields, and native struct
-pointers and fixed cdecl function-pointer parameters/results on the six qualified
-64-bit llgo hosts. Constructors check Clang layouts
+pointers and fixed/variadic cdecl function-pointer parameters/results on the six qualified
+64-bit llgo hosts. `Declaration.WithTail` selects a typed variadic method shape;
+the generated call applies C default promotions and uses llgo's native ellipsis
+interface. An unexpanded prefix calls with no tail. Constructors check Clang layouts
 against generated llgo storage before resolving symbols. Methods call through
 `//llgo:type C` pointers inside `Symbol.WithAddress`, without libffi. The caller
 owns the session, pointer storage and returned native entry lifetimes. Run the [tested direct example](examples/directdeclarations/main.go)
 with `examples/run.sh llgo directdeclarations <library>`.
+
+Returned variadic pointer types expose `__llgo_va_list ...any`; pass explicitly
+promoted `int32`/`float64` values, match the C argument contract, and retain the
+producer image throughout later calls. Variadic Go callback entries are not supported.
 
 The qualified llgo compiler has a macOS ARM64 signed narrow-argument issue
 ([#2767](https://github.com/xgo-dev/llgo/issues/2767)). Use `CgoSource` or dynamic

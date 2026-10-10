@@ -19,7 +19,7 @@ func main() {
 	output := flag.String("out", "", "output Go source path")
 	packageName := flag.String("package", "main", "Go package name")
 	packing := flag.Bool("pack", false, "generate with Clang -fpack-struct=1")
-	direct := flag.Bool("llgo", false, "emit direct fixed-cdecl llgo bindings; -var names the binding type")
+	direct := flag.Bool("llgo", false, "emit direct cdecl llgo bindings; -var names the binding type")
 	cgo := flag.Bool("cgo", false, "emit typed C bridges for Go/llgo; -var names the binding type")
 	var tails []string
 	flag.Func("tail", "concrete variadic name=int8,float32,... (repeat for each function)", func(value string) error {
