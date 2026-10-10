@@ -30,6 +30,12 @@ returns `abi.ErrClosed` for new calls. Concurrent close callers wait for the
 same cleanup; cleanup runs once. A panic in a Go address adapter releases its
 active-use guard while preserving the panic.
 
+`CallPlan.Share` gives each logical plan an independent retirement state while
+retaining one native resource group. Closing one plan does not retire its
+siblings. The final plan waits for its calls and releases the group's layouts
+and idle pools once. Sharing can begin while the original has an active call.
+See [shared call resources](shared-plans.md) for signature compatibility rules.
+
 Session finalizers run outside the session mutex after retirement. They may
 observe `ErrClosed` from session methods without a lock cycle. Call `Close`
 outside an owner's own adapters, native handlers, or finalizers: close waits

@@ -46,21 +46,22 @@ type Options struct {
 // Callers using unmanaged raw addresses must ensure no native threads or
 // callbacks still use them before calling Close.
 type Session struct {
-	mu          sync.Mutex
-	cond        *sync.Cond
-	calls       int
-	closing     bool
-	opts        Options
-	files       []*file
-	libs        []uintptr
-	dllHandles  map[string]uintptr
-	paths       map[string]bool
-	defined     map[string]uintptr
-	image       *image
-	failedImage *image // Retain code for exit registrations until Close after init failure.
-	initErr     error
-	closed      bool
-	plans       map[string]*abi.CallPlan
+	mu            sync.Mutex
+	cond          *sync.Cond
+	calls         int
+	closing       bool
+	opts          Options
+	files         []*file
+	libs          []uintptr
+	dllHandles    map[string]uintptr
+	paths         map[string]bool
+	defined       map[string]uintptr
+	image         *image
+	failedImage   *image // Retain code for exit registrations until Close after init failure.
+	initErr       error
+	closed        bool
+	plans         map[string]*abi.CallPlan
+	physicalPlans map[string]*abi.CallPlan // Index existing logical owners, not extra references.
 }
 
 func New(opts Options) *Session {
@@ -554,6 +555,7 @@ func (s *Session) Close() error {
 		image = s.failedImage
 	}
 	s.plans, s.image, s.failedImage, s.libs, s.dllHandles = nil, nil, nil, nil, nil
+	s.physicalPlans = nil
 	s.mu.Unlock()
 	// Native finalizers may call back into Go. The session is already retired,
 	// so reentrant lookups return ErrClosed without blocking on cleanup.

@@ -10,8 +10,9 @@ type Function struct {
 
 // Bind validates the signature and resolves the symbol once. No demangling or
 // type guessing occurs; a header generator such as llcppg can supply metadata.
-// Canonical logical signatures share a session-owned plan across bindings. The
-// symbol address is separate from the plan; no cache crosses session lifetimes.
+// Canonical logical signatures share a session-owned plan across bindings.
+// Distinct logical signatures with compatible ABI shapes share native resources,
+// preserving their validation and metadata. No cache crosses session lifetimes.
 func (s *Session) Bind(name string, signature abi.Signature) (*Function, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -27,8 +28,21 @@ func (s *Session) Bind(name string, signature abi.Signature) (*Function, error) 
 	}
 	plan := s.plans[key]
 	fresh := plan == nil
+	var physicalKey string
 	if fresh {
-		plan, err = abi.Prepare(signature)
+		shape, shapeErr := signature.ABIShape()
+		if shapeErr != nil {
+			return nil, shapeErr
+		}
+		physicalKey, err = bindingKey(shape)
+		if err != nil {
+			return nil, err
+		}
+		if owner := s.physicalPlans[physicalKey]; owner != nil {
+			plan, err = owner.Share(signature)
+		} else {
+			plan, err = abi.Prepare(signature)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -45,6 +59,12 @@ func (s *Session) Bind(name string, signature abi.Signature) (*Function, error) 
 			s.plans = make(map[string]*abi.CallPlan)
 		}
 		s.plans[key] = plan
+		if s.physicalPlans == nil {
+			s.physicalPlans = make(map[string]*abi.CallPlan)
+		}
+		if s.physicalPlans[physicalKey] == nil {
+			s.physicalPlans[physicalKey] = plan
+		}
 	}
 	return &Function{symbol: &Symbol{owner: s, address: address}, plan: plan}, nil
 }
