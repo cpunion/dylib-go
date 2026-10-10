@@ -4,12 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"unsafe"
 )
 
 var ErrValueClosed = errors.New("ABI native value is closed")
 
 type valueBackend interface {
-	address() uintptr
+	pointer() unsafe.Pointer
 	layout() Layout
 	read() Value
 	write(Value) error
@@ -128,7 +129,21 @@ func (l *NativeValueLease) Address() (uintptr, error) {
 	if l.owner == nil {
 		return 0, ErrValueClosed
 	}
-	return l.backend.address(), nil
+	return uintptr(l.backend.pointer()), nil
+}
+
+// Pointer returns the leased native address for typed cgo/llgo adapters, without
+// an integer-to-pointer conversion. Its lifetime is the same as Address.
+func (l *NativeValueLease) Pointer() (unsafe.Pointer, error) {
+	if l == nil {
+		return nil, ErrValueClosed
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.owner == nil {
+		return nil, ErrValueClosed
+	}
+	return l.backend.pointer(), nil
 }
 
 // Read copies storage into independent logical Go data. Pointer fields remain

@@ -33,3 +33,9 @@ Small record_variable(Small value, ...) {
 }
 static int datum = 42;
 void *data_pointer(void) { return &datum; }
+static Pair native_pair = {1, 20.5, 20};
+Pair *pair_pointer(void) { return &native_pair; }
+Pair *mutate_pair(Pair *value) { if (value) *value = echo_pair(*value); return value; }
+double sum_pair(Pair *value) { return value ? value->tag + value->value + value->tail : -1; }
+PairPointerFn pair_pointer_factory(void) { return mutate_pair; }
+Pair *apply_pair_pointer(PairPointerFn entry, Pair *value) { return entry(value); }

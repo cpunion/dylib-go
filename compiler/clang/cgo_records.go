@@ -37,12 +37,19 @@ func (t *cgoTypes) cType(description abi.TypeDesc) (string, error) {
 		index, err := t.recordIndex(description)
 		return t.cRecordName(index), err
 	}
+	if description.Type == abi.Pointer && description.Elem != nil && description.Elem.Type == abi.Struct {
+		index, err := t.recordIndex(*description.Elem)
+		return t.cRecordName(index) + " *", err
+	}
 	return cgoScalarType(description)
 }
 
 func (t *cgoTypes) goType(description abi.TypeDesc) (string, error) {
 	if description.Type == abi.Struct {
 		return t.directTypes.goType(description)
+	}
+	if description.Type == abi.Pointer && description.Elem != nil && description.Elem.Type == abi.Struct {
+		return "unsafe.Pointer", nil
 	}
 	return directGoType(description)
 }
@@ -68,6 +75,9 @@ func (t *cgoTypes) cField(description abi.TypeDesc, name string) (string, error)
 	for description.Type == abi.Array {
 		fmt.Fprintf(&suffix, "[%d]", description.Len)
 		description = *description.Elem
+	}
+	if description.Type == abi.Pointer && description.Elem != nil {
+		return "", fmt.Errorf("typed record fields require opaque native addresses")
 	}
 	kind, err := t.cType(description)
 	return kind + " " + name + suffix.String(), err

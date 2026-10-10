@@ -123,8 +123,20 @@ struct storage or depend on Go padding/alignment. The C compiler determines
 aggregate argument/return classification, including hidden return storage.
 Constructors check each C record's `sizeof`, `_Alignof` and `offsetof` against the
 saved Clang layout. Packed or otherwise incompatible layouts fail before symbol
-resolution. A struct pointer requires native storage and an explicit adapter;
-the generator does not infer ownership or alias-preserving pointer conversions.
+resolution. Complete struct pointees require native storage. They are represented
+by `unsafe.Pointer` on the Go boundary,
+and the C bridge restores their saved record-pointer prototype. Returned addresses
+remain caller-owned/borrowed as required by the producer. The generator does not
+cast pointers to public Go records or infer ownership, allocations or pointer
+graphs. Keep the native storage and image alive throughout address use.
+
+Use producer-owned native storage, a caller-defined allocator, or
+`abi.NewNativeValue(record.Description, initial)` after comparing its layout
+with the saved Clang layout. A native value lease's `Pointer()` supplies an
+`unsafe.Pointer` without an integer-to-pointer conversion. That allocation path
+requires libffi; generated pointer methods themselves do not. Other typed
+pointees and typed pointer fields in manually assembled record metadata remain
+unsupported; record fields use opaque addresses.
 
 Constructors check `Target.CheckHost` before layout checks and resolving exports. Methods run their
 C bridges inside `Symbol.WithAddress`, retaining the image for the call and
@@ -134,7 +146,7 @@ Boolean values; C restores declared widths before the native call. This avoids
 depending on narrow-parameter extension across the Go/C boundary. Native pointer
 typedefs carry explicit cdecl/stdcall/fastcall attributes on Windows 386,
 independently for each outer/inner prototype. The static cgo bridge keeps the
-ordinary host C convention. Typed struct pointees and other conventions
+ordinary host C convention. Other typed pointees and conventions
 fail generation. Non-cdecl variadic calls and stdcall/fastcall on other targets
 are rejected. Use dynamic
 `Session.Bind` or the direct llgo adapter for those supported interfaces.
@@ -159,7 +171,10 @@ variants are checked on all eight Go targets and six llgo targets. Native tests
 execute objects, archives and shared libraries at `-O0` and `-O2`: integer and
 floating-point aggregates, padded/narrow/Boolean fields, nested arrays, large
 returns, native address fields, record-valued native pointer prototypes and a
-concrete variadic record prefix/result. Nil/closed handles, incompatible targets
+concrete variadic record prefix/result. Native struct-pointer factories,
+mutation/identity/nulls and record-pointer function-pointer prototypes execute
+without libffi. Additional tagged tests call these methods on independently
+owned `NativeValue` storage. Nil/closed handles, incompatible targets
 and packed C layout rejection are also checked without requiring libffi.
 
 ## Direct llgo bindings

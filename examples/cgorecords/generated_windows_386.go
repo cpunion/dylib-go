@@ -128,6 +128,28 @@ typedef void * (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call10_functio
 static void * dylib_go_42696e64696e6773_call10(uintptr_t address) {
 return (void *)((dylib_go_42696e64696e6773_call10_function)address)();
 }
+typedef dylib_go_42696e64696e6773_record1 * (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call11_function)(void);
+static void * dylib_go_42696e64696e6773_call11(uintptr_t address) {
+return (void *)((dylib_go_42696e64696e6773_call11_function)address)();
+}
+typedef dylib_go_42696e64696e6773_record1 * (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call12_function)(dylib_go_42696e64696e6773_record1 *);
+static void * dylib_go_42696e64696e6773_call12(uintptr_t address,void * p0) {
+return (void *)((dylib_go_42696e64696e6773_call12_function)address)((dylib_go_42696e64696e6773_record1 *)p0);
+}
+typedef double (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call13_function)(dylib_go_42696e64696e6773_record1 *);
+static double dylib_go_42696e64696e6773_call13(uintptr_t address,void * p0) {
+return ((dylib_go_42696e64696e6773_call13_function)address)((dylib_go_42696e64696e6773_record1 *)p0);
+}
+typedef dylib_go_42696e64696e6773_record1 * (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call14_pointer0)(dylib_go_42696e64696e6773_record1 *);
+typedef dylib_go_42696e64696e6773_call14_pointer0 (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call14_function)(void);
+static void * dylib_go_42696e64696e6773_call14(uintptr_t address) {
+return (void *)((dylib_go_42696e64696e6773_call14_function)address)();
+}
+typedef dylib_go_42696e64696e6773_record1 * (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call15_pointer1)(dylib_go_42696e64696e6773_record1 *);
+typedef dylib_go_42696e64696e6773_record1 * (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call15_function)(dylib_go_42696e64696e6773_call15_pointer1,dylib_go_42696e64696e6773_record1 *);
+static void * dylib_go_42696e64696e6773_call15(uintptr_t address,void * p0,void * p1) {
+return (void *)((dylib_go_42696e64696e6773_call15_function)address)((dylib_go_42696e64696e6773_call15_pointer1)p0,(dylib_go_42696e64696e6773_record1 *)p1);
+}
 */
 import "C"
 
@@ -154,6 +176,11 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "apply_outer", Symbol: "apply_outer", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 3, Elem: &abi.TypeDesc{Type: abi.I32}}}}, {Name: "next", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 3, Elem: &abi.TypeDesc{Type: abi.I32}}}}, {Name: "next", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 3, Elem: &abi.TypeDesc{Type: abi.I32}}}}, {Name: "next", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 3, Elem: &abi.TypeDesc{Type: abi.I32}}}}, {Name: "next", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
 		{Name: "record_variable", Symbol: "record_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "a", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "b", Type: abi.TypeDesc{Type: abi.I32}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "a", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "b", Type: abi.TypeDesc{Type: abi.I32}}}}}},
 		{Name: "data_pointer", Symbol: "data_pointer", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}},
+		{Name: "pair_pointer", Symbol: "pair_pointer", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}},
+		{Name: "mutate_pair", Symbol: "mutate_pair", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}},
+		{Name: "sum_pair", Symbol: "sum_pair", Signature: abi.Signature{Result: abi.F64, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}}},
+		{Name: "pair_pointer_factory", Symbol: "pair_pointer_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}}}},
+		{Name: "apply_pair_pointer", Symbol: "apply_pair_pointer", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer}, abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}}}},
 	},
 	Records: []clang.Record{
 		{Name: "Small", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "a", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "b", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 8, Alignment: 4, Offsets: []uint64{0, 4}}},
@@ -305,6 +332,11 @@ type Bindings struct {
 	symbol8  *dylib.Symbol
 	symbol9  *dylib.Symbol
 	symbol10 *dylib.Symbol
+	symbol11 *dylib.Symbol
+	symbol12 *dylib.Symbol
+	symbol13 *dylib.Symbol
+	symbol14 *dylib.Symbol
+	symbol15 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -386,6 +418,31 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol10 = symbol10
+	symbol11, err := session.Resolve("pair_pointer")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol11 = symbol11
+	symbol12, err := session.Resolve("mutate_pair")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol12 = symbol12
+	symbol13, err := session.Resolve("sum_pair")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol13 = symbol13
+	symbol14, err := session.Resolve("pair_pointer_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol14 = symbol14
+	symbol15, err := session.Resolve("apply_pair_pointer")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol15 = symbol15
 	return b, nil
 }
 
@@ -505,6 +562,61 @@ func (b *Bindings) Data_pointer() (result unsafe.Pointer, err error) {
 	}
 	err = b.symbol10.WithAddress(func(address uintptr) error {
 		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call10(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Pair_pointer() (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol11.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call11(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Mutate_pair(p0 unsafe.Pointer) (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol12.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call12(C.uintptr_t(address), p0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Sum_pair(p0 unsafe.Pointer) (result float64, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol13.WithAddress(func(address uintptr) error {
+		result = float64(C.dylib_go_42696e64696e6773_call13(C.uintptr_t(address), p0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Pair_pointer_factory() (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol14.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call14(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Apply_pair_pointer(p0 unsafe.Pointer, p1 unsafe.Pointer) (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol15.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call15(C.uintptr_t(address), p0, p1))
 		return nil
 	})
 	return result, err

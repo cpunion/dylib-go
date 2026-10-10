@@ -14,6 +14,7 @@ not a Session resource or a C++/Swift object constructor/destructor adapter.
 | `Write` | Replace fields and clear padding in the same allocation |
 | `Acquire` | Lease stable storage until explicitly released |
 | Lease `Address` | Use with `abi.Ptr(address)` or a caller-defined adapter; valid only for the lease lifetime |
+| Lease `Pointer` | Same lifetime as Address; supplies `unsafe.Pointer` to typed cgo/llgo adapters without an integer conversion |
 | Lease `Read`, `Write` | Remain usable during owner retirement; reject a released lease |
 | `WithAddress` | Short lease for synchronous code; unregister/join users before the function returns |
 | `Close` | Reject new leases/operations, wait for leases, free native bytes/layouts once |

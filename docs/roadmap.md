@@ -93,6 +93,7 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [ ] C++ constructor/method/object adapters, followed by inheritance and virtual dispatch.
 - [ ] Public providers, dependency paths/manifests, and version contracts.
 - [x] Owned native scalar/record/array storage with stable address leases, C-retained pointer tests and explicit retirement.
+- [x] Generated cgo struct-pointer methods using opaque native addresses, native pointer prototypes and owned storage integration without casting Go record memory.
 - [ ] Automatic long-lived native registration owners coupling values, callbacks, code leases and unregister/join operations.
 - [ ] Module replacement with explicit retirement and state migration.
 - [ ] Optional Apple C facades for ABIBridge Swift/ObjC integration.

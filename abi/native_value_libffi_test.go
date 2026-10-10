@@ -74,6 +74,10 @@ func TestNativeValueRoundTrips(t *testing.T) {
 	if err != nil || address == 0 || uint64(address)%expected.Alignment != 0 {
 		t.Fatal("native address/alignment:", address, err)
 	}
+	pointer, err := lease.Pointer()
+	if err != nil || uintptr(pointer) != address {
+		t.Fatal("native pointer:", pointer, err)
+	}
 	// Self/interior pointers are owned addresses, not call-local temporary copies.
 	snapshot.Aggregate.Fields[1] = Ptr(address + uintptr(expected.Offsets[1]))
 	if err := lease.Write(snapshot); err != nil {

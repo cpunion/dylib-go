@@ -58,6 +58,9 @@ func TestNativeValueValidationAndUnavailable(t *testing.T) {
 	}
 	var absentLease *NativeValueLease
 	for _, lease := range []*NativeValueLease{absentLease, {}} {
+		if pointer, err := lease.Pointer(); pointer != nil || !errors.Is(err, ErrValueClosed) {
+			t.Fatal("nil/zero lease pointer:", pointer, err)
+		}
 		if _, err := lease.Address(); !errors.Is(err, ErrValueClosed) {
 			t.Fatal("nil/zero lease address:", err)
 		}

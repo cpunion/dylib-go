@@ -13,9 +13,9 @@ import (
 // Go and llgo can compile the generated source. Scalars, opaque native pointers,
 // ordinary record values and function-pointer addresses are supported. WithTail
 // specifies a concrete variadic call shape; C performs default promotions.
-// Windows 386 also supports fixed stdcall/fastcall prototypes. Typed record
-// pointees require another adapter. The caller owns the Session, native storage
-// and any returned or passed function-pointer lifetimes.
+// Windows 386 also supports fixed stdcall/fastcall prototypes. Struct pointees
+// use opaque native addresses; no Go struct pointer conversion is inferred.
+// The caller owns the Session, native storage and function-pointer lifetimes.
 func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
 	if err := validateBindingName(h, bindingType); err != nil {
 		return nil, err
@@ -200,7 +200,7 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 		} else if s.Args[i] == abi.Bool {
 			conversions = append(conversions, fmt.Sprintf("var c%d C.int32_t\nif p%d { c%d = 1 }\n", i, i, i))
 			goArgs = append(goArgs, fmt.Sprintf("c%d", i))
-		} else if kind != "void *" {
+		} else if s.Args[i] != abi.Pointer {
 			goArgs = append(goArgs, fmt.Sprintf("C.%s(p%d)", transport, i))
 		} else {
 			goArgs = append(goArgs, argument)
@@ -229,7 +229,7 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 	fmt.Fprintf(c, "typedef %s (%s*%s_function)(%s);\nstatic %s %s(%s) {\n", prototypeResult, attribute, helper, strings.Join(prototype, ","), mapper.transport(s.ReturnType()), helper, strings.Join(bridge, ","))
 	if s.Result != abi.Void {
 		fmt.Fprint(c, "return ")
-		if resultC == "void *" {
+		if s.Result == abi.Pointer {
 			fmt.Fprint(c, "(void *)")
 		}
 	}
