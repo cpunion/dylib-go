@@ -42,8 +42,9 @@ type Options struct {
 
 // Session owns one linked image and its shared-library handles. Do not copy it.
 // A session is built in two phases: Load/Define, then Link/Lookup/Resolve/Bind.
-// Close invalidates every returned address. Callers using raw addresses must
-// ensure no native threads or callbacks still use them before calling Close.
+// Close waits for active adapters and leases before invalidating addresses.
+// Callers using unmanaged raw addresses must ensure no native threads or
+// callbacks still use them before calling Close.
 type Session struct {
 	mu          sync.Mutex
 	cond        *sync.Cond
@@ -532,8 +533,9 @@ func (s *Session) lookup(name string) (uintptr, error) {
 }
 
 // Close retires the session, rejects new calls, and waits for active address
-// users before releasing resources. Call it outside this session's adapters,
-// callbacks, and finalizers: waiting for one's own call would deadlock.
+// users and leases before releasing resources. Call it outside this session's
+// adapters, callbacks, and finalizers. Release leases after unregister/join;
+// waiting for one's own call or lease would deadlock.
 func (s *Session) Close() error {
 	s.mu.Lock()
 	if s.closed {

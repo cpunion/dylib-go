@@ -26,6 +26,12 @@ For a stored registration:
 
 `Callback.Close` waits for every lease and frees the native entry, plan, and capture handle afterward. Lease close and callback close are idempotent; closed acquisition/address access returns `abi.ErrCallbackClosed`. A lease guards ownership, not native use-after-free: releasing it while native code still holds or executes the address violates the contract. Neither the callback nor `Session.Define` automatically owns a native registration or a target session.
 
+`dylib.NewRegistration` can acquire and group code, native-value and callback
+leases before publication. Its application-supplied stop operation unregisters
+and joins users before releasing them; failure keeps them retained for retry.
+Existing function leases can execute cleanup while their session retires. See
+[registration ownership](registrations.md).
+
 Do not acquire another callback lease or close the callback from its handler or from `WithAddress`: a pending callback close can cause a lock cycle. Keep an already-acquired address for recursive calls. Session `Resolve`, `Bind`, and `Function.Call` can reenter the calling session, including the same Function/CallPlan, because no invocation mutex spans native execution. Session/CallPlan close rejects new calls and waits for existing users; invoke close outside that owner's own call or finalizer. See [concurrency and retirement](concurrency.md).
 
 ## Errors and threads

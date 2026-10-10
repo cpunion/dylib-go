@@ -1,5 +1,10 @@
 # Owned native storage
 
+For registrations combining retained values, callbacks and code, see
+[registration ownership](registrations.md). The registration acquires separate
+leases and releases them only after successful unregister/join; resource owners
+remain independently owned.
+
 `abi.NewNativeValue(description, initial)` owns stable host C storage for scalars,
 ordinary structs and fixed arrays. It snapshots logical metadata and copies the
 initial value field by field. It requires cgo and `-tags libffi` with either Go

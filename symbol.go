@@ -3,8 +3,8 @@ package dylib
 import "fmt"
 
 // Symbol is a resolved native function or data symbol owned by a Session.
-// It carries no type information or calling convention. Use WithAddress to
-// access its address while preventing the session from closing.
+// It carries no type information or calling convention. Use WithAddress for
+// synchronous use, or Acquire to retain its code across separate native calls.
 type Symbol struct {
 	owner   *Session
 	address uintptr
