@@ -165,6 +165,20 @@ func aggregateValue(d TypeDesc, members []Value) (Value, error) {
 // code must not retain this address. Use Ptr for caller-managed native storage.
 func AddressOf(v *Value) Value { return Value{Type: Pointer, Pointee: v} }
 
+func hasTemporaryPointees(v Value) bool {
+	if v.Pointee != nil {
+		return true
+	}
+	if v.Aggregate != nil {
+		for _, field := range v.Aggregate.Fields {
+			if hasTemporaryPointees(field) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Zero creates a zero value for a descriptor that has passed Validate.
 func Zero(d TypeDesc) Value {
 	v := Value{Type: d.Type}

@@ -14,16 +14,16 @@ binary="$example_dir/mixed"
 case "$(uname -s)" in
   Darwin)
     library="$example_dir/scalars.dylib"
-    "${CLANG:-clang}" -dynamiclib testdata/scalars.c testdata/arrays.c -o "$library"
+    "${CLANG:-clang}" -dynamiclib testdata/scalars.c testdata/arrays.c examples/nativevalue/testdata/exports.c -o "$library"
     ;;
   Linux)
     library="$example_dir/scalars.so"
-    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared -fPIC testdata/scalars.c testdata/arrays.c -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared -fPIC testdata/scalars.c testdata/arrays.c examples/nativevalue/testdata/exports.c -o "$library"
     ;;
   MINGW*|MSYS*)
     binary="$example_dir/mixed.exe"
     library="$example_dir/scalars.dll"
-    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared testdata/scalars.c testdata/arrays.c -Wl,--export-all-symbols -o "$library"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -shared testdata/scalars.c testdata/arrays.c examples/nativevalue/testdata/exports.c -Wl,--export-all-symbols -o "$library"
     ;;
   *) echo 'unsupported example host' >&2; exit 1 ;;
 esac
@@ -46,6 +46,11 @@ echo "$compiler dynamic C callback with Go capture: $result"
 result=$("$binary" "$library")
 test "$result" = 42
 echo "$compiler dynamic C struct with array members: $result"
+
+"$compiler" build -tags libffi -o "$binary" ./examples/nativevalue
+result=$("$binary" "$library")
+test "$result" = 42
+echo "$compiler leased native record retained across C calls: $result"
 
 object="$example_dir/cgodeclarations.o"
 "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -c -fno-stack-protector examples/cgodeclarations/testdata/exports.c -o "$object"
