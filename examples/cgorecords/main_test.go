@@ -62,6 +62,7 @@ func TestGeneratedCgoRecords(t *testing.T) {
 	compiler := compilerTool(t)
 	archiver := archiveTool(t, compiler)
 	names := []string{"echo_small", "echo_pair", "echo_outer", "echo_floats", "echo_flags", "small_factory", "apply_small", "outer_factory", "apply_outer", "record_variable", "data_pointer"}
+	names = append(names, "pair_pointer", "mutate_pair", "sum_pair", "pair_pointer_factory", "apply_pair_pointer")
 	header, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -149,6 +150,9 @@ func TestGeneratedCgoRecords(t *testing.T) {
 					if got, err := b.Echo_small(BindingsRecord0{}); got != (BindingsRecord0{}) || !errors.Is(err, dylib.ErrClosed) {
 						t.Fatal("closed record binding:", got, err)
 					}
+					if pointer, err := b.Pair_pointer(); pointer != nil || !errors.Is(err, dylib.ErrClosed) {
+						t.Fatal("closed struct pointer binding:", pointer, err)
+					}
 				})
 			}
 		})
@@ -189,6 +193,20 @@ func checkRecordCalls(t *testing.T, session *dylib.Session, b *Bindings) {
 	check("false boolean", gotFlags.Truth, true, err)
 	variable, err := b.Record_variable(small, -8, 10)
 	check("record variadic prefix/result", variable, BindingsRecord0{A: 12, B: 32}, err)
+	nativePair, err := b.Pair_pointer()
+	if err != nil || nativePair == nil {
+		t.Fatal("native struct pointer:", err)
+	}
+	checksum, err := b.Sum_pair(nativePair)
+	check("native pointee fields", checksum, float64(41.5), err)
+	mutated, err := b.Mutate_pair(nativePair)
+	check("native pointer mutation/identity", mutated, nativePair, err)
+	checksum, err = b.Sum_pair(nativePair)
+	check("mutated native pointee", checksum, float64(43), err)
+	mutated, err = b.Mutate_pair(nil)
+	if mutated != nil || err != nil {
+		t.Fatal("null struct pointee:", mutated, err)
+	}
 	// Keep code/data in the image alive throughout native entry use.
 	factory, err := session.Resolve("small_factory")
 	if err != nil {
@@ -207,6 +225,14 @@ func checkRecordCalls(t *testing.T, session *dylib.Session, b *Bindings) {
 		}
 		large, err := b.Apply_outer(outerEntry, outer)
 		check("native large record prototype", large, wantOuter, err)
+		pointerEntry, err := b.Pair_pointer_factory()
+		if err != nil || pointerEntry == nil {
+			t.Fatal("struct pointer factory:", err)
+		}
+		mutated, err := b.Apply_pair_pointer(pointerEntry, nativePair)
+		check("native struct-pointer prototype/identity", mutated, nativePair, err)
+		checksum, err := b.Sum_pair(nativePair)
+		check("native struct-pointer consumer mutation", checksum, float64(44.5), err)
 		return nil
 	})
 	if err != nil {

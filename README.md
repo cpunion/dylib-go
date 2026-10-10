@@ -419,7 +419,10 @@ supported with Go on Windows 386. Ordinary record values support nested records,
 fixed arrays and native address fields. Fields are copied into independent C
 values; public Go structs need not share C padding or alignment. Constructors
 verify C sizes, alignments and offsets against Clang before resolving symbols.
-Typed struct pointees and other conventions require another adapter. Run the
+Complete struct pointees use `unsafe.Pointer` native addresses with their C
+prototypes preserved. They do not accept pointers to public Go record storage;
+use producer-owned storage or a compatible `abi.NativeValue` lease. Other
+conventions require another adapter. Run the
 [tested variadic example](examples/cgodeclarations/main.go) with
 `examples/run.sh <go|llgo> cgodeclarations <library>`, or the
 [record example](examples/cgorecords/main.go) with

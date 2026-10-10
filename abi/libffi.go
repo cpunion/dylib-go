@@ -648,8 +648,8 @@ func prepareValue(d TypeDesc, initial Value) (valueBackend, error) {
 	return b, nil
 }
 
-func (b *ffiValueBackend) address() uintptr { return uintptr(b.memory) }
-func (b *ffiValueBackend) layout() Layout   { return b.storageLayout }
+func (b *ffiValueBackend) pointer() unsafe.Pointer { return b.memory }
+func (b *ffiValueBackend) layout() Layout          { return b.storageLayout }
 func (b *ffiValueBackend) read() Value {
 	// Addresses into an owned allocation are valid while its lease is alive;
 	// call-local temporary-pointer escape checks do not apply to this storage.

@@ -41,18 +41,6 @@ func TestCgoGenerationAcrossTargets(t *testing.T) {
 }
 
 func TestCgoRejectsUnsupportedDeclarations(t *testing.T) {
-	for _, prototype := range []string{
-		"typedef struct {int a,b;} Pair; Pair *f(Pair *);",
-		"typedef struct {int a,b;} Pair; void f(Pair *(*)(Pair *));",
-	} {
-		h, err := Parse(context.Background(), headerFile(t, prototype), Options{Compiler: compilerTool(t), Functions: []string{"f"}})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if _, err := h.CgoSource("bindings", "Bindings"); err == nil {
-			t.Fatal("unsupported bridge emitted:", prototype)
-		}
-	}
 	h, err := Parse(context.Background(), headerFile(t, "int f(int);"), Options{Compiler: compilerTool(t), Target: "x86_64-unknown-linux-gnu", Functions: []string{"f"}})
 	if err != nil {
 		t.Fatal(err)
@@ -70,6 +58,37 @@ func TestCgoRejectsUnsupportedDeclarations(t *testing.T) {
 	h.Functions = append(h.Functions, Declaration{Name: "F", Symbol: "F", Signature: h.Functions[0].Signature})
 	if _, err := h.CgoSource("bindings", "Bindings"); err == nil {
 		t.Fatal("ambiguous method emitted")
+	}
+}
+
+func TestCgoRecordPointersAcrossTargets(t *testing.T) {
+	path := headerFile(t, "typedef struct {int a,b;} Pair; Pair *f(Pair *); void apply(Pair *(*)(Pair *),Pair *);")
+	for _, target := range targets {
+		t.Run(target.triple, func(t *testing.T) {
+			h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Target: target.triple, Functions: []string{"f", "apply"}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			source, err := h.CgoSource("bindings", "Bindings")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := parser.ParseFile(token.NewFileSet(), "generated.go", source, parser.AllErrors); err != nil {
+				t.Fatal(err)
+			}
+			for _, marker := range []string{"record0 *", "F(p0 unsafe.Pointer)", "Apply(p0 unsafe.Pointer, p1 unsafe.Pointer)", "(void *)", "compiler/cgo layout mismatch"} {
+				if !strings.Contains(string(source), marker) {
+					t.Fatalf("missing %s:\n%s", marker, source)
+				}
+			}
+			if strings.Contains(string(source), "*BindingsRecord0") {
+				t.Fatal("struct pointees must not accept raw Go record storage")
+			}
+			h.Functions[0].Signature.ArgTypes[0].Elem = &abi.TypeDesc{Type: abi.I32}
+			if _, err := h.CgoSource("bindings", "Bindings"); err == nil {
+				t.Fatal("unsupported typed scalar pointee emitted")
+			}
+		})
 	}
 }
 
