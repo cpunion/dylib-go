@@ -57,6 +57,14 @@ result=$("$binary" "$library")
 test "$result" = 42
 echo "$compiler owned native registration with code/value/callback leases: $result"
 
+provider="$example_dir/dependency-provider.o"
+consumer="$example_dir/dependency-consumer.o"
+"${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -c -fno-stack-protector examples/dependencies/testdata/provider.c -o "$provider"
+"${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -c -fno-stack-protector examples/dependencies/testdata/consumer.c -o "$consumer"
+result=$(bash examples/run.sh "$compiler" dependencies "$provider" "$consumer")
+test "$result" = 42
+echo "$compiler retained cross-session function/data imports: $result"
+
 object="$example_dir/cgodeclarations.o"
 "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -c -fno-stack-protector examples/cgodeclarations/testdata/exports.c -o "$object"
 result=$(bash examples/run.sh "$compiler" cgodeclarations "$object")

@@ -39,6 +39,7 @@ Known native signatures can use caller-defined cgo or llgo adapters. For dynamic
 
 - `Inspect(path)`: read format, target, symbols, and archive metadata without executing code.
 - `Load(path)` / `Define(name, address)`: add inputs or native symbols supplied by the host.
+- `DefineSymbol(name, symbol)`: import another session's function/data symbol and retain its code through consumer cleanup.
 - `Link(roots...)`: select archive roots, extract dependencies, and apply relocations.
 - `Lookup(name)`: obtain an unmanaged native address; callers manage its lifetime.
 - `Resolve(name)`: resolve once and return a session-owned, untyped `Symbol`.
@@ -178,6 +179,12 @@ func main() {
 Neither typed adapter enables the optional dynamic ABI backend. CI compiles and runs these programs against a real C shared library with Go on eight targets and llgo on the six amd64/arm64 targets. Run `bash examples/run.sh go library` or `bash examples/run.sh llgo library` to reproduce the typed and dynamic examples; libffi development files are required for the dynamic example.
 
 `Load` may be called repeatedly before the first `Link`, `Lookup`, `Resolve`, or `Bind`. Add all dependencies before linking. A failed link can be retried after adding dependencies. A successful link seals the session; create a new session for another plugin set.
+
+Use `DefineSymbol` to import resolved functions or data from another session with
+automatic code retention. Close consumers before providers, or close them
+concurrently; existing consumers can still use a retiring provider. See
+[retained dependencies](docs/dependencies.md) and the
+[CI-executed library example](examples/dependencies/main.go).
 
 ## Dynamic signatures
 

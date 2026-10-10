@@ -3,7 +3,7 @@ set -euo pipefail
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
 
 usage() {
-  echo 'usage: examples/run.sh <go|llgo> {call ARGS...|inspect FILE|llvm MODULE|llvmarchive ARCHIVE|llvmmodules MODULE...|declarations LIBRARY|cgodeclarations LIBRARY|cgorecords LIBRARY|directdeclarations LIBRARY|library|quickstart|dynamic|structs}' >&2
+  echo 'usage: examples/run.sh <go|llgo> {call ARGS...|inspect FILE|llvm MODULE|llvmarchive ARCHIVE|llvmmodules MODULE...|dependencies PROVIDER CONSUMER|declarations LIBRARY|cgodeclarations LIBRARY|cgorecords LIBRARY|directdeclarations LIBRARY|library|quickstart|dynamic|structs}' >&2
   exit 1
 }
 
@@ -17,7 +17,7 @@ case "$compiler" in
 esac
 
 case "$action" in
-  call|inspect|llvm|llvmarchive|llvmmodules|declarations|cgodeclarations|cgorecords|directdeclarations)
+  call|inspect|llvm|llvmarchive|llvmmodules|dependencies|declarations|cgodeclarations|cgorecords|directdeclarations)
     [[ $# -ge 1 ]] || usage
     cli_dir=$(mktemp -d)
     trap 'rm -rf "$cli_dir"' EXIT
@@ -27,10 +27,14 @@ case "$action" in
     esac
     example=""
     case "$action" in
-      llvm|llvmarchive|llvmmodules|declarations|cgodeclarations|cgorecords|directdeclarations) example="./examples/$action" ;;
+      llvm|llvmarchive|llvmmodules|dependencies|declarations|cgodeclarations|cgorecords|directdeclarations) example="./examples/$action" ;;
     esac
     if [[ -n "$example" ]]; then
-      [[ "$action" == llvmmodules || $# -eq 1 ]] || usage
+      if [[ "$action" == dependencies ]]; then
+        [[ $# -eq 2 ]] || usage
+      else
+        [[ "$action" == llvmmodules || $# -eq 1 ]] || usage
+      fi
       [[ "$action" != directdeclarations || "$compiler" == llgo ]] || usage
       build_args=(-o "$binary" "$example")
     else

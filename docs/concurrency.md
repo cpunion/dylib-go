@@ -55,6 +55,9 @@ lease if stop fails. See [retained registrations](registrations.md).
 Synchronous guards alone do not own arbitrary pointers retained by native
 code. Join workers and remove native registrations before releasing leases.
 Raw `Lookup` addresses require caller-managed lifetimes.
+`DefineSymbol` imports retain their provider through consumer cleanup. Close
+consumers first, or concurrently with providers; consumer code leases transitively
+retain imported functions/data during retirement. See [dependencies](dependencies.md).
 Loading and linking remain serialized staging operations; constructors during
 OS load or raw initialization must not reenter the loading session. Supporting
 staged-symbol lookup during initialization requires a separate linking state.
