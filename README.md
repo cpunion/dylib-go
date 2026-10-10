@@ -43,8 +43,10 @@ Known native signatures can use caller-defined cgo or llgo adapters. For dynamic
 - `Lookup(name)`: obtain an unmanaged native address; callers manage its lifetime.
 - `Resolve(name)`: resolve once and return a session-owned, untyped `Symbol`.
 - `Symbol.WithAddress(callback)`: use an address while preventing concurrent `Close`.
+- `Symbol.Acquire()` / `Function.Acquire()`: retain code and bound plans until unregister/join has finished, including during session retirement.
 - `Bind(name, abi.Signature)` / `Function.Call`: bind and invoke an explicit dynamic signature with libffi.
 - `abi.NewCallback(signature, handler)`: create a native C entry for a Go closure; acquire a lease before publishing its address.
+- `NewRegistration(resources, stop)`: group code, native-value and callback leases; run unregister/join before releasing them, retaining resources on cleanup failure.
 - `Close()`: free the object image and release system library references; subsequent symbol access and bound calls return `ErrClosed`.
 
 Mach-O and i386 COFF C names omit one leading linker underscore. Mach-O supports external `N_INDR` aliases, eager indirect pointer binding, and standard amd64/arm64 symbol stubs; see [Mach-O symbol rules](docs/macho.md). i386 stdcall/fastcall decorations remain; select the matching convention explicitly when binding. C++ names still require their exact mangled linkage name.
@@ -243,6 +245,15 @@ and writes use logical values; pointer fields remain caller-owned addresses.
 This optional libffi path owns storage separately from code images. See
 [native value ownership](docs/native-values.md) and the
 [tested library example](examples/nativevalue/main.go).
+
+For a long-lived registration, `NewRegistration` acquires independent leases on
+its declared symbols/functions, native values and callbacks before addresses are
+published through `WithLeases`. Its stop function unregisters and joins native
+users while all leases remain alive; failed cleanup retains them for a later
+`Close` retry. Resource owners remain independent. See
+[registration ownership](docs/registrations.md) and the
+[tested C registration example](examples/registration/main.go), executed by
+`examples/run.sh go library` and `examples/run.sh llgo library`.
 
 `abi.LayoutOf(description, abi.CDecl)` returns the current native backend's storage size, alignment and direct member offsets as independent Go data. It uses the same type construction as calls and callbacks; pointer queries describe the address itself. Compare these values with the producer's compiler layout before using generated records. See [native layout queries](docs/layout.md).
 
@@ -561,7 +572,7 @@ Inputs must be trusted native code. The parser and execution layer provide no se
 
 Objects are allocated RW, relocated in Go, flushed from the instruction cache, and protected as RX/R/RW per section. No pages are RWX. Raw objects run supported initialization tables after link validation and session-owned exit callbacks/termination tables before unmapping. The raw path rejects recognized TLS, unsupported lifecycle forms, unsupported COMDAT selections, and language runtime registration requirements. Optional Windows amd64/arm64 runtime function tables, macOS amd64/arm64 DWARF and Linux amd64/arm64/386 libgcc frame registration support C stack traversal; language exception handlers and other raw unwind backends remain pending. Use complete shared libraries when these services are needed; the OS handles their dependencies, TLS, and initialization. Exceptions must still remain within the native call boundary.
 
-`Symbol.WithAddress` and `Function.Call` support concurrent and reentrant calls with independent argument storage. `Close` rejects new calls with `ErrClosed`, waits for active address users, then releases resources. Finish all address use before an adapter returns; close owners outside their own calls or callbacks. Synchronize shared native state and mutable pointees. See [concurrency and retirement](docs/concurrency.md). Raw addresses, asynchronous native threads, and native callbacks require caller-managed lifetimes. `Symbol.WithAddress` guards session addresses. `abi.Callback` owns a separate native entry and captures, with leases that callers hold for registrations and native workers. Go function values cannot be cast into C function pointers; use `abi.NewCallback` to create an entry. `Define` accepts a native function or data address and does not acquire a callback lease for you.
+`Symbol.WithAddress` and `Function.Call` support concurrent and reentrant calls with independent argument storage. `Close` rejects new calls with `ErrClosed`, waits for active address users and leases, then releases resources. Existing `SymbolLease`/`FunctionLease` entries remain usable during session retirement so native unregister/join can finish. Finish all address use before an adapter returns; close owners outside their own calls, callbacks and held leases. Synchronize shared native state and mutable pointees. See [concurrency and retirement](docs/concurrency.md). Unmanaged raw addresses require caller-managed lifetimes. `Registration` groups explicitly declared code, native-value and callback leases with an application-supplied stop operation. `Symbol.WithAddress` guards session addresses. `abi.Callback` owns a separate native entry and captures, with leases that callers hold for registrations and native workers. Go function values cannot be cast into C function pointers; use `abi.NewCallback` to create an entry. `Define` accepts a native function or data address and does not acquire a callback lease for you.
 
 Use `Options{KeepLibraries:true}` for Go/llgo `c-shared` libraries and other runtimes with background threads, retaining OS references until process exit. `ProcessSymbols:true` searches POSIX host exports; on Windows, load the supplying DLL explicitly.
 

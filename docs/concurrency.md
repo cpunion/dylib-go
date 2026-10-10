@@ -15,10 +15,10 @@ captures, and native state that their C API does not permit sharing.
 
 ## Close and retirement
 
-| Owner state | New calls/lookups | Existing calls | Cleanup |
+| Owner state | New calls/lookups/leases | Existing calls/leases | Cleanup |
 | --- | --- | --- | --- |
 | Open | Accepted | May overlap or nest | None |
-| Retiring after Close starts | `ErrClosed` | Retain code, libraries, and call layouts until return | Waits without an invocation lock |
+| Retiring after Close starts | `ErrClosed` | Retain resources; existing lease calls can finish unregister/join | Waits without an invocation lock |
 | Closed | `ErrClosed` | None | Completed |
 
 `Session.Close` retires the owner before waiting. A callback racing close can
@@ -39,9 +39,16 @@ from its handler when a callback close could be pending.
 
 ## Boundaries
 
-These synchronous guards do not own arbitrary pointers retained by native
-code. Join workers and remove native registrations before releasing addresses
-or callback leases. Raw `Lookup` addresses require caller-managed lifetimes.
+`Symbol.Acquire` and `Function.Acquire` retain the session across separate calls.
+Their leases remain usable during session retirement, including native cleanup,
+then reject new uses and wait for active lease calls when released.
+`Registration` groups code, value and callback leases with an explicit stop
+operation; it waits for Go operations before unregister/join, and retains every
+lease if stop fails. See [retained registrations](registrations.md).
+
+Synchronous guards alone do not own arbitrary pointers retained by native
+code. Join workers and remove native registrations before releasing leases.
+Raw `Lookup` addresses require caller-managed lifetimes.
 Loading and linking remain serialized staging operations; constructors during
 OS load or raw initialization must not reenter the loading session. Supporting
 staged-symbol lookup during initialization requires a separate linking state.
