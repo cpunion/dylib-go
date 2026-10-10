@@ -236,6 +236,14 @@ Supported scalar types are signed/unsigned 8/16/32/64-bit integers, C `bool`, `f
 
 Arrays use `TypeDesc{Type: abi.Array, Len: N, Elem: &element}` and may appear inside structs or behind pointers, including multidimensional arrays and arrays of structs or pointers. C array parameters decay to pointers; bare array arguments/results are rejected. The [array library example](examples/arrays/main.go) constructs an array member and calls a C function; `examples/run.sh go library` and `examples/run.sh llgo library` execute it in CI. See [array types and limits](docs/arrays.md).
 
+Use `abi.NewNativeValue(description, initial)` when C must retain scalar, record
+or array storage across calls. Acquire a lease, pass its address with `abi.Ptr`,
+unregister/join native users, then release the lease and close the owner. Reads
+and writes use logical values; pointer fields remain caller-owned addresses.
+This optional libffi path owns storage separately from code images. See
+[native value ownership](docs/native-values.md) and the
+[tested library example](examples/nativevalue/main.go).
+
 `abi.LayoutOf(description, abi.CDecl)` returns the current native backend's storage size, alignment and direct member offsets as independent Go data. It uses the same type construction as calls and callbacks; pointer queries describe the address itself. Compare these values with the producer's compiler layout before using generated records. See [native layout queries](docs/layout.md).
 
 For a variadic call shape, set `Signature.Variadic = true` and `FixedArgs` to the fixed-prefix count. `Args` includes every concrete tail argument. The backend promotes tail `float32` to `float64` and small integers / C bool to `int32`; fixed arguments retain their declared types. Prepare another binding for a different tail shape. `Convention` accepts `abi.Default` / `abi.CDecl` on supported hosts and `abi.StdCall` / `abi.FastCall` for fixed calls on Windows 386; unsupported host/convention combinations fail during preparation.

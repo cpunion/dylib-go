@@ -167,17 +167,3 @@ func (c *Callback) Close() error {
 	}
 	return nil
 }
-
-func temporaryCallbackResult(v Value) bool {
-	if v.Pointee != nil {
-		return true
-	}
-	if v.Aggregate != nil {
-		for _, field := range v.Aggregate.Fields {
-			if temporaryCallbackResult(field) {
-				return true
-			}
-		}
-	}
-	return false
-}

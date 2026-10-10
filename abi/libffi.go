@@ -594,9 +594,13 @@ func layoutOf(d TypeDesc, convention Convention) (Layout, error) {
 	if err != nil {
 		return Layout{}, err
 	}
+	return nativeStorageLayout(native, d.Type, nativeABI)
+}
+
+func nativeStorageLayout(native *nativeType, kind Type, nativeABI C.int) (Layout, error) {
 	// Aggregates were initialized by ffi_get_struct_offsets in build. Prepare
 	// scalar types before reading metadata, as required by libffi's ABI contract.
-	if d.Type != Struct && d.Type != Array {
+	if kind != Struct && kind != Array {
 		if rc := C.dylib_scalar_layout(native.ffi, nativeABI); rc != 0 {
 			return Layout{}, fmt.Errorf("ffi scalar layout failed: %d", rc)
 		}
@@ -606,6 +610,59 @@ func layoutOf(d TypeDesc, convention Convention) (Layout, error) {
 		layout.Offsets = append(layout.Offsets, uint64(offset))
 	}
 	return layout, nil
+}
+
+type ffiValueBackend struct {
+	desc          TypeDesc
+	pool          nativePool
+	native        *nativeType
+	memory        unsafe.Pointer
+	storageLayout Layout
+}
+
+func prepareValue(d TypeDesc, initial Value) (valueBackend, error) {
+	b := &ffiValueBackend{desc: d, pool: nativePool{abi: C.dylib_abi(C.uint8_t(CDecl))}}
+	ok := false
+	defer func() {
+		if !ok {
+			b.close()
+		}
+	}()
+	var err error
+	b.native, err = b.pool.build(d)
+	if err != nil {
+		return nil, err
+	}
+	b.storageLayout, err = nativeStorageLayout(b.native, d.Type, b.pool.abi)
+	if err != nil {
+		return nil, err
+	}
+	b.memory, err = b.pool.allocate(b.storageLayout.Size)
+	if err != nil {
+		return nil, err
+	}
+	if err := b.write(initial); err != nil {
+		return nil, err
+	}
+	ok = true
+	return b, nil
+}
+
+func (b *ffiValueBackend) address() uintptr { return uintptr(b.memory) }
+func (b *ffiValueBackend) layout() Layout   { return b.storageLayout }
+func (b *ffiValueBackend) read() Value {
+	// Addresses into an owned allocation are valid while its lease is alive;
+	// call-local temporary-pointer escape checks do not apply to this storage.
+	reader := nativePool{}
+	return reader.read(b.desc, b.native, b.memory, false)
+}
+func (b *ffiValueBackend) write(value Value) error {
+	C.memset(b.memory, 0, C.size_t(b.storageLayout.Size))
+	return b.pool.write(value, b.desc, b.native, b.memory)
+}
+func (b *ffiValueBackend) close() {
+	b.pool.close()
+	b.desc, b.native, b.memory, b.storageLayout = TypeDesc{}, nil, nil, Layout{}
 }
 
 type nativeCopy struct {
@@ -871,7 +928,7 @@ func (b *ffiCallbackBackend) dispatch(state *callbackState, result, arguments un
 	if err == nil {
 		err = value.Validate(state.signature.ReturnType())
 	}
-	if err == nil && temporaryCallbackResult(value) {
+	if err == nil && hasTemporaryPointees(value) {
 		err = fmt.Errorf("callback result cannot contain temporary pointees")
 	}
 	if err != nil {

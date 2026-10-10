@@ -51,3 +51,9 @@ simultaneous native calls, independent struct-pointer copies, close during a
 callback, and finalizer queries. A C library also starts four native threads,
 each performing C → Go → same-session C → Go calls through a shared plan. The
 existing Go and llgo platform suites execute these tests, including Go 386.
+
+`abi.NativeValue` follows the same retirement sequence for native storage.
+`Close` rejects new leases and waits for existing leases before freeing bytes and
+layouts. Existing leases can read/write during retirement. Go reads/writes are
+serialized; foreign memory access still needs application synchronization. See
+[owned native values](native-values.md).
