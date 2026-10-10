@@ -2,7 +2,7 @@
 
 `Load` stages raw objects. The first successful `Link`, `Lookup`, `Resolve`, or `Bind` relocates the selected objects, validates all lifecycle entries and requested roots, applies W^X protection, then runs their initializers. Repeated linking does not run them again. A failed validation runs no native initializer and permits a dependency fix and retry.
 
-`Close` prevents further calls, releases prepared call plans, executes session-owned exit callbacks, runs termination arrays, drains any callbacks registered by those terminators, unregisters optional runtime function tables, and only then frees the image and native registration storage. OS library handles remain available throughout this sequence and are released afterward. `KeepLibraries` retains OS handles, but does not retain the raw object image or skip its finalization. Closing a session that never began initialization runs no object code; repeated close is harmless.
+`Close` prevents further calls, releases prepared call plans, executes session-owned exit callbacks, runs termination arrays, drains any callbacks registered by those terminators, unregisters optional runtime function tables, and only then frees the image and native registration storage. OS library handles remain available throughout this sequence and are released afterward. `DefineSymbol` provider leases remain alive through both image and library cleanup, including failed-initializer exit callbacks; see [retained dependencies](dependencies.md). `KeepLibraries` retains OS handles, but does not retain the raw object image or skip its finalization. Closing a session that never began initialization runs no object code; repeated close is harmless.
 
 ## Supported tables
 

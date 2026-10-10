@@ -26,6 +26,12 @@ func nativeABILibrary(t testing.TB, source, input string) *Session {
 	if !abi.Available() {
 		t.Skip("requires libffi")
 	}
+	return nativeInputSession(t, source, input)
+}
+
+// Native ownership tests can use static adapters without the optional ABI backend.
+func nativeInputSession(t testing.TB, source, input string) *Session {
+	t.Helper()
 	needNative(t)
 	dir := t.TempDir()
 	var path string

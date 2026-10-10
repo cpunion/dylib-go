@@ -62,6 +62,8 @@ type Session struct {
 	closed        bool
 	plans         map[string]*abi.CallPlan
 	physicalPlans map[string]*abi.CallPlan // Index existing logical owners, not extra references.
+
+	symbolDependencies []*SymbolLease // Code providers retained through native cleanup.
 }
 
 func New(opts Options) *Session {
@@ -166,9 +168,16 @@ func (s *Session) Load(path string) error {
 
 // Define registers an unmangled C name (or exact C++ mangled name). address
 // must be a native C-ABI function or native data, not a Go function value.
+// Its owner/lifetime is caller-managed. Use DefineSymbol for another Session's
+// resolved symbol to retain that session automatically.
 func (s *Session) Define(name string, address uintptr) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.define(name, address)
+}
+
+// define requires mu; both unmanaged and retained definitions use these rules.
+func (s *Session) define(name string, address uintptr) error {
 	if e := s.mutable(); e != nil {
 		return e
 	}
@@ -550,12 +559,13 @@ func (s *Session) Close() error {
 	for s.calls != 0 {
 		s.waitCalls()
 	}
-	plans, image, libs := s.plans, s.image, s.libs
+	plans, image, libs, dependencies := s.plans, s.image, s.libs, s.symbolDependencies
 	if image == nil {
 		image = s.failedImage
 	}
 	s.plans, s.image, s.failedImage, s.libs, s.dllHandles = nil, nil, nil, nil, nil
 	s.physicalPlans = nil
+	s.symbolDependencies = nil
 	s.mu.Unlock()
 	// Native finalizers may call back into Go. The session is already retired,
 	// so reentrant lookups return ErrClosed without blocking on cleanup.
@@ -570,6 +580,11 @@ func (s *Session) Close() error {
 		for i := len(libs) - 1; i >= 0; i-- {
 			err = errors.Join(err, native.Close(libs[i]))
 		}
+	}
+	// Destructors and OS library cleanup may still reference provider code/data.
+	// Release dependencies only after all of this consumer's native cleanup.
+	for i := len(dependencies) - 1; i >= 0; i-- {
+		dependencies[i].Close()
 	}
 	s.mu.Lock()
 	s.closing = false

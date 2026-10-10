@@ -91,7 +91,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Typed by-value cgo records for Go/llgo, recursive field copies, native C layout checks, nested arrays/large returns and record-valued native function pointers without libffi.
 - [ ] Higher-order/multiple-indirection function pointers and callback record fields.
 - [ ] C++ constructor/method/object adapters, followed by inheritance and virtual dispatch.
-- [ ] Public providers, dependency paths/manifests, and version contracts.
+- [x] Explicit retained session-to-session function/data symbol providers, transitive code leases and cleanup ordering without libffi.
+- [ ] Automatic provider discovery, dependency manifests, and version contracts.
 - [x] Owned native scalar/record/array storage with stable address leases, C-retained pointer tests and explicit retirement.
 - [x] Generated cgo struct-pointer methods using opaque native addresses, native pointer prototypes and owned storage integration without casting Go record memory.
 - [x] Explicit long-lived native registration owners acquiring and coupling value, callback and code leases with caller-supplied unregister/join, cleanup retry and native-thread execution tests.
