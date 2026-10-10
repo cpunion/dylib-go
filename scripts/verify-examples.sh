@@ -53,6 +53,12 @@ result=$(bash examples/run.sh "$compiler" cgodeclarations "$object")
 test "$result" = 42
 echo "$compiler generated variadic C bridge without libffi: 42"
 
+object="$example_dir/cgorecords.o"
+"${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} -c -fno-stack-protector examples/cgorecords/testdata/exports.c -o "$object"
+result=$(bash examples/run.sh "$compiler" cgorecords "$object")
+test "$result" = 42
+echo "$compiler generated record C bridge without libffi: 42"
+
 if [[ "$compiler" == go && "$(go env GOOS)/$(go env GOARCH)" == windows/386 ]]; then
   go test -count=1 -run '^TestGeneratedWindows386Conventions$' ./examples/cgodeclarations
 fi

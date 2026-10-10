@@ -10,12 +10,12 @@ import (
 )
 
 // CgoSource emits typed C bindings using fixed cgo bridges, without libffi.
-// Go and llgo can compile the generated source. Scalars, opaque native pointers
-// and function-pointer addresses are supported. WithTail specifies a concrete
-// variadic call shape; the C compiler performs default argument promotions.
-// Windows 386 also supports fixed stdcall/fastcall prototypes. Records require
-// another adapter. The caller owns the Session, native storage and any returned
-// or passed function-pointer lifetimes.
+// Go and llgo can compile the generated source. Scalars, opaque native pointers,
+// ordinary record values and function-pointer addresses are supported. WithTail
+// specifies a concrete variadic call shape; C performs default promotions.
+// Windows 386 also supports fixed stdcall/fastcall prototypes. Typed record
+// pointees require another adapter. The caller owns the Session, native storage
+// and any returned or passed function-pointer lifetimes.
 func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
 	if err := validateBindingName(h, bindingType); err != nil {
 		return nil, err
@@ -27,10 +27,24 @@ func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
 	}
 	// Encoding the Go identifier also supports Unicode without C name collisions.
 	prefix := fmt.Sprintf("dylib_go_%x", []byte(bindingType))
+	direct, err := newDirectTypes(h.Records, bindingType)
+	if err != nil {
+		return nil, err
+	}
+	mapper := &cgoTypes{directTypes: direct, cPrefix: prefix}
 	var preamble, methods bytes.Buffer
 	fmt.Fprint(&preamble, "/*\n#include <stdint.h>\n")
+	if len(h.Records) != 0 {
+		fmt.Fprint(&preamble, "#include <stddef.h>\n")
+		if err := mapper.writeCRecords(&preamble); err != nil {
+			return nil, err
+		}
+	}
 	seen := make(map[string]bool)
 	needsUnsafe := false
+	for _, record := range h.Records {
+		needsUnsafe = needsUnsafe || containsNativePointer(record.Description)
+	}
 	for i, function := range h.Functions {
 		needsUnsafe = needsUnsafe || function.Signature.Result == abi.Pointer
 		for _, argument := range function.Signature.Args {
@@ -42,7 +56,7 @@ func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
 		}
 		seen[name] = true
 		helper := fmt.Sprintf("%s_call%d", prefix, i)
-		if err := h.writeCgoBridge(&preamble, &methods, function, bindingType, name, helper, i); err != nil {
+		if err := h.writeCgoBridge(&preamble, &methods, function, bindingType, name, helper, i, mapper); err != nil {
 			return nil, fmt.Errorf("clang: %s: %w", function.Name, err)
 		}
 	}
@@ -52,14 +66,22 @@ func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
 	if needsUnsafe {
 		fmt.Fprint(&preamble, "\"unsafe\"\n")
 	}
+	if len(h.Records) != 0 {
+		fmt.Fprint(&preamble, "\"fmt\"\n")
+	}
 	source = bytes.Replace(source, []byte("\nimport ("), preamble.Bytes(), 1)
 	var output bytes.Buffer
 	output.Write(source)
+	mapper.writeRecords(&output)
+	if err := mapper.writeConversions(&output); err != nil {
+		return nil, err
+	}
 	fmt.Fprintf(&output, "\n// %s retains symbol handles; its caller owns the Session.\ntype %s struct {\n", bindingType, bindingType)
 	for i := range h.Functions {
 		fmt.Fprintf(&output, "symbol%d *dylib.Symbol\n", i)
 	}
 	fmt.Fprintf(&output, "}\n\n// New%s validates the host and resolves each requested export.\nfunc New%s(session *dylib.Session) (*%s,error) {\nif session == nil { return nil,dylib.ErrClosed }\nif err := %s.Target.CheckHost(); err != nil { return nil,err }\nb := &%s{}\n", bindingType, bindingType, bindingType, metadata, bindingType)
+	mapper.writeCLayoutChecks(&output)
 	for i, function := range h.Functions {
 		fmt.Fprintf(&output, "symbol%d,err := session.Resolve(%q)\nif err != nil { return nil,err }\nb.symbol%d = symbol%d\n", i, function.Symbol, i, i)
 	}
@@ -107,11 +129,11 @@ func (h *Header) cgoAttribute(s abi.Signature) (string, error) {
 	return "", fmt.Errorf("cgo bridges require cdecl or fixed Windows 386 stdcall/fastcall prototypes")
 }
 
-func (h *Header) cgoPrototype(s abi.Signature) (string, string, error) {
+func (h *Header) cgoPrototype(s abi.Signature, mapper *cgoTypes) (string, string, error) {
 	if _, err := h.cgoAttribute(s); err != nil {
 		return "", "", err
 	}
-	result, err := cgoScalarType(s.ReturnType())
+	result, err := mapper.cType(s.ReturnType())
 	if err != nil {
 		return "", "", err
 	}
@@ -121,7 +143,7 @@ func (h *Header) cgoPrototype(s abi.Signature) (string, string, error) {
 	}
 	var parameters []string
 	for i := 0; i < count; i++ {
-		kind, err := cgoScalarType(s.ArgumentType(i))
+		kind, err := mapper.cType(s.ArgumentType(i))
 		if err != nil {
 			return "", "", err
 		}
@@ -135,18 +157,18 @@ func (h *Header) cgoPrototype(s abi.Signature) (string, string, error) {
 	return result, strings.Join(parameters, ","), nil
 }
 
-func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, bindingType, method, helper string, index int) error {
+func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, bindingType, method, helper string, index int, mapper *cgoTypes) error {
 	s := function.Signature
-	resultC, _, err := h.cgoPrototype(s)
+	resultC, _, err := h.cgoPrototype(s, mapper)
 	if err != nil {
 		return err
 	}
-	resultGo, _ := directGoType(s.ReturnType())
+	resultGo, _ := mapper.goType(s.ReturnType())
 	// Native entries retain their convention independently of the fixed cgo bridge.
 	attribute, _ := h.cgoAttribute(s)
 	boundaryC := make(map[int]string)
 	for _, pointer := range function.FunctionPointers {
-		result, parameters, err := h.cgoPrototype(pointer.Signature)
+		result, parameters, err := h.cgoPrototype(pointer.Signature, mapper)
 		if err != nil {
 			return fmt.Errorf("function pointer %d: %w", pointer.Position, err)
 		}
@@ -163,16 +185,19 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 		count = s.FixedArgs
 	}
 	for i := range s.Args {
-		kind, err := cgoScalarType(s.ArgumentType(i))
+		kind, err := mapper.cType(s.ArgumentType(i))
 		if err != nil {
 			return fmt.Errorf("argument %d: %w", i, err)
 		}
-		goKind, _ := directGoType(s.ArgumentType(i))
+		goKind, _ := mapper.goType(s.ArgumentType(i))
 		goParams = append(goParams, fmt.Sprintf("p%d %s", i, goKind))
-		transport := cgoTransportType(s.Args[i])
+		transport := mapper.transport(s.ArgumentType(i))
 		bridge = append(bridge, fmt.Sprintf("%s p%d", transport, i))
 		argument := fmt.Sprintf("p%d", i)
-		if s.Args[i] == abi.Bool {
+		if s.Args[i] == abi.Struct {
+			index, _ := mapper.recordIndex(s.ArgumentType(i))
+			goArgs = append(goArgs, mapper.conversion(index, true)+"("+argument+")")
+		} else if s.Args[i] == abi.Bool {
 			conversions = append(conversions, fmt.Sprintf("var c%d C.int32_t\nif p%d { c%d = 1 }\n", i, i, i))
 			goArgs = append(goArgs, fmt.Sprintf("c%d", i))
 		} else if kind != "void *" {
@@ -201,7 +226,7 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 	if callback, ok := boundaryC[-1]; ok {
 		prototypeResult = callback
 	}
-	fmt.Fprintf(c, "typedef %s (%s*%s_function)(%s);\nstatic %s %s(%s) {\n", prototypeResult, attribute, helper, strings.Join(prototype, ","), cgoTransportType(s.Result), helper, strings.Join(bridge, ","))
+	fmt.Fprintf(c, "typedef %s (%s*%s_function)(%s);\nstatic %s %s(%s) {\n", prototypeResult, attribute, helper, strings.Join(prototype, ","), mapper.transport(s.ReturnType()), helper, strings.Join(bridge, ","))
 	if s.Result != abi.Void {
 		fmt.Fprint(c, "return ")
 		if resultC == "void *" {
@@ -216,6 +241,10 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 		fmt.Fprintf(goCode, "\nfunc (b *%s) %s(%s) error {\nif b == nil { return dylib.ErrClosed }\nreturn b.symbol%d.WithAddress(func(address uintptr) error {\n%s%s\nreturn nil\n})\n}\n", bindingType, method, params, index, convert, call)
 	} else {
 		value := resultGo + "(" + call + ")"
+		if s.Result == abi.Struct {
+			index, _ := mapper.recordIndex(s.ReturnType())
+			value = mapper.conversion(index, false) + "(" + call + ")"
+		}
 		if s.Result == abi.Bool {
 			value = call + " != 0"
 		}

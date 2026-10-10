@@ -398,7 +398,7 @@ separate adapters. See [types, targets and limits](docs/clang.md).
 | Generator | Host compiler | Native calls | libffi required |
 | --- | --- | --- | --- |
 | `Header.GoSource` | Go / llgo | Dynamic `Session.Bind`, including supported records and variadic shapes | Yes |
-| `Header.CgoSource` | Go / llgo | Typed scalars, native addresses and concrete cdecl variadic shapes; fixed Windows 386 stdcall/fastcall | No |
+| `Header.CgoSource` | Go / llgo | Typed scalars, ordinary record values, native addresses and concrete cdecl variadic shapes; fixed Windows 386 stdcall/fastcall | No |
 | `Header.LLGoSource` | llgo | Typed cdecl scalars, ordinary records, concrete variadic shapes and fixed/variadic native function pointers | No |
 
 `Header.CgoSource(packageName, bindingType)` generates typed methods usable with
@@ -407,9 +407,15 @@ declarations with `Declaration.WithTail` before generation; the C compiler appli
 default argument promotions. Native function-pointer parameters/results remain
 caller-owned addresses, with their C prototypes preserved inside the bridge.
 Fixed stdcall/fastcall exports and native function-pointer prototypes are also
-supported with Go on Windows 386. Records and other conventions require another adapter. Run the
+supported with Go on Windows 386. Ordinary record values support nested records,
+fixed arrays and native address fields. Fields are copied into independent C
+values; public Go structs need not share C padding or alignment. Constructors
+verify C sizes, alignments and offsets against Clang before resolving symbols.
+Typed struct pointees and other conventions require another adapter. Run the
 [tested variadic example](examples/cgodeclarations/main.go) with
-`examples/run.sh <go|llgo> cgodeclarations <library>`.
+`examples/run.sh <go|llgo> cgodeclarations <library>`, or the
+[record example](examples/cgorecords/main.go) with
+`examples/run.sh <go|llgo> cgorecords <library>`.
 
 `Header.LLGoSource(packageName, bindingType)` generates typed methods for
 C cdecl scalars, ordinary records with fixed array fields, and native struct

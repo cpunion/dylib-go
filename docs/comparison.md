@@ -100,6 +100,11 @@ explicit code ownership; managed captures and foreign-thread callback entries
 still use owned adapters. Direct llgo methods support concrete variadic tails with
 C promotions without libffi. C++ adapters remain separate work.
 
+`CgoSource` also generates typed scalar/record/native-address methods for Go and
+llgo without libffi. Record conversions copy fields into independently checked C
+storage, including nested arrays and large returns; typed struct pointees still
+require another adapter.
+
 The following integrations remain proposals:
 
 1. Add an optional dynamic mode to llcppg. Preserve its generated types, names, and layouts, and generate binding fields owned by a session. Known signatures can use caller-defined `//llgo:type C` function types through `Symbol.WithAddress`. The loader need not duplicate header parsing.

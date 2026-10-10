@@ -88,6 +88,7 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Typed scalar/native-address cgo bridges for Go/llgo, concrete variadic shapes with C promotions, native function-pointer prototype forwarding and no-libffi runtime tests.
 - [x] Fixed Windows Go 386 stdcall/fastcall cgo bridges, mixed scalars, decorated exports and native function-pointer convention preservation without libffi.
 - [x] Direct variadic llgo methods with concrete promoted tails, empty calls, record prefixes/results and native variadic factories/forwarding without libffi.
+- [x] Typed by-value cgo records for Go/llgo, recursive field copies, native C layout checks, nested arrays/large returns and record-valued native function pointers without libffi.
 - [ ] Higher-order/multiple-indirection function pointers and callback record fields.
 - [ ] C++ constructor/method/object adapters, followed by inheritance and virtual dispatch.
 - [ ] Public providers, dependency paths/manifests, and version contracts.
