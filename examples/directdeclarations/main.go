@@ -22,8 +22,8 @@ func call(input string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	value, err := bindings.Echo_small(BindingsRecord3{A: 20, B: 22})
-	return float64(value.A + value.B), err
+	value, err := bindings.Variable(20, 10, 12)
+	return float64(value), err
 }
 
 func load(input string) (*dylib.Session, error) {

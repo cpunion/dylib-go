@@ -146,12 +146,20 @@ runs the convention tests both with and without the libffi build tag.
 ## Direct llgo bindings
 
 `Header.LLGoSource(packageName, bindingType)` emits a binding type, a
-`New<bindingType>(session)` constructor and typed methods. Fixed C cdecl scalars,
+`New<bindingType>(session)` constructor and typed methods. C cdecl scalars,
 Boolean, native pointers, ordinary records and typed struct pointers are supported
 on Linux/macOS/Windows amd64 and arm64. Record fields support nested records and
-fixed arrays. Fixed cdecl function-pointer parameters/results retain their typed
-prototypes. Variadic outer/inner signatures, other conventions and unqualified
+fixed arrays. Fixed and variadic cdecl function-pointer parameters/results retain their typed
+prototypes. Other conventions and unqualified
 386 targets fail generation explicitly.
+
+Use `Declaration.WithTail(types...)` to select a concrete variadic method shape,
+as with `CgoSource`. An unexpanded prefix emits a zero-tail call. Generated methods
+keep their logical parameter types, promote narrow integers and Boolean values to
+`int32` and `float32` to `float64`, and call a true C ellipsis pointer ending in
+`__llgo_va_list ...any`. Fixed prefix types are unchanged; ordinary record prefixes
+and results retain their compiler layout checks. This requires the merged
+[llgo indirect-varargs fix](https://github.com/xgo-dev/llgo/pull/2766), included in CI's llgo `main`.
 
 The qualified compiler does not sign-extend negative `int8`/`int16` arguments
 correctly for some optimized macOS ARM64 C calls, including native function
@@ -184,7 +192,12 @@ as `<bindingType>Record<index>` in metadata order. Binding type names must not s
 predeclared names or generated imports. The generator itself remains Go code.
 
 Function-pointer types are named `<bindingType>Callback<index>`; identical saved
-prototypes reuse a type. These are `//llgo:type C` native callable values. A factory
+prototypes reuse a type, including variadic signatures with different concrete tails.
+These are `//llgo:type C` native callable values. Variadic types retain only their
+fixed prefix followed by `__llgo_va_list ...any`; callers must supply concrete
+C-promoted tail values and match the native count/format contract. This supports
+calling and forwarding native variadic entries, not exporting Go variadic callbacks.
+A factory
 method retains its symbol for the factory call only. Keep the producer image leased,
 for example through `Symbol.WithAddress`, during all later invocations or while
 passing the entry back to C. Returned entries and external callback addresses do
@@ -201,7 +214,10 @@ floating-point aggregate returns, typed pointer mutation/identity, scalar/record
 large/pointer native factories, C callback invocation, local Go C entries and rejection
 of a separately generated packed binding. CI compares fresh output with six
 committed normal and packed target variants and executes the library example
-without libffi. Raw aggregate copies can import C runtime helpers such as `memcpy`;
+without libffi. The same object/archive/library fixtures execute empty and mixed
+variadic tails, all C default promotions, integer/floating-point register spills,
+record prefixes/results, pointer mutation and native variadic factories/forwarding.
+Raw aggregate copies can import C runtime helpers such as `memcpy`;
 the example supplies process symbols on POSIX and explicitly loads the Windows
 CRT. The core loader does not infer these dependencies.
 `examples/run.sh llgo directdeclarations <library>` runs it;
@@ -241,7 +257,7 @@ explicitly. No temporary compilation files are created by `Parse`.
 This complements [llcppg](https://github.com/goplus/llcppg): its Clang-based static
 bindings can use direct llgo C entries, while these generated descriptors resolve
 symbols dynamically through this loader. Full C++ adapters, additional
-function-pointer forms and direct llgo variadic adapters remain separate
+function-pointer forms remain separate
 work. Clang's
 syntax and type information
 come from its [AST interface](https://clang.llvm.org/docs/IntroductionToTheClangAST.html).

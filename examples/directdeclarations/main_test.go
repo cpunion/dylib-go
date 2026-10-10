@@ -17,6 +17,7 @@ import (
 	"unsafe"
 
 	dylib "github.com/cpunion/dylib-go"
+	"github.com/cpunion/dylib-go/abi"
 	"github.com/cpunion/dylib-go/compiler/clang"
 )
 
@@ -35,9 +36,28 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 		t.Skip(err)
 	}
 	names := []string{"s8", "u8", "s16", "u16", "s32", "u32", "s64", "u64", "f32", "f64", "truth", "pointer", "zero", "empty", "mixed", "echo_pair", "mutate_pair", "echo_outer", "echo_floats", "echo_small", "echo_mixed", "adder_factory", "apply_adder", "apply_anonymous", "apply_decayed", "small_factory", "apply_small", "outer_factory", "apply_outer", "mutator_factory", "apply_mutator"}
+	names = append(names, "variable", "promotions", "empty_variable", "mixed_variable", "void_variable", "data_pointer", "many_variable", "record_variable", "variadic_factory", "forward_variadic")
 	header, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
+	}
+	tails := map[string][]abi.Type{
+		"variable":        {abi.I8, abi.F32},
+		"promotions":      {abi.I8, abi.U8, abi.I16, abi.U16, abi.F32, abi.Bool, abi.Bool, abi.I64, abi.U64, abi.Pointer},
+		"mixed_variable":  {abi.I8, abi.F32},
+		"void_variable":   {abi.I16},
+		"record_variable": {abi.I32, abi.F64},
+	}
+	for range 10 {
+		tails["many_variable"] = append(tails["many_variable"], abi.I64, abi.F64)
+	}
+	for i, function := range header.Functions {
+		if tail, ok := tails[function.Name]; ok {
+			header.Functions[i], err = function.WithTail(tail...)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 	fresh, err := header.LLGoSource("main", "Bindings")
 	if err != nil {
@@ -139,6 +159,7 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 	mixed := BindingsRecord4{Value: 20.5, Tag: 22}
 	echoedMixed, err := b.Echo_mixed(mixed)
 	check("mixed register aggregate", echoedMixed, mixed, err)
+	checkDirectVariadicCalls(t, session, b)
 	// Keep the producer image leased while using returned native entries.
 	factory, err := session.Resolve("adder_factory")
 	if err != nil {
@@ -232,6 +253,12 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 	if _, err := b.Zero(); !errors.Is(err, dylib.ErrClosed) {
 		t.Fatal("closed binding:", err)
 	}
+	if _, err := b.Variable(20, 10, 12); !errors.Is(err, dylib.ErrClosed) {
+		t.Fatal("closed variadic binding:", err)
+	}
+	if entry, err := b.Variadic_factory(); entry != nil || !errors.Is(err, dylib.ErrClosed) {
+		t.Fatal("closed variadic factory:", err)
+	}
 	if entry, err := b.Adder_factory(); entry != nil || !errors.Is(err, dylib.ErrClosed) {
 		t.Fatal("closed native factory:", err)
 	}
@@ -251,5 +278,107 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 	}
 	if _, err := NewBindings(nil); !errors.Is(err, dylib.ErrClosed) {
 		t.Fatal("nil session:", err)
+	}
+}
+
+func checkDirectVariadicCalls(t *testing.T, session *dylib.Session, b *Bindings) {
+	t.Helper()
+	check := func(name string, got, want any, err error) {
+		t.Helper()
+		if err != nil || !reflect.DeepEqual(got, want) {
+			t.Fatalf("%s: %+v, %v; want %+v", name, got, err, want)
+		}
+	}
+	small := BindingsRecord3{A: 20, B: 22}
+	variable, err := b.Variable(20, 10, 12)
+	check("variadic narrow/float promotion", variable, int32(42), err)
+	promoted, err := b.Promotions(7, -8, 255, -300, 65535, 20.5, true, false, -9, ^uint64(0), nil)
+	check("all C default promotions", promoted, int32(42), err)
+	emptyVariable, err := b.Empty_variable(42)
+	check("empty variadic tail", emptyVariable, int32(42), err)
+	mixedVariable, err := b.Mixed_variable(3, 20, 7, 12)
+	check("fixed float/variadic double", mixedVariable, float64(42), err)
+	many, err := b.Many_variable(10, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2)
+	check("variadic integer/FP register spill", many, float64(30), err)
+	recordVariable, err := b.Record_variable(small, 1, -1)
+	check("variadic record prefix/result", recordVariable, BindingsRecord3{A: 21, B: 21}, err)
+	data, err := b.Data_pointer()
+	if err != nil || data == nil {
+		t.Fatal("native data pointer:", err)
+	}
+	if err := b.Void_variable(data, 42); err != nil || *(*int32)(data) != 42 {
+		t.Fatal("void variadic/pointer mutation:", err)
+	}
+	variadicFactory, err := session.Resolve("variadic_factory")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = variadicFactory.WithAddress(func(_ uintptr) error {
+		entry, err := b.Variadic_factory()
+		if err != nil || entry == nil {
+			t.Fatal("variadic native factory:", err)
+		}
+		check("returned variadic native entry", entry(20, int32(10), float64(12)), int32(42), nil)
+		forwarded, err := b.Forward_variadic(entry)
+		check("variadic native pointer forwarding", forwarded, int32(42), err)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDirectVariadicArchivesAndLibraries(t *testing.T) {
+	compiler := os.Getenv("DYLIB_LLVM_CLANG")
+	if compiler == "" {
+		compiler = os.Getenv("CLANG")
+	}
+	if compiler == "" {
+		compiler = "clang"
+	}
+	for _, tool := range []string{compiler, "llvm-ar"} {
+		if _, err := exec.LookPath(tool); err != nil {
+			if os.Getenv("DYLIB_TEST_REQUIRE_TOOLS") == "1" {
+				t.Fatal(err)
+			}
+			t.Skip(err)
+		}
+	}
+	dir := t.TempDir()
+	object := filepath.Join(dir, "exports.o")
+	archive := filepath.Join(dir, "exports.a")
+	compile := func(tool string, args ...string) {
+		t.Helper()
+		if data, err := exec.Command(tool, args...).CombinedOutput(); err != nil {
+			t.Fatalf("%s: %v\n%s", tool, err, data)
+		}
+	}
+	flags := []string{"--target=" + _BindingsDeclarations.Target.Triple, "-O0", "-c", "-fno-stack-protector", "testdata/exports.c", "-o", object}
+	if runtime.GOOS != "windows" {
+		flags = append(flags, "-fPIC")
+	}
+	compile(compiler, flags...)
+	compile("llvm-ar", "rcs", archive, object)
+	library, linkFlags := filepath.Join(dir, "exports.so"), []string{"-shared", "-fPIC"}
+	switch runtime.GOOS {
+	case "darwin":
+		library, linkFlags = filepath.Join(dir, "exports.dylib"), []string{"-dynamiclib"}
+	case "windows":
+		library, linkFlags = filepath.Join(dir, "exports.dll"), []string{"-shared", "-Wl,--export-all-symbols"}
+	}
+	compile(compiler, append(linkFlags, "-O0", "testdata/exports.c", "-o", library)...)
+	for _, input := range []struct{ name, path string }{{"archive", archive}, {"library", library}} {
+		t.Run(input.name, func(t *testing.T) {
+			session, err := load(input.path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer session.Close()
+			bindings, err := NewBindings(session)
+			if err != nil {
+				t.Fatal(err)
+			}
+			checkDirectVariadicCalls(t, session, bindings)
+		})
 	}
 }

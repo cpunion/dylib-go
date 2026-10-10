@@ -41,8 +41,8 @@ jobs:
       - uses: xgo-dev/setup-llgo@v0.2.0
         id: llgo
         with:
-          # Merged C-export foreign-thread guards: https://github.com/xgo-dev/llgo/pull/2752
-          llgo-version: b86d349178d610e6b15e95c2a5fdfcb130d09fa1
+          # Public C-export guards (#2752) and indirect C varargs (#2766).
+          llgo-version: main
           install-method: source
           go-version: '1.27.x'
           llvm-version: '22'

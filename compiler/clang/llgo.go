@@ -14,12 +14,13 @@ import (
 	"github.com/cpunion/dylib-go/abi"
 )
 
-// LLGoSource emits typed, fixed C cdecl bindings for qualified 64-bit llgo hosts.
+// LLGoSource emits typed C cdecl bindings for qualified 64-bit llgo hosts.
 // Scalar and opaque pointer calls use llgo's public C function-pointer directive
 // without libffi. The caller owns the Session; each method retains its symbol for
 // the native call. Ordinary records and typed native pointers use compiler-checked
-// layouts. Fixed native function pointers retain their C prototypes; callers own
-// their code and registration lifetimes. Variadic and other conventions are rejected.
+// layouts. Native function pointers retain their C prototypes; callers own
+// their code and registration lifetimes. WithTail selects a concrete variadic
+// method shape, with C default promotions. Other conventions are rejected.
 func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 	if err := validateBindingName(h, bindingType); err != nil {
 		return nil, err
@@ -43,8 +44,8 @@ func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 	var methods []string
 	for _, function := range h.Functions {
 		s := function.Signature
-		if s.Variadic || (s.Convention != abi.Default && s.Convention != abi.CDecl) {
-			return nil, fmt.Errorf("clang: %s requires a fixed cdecl adapter", function.Name)
+		if s.Convention != abi.Default && s.Convention != abi.CDecl {
+			return nil, fmt.Errorf("clang: %s requires a cdecl adapter", function.Name)
 		}
 		if _, err := mapper.boundaryType(function, -1); err != nil {
 			return nil, fmt.Errorf("clang: %s result: %w", function.Name, err)
@@ -98,22 +99,48 @@ func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 	fmt.Fprint(&output, "return b,nil\n}\n")
 	for i, function := range h.Functions {
 		result, _ := mapper.boundaryType(function, -1)
-		var parameters, arguments []string
+		var parameters []string
 		for j := range function.Signature.Args {
 			kind, _ := mapper.boundaryType(function, j)
 			parameters = append(parameters, fmt.Sprintf("p%d %s", j, kind))
-			arguments = append(arguments, fmt.Sprintf("p%d", j))
 		}
-		params, args := strings.Join(parameters, ","), strings.Join(arguments, ",")
-		fmt.Fprintf(&output, "\n//llgo:type C\ntype _%sFunction%d func(%s) %s\n", bindingType, i, params, result)
+		params := strings.Join(parameters, ",")
+		prototype := params
+		if function.Signature.Variadic {
+			prototype = strings.Join(append(parameters[:function.Signature.FixedArgs:function.Signature.FixedArgs], "__llgo_va_list ...any"), ",")
+		}
+		args, promotions := directCallArguments(function.Signature)
+		fmt.Fprintf(&output, "\n//llgo:type C\ntype _%sFunction%d func(%s) %s\n", bindingType, i, prototype, result)
 		if result == "" {
-			fmt.Fprintf(&output, "\nfunc (b *%s) %s(%s) error {\nif b == nil { return dylib.ErrClosed }\nreturn b.symbol%d.WithAddress(func(address uintptr) error {\nfunction := *(*_%sFunction%d)(unsafe.Pointer(&address))\nfunction(%s)\nreturn nil\n})\n}\n", bindingType, methods[i], params, i, bindingType, i, args)
+			fmt.Fprintf(&output, "\nfunc (b *%s) %s(%s) error {\nif b == nil { return dylib.ErrClosed }\nreturn b.symbol%d.WithAddress(func(address uintptr) error {\nfunction := *(*_%sFunction%d)(unsafe.Pointer(&address))\n%sfunction(%s)\nreturn nil\n})\n}\n", bindingType, methods[i], params, i, bindingType, i, promotions, args)
 		} else {
-			fmt.Fprintf(&output, "\nfunc (b *%s) %s(%s) (result %s,err error) {\nif b == nil { return result,dylib.ErrClosed }\nerr = b.symbol%d.WithAddress(func(address uintptr) error {\nfunction := *(*_%sFunction%d)(unsafe.Pointer(&address))\nresult = function(%s)\nreturn nil\n})\nreturn result,err\n}\n", bindingType, methods[i], params, result, i, bindingType, i, args)
+			fmt.Fprintf(&output, "\nfunc (b *%s) %s(%s) (result %s,err error) {\nif b == nil { return result,dylib.ErrClosed }\nerr = b.symbol%d.WithAddress(func(address uintptr) error {\nfunction := *(*_%sFunction%d)(unsafe.Pointer(&address))\n%sresult = function(%s)\nreturn nil\n})\nreturn result,err\n}\n", bindingType, methods[i], params, result, i, bindingType, i, promotions, args)
 		}
 	}
 	source = bytes.Replace(output.Bytes(), []byte("\npackage "), []byte("\n//go:build llgo && cgo\n\npackage "), 1)
 	return format.Source(source)
+}
+
+// llgo's C ellipsis accepts concrete values; default C promotions are explicit.
+func directCallArguments(signature abi.Signature) (string, string) {
+	var arguments []string
+	var promotions strings.Builder
+	for i, kind := range signature.Args {
+		argument := fmt.Sprintf("p%d", i)
+		if signature.Variadic && i >= signature.FixedArgs {
+			switch kind {
+			case abi.I8, abi.U8, abi.I16, abi.U16:
+				argument = "int32(" + argument + ")"
+			case abi.F32:
+				argument = "float64(" + argument + ")"
+			case abi.Bool:
+				fmt.Fprintf(&promotions, "var v%d int32\nif %s { v%d = 1 }\n", i, argument, i)
+				argument = fmt.Sprintf("v%d", i)
+			}
+		}
+		arguments = append(arguments, argument)
+	}
+	return strings.Join(arguments, ","), promotions.String()
 }
 
 func directGoType(description abi.TypeDesc) (string, error) {
