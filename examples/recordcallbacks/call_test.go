@@ -30,13 +30,33 @@ func tool(t *testing.T, name string) string {
 	return path
 }
 
+func archiveTool(t *testing.T, compiler string) string {
+	t.Helper()
+	candidates := []string{filepath.Join(filepath.Dir(compiler), "llvm-ar"), "llvm-ar", "ar"}
+	if override := os.Getenv("DYLIB_LLVM_AR"); override != "" {
+		candidates = []string{override}
+	}
+	for _, candidate := range candidates {
+		if path, err := exec.LookPath(candidate); err == nil {
+			return path
+		}
+	}
+	message := fmt.Sprintf("native archiver unavailable: %v", candidates)
+	if os.Getenv("DYLIB_TEST_REQUIRE_TOOLS") == "1" {
+		t.Fatal(message)
+	}
+	t.Skip(message)
+	return ""
+}
+
 func withFixtures(t *testing.T, use func(*testing.T, string)) {
 	t.Helper()
 	compiler := os.Getenv("DYLIB_LLVM_CLANG")
 	if compiler == "" {
 		compiler = "clang"
 	}
-	compiler, ar := tool(t, compiler), tool(t, "llvm-ar")
+	compiler = tool(t, compiler)
+	ar := archiveTool(t, compiler)
 	compile := func(tool string, args ...string) {
 		t.Helper()
 		if data, err := exec.Command(tool, args...).CombinedOutput(); err != nil {
