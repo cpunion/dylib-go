@@ -189,7 +189,12 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 	r.building[id] = true
 	defer delete(r.building, id)
 	d := abi.TypeDesc{Type: abi.Struct}
+	packed := false
 	for _, child := range node.Inner {
+		if child.Kind == "PackedAttr" {
+			packed = true
+			continue
+		}
 		if strings.HasSuffix(child.Kind, "Attr") {
 			return abi.TypeDesc{}, fmt.Errorf("unsupported record attribute %s", child.Kind)
 		}
@@ -223,6 +228,6 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		return abi.TypeDesc{}, fmt.Errorf("at most %d records are supported", maxRecords)
 	}
 	r.resolved[id] = d
-	r.records = append(r.records, Record{Name: name, Description: d})
+	r.records = append(r.records, Record{Name: name, Description: d, Packed: packed})
 	return d, nil
 }

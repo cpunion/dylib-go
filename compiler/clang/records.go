@@ -13,11 +13,14 @@ const maxRecords = 256
 const maxDescriptionNodes = 65536
 
 // Record contains a usable C type spelling, logical fields, and the compiler's
-// target-specific storage layout. It describes an ordinary struct, not ownership.
+// target-specific storage layout. It does not describe pointer ownership.
 type Record struct {
 	Name        string
 	Description abi.TypeDesc
 	Layout      abi.Layout
+	// Packed requests the C compiler's packed attribute. Description remains a
+	// logical field model; only compiled C adapters may pass this record by value.
+	Packed bool
 	// FunctionPointers describes pointer fields and fixed arrays of entries.
 	// Position is the field index; array shape remains in Description. All
 	// elements share the prototype and have caller-managed address lifetimes.
@@ -254,6 +257,18 @@ func (h *Header) validateHostRecords(signature abi.Signature) error {
 		return nil
 	}
 	check = func(d abi.TypeDesc) error {
+		// Inspect nested records before asking the backend for a parent layout:
+		// packed children require a compiler adapter even without libffi installed.
+		for _, field := range d.Fields {
+			if err := check(field.Type); err != nil {
+				return err
+			}
+		}
+		if d.Elem != nil {
+			if err := check(*d.Elem); err != nil {
+				return err
+			}
+		}
 		if d.Type == abi.Struct {
 			found := false
 			var native abi.Layout
@@ -263,6 +278,9 @@ func (h *Header) validateHostRecords(signature abi.Signature) error {
 				}
 				if err := validRecordLayout(record); err != nil {
 					return err
+				}
+				if record.Packed {
+					return fmt.Errorf("clang: packed record %s requires a compiled C adapter", record.Name)
 				}
 				if !found {
 					var err error
@@ -285,14 +303,6 @@ func (h *Header) validateHostRecords(signature abi.Signature) error {
 			if !found {
 				return fmt.Errorf("clang: missing compiler record layout")
 			}
-		}
-		for _, field := range d.Fields {
-			if err := check(field.Type); err != nil {
-				return err
-			}
-		}
-		if d.Elem != nil {
-			return check(*d.Elem)
 		}
 		return nil
 	}

@@ -12,7 +12,8 @@ import (
 // the cgo boundary, so their padding/alignment need not match Go storage.
 type cgoTypes struct {
 	*directTypes
-	cPrefix string
+	cPrefix    string
+	transports map[int]bool
 }
 
 func (t *cgoTypes) recordIndex(description abi.TypeDesc) (int, error) {
@@ -56,7 +57,11 @@ func (t *cgoTypes) goType(description abi.TypeDesc) (string, error) {
 
 func (t *cgoTypes) transport(description abi.TypeDesc) string {
 	if description.Type == abi.Struct {
-		name, _ := t.cType(description)
+		index, _ := t.recordIndex(description)
+		name := t.cRecordName(index)
+		if t.needsTransport(index) {
+			name += "_transport"
+		}
 		return name
 	}
 	return cgoTransportType(description.Type)
@@ -71,6 +76,10 @@ func (t *cgoTypes) conversion(index int, toC bool) string {
 }
 
 func (t *cgoTypes) cField(description abi.TypeDesc, name string) (string, error) {
+	return t.cFieldType(description, name, false)
+}
+
+func (t *cgoTypes) cFieldType(description abi.TypeDesc, name string, transport bool) (string, error) {
 	var suffix strings.Builder
 	for description.Type == abi.Array {
 		fmt.Fprintf(&suffix, "[%d]", description.Len)
@@ -80,6 +89,9 @@ func (t *cgoTypes) cField(description abi.TypeDesc, name string) (string, error)
 		return "", fmt.Errorf("typed record fields require opaque native addresses")
 	}
 	kind, err := t.cType(description)
+	if err == nil && transport && description.Type == abi.Struct {
+		kind = t.transport(description)
+	}
 	return kind + " " + name + suffix.String(), err
 }
 
@@ -110,7 +122,11 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 		}
 		name := t.cRecordName(i)
-		fmt.Fprint(output, "typedef struct {\n")
+		fmt.Fprint(output, "typedef struct ")
+		if record.Packed {
+			fmt.Fprint(output, "__attribute__((packed)) ")
+		}
+		fmt.Fprint(output, "{\n")
 		for j, field := range record.Description.Fields {
 			declaration, err := t.cField(field.Type, fmt.Sprintf("f%d", j))
 			if err != nil {
@@ -123,6 +139,11 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			fmt.Fprintf(output, "case %d:return offsetof(%s,f%d);\n", j+2, name, j)
 		}
 		fmt.Fprint(output, "default:return UINT64_MAX;\n}\n}\n")
+		if t.needsTransport(i) {
+			if err := t.writeTransport(output, i); err != nil {
+				return err
+			}
+		}
 		return nil
 	}
 	for i := range t.records {
@@ -147,7 +168,7 @@ func (t *cgoTypes) writeCLayoutChecks(output *bytes.Buffer) {
 func (t *cgoTypes) writeConversions(output *bytes.Buffer) error {
 	for i, record := range t.records {
 		for _, toC := range []bool{true, false} {
-			from, to := t.recordName(i), "C."+t.cRecordName(i)
+			from, to := t.recordName(i), "C."+t.transport(record.Description)
 			if !toC {
 				from, to = to, from
 			}

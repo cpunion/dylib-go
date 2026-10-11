@@ -29,7 +29,12 @@ func directName(name string) string {
 
 func newDirectTypes(records []Record, prefix string) (*directTypes, error) {
 	t := &directTypes{records: records, prefix: prefix}
-	for _, record := range records {
+	for i, record := range records {
+		for _, previous := range records[:i] {
+			if reflect.DeepEqual(previous.Description, record.Description) && (previous.Packed != record.Packed || !reflect.DeepEqual(previous.Layout, record.Layout)) {
+				return nil, fmt.Errorf("clang: ambiguous native layouts for %s and %s", previous.Name, record.Name)
+			}
+		}
 		seen := make(map[string]bool)
 		var names []string
 		for _, field := range record.Description.Fields {

@@ -41,6 +41,7 @@ Run
 | Typedefs and ordinary qualifiers | Desugared/resolved, including integer and pointer aliases |
 | Object/opaque pointers | Native addresses; no automatic pointee allocation, copying or ownership |
 | Ordinary structs, including anonymous typedef records | Arguments/results; compiler-evaluated layout checked against the native backend |
+| Explicit `__attribute__((packed))` structs | `CgoSource` for Go/llgo; logical fields are transported through ordinary records and converted inside C; dynamic and direct llgo bindings reject them |
 | Fixed array members | Scalars, pointers, records and nested arrays; positive evaluated lengths |
 | Function parameters/results pointing to a complete ordinary struct | Typed single-struct pointees; `abi.AddressOf` supplies a temporary copy, with mutation/return identity checks |
 | Function pointers at parameter/result boundaries | Typedefs, anonymous pointers and decayed function parameters; retain their exact prototype/convention independently of the outer pointer |
@@ -49,7 +50,7 @@ Run
 | stdcall / fastcall | Windows 386; retain compiler symbol decoration |
 | Higher-order and multiply indirect function pointers | Nested argument/result prototypes and 1–8 pointer layers; caller owns code and pointee lifetimes |
 | Function-pointer record fields and fixed arrays | Opaque native address storage with separate field-indexed prototypes; supports typedef/direct pointers, multidimensional arrays, nested record arrays and self-referencing callback signatures |
-| Unions, bitfields, attributed records/fields/typedefs, flexible/zero-length arrays, enums, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
+| Unions, bitfields, other attributed records/fields/typedefs, flexible/zero-length arrays, enums, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
 | Static/inline functions and old-style declarations without prototypes | Rejected; provide an exported C facade/prototype |
 
 `Header.Records` saves the C type spelling, `abi.TypeDesc` and compiler layout for
@@ -131,7 +132,7 @@ No language runtime, C++ ownership or exception adaptation is inferred.
 ## Typed cgo bridges for Go and llgo
 
 `Header.CgoSource(packageName, bindingType)` emits typed methods with static C
-bridges in an `import "C"` preamble. It supports cdecl scalars, ordinary record
+bridges in an `import "C"` preamble. It supports cdecl scalars, ordinary/explicitly packed record
 values and opaque native pointer arguments/results on all eight native Go targets and six qualified llgo
 targets, without the optional libffi backend. Fixed Windows 386 stdcall/fastcall
 exports and function-pointer prototypes are supported with Go. A C toolchain is needed when building
@@ -158,7 +159,7 @@ Conversions copy fields recursively into separate C values; they do not cast Go
 struct storage or depend on Go padding/alignment. The C compiler determines
 aggregate argument/return classification, including hidden return storage.
 Constructors check each C record's `sizeof`, `_Alignof` and `offsetof` against the
-saved Clang layout. Packed or otherwise incompatible layouts fail before symbol
+saved Clang layout. Packing flags or otherwise incompatible layouts without explicit record attributes fail before symbol
 resolution. Complete struct pointees require native storage. They are represented
 by `unsafe.Pointer` on the Go boundary,
 and the C bridge restores their saved record-pointer prototype. Returned addresses
@@ -173,6 +174,40 @@ with the saved Clang layout. A native value lease's `Pointer()` supplies an
 requires libffi; generated pointer methods themselves do not. Other typed
 pointees and typed pointer fields in manually assembled record metadata remain
 unsupported; record fields use opaque addresses.
+
+### Explicitly packed C records
+
+`Record.Packed` preserves Clang's explicit `PackedAttr`. `Record.Description`
+remains a logical field model, not a descriptor of packed native memory. Generated
+C declarations reproduce `__attribute__((packed))`; their layout probes must
+match the saved size, alignment and every offset before symbols are resolved.
+
+For packed values and ordinary parents containing them, the generator also emits
+ordinary transport structs. Go copies its public fields to/from those transports.
+C copies transports to/from the actual native type and applies its own argument
+and return ABI. Nested records, multidimensional arrays, Boolean/narrow fields,
+native address fields, function-pointer prototypes and concrete variadic calls
+retain this separation. Neither Go nor llgo passes a packed C record directly.
+This path needs a C compiler at build time and does not need libffi.
+
+`ForHost`, `ForHostRecord` and direct `LLGoSource` reject packed records, including
+reachable nested records and callback prototypes. Use producer-owned native
+storage for their pointers; `abi.NewNativeValue` cannot allocate packed storage
+from the logical description. Native function pointers using packed values need
+a matching compiled adapter; `abi.NewCallback` does not supply this ABI.
+
+Global packing flags, `#pragma pack`, field packing/alignment attributes and
+unions/bitfields are not inferred by this adapter. When two records have identical
+logical fields but different native layouts, typed generation rejects the
+ambiguity rather than selecting a layout from metadata order. Generate separate
+bindings for those declarations.
+
+The [packed example](../examples/packedrecords/call.go) and its native tests run
+objects, archives and shared libraries at `-O0` and `-O2` through the existing
+setup-go/setup-llgo jobs. They verify packed values/returns, ordinary parents with
+packed multidimensional arrays, signed boundaries, Boolean and pointer fields,
+factories/consumers, native struct pointers, variadic promotions, stale generated
+source, target guards and session retirement.
 
 Constructors check `Target.CheckHost` before layout checks and resolving exports. Methods run their
 C bridges inside `Symbol.WithAddress`, retaining the image for the call and
