@@ -13,6 +13,10 @@ import (
 type FunctionPointer struct {
 	Position  int
 	Signature abi.Signature
+	// Indirection counts pointer layers to the entry. Zero means one for compatibility.
+	Indirection int
+	// FunctionPointers preserves prototypes within this entry's arguments/results.
+	FunctionPointers []FunctionPointer
 }
 
 // LookupFunctionPointer returns an independent signature snapshot. Use a
@@ -23,30 +27,56 @@ func (d Declaration) LookupFunctionPointer(position int) (FunctionPointer, error
 	}
 	for _, pointer := range d.FunctionPointers {
 		if pointer.Position == position {
-			pointer.Signature = pointer.Signature.Clone()
-			return pointer, nil
+			return pointer.clone(), nil
 		}
 	}
 	return FunctionPointer{}, fmt.Errorf("clang: no function pointer at position %d", position)
 }
 
+// LookupFunctionPointer inspects a nested argument or result prototype.
+func (p FunctionPointer) LookupFunctionPointer(position int) (FunctionPointer, error) {
+	return (Declaration{Signature: p.Signature, FunctionPointers: p.FunctionPointers}).LookupFunctionPointer(position)
+}
+
+func (p FunctionPointer) pointerDepth() int {
+	if p.Indirection == 0 {
+		return 1
+	}
+	return p.Indirection
+}
+
+func (p FunctionPointer) clone() FunctionPointer {
+	p.Signature = p.Signature.Clone()
+	p.FunctionPointers = cloneFunctionPointers(p.FunctionPointers)
+	return p
+}
+
+func cloneFunctionPointers(pointers []FunctionPointer) []FunctionPointer {
+	if pointers == nil {
+		return nil
+	}
+	result := make([]FunctionPointer, len(pointers))
+	for i, pointer := range pointers {
+		result[i] = pointer.clone()
+	}
+	return result
+}
+
 // WithTail describes a concrete call to a variadic native function pointer.
 // Variadic Go callback entries remain unsupported by abi.NewCallback.
 func (p FunctionPointer) WithTail(types ...abi.Type) (FunctionPointer, error) {
-	d, err := (Declaration{Signature: p.Signature}).WithTail(types...)
+	d, err := (Declaration{Signature: p.Signature, FunctionPointers: p.FunctionPointers}).WithTail(types...)
 	if err != nil {
 		return FunctionPointer{}, err
 	}
 	p.Signature = d.Signature
+	p.FunctionPointers = d.FunctionPointers
 	return p, nil
 }
 
 func (d Declaration) clone() Declaration {
 	d.Signature = d.Signature.Clone()
-	d.FunctionPointers = append([]FunctionPointer(nil), d.FunctionPointers...)
-	for i := range d.FunctionPointers {
-		d.FunctionPointers[i].Signature = d.FunctionPointers[i].Signature.Clone()
-	}
+	d.FunctionPointers = cloneFunctionPointers(d.FunctionPointers)
 	return d
 }
 
@@ -103,7 +133,10 @@ func callingConvention(cc string, target Target) (abi.Convention, error) {
 	return convention, nil
 }
 
-func (r *typeResolver) prototype(node astNode, target Target, functionPointers bool) (abi.Signature, []FunctionPointer, error) {
+func (r *typeResolver) prototype(node astNode, target Target, depth int) (abi.Signature, []FunctionPointer, error) {
+	if depth > 8 {
+		return abi.Signature{}, nil, fmt.Errorf("function-pointer nesting exceeds 8 levels")
+	}
 	if node.Kind != "FunctionProtoType" || len(node.Inner) == 0 {
 		return abi.Signature{}, nil, fmt.Errorf("C17 calls require an explicit prototype")
 	}
@@ -119,12 +152,13 @@ func (r *typeResolver) prototype(node astNode, target Target, functionPointers b
 	var arguments []abi.TypeDesc
 	complex := false
 	for i, child := range node.Inner {
-		description, pointer, err := r.boundaryType(child, target, functionPointers)
+		description, pointer, err := r.boundaryType(child, target, depth)
 		if err != nil {
 			return abi.Signature{}, nil, err
 		}
 		if pointer != nil {
-			pointers = append(pointers, FunctionPointer{Position: i - 1, Signature: *pointer})
+			pointer.Position = i - 1
+			pointers = append(pointers, *pointer)
 		}
 		if i == 0 {
 			signature.Result = description.Type
@@ -146,23 +180,30 @@ func (r *typeResolver) prototype(node astNode, target Target, functionPointers b
 	return signature, pointers, signature.Validate()
 }
 
-func (r *typeResolver) boundaryType(node astNode, target Target, functionPointers bool) (abi.TypeDesc, *abi.Signature, error) {
+func (r *typeResolver) boundaryType(node astNode, target Target, depth int) (abi.TypeDesc, *FunctionPointer, error) {
 	effective, err := r.effectiveType(node)
 	if err != nil {
 		return abi.TypeDesc{}, nil, err
 	}
-	if effective.Kind == "PointerType" && len(effective.Inner) == 1 {
-		pointee, err := r.effectiveType(effective.Inner[0])
+	pointee := effective
+	layers := 0
+	for pointee.Kind == "PointerType" && len(pointee.Inner) == 1 {
+		layers++
+		pointee, err = r.effectiveType(pointee.Inner[0])
 		if err != nil {
 			return abi.TypeDesc{}, nil, err
 		}
-		if pointee.Kind == "FunctionProtoType" || pointee.Kind == "FunctionNoProtoType" {
-			if !functionPointers {
-				return abi.TypeDesc{}, nil, fmt.Errorf("nested function-pointer signatures require an adapter")
-			}
-			signature, _, err := r.prototype(pointee, target, false)
-			return abi.TypeDesc{Type: abi.Pointer}, &signature, err
+	}
+	if layers != 0 && (pointee.Kind == "FunctionProtoType" || pointee.Kind == "FunctionNoProtoType") {
+		if layers > 8 {
+			return abi.TypeDesc{}, nil, fmt.Errorf("function-pointer indirection exceeds 8 levels")
 		}
+		signature, pointers, err := r.prototype(pointee, target, depth+1)
+		pointer := &FunctionPointer{Signature: signature, FunctionPointers: pointers}
+		if layers > 1 {
+			pointer.Indirection = layers
+		}
+		return abi.TypeDesc{Type: abi.Pointer}, pointer, err
 	}
 	description, err := r.describe(node.Type.QualType, true, 0)
 	return description, nil, err

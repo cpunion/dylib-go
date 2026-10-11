@@ -418,7 +418,8 @@ members, typed struct pointers, function-pointer parameter/result prototypes,
 variadic prefixes, C cdecl, and Windows 386 stdcall/fastcall. `ForHost` checks compiler record sizes, alignments and offsets
 against the actual backend before calls, including callback records.
 `LookupFunctionPointer` supplies signatures for `abi.NewCallback` or returned native
-addresses. Unions, packed records, enums and higher-order function pointers need
+addresses, including nested prototypes and multiple pointer layers. Unions,
+packed records, enums and function-pointer record fields need
 separate adapters. See [types, targets and limits](docs/clang.md).
 
 | Generator | Host compiler | Native calls | libffi required |
@@ -432,6 +433,8 @@ Go on all eight native targets and llgo on the six 64-bit targets. Expand variad
 declarations with `Declaration.WithTail` before generation; the C compiler applies
 default argument promotions. Native function-pointer parameters/results remain
 caller-owned addresses, with their C prototypes preserved inside the bridge.
+Higher-order prototypes retain nested argument/result conventions; pointer slots
+are borrowed native addresses, with explicit caller-managed storage lifetimes.
 Fixed stdcall/fastcall exports and native function-pointer prototypes are also
 supported with Go on Windows 386. Ordinary record values support nested records,
 fixed arrays and native address fields. Fields are copied into independent C
@@ -456,6 +459,9 @@ against generated llgo storage before resolving symbols. Methods call through
 `//llgo:type C` pointers inside `Symbol.WithAddress`, without libffi. The caller
 owns the session, pointer storage and returned native entry lifetimes. Run the [tested direct example](examples/directdeclarations/main.go)
 with `examples/run.sh llgo directdeclarations <library>`.
+Higher-order entries use nested `Callback` types; an `Adder *` slot becomes a
+pointer to its native callback type. Factories, consumers and slot replacement
+are tested through objects, archives and shared libraries.
 
 Returned variadic pointer types expose `__llgo_va_list ...any`; pass explicitly
 promoted `int32`/`float64` values, match the C argument contract, and retain the
@@ -467,7 +473,7 @@ locals also require the [debug snapshot fix](https://github.com/xgo-dev/llgo/pul
 CI temporarily pins that contribution while it is reviewed. Runtime tests check wide
 results, native function pointers, callbacks,
 stack parameters and variadic prefixes in objects, archives and libraries at
-`-O0` and `-O2`. See the [direct binding contracts](docs/clang.md#direct-llgo-bindings).
+Clang `-O0` and `-O2` builds. See the [direct binding contracts](docs/clang.md#direct-llgo-bindings).
 
 This complements [llcppg](https://github.com/goplus/llcppg)'s static bindings.
 

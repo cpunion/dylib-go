@@ -47,7 +47,8 @@ Run
 | Variadic prototypes | Fixed prefix; `Declaration.WithTail` adds a concrete scalar/pointer tail; `abi.Prepare` applies promotions |
 | C cdecl | All eight qualified native targets |
 | stdcall / fastcall | Windows 386; retain compiler symbol decoration |
-| Unions, bitfields, attributed records/fields/typedefs, flexible/zero-length arrays, enums, function-pointer fields/multiple indirection/higher-order signatures, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
+| Higher-order and multiply indirect function pointers | Nested argument/result prototypes and 1–8 pointer layers; caller owns code and pointee lifetimes |
+| Unions, bitfields, attributed records/fields/typedefs, flexible/zero-length arrays, enums, function-pointer fields, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
 | Static/inline functions and old-style declarations without prototypes | Rejected; provide an exported C facade/prototype |
 
 `Header.Records` saves the C type spelling, `abi.TypeDesc` and compiler layout for
@@ -67,7 +68,10 @@ C array parameters decay to pointers; bare arrays are not passed by value.
 
 `Declaration.FunctionPointers` stores each function-pointer signature with its
 zero-based parameter `Position`; `-1` identifies a function-pointer result.
-`LookupFunctionPointer(position)` returns a detached snapshot. The outer signature
+`LookupFunctionPointer(position)` returns a detached snapshot. Its own
+`LookupFunctionPointer` method inspects nested parameter/result prototypes.
+`Indirection` counts pointer layers; zero is the backward-compatible one-layer
+default. The outer signature
 uses `abi.Pointer`, so pass a leased `abi.NewCallback` address to C. `ForHost`
 checks records used by both the outer call and each function-pointer signature.
 The generated example derives its struct callback signature from these metadata.
@@ -76,8 +80,9 @@ Clang `__typeof__` probes expose `FunctionProtoType` nodes in the same AST
 invocation. Their parameter/result types and effective calling convention avoid
 parsing nested C declarator text. Function-pointer signatures support ordinary
 records and typed struct pointers, along with the existing primitive types.
-Pointers within records, multiple function-pointer indirection and callbacks that
-accept/return other function pointers require manual adapters.
+Callbacks can accept/return other native function pointers and use up to eight
+prototype levels and eight pointer layers. Function-pointer record fields still
+require manual adapters.
 
 For native function-pointer results, retain the image while calling the returned
 address, for example inside the factory symbol's `Symbol.WithAddress` lease.
@@ -204,7 +209,7 @@ incorrect argument extension. They check signed minimum/maximum/negative/zero
 values, unsigned high bits, both Boolean values, native factories and forwarding,
 C-to-Go callback arguments, stack parameters with a hidden aggregate result, and
 fixed variadic prefixes. Objects, archives and shared libraries execute at both
-`-O0` and `-O2` on the six qualified targets.
+Clang `-O0` and `-O2` builds on the six qualified targets.
 
 The constructor checks `Target.CheckHost` and compares generated record
 `unsafe.Sizeof`, `unsafe.Alignof` and `unsafe.Offsetof` values with the saved Clang
@@ -242,8 +247,10 @@ not acquire a new code owner. Noncapturing C literals can reenter the already
 registered Go calling thread; this does not qualify them as foreign-thread entries.
 Use separately owned `abi.NewCallback` registrations and address leases for
 captures or C-created threads, with the optional libffi backend. Higher-order
-function pointers, multiple indirection and function-pointer record fields remain
-unsupported by declaration parsing.
+entries retain nested native callback types in arguments/results. A multiply
+indirect entry uses pointers to that callback type; these are borrowed slots,
+not Go closure storage. Keep slot storage and referenced entries alive, and
+synchronize slot mutation. Function-pointer record fields remain unsupported.
 Noncapturing Go C entries with narrow integer results are not qualified by these
 tests: their result-extension contract requires a separate compiler adapter. Use
 `abi.NewCallback` or a compiled C bridge for that result boundary. Narrow results

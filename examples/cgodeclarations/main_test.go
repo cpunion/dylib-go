@@ -36,6 +36,7 @@ func TestGeneratedCgoDeclarations(t *testing.T) {
 		t.Skip(err)
 	}
 	names := []string{"s8", "u8", "s16", "u16", "s32", "u32", "s64", "u64", "f32", "f64", "truth", "pointer", "zero", "empty", "mixed", "variable", "promotions", "empty_variable", "mixed_variable", "void_variable", "adder_factory", "apply_adder", "variadic_factory", "forward_variadic", "data_pointer"}
+	names = append(names, "maker_factory", "meta_factory", "consumer_factory", "subtract_factory", "apply_maker", "apply_meta", "apply_consumer", "adder_slot", "replace_adder")
 	header, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -175,6 +176,7 @@ func TestGeneratedCgoDeclarations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	checkHigherOrderCalls(t, session, b)
 	if err := session.Close(); err != nil {
 		t.Fatal(err)
 	}

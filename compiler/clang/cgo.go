@@ -168,14 +168,12 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 	attribute, _ := h.cgoAttribute(s)
 	boundaryC := make(map[int]string)
 	for _, pointer := range function.FunctionPointers {
-		result, parameters, err := h.cgoPrototype(pointer.Signature, mapper)
+		name := fmt.Sprintf("%s_pointer%d", helper, pointer.Position+1)
+		kind, err := h.writeCgoFunctionPointer(c, pointer, name, mapper)
 		if err != nil {
 			return fmt.Errorf("function pointer %d: %w", pointer.Position, err)
 		}
-		name := fmt.Sprintf("%s_pointer%d", helper, pointer.Position+1)
-		pointerAttribute, _ := h.cgoAttribute(pointer.Signature)
-		fmt.Fprintf(c, "typedef %s (%s*%s)(%s);\n", result, pointerAttribute, name, parameters)
-		boundaryC[pointer.Position] = name
+		boundaryC[pointer.Position] = kind
 	}
 	var prototype, bridge, callArgs, goParams, goArgs, conversions []string
 	bridge = append(bridge, "uintptr_t address")

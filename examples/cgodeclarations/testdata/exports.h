@@ -25,3 +25,16 @@ typedef int (*Variadic)(int, ...);
 Variadic variadic_factory(void);
 int forward_variadic(Variadic, int);
 void *data_pointer(void);
+
+typedef Adder (*Maker)(void);
+typedef Maker (*MetaMaker)(void);
+typedef int (*Consumer)(Adder, int, int);
+Maker maker_factory(void);
+MetaMaker meta_factory(void);
+Consumer consumer_factory(void);
+Adder subtract_factory(void);
+int apply_maker(Maker, int, int);
+int apply_meta(MetaMaker, int, int);
+int apply_consumer(Consumer, Adder, int, int);
+Adder *adder_slot(void);
+void replace_adder(Adder *, Adder);

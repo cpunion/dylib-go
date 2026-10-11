@@ -68,4 +68,16 @@ Adder adder_factory(void) { return add; }
 int apply_adder(Adder entry, int a, int b) { return entry(a, b); }
 Variadic variadic_factory(void) { return variable; }
 int forward_variadic(Variadic entry, int a) { return entry(a, 10, 12.0); }
+
+Maker maker_factory(void) { return adder_factory; }
+MetaMaker meta_factory(void) { return maker_factory; }
+Consumer consumer_factory(void) { return apply_adder; }
+static int subtract(int a, int b) { return a - b; }
+Adder subtract_factory(void) { return subtract; }
+int apply_maker(Maker maker, int a, int b) { return maker()(a, b); }
+int apply_meta(MetaMaker maker, int a, int b) { return maker()()(a, b); }
+int apply_consumer(Consumer consumer, Adder entry, int a, int b) { return consumer(entry, a, b); }
+static Adder entry_slot = add;
+Adder *adder_slot(void) { return &entry_slot; }
+void replace_adder(Adder *slot, Adder entry) { *slot = entry; }
 void *data_pointer(void) { return &datum; }

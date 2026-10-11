@@ -69,25 +69,8 @@ func (h *Header) validateDescriptions() error {
 		if err := validateSignature(function.Signature, &budget); err != nil {
 			return err
 		}
-		if len(function.FunctionPointers) > len(function.Signature.Args)+1 {
-			return fmt.Errorf("clang: too many function-pointer declarations")
-		}
-		seen := make(map[int]bool)
-		for _, pointer := range function.FunctionPointers {
-			if pointer.Position < -1 || pointer.Position >= len(function.Signature.Args) || seen[pointer.Position] {
-				return fmt.Errorf("clang: invalid or duplicate function-pointer position")
-			}
-			seen[pointer.Position] = true
-			description := function.Signature.ReturnType()
-			if pointer.Position >= 0 {
-				description = function.Signature.ArgumentType(pointer.Position)
-			}
-			if description.Type != abi.Pointer || description.Elem != nil {
-				return fmt.Errorf("clang: function-pointer position must be an opaque pointer")
-			}
-			if err := validateSignature(pointer.Signature, &budget); err != nil {
-				return err
-			}
+		if err := validateFunctionPointers(function.Signature, function.FunctionPointers, &budget, 0); err != nil {
+			return err
 		}
 	}
 	for _, record := range h.Records {
@@ -98,6 +81,51 @@ func (h *Header) validateDescriptions() error {
 			return err
 		}
 		if err := record.Description.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateFunctionPointers(signature abi.Signature, pointers []FunctionPointer, budget *int, depth int) error {
+	if depth > 8 {
+		return fmt.Errorf("clang: function-pointer nesting exceeds 8 levels")
+	}
+	if len(pointers) > len(signature.Args)+1 {
+		return fmt.Errorf("clang: too many function-pointer declarations")
+	}
+	seen := make(map[int]bool)
+	for _, pointer := range pointers {
+		if pointer.Position < -1 || pointer.Position >= len(signature.Args) || seen[pointer.Position] {
+			return fmt.Errorf("clang: invalid or duplicate function-pointer position")
+		}
+		seen[pointer.Position] = true
+		if pointer.pointerDepth() < 1 || pointer.pointerDepth() > 8 {
+			return fmt.Errorf("clang: pointer indirection requires 1 to 8 levels")
+		}
+		description := signature.ReturnType()
+		if pointer.Position >= 0 {
+			description = signature.ArgumentType(pointer.Position)
+		}
+		if description.Type != abi.Pointer || description.Elem != nil {
+			return fmt.Errorf("clang: function-pointer position must be an opaque pointer")
+		}
+		if err := validateSignature(pointer.Signature, budget); err != nil {
+			return err
+		}
+		if err := validateFunctionPointers(pointer.Signature, pointer.FunctionPointers, budget, depth+1); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (h *Header) validateHostFunctionPointers(pointers []FunctionPointer) error {
+	for _, pointer := range pointers {
+		if err := h.validateHostRecords(pointer.Signature); err != nil {
+			return err
+		}
+		if err := h.validateHostFunctionPointers(pointer.FunctionPointers); err != nil {
 			return err
 		}
 	}

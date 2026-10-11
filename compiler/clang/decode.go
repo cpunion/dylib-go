@@ -170,7 +170,7 @@ func decodeFunction(node astNode, target Target, resolver *typeResolver, probe a
 	if err != nil {
 		return Declaration{}, err
 	}
-	signature, pointers, err := resolver.prototype(prototype, target, true)
+	signature, pointers, err := resolver.prototype(prototype, target, 0)
 	if err != nil {
 		return Declaration{}, err
 	}

@@ -63,3 +63,16 @@ int narrow_variable(signed char, unsigned char, short, unsigned short, _Bool, in
 typedef int (*NarrowVariadic)(signed char, unsigned char, short, unsigned short, _Bool, int, ...);
 NarrowVariadic narrow_variadic_factory(void);
 int forward_narrow_variadic(NarrowVariadic);
+
+typedef Adder (*Maker)(void);
+typedef Maker (*MetaMaker)(void);
+typedef int (*Consumer)(Adder, int, int);
+Maker maker_factory(void);
+MetaMaker meta_factory(void);
+Consumer consumer_factory(void);
+Adder subtract_factory(void);
+int apply_maker(Maker, int, int);
+int apply_meta(MetaMaker, int, int);
+int apply_consumer(Consumer, Adder, int, int);
+Adder *adder_slot(void);
+void replace_adder(Adder *, Adder);

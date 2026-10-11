@@ -110,6 +110,61 @@ typedef void * (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call24_functio
 static void * dylib_go_42696e64696e6773_call24(uintptr_t address) {
 return (void *)((dylib_go_42696e64696e6773_call24_function)address)();
 }
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call25_pointer0_pointer0)(int32_t,int32_t);
+typedef dylib_go_42696e64696e6773_call25_pointer0_pointer0 (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call25_pointer0)(void);
+typedef dylib_go_42696e64696e6773_call25_pointer0 (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call25_function)(void);
+static void * dylib_go_42696e64696e6773_call25(uintptr_t address) {
+return (void *)((dylib_go_42696e64696e6773_call25_function)address)();
+}
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call26_pointer0_pointer0_pointer0)(int32_t,int32_t);
+typedef dylib_go_42696e64696e6773_call26_pointer0_pointer0_pointer0 (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call26_pointer0_pointer0)(void);
+typedef dylib_go_42696e64696e6773_call26_pointer0_pointer0 (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call26_pointer0)(void);
+typedef dylib_go_42696e64696e6773_call26_pointer0 (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call26_function)(void);
+static void * dylib_go_42696e64696e6773_call26(uintptr_t address) {
+return (void *)((dylib_go_42696e64696e6773_call26_function)address)();
+}
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call27_pointer0_pointer1)(int32_t,int32_t);
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call27_pointer0)(dylib_go_42696e64696e6773_call27_pointer0_pointer1,int32_t,int32_t);
+typedef dylib_go_42696e64696e6773_call27_pointer0 (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call27_function)(void);
+static void * dylib_go_42696e64696e6773_call27(uintptr_t address) {
+return (void *)((dylib_go_42696e64696e6773_call27_function)address)();
+}
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call28_pointer0)(int32_t,int32_t);
+typedef dylib_go_42696e64696e6773_call28_pointer0 (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call28_function)(void);
+static void * dylib_go_42696e64696e6773_call28(uintptr_t address) {
+return (void *)((dylib_go_42696e64696e6773_call28_function)address)();
+}
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call29_pointer1_pointer0)(int32_t,int32_t);
+typedef dylib_go_42696e64696e6773_call29_pointer1_pointer0 (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call29_pointer1)(void);
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call29_function)(dylib_go_42696e64696e6773_call29_pointer1,int32_t,int32_t);
+static int32_t dylib_go_42696e64696e6773_call29(uintptr_t address,void * p0,int32_t p1,int32_t p2) {
+return ((dylib_go_42696e64696e6773_call29_function)address)((dylib_go_42696e64696e6773_call29_pointer1)p0,p1,p2);
+}
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call30_pointer1_pointer0_pointer0)(int32_t,int32_t);
+typedef dylib_go_42696e64696e6773_call30_pointer1_pointer0_pointer0 (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call30_pointer1_pointer0)(void);
+typedef dylib_go_42696e64696e6773_call30_pointer1_pointer0 (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call30_pointer1)(void);
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call30_function)(dylib_go_42696e64696e6773_call30_pointer1,int32_t,int32_t);
+static int32_t dylib_go_42696e64696e6773_call30(uintptr_t address,void * p0,int32_t p1,int32_t p2) {
+return ((dylib_go_42696e64696e6773_call30_function)address)((dylib_go_42696e64696e6773_call30_pointer1)p0,p1,p2);
+}
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call31_pointer1_pointer1)(int32_t,int32_t);
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call31_pointer1)(dylib_go_42696e64696e6773_call31_pointer1_pointer1,int32_t,int32_t);
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call31_pointer2)(int32_t,int32_t);
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call31_function)(dylib_go_42696e64696e6773_call31_pointer1,dylib_go_42696e64696e6773_call31_pointer2,int32_t,int32_t);
+static int32_t dylib_go_42696e64696e6773_call31(uintptr_t address,void * p0,void * p1,int32_t p2,int32_t p3) {
+return ((dylib_go_42696e64696e6773_call31_function)address)((dylib_go_42696e64696e6773_call31_pointer1)p0,(dylib_go_42696e64696e6773_call31_pointer2)p1,p2,p3);
+}
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call32_pointer0)(int32_t,int32_t);
+typedef dylib_go_42696e64696e6773_call32_pointer0* (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call32_function)(void);
+static void * dylib_go_42696e64696e6773_call32(uintptr_t address) {
+return (void *)((dylib_go_42696e64696e6773_call32_function)address)();
+}
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call33_pointer1)(int32_t,int32_t);
+typedef int32_t (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call33_pointer2)(int32_t,int32_t);
+typedef void (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call33_function)(dylib_go_42696e64696e6773_call33_pointer1*,dylib_go_42696e64696e6773_call33_pointer2);
+static void dylib_go_42696e64696e6773_call33(uintptr_t address,void * p0,void * p1) {
+((dylib_go_42696e64696e6773_call33_function)address)((dylib_go_42696e64696e6773_call33_pointer1*)p0,(dylib_go_42696e64696e6773_call33_pointer2)p1);
+}
 */
 import "C"
 
@@ -149,6 +204,15 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "variadic_factory", Symbol: "variadic_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.I32}}}}},
 		{Name: "forward_variadic", Symbol: "forward_variadic", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.I32}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.I32}}}}},
 		{Name: "data_pointer", Symbol: "data_pointer", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}},
+		{Name: "maker_factory", Symbol: "maker_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}}}},
+		{Name: "meta_factory", Symbol: "meta_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}}}}}},
+		{Name: "consumer_factory", Symbol: "consumer_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.I32, abi.I32}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}}}},
+		{Name: "subtract_factory", Symbol: "subtract_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}},
+		{Name: "apply_maker", Symbol: "apply_maker", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.I32, abi.I32}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}}}},
+		{Name: "apply_meta", Symbol: "apply_meta", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.I32, abi.I32}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}}}}}},
+		{Name: "apply_consumer", Symbol: "apply_consumer", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Pointer, abi.I32, abi.I32}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.I32, abi.I32}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}}, {Position: 1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}},
+		{Name: "adder_slot", Symbol: "adder_slot", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}, Indirection: 2}}},
+		{Name: "replace_adder", Symbol: "replace_adder", Signature: abi.Signature{Result: abi.Void, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Pointer}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}, Indirection: 2}, {Position: 1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}},
 	},
 }
 
@@ -179,6 +243,15 @@ type Bindings struct {
 	symbol22 *dylib.Symbol
 	symbol23 *dylib.Symbol
 	symbol24 *dylib.Symbol
+	symbol25 *dylib.Symbol
+	symbol26 *dylib.Symbol
+	symbol27 *dylib.Symbol
+	symbol28 *dylib.Symbol
+	symbol29 *dylib.Symbol
+	symbol30 *dylib.Symbol
+	symbol31 *dylib.Symbol
+	symbol32 *dylib.Symbol
+	symbol33 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -315,6 +388,51 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol24 = symbol24
+	symbol25, err := session.Resolve("maker_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol25 = symbol25
+	symbol26, err := session.Resolve("meta_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol26 = symbol26
+	symbol27, err := session.Resolve("consumer_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol27 = symbol27
+	symbol28, err := session.Resolve("subtract_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol28 = symbol28
+	symbol29, err := session.Resolve("apply_maker")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol29 = symbol29
+	symbol30, err := session.Resolve("apply_meta")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol30 = symbol30
+	symbol31, err := session.Resolve("apply_consumer")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol31 = symbol31
+	symbol32, err := session.Resolve("adder_slot")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol32 = symbol32
+	symbol33, err := session.Resolve("replace_adder")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol33 = symbol33
 	return b, nil
 }
 
@@ -597,4 +715,102 @@ func (b *Bindings) Data_pointer() (result unsafe.Pointer, err error) {
 		return nil
 	})
 	return result, err
+}
+
+func (b *Bindings) Maker_factory() (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol25.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call25(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Meta_factory() (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol26.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call26(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Consumer_factory() (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol27.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call27(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Subtract_factory() (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol28.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call28(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Apply_maker(p0 unsafe.Pointer, p1 int32, p2 int32) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol29.WithAddress(func(address uintptr) error {
+		result = int32(C.dylib_go_42696e64696e6773_call29(C.uintptr_t(address), p0, C.int32_t(p1), C.int32_t(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Apply_meta(p0 unsafe.Pointer, p1 int32, p2 int32) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol30.WithAddress(func(address uintptr) error {
+		result = int32(C.dylib_go_42696e64696e6773_call30(C.uintptr_t(address), p0, C.int32_t(p1), C.int32_t(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Apply_consumer(p0 unsafe.Pointer, p1 unsafe.Pointer, p2 int32, p3 int32) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol31.WithAddress(func(address uintptr) error {
+		result = int32(C.dylib_go_42696e64696e6773_call31(C.uintptr_t(address), p0, p1, C.int32_t(p2), C.int32_t(p3)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Adder_slot() (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol32.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call32(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Replace_adder(p0 unsafe.Pointer, p1 unsafe.Pointer) error {
+	if b == nil {
+		return dylib.ErrClosed
+	}
+	return b.symbol33.WithAddress(func(address uintptr) error {
+		C.dylib_go_42696e64696e6773_call33(C.uintptr_t(address), p0, p1)
+		return nil
+	})
 }
