@@ -48,8 +48,8 @@ Run
 | C cdecl | All eight qualified native targets |
 | stdcall / fastcall | Windows 386; retain compiler symbol decoration |
 | Higher-order and multiply indirect function pointers | Nested argument/result prototypes and 1–8 pointer layers; caller owns code and pointee lifetimes |
-| Function-pointer record fields | Opaque native address storage with separate field-indexed prototypes; supports typedef/direct pointers, nested record arrays and self-referencing callback signatures |
-| Unions, bitfields, attributed records/fields/typedefs, flexible/zero-length arrays, arrays of function pointers, enums, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
+| Function-pointer record fields and fixed arrays | Opaque native address storage with separate field-indexed prototypes; supports typedef/direct pointers, multidimensional arrays, nested record arrays and self-referencing callback signatures |
+| Unions, bitfields, attributed records/fields/typedefs, flexible/zero-length arrays, enums, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
 | Static/inline functions and old-style declarations without prototypes | Rejected; provide an exported C facade/prototype |
 
 `Header.Records` saves the C type spelling, `abi.TypeDesc` and compiler layout for
@@ -86,7 +86,11 @@ prototype levels and eight pointer layers.
 
 `Record.FunctionPointers` uses `Position` for the zero-based field index.
 `Record.LookupFunctionPointer(fieldName)` returns a cloned prototype, including
-its nested callbacks. `Header.ForHostRecord(name)` checks the target and native
+its nested callbacks. For fixed array fields this is the common element
+prototype; dimensions remain in `Record.Description`. Clang's evaluated
+`ConstantArrayType` nodes supply the extents, including multidimensional arrays,
+arrays of higher-order entries and arrays of indirect entry slots.
+`Header.ForHostRecord(name)` checks the target and native
 layouts before returning the record. `ForHost` also validates records used only
 by a field callback prototype. Field type nodes come from an extra batched
 Clang `__typeof__(((Record *)0)->field)` probe when ordinary spelling resolution
@@ -94,7 +98,8 @@ cannot describe a field; C declarator text is not parsed. Physical record
 descriptions are completed before callback prototypes, so a callback accepting
 its enclosing record does not create a recursive metadata graph.
 
-Generated cgo and llgo record fields use `unsafe.Pointer`. Prototype metadata
+Generated cgo and llgo record fields use `unsafe.Pointer` or fixed Go arrays of
+that type. Prototype metadata
 does not make an address callable as a Go function value or own its lifetime.
 Pass a native entry with its image lease, or create a captured Go entry with
 `abi.NewCallback(recordPrototype.Signature, handler)`. Hold a callback lease while
@@ -105,9 +110,10 @@ The [record example](../examples/recordcallbacks/call.go) and its tests exercise
 by-value arguments/results, nested record arrays, native struct pointers,
 field replacement, null entries, direct noncapturing llgo entries and retained
 Go captures. Runtime tests use objects, archives and shared libraries at Clang
-`-O0` and `-O2`; cgo runs on eight targets and direct llgo on six. Arrays whose
-elements are function pointers remain unsupported; arrays of records containing
-callback fields are supported.
+`-O0` and `-O2`; cgo runs on eight targets and direct llgo on six. Tests include
+multidimensional callback arrays, element order, replacement, null entries and
+registrations retaining multiple Go captures until native storage is cleared.
+Flexible/zero-length callback arrays and entries without prototypes are rejected.
 
 For native function-pointer results, retain the image while calling the returned
 address, for example inside the factory symbol's `Symbol.WithAddress` lease.

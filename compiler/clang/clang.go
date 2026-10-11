@@ -126,7 +126,7 @@ const maxFunctions = 256
 // It extracts only requested external prototypes, supported scalars/typedefs,
 // ordinary records, array members, pointers and function-pointer prototypes. Record layouts are compiler
 // evaluated; ForHost checks the native backend before calls. Unions, bitfields,
-// packed/aligned records, enums, arrays of function pointers, inline/static
+// packed/aligned records, enums, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes
 // must stay stable during parsing; they are read by Clang at their original paths.
 func Parse(ctx context.Context, path string, opts Options) (*Header, error) {

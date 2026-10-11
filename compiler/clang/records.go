@@ -18,12 +18,14 @@ type Record struct {
 	Name        string
 	Description abi.TypeDesc
 	Layout      abi.Layout
-	// FunctionPointers describes pointer fields. Position is the field index;
-	// field values remain opaque native addresses with caller-managed lifetimes.
+	// FunctionPointers describes pointer fields and fixed arrays of entries.
+	// Position is the field index; array shape remains in Description. All
+	// elements share the prototype and have caller-managed address lifetimes.
 	FunctionPointers []FunctionPointer
 }
 
-// LookupFunctionPointer returns an independent prototype for a named field.
+// LookupFunctionPointer returns an independent prototype for a named field or
+// the common element prototype of its fixed array.
 // Validate the header with ForHostRecord before calling addresses or callbacks.
 func (r Record) LookupFunctionPointer(field string) (FunctionPointer, error) {
 	if err := (&Header{Records: []Record{r}}).validateDescriptions(); err != nil {
@@ -59,8 +61,12 @@ func (h *Header) ForHostRecord(name string) (Record, error) {
 func recordFieldSignature(record Record) abi.Signature {
 	s := abi.Signature{}
 	for _, field := range record.Description.Fields {
-		s.Args = append(s.Args, field.Type.Type)
-		s.ArgTypes = append(s.ArgTypes, field.Type)
+		description := field.Type
+		for description.Type == abi.Array {
+			description = *description.Elem
+		}
+		s.Args = append(s.Args, description.Type)
+		s.ArgTypes = append(s.ArgTypes, description)
 	}
 	return s
 }

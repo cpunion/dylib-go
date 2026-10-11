@@ -37,6 +37,10 @@ func TestLLGoCallbackField(t *testing.T) {
 		if err != nil || got != 42 {
 			t.Fatal(got, err)
 		}
+		array := BindingsRecord2{Entries: [2][2]unsafe.Pointer{{address, nil}, {nil, address}}}
+		if got, err := b.Callback_array_apply(array, 1, 1, 20, 21); err != nil || got != 42 {
+			t.Fatal(got, err)
+		}
 	})
 }
 
@@ -59,6 +63,17 @@ func TestLLGoCgoCallbackRecords(t *testing.T) {
 			t.Fatal(err)
 		}
 		if got, err := b.Callbacks_nested_apply(nested, 20, 21); err != nil || got != 42 {
+			t.Fatal(got, err)
+		}
+		array, err := b.Callback_array_factory()
+		if err != nil {
+			t.Fatal(err)
+		}
+		array, err = b.Callback_array_echo(array)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, err := b.Callback_array_apply(array, 0, 1, 64, 22); err != nil || got != 42 {
 			t.Fatal(got, err)
 		}
 	})
