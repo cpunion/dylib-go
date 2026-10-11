@@ -16,7 +16,7 @@ var ErrCallbackClosed = errors.New("ABI callback is closed")
 type CallbackFunc func(args []Value) (Value, error)
 
 type callbackBackend interface {
-	address() uintptr
+	pointer() unsafe.Pointer
 	dispatch(*callbackState, unsafe.Pointer, unsafe.Pointer)
 	close()
 }
@@ -76,7 +76,7 @@ func NewCallback(signature Signature, handler CallbackFunc) (*Callback, error) {
 type CallbackLease struct {
 	mu      sync.Mutex
 	owner   *Callback
-	address uintptr
+	pointer unsafe.Pointer
 }
 
 func (c *Callback) Acquire() (*CallbackLease, error) {
@@ -88,7 +88,7 @@ func (c *Callback) Acquire() (*CallbackLease, error) {
 		c.mu.RUnlock()
 		return nil, ErrCallbackClosed
 	}
-	return &CallbackLease{owner: c, address: c.backend.address()}, nil
+	return &CallbackLease{owner: c, pointer: c.backend.pointer()}, nil
 }
 
 func (l *CallbackLease) Address() (uintptr, error) {
@@ -100,7 +100,21 @@ func (l *CallbackLease) Address() (uintptr, error) {
 	if l.owner == nil {
 		return 0, ErrCallbackClosed
 	}
-	return l.address, nil
+	return uintptr(l.pointer), nil
+}
+
+// Pointer returns the leased native entry for typed cgo/llgo adapters without
+// an integer-to-pointer conversion. Its lifetime is the same as Address.
+func (l *CallbackLease) Pointer() (unsafe.Pointer, error) {
+	if l == nil {
+		return nil, ErrCallbackClosed
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.owner == nil {
+		return nil, ErrCallbackClosed
+	}
+	return l.pointer, nil
 }
 
 // Close releases the lease after native code has stopped using the entry.
@@ -113,7 +127,7 @@ func (l *CallbackLease) Close() error {
 	defer l.mu.Unlock()
 	if l.owner != nil {
 		l.owner.mu.RUnlock()
-		l.owner, l.address = nil, 0
+		l.owner, l.pointer = nil, nil
 	}
 	return nil
 }

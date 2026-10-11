@@ -98,7 +98,8 @@ Generated cgo and llgo record fields use `unsafe.Pointer`. Prototype metadata
 does not make an address callable as a Go function value or own its lifetime.
 Pass a native entry with its image lease, or create a captured Go entry with
 `abi.NewCallback(recordPrototype.Signature, handler)`. Hold a callback lease while
-C retains the field. `Registration` can couple the image and callback leases
+C retains the field; `CallbackLease.Pointer()` supplies its native address to
+typed cgo/llgo record fields. `Registration` can couple the image and callback leases
 with an explicit operation that clears native storage before releasing them.
 The [record example](../examples/recordcallbacks/call.go) and its tests exercise
 by-value arguments/results, nested record arrays, native struct pointers,

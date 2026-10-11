@@ -4,7 +4,6 @@ package recordcallbacks
 
 import (
 	"testing"
-	"unsafe"
 
 	dylib "github.com/cpunion/dylib-go"
 	"github.com/cpunion/dylib-go/abi"
@@ -53,6 +52,10 @@ func TestRetainedGoCallbackField(t *testing.T) {
 			if err != nil {
 				return err
 			}
+			pointer, err := leases.Callbacks[0].Pointer()
+			if err != nil || pointer == nil || uintptr(pointer) != address {
+				t.Fatal("leased pointer", pointer, err)
+			}
 			value, err := abi.StructValue(record.Description, abi.Int32(0), abi.Ptr(address))
 			if err != nil {
 				return err
@@ -61,7 +64,7 @@ func TestRetainedGoCallbackField(t *testing.T) {
 			if err != nil || int32(got.Bits) != 42 {
 				t.Fatal("dynamic callback record", got, err)
 			}
-			return b.Callbacks_store(BindingsRecord0{Add: unsafe.Pointer(address)})
+			return b.Callbacks_store(BindingsRecord0{Add: pointer})
 		})
 		if err != nil {
 			t.Fatal(err)
