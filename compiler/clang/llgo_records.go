@@ -13,7 +13,7 @@ type directTypes struct {
 	records         []Record
 	prefix          string
 	fields          [][]string
-	callbacks       []abi.Signature
+	callbacks       []FunctionPointer
 	callbackIndexes map[string]int
 }
 

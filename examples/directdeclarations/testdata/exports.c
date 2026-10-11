@@ -135,6 +135,19 @@ int narrow_variable(signed char a, unsigned char b, short c, unsigned short d,
     return result;
 }
 NarrowVariadic narrow_variadic_factory(void) { return narrow_variable; }
+
+Maker maker_factory(void) { return adder_factory; }
+MetaMaker meta_factory(void) { return maker_factory; }
+Consumer consumer_factory(void) { return apply_adder; }
+static int subtract(int a, int b) { return a - b; }
+Adder subtract_factory(void) { return subtract; }
+int apply_maker(Maker maker, int a, int b) { return maker()(a, b); }
+int apply_meta(MetaMaker maker, int a, int b) { return maker()()(a, b); }
+int apply_consumer(Consumer consumer, Adder entry, int a, int b) { return consumer(entry, a, b); }
+static Adder entry_slot = add;
+Adder *adder_slot(void) { return &entry_slot; }
+void replace_adder(Adder *slot, Adder entry) { *slot = entry; }
+
 int forward_narrow_variadic(NarrowVariadic entry) {
     return entry(-8, 255, -300, 65535, 1, 2, -7, 12.0);
 }

@@ -38,6 +38,7 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 	names := []string{"s8", "u8", "s16", "u16", "s32", "u32", "s64", "u64", "f32", "f64", "truth", "pointer", "zero", "empty", "mixed", "echo_pair", "mutate_pair", "echo_outer", "echo_floats", "echo_small", "echo_mixed", "adder_factory", "apply_adder", "apply_anonymous", "apply_decayed", "small_factory", "apply_small", "outer_factory", "apply_outer", "mutator_factory", "apply_mutator"}
 	names = append(names, "variable", "promotions", "empty_variable", "mixed_variable", "void_variable", "data_pointer", "many_variable", "record_variable", "variadic_factory", "forward_variadic")
 	names = append(names, "narrow", "narrow_factory", "apply_narrow", "narrow_stack", "narrow_variable", "narrow_variadic_factory", "forward_narrow_variadic")
+	names = append(names, "maker_factory", "meta_factory", "consumer_factory", "subtract_factory", "apply_maker", "apply_meta", "apply_consumer", "adder_slot", "replace_adder")
 	header, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -163,6 +164,7 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 	check("mixed register aggregate", echoedMixed, mixed, err)
 	checkDirectVariadicCalls(t, session, b)
 	checkDirectNarrowCalls(t, session, b)
+	checkHigherOrderCalls(t, session, b)
 	// Keep the producer image leased while using returned native entries.
 	factory, err := session.Resolve("adder_factory")
 	if err != nil {
@@ -385,6 +387,7 @@ func TestDirectCallsAcrossContainersAndOptimizations(t *testing.T) {
 					}
 					checkDirectVariadicCalls(t, session, bindings)
 					checkDirectNarrowCalls(t, session, bindings)
+					checkHigherOrderCalls(t, session, bindings)
 				})
 			}
 		})

@@ -63,6 +63,15 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "narrow_variable", Symbol: "narrow_variable", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 6, Args: []abi.Type{abi.I8, abi.U8, abi.I16, abi.U16, abi.Bool, abi.I32, abi.I8, abi.F32}}},
 		{Name: "narrow_variadic_factory", Symbol: "narrow_variadic_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 6, Args: []abi.Type{abi.I8, abi.U8, abi.I16, abi.U16, abi.Bool, abi.I32}}}}},
 		{Name: "forward_narrow_variadic", Symbol: "forward_narrow_variadic", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 6, Args: []abi.Type{abi.I8, abi.U8, abi.I16, abi.U16, abi.Bool, abi.I32}}}}},
+		{Name: "maker_factory", Symbol: "maker_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}}}},
+		{Name: "meta_factory", Symbol: "meta_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}}}}}},
+		{Name: "consumer_factory", Symbol: "consumer_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.I32, abi.I32}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}}}},
+		{Name: "subtract_factory", Symbol: "subtract_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}},
+		{Name: "apply_maker", Symbol: "apply_maker", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.I32, abi.I32}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}}}},
+		{Name: "apply_meta", Symbol: "apply_meta", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.I32, abi.I32}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}}}}}},
+		{Name: "apply_consumer", Symbol: "apply_consumer", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Pointer, abi.I32, abi.I32}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.I32, abi.I32}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}}, {Position: 1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}},
+		{Name: "adder_slot", Symbol: "adder_slot", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}, Indirection: 2}}},
+		{Name: "replace_adder", Symbol: "replace_adder", Signature: abi.Signature{Result: abi.Void, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Pointer}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}, Indirection: 2}, {Position: 1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}},
 	},
 	Records: []clang.Record{
 		{Name: "Pair", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}, Layout: abi.Layout{Size: 24, Alignment: 8, Offsets: []uint64{0, 8, 16}}},
@@ -149,6 +158,21 @@ type BindingsCallback5 func(int8, uint8, int16, uint16, bool) int32
 //llgo:type C
 type BindingsCallback6 func(p0 int8, p1 uint8, p2 int16, p3 uint16, p4 bool, p5 int32, __llgo_va_list ...any) int32
 
+// BindingsCallback7 is a native C entry; retain its code and callback registration while invoking it.
+//
+//llgo:type C
+type BindingsCallback7 func() BindingsCallback0
+
+// BindingsCallback8 is a native C entry; retain its code and callback registration while invoking it.
+//
+//llgo:type C
+type BindingsCallback8 func() BindingsCallback7
+
+// BindingsCallback9 is a native C entry; retain its code and callback registration while invoking it.
+//
+//llgo:type C
+type BindingsCallback9 func(BindingsCallback0, int32, int32) int32
+
 // Bindings retains symbol handles; its caller owns the Session.
 type Bindings struct {
 	symbol0  *dylib.Symbol
@@ -199,6 +223,15 @@ type Bindings struct {
 	symbol45 *dylib.Symbol
 	symbol46 *dylib.Symbol
 	symbol47 *dylib.Symbol
+	symbol48 *dylib.Symbol
+	symbol49 *dylib.Symbol
+	symbol50 *dylib.Symbol
+	symbol51 *dylib.Symbol
+	symbol52 *dylib.Symbol
+	symbol53 *dylib.Symbol
+	symbol54 *dylib.Symbol
+	symbol55 *dylib.Symbol
+	symbol56 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -465,6 +498,51 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol47 = symbol47
+	symbol48, err := session.Resolve("maker_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol48 = symbol48
+	symbol49, err := session.Resolve("meta_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol49 = symbol49
+	symbol50, err := session.Resolve("consumer_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol50 = symbol50
+	symbol51, err := session.Resolve("subtract_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol51 = symbol51
+	symbol52, err := session.Resolve("apply_maker")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol52 = symbol52
+	symbol53, err := session.Resolve("apply_meta")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol53 = symbol53
+	symbol54, err := session.Resolve("apply_consumer")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol54 = symbol54
+	symbol55, err := session.Resolve("adder_slot")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol55 = symbol55
+	symbol56, err := session.Resolve("replace_adder")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol56 = symbol56
 	return b, nil
 }
 
@@ -1192,4 +1270,138 @@ func (b *Bindings) Forward_narrow_variadic(p0 BindingsCallback6) (result int32, 
 		return nil
 	})
 	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction48 func() BindingsCallback7
+
+func (b *Bindings) Maker_factory() (result BindingsCallback7, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol48.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction48)(unsafe.Pointer(&address))
+		result = function()
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction49 func() BindingsCallback8
+
+func (b *Bindings) Meta_factory() (result BindingsCallback8, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol49.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction49)(unsafe.Pointer(&address))
+		result = function()
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction50 func() BindingsCallback9
+
+func (b *Bindings) Consumer_factory() (result BindingsCallback9, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol50.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction50)(unsafe.Pointer(&address))
+		result = function()
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction51 func() BindingsCallback0
+
+func (b *Bindings) Subtract_factory() (result BindingsCallback0, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol51.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction51)(unsafe.Pointer(&address))
+		result = function()
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction52 func(p0 BindingsCallback7, p1 int32, p2 int32) int32
+
+func (b *Bindings) Apply_maker(p0 BindingsCallback7, p1 int32, p2 int32) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol52.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction52)(unsafe.Pointer(&address))
+		result = function(p0, p1, p2)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction53 func(p0 BindingsCallback8, p1 int32, p2 int32) int32
+
+func (b *Bindings) Apply_meta(p0 BindingsCallback8, p1 int32, p2 int32) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol53.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction53)(unsafe.Pointer(&address))
+		result = function(p0, p1, p2)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction54 func(p0 BindingsCallback9, p1 BindingsCallback0, p2 int32, p3 int32) int32
+
+func (b *Bindings) Apply_consumer(p0 BindingsCallback9, p1 BindingsCallback0, p2 int32, p3 int32) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol54.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction54)(unsafe.Pointer(&address))
+		result = function(p0, p1, p2, p3)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction55 func() *BindingsCallback0
+
+func (b *Bindings) Adder_slot() (result *BindingsCallback0, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol55.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction55)(unsafe.Pointer(&address))
+		result = function()
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction56 func(p0 *BindingsCallback0, p1 BindingsCallback0)
+
+func (b *Bindings) Replace_adder(p0 *BindingsCallback0, p1 BindingsCallback0) error {
+	if b == nil {
+		return dylib.ErrClosed
+	}
+	return b.symbol56.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction56)(unsafe.Pointer(&address))
+		function(p0, p1)
+		return nil
+	})
 }

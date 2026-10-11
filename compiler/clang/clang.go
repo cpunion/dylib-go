@@ -88,10 +88,8 @@ func (h *Header) ForHost(name string) (Declaration, error) {
 	if err := h.validateHostRecords(declaration.Signature); err != nil {
 		return Declaration{}, err
 	}
-	for _, pointer := range declaration.FunctionPointers {
-		if err := h.validateHostRecords(pointer.Signature); err != nil {
-			return Declaration{}, err
-		}
+	if err := h.validateHostFunctionPointers(declaration.FunctionPointers); err != nil {
+		return Declaration{}, err
 	}
 	return declaration, nil
 }
@@ -127,7 +125,7 @@ const maxFunctions = 256
 // It extracts only requested external prototypes, supported scalars/typedefs,
 // ordinary records, array members, pointers and function-pointer prototypes. Record layouts are compiler
 // evaluated; ForHost checks the native backend before calls. Unions, bitfields,
-// packed/aligned records, enums, higher-order function pointers, inline/static
+// packed/aligned records, enums, function-pointer record fields, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes
 // must stay stable during parsing; they are read by Clang at their original paths.
 func Parse(ctx context.Context, path string, opts Options) (*Header, error) {

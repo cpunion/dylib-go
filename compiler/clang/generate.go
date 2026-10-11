@@ -35,13 +35,8 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 		fmt.Fprintf(&output, "{Name:%q,Symbol:%q,Signature:", function.Name, function.Symbol)
 		writeSignature(&output, function.Signature)
 		if len(function.FunctionPointers) != 0 {
-			fmt.Fprint(&output, ",FunctionPointers:[]clang.FunctionPointer{")
-			for _, pointer := range function.FunctionPointers {
-				fmt.Fprintf(&output, "{Position:%d,Signature:", pointer.Position)
-				writeSignature(&output, pointer.Signature)
-				fmt.Fprint(&output, "},")
-			}
-			fmt.Fprint(&output, "}")
+			fmt.Fprint(&output, ",FunctionPointers:")
+			writeFunctionPointers(&output, function.FunctionPointers)
 		}
 		fmt.Fprint(&output, "},\n")
 	}
@@ -64,6 +59,23 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 	}
 	fmt.Fprint(&output, "}\n")
 	return format.Source(output.Bytes())
+}
+
+func writeFunctionPointers(output *bytes.Buffer, pointers []FunctionPointer) {
+	fmt.Fprint(output, "[]clang.FunctionPointer{")
+	for _, pointer := range pointers {
+		fmt.Fprintf(output, "{Position:%d,Signature:", pointer.Position)
+		writeSignature(output, pointer.Signature)
+		if pointer.Indirection != 0 {
+			fmt.Fprintf(output, ",Indirection:%d", pointer.Indirection)
+		}
+		if len(pointer.FunctionPointers) != 0 {
+			fmt.Fprint(output, ",FunctionPointers:")
+			writeFunctionPointers(output, pointer.FunctionPointers)
+		}
+		fmt.Fprint(output, "},")
+	}
+	fmt.Fprint(output, "}")
 }
 
 func writeSignature(output *bytes.Buffer, signature abi.Signature) {
