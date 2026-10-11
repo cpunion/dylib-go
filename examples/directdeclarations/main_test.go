@@ -37,6 +37,7 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 	}
 	names := []string{"s8", "u8", "s16", "u16", "s32", "u32", "s64", "u64", "f32", "f64", "truth", "pointer", "zero", "empty", "mixed", "echo_pair", "mutate_pair", "echo_outer", "echo_floats", "echo_small", "echo_mixed", "adder_factory", "apply_adder", "apply_anonymous", "apply_decayed", "small_factory", "apply_small", "outer_factory", "apply_outer", "mutator_factory", "apply_mutator"}
 	names = append(names, "variable", "promotions", "empty_variable", "mixed_variable", "void_variable", "data_pointer", "many_variable", "record_variable", "variadic_factory", "forward_variadic")
+	names = append(names, "narrow", "narrow_factory", "apply_narrow", "narrow_stack", "narrow_variable", "narrow_variadic_factory", "forward_narrow_variadic")
 	header, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -47,6 +48,7 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 		"mixed_variable":  {abi.I8, abi.F32},
 		"void_variable":   {abi.I16},
 		"record_variable": {abi.I32, abi.F64},
+		"narrow_variable": {abi.I8, abi.F32},
 	}
 	for range 10 {
 		tails["many_variable"] = append(tails["many_variable"], abi.I64, abi.F64)
@@ -160,6 +162,7 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 	echoedMixed, err := b.Echo_mixed(mixed)
 	check("mixed register aggregate", echoedMixed, mixed, err)
 	checkDirectVariadicCalls(t, session, b)
+	checkDirectNarrowCalls(t, session, b)
 	// Keep the producer image leased while using returned native entries.
 	factory, err := session.Resolve("adder_factory")
 	if err != nil {
@@ -328,7 +331,7 @@ func checkDirectVariadicCalls(t *testing.T, session *dylib.Session, b *Bindings)
 	}
 }
 
-func TestDirectVariadicArchivesAndLibraries(t *testing.T) {
+func TestDirectCallsAcrossContainersAndOptimizations(t *testing.T) {
 	compiler := os.Getenv("DYLIB_LLVM_CLANG")
 	if compiler == "" {
 		compiler = os.Getenv("CLANG")
@@ -353,32 +356,37 @@ func TestDirectVariadicArchivesAndLibraries(t *testing.T) {
 			t.Fatalf("%s: %v\n%s", tool, err, data)
 		}
 	}
-	flags := []string{"--target=" + _BindingsDeclarations.Target.Triple, "-O0", "-c", "-fno-stack-protector", "testdata/exports.c", "-o", object}
-	if runtime.GOOS != "windows" {
-		flags = append(flags, "-fPIC")
-	}
-	compile(compiler, flags...)
-	compile("llvm-ar", "rcs", archive, object)
-	library, linkFlags := filepath.Join(dir, "exports.so"), []string{"-shared", "-fPIC"}
-	switch runtime.GOOS {
-	case "darwin":
-		library, linkFlags = filepath.Join(dir, "exports.dylib"), []string{"-dynamiclib"}
-	case "windows":
-		library, linkFlags = filepath.Join(dir, "exports.dll"), []string{"-shared", "-Wl,--export-all-symbols"}
-	}
-	compile(compiler, append(linkFlags, "-O0", "testdata/exports.c", "-o", library)...)
-	for _, input := range []struct{ name, path string }{{"archive", archive}, {"library", library}} {
-		t.Run(input.name, func(t *testing.T) {
-			session, err := load(input.path)
-			if err != nil {
-				t.Fatal(err)
+	for _, optimization := range []string{"-O0", "-O2"} {
+		t.Run(optimization, func(t *testing.T) {
+			flags := []string{"--target=" + _BindingsDeclarations.Target.Triple, optimization, "-c", "-fno-stack-protector", "testdata/exports.c", "-o", object}
+			if runtime.GOOS != "windows" {
+				flags = append(flags, "-fPIC")
 			}
-			defer session.Close()
-			bindings, err := NewBindings(session)
-			if err != nil {
-				t.Fatal(err)
+			compile(compiler, flags...)
+			compile("llvm-ar", "rcs", archive, object)
+			library, linkFlags := filepath.Join(dir, "exports.so"), []string{"-shared", "-fPIC"}
+			switch runtime.GOOS {
+			case "darwin":
+				library, linkFlags = filepath.Join(dir, "exports.dylib"), []string{"-dynamiclib"}
+			case "windows":
+				library, linkFlags = filepath.Join(dir, "exports.dll"), []string{"-shared", "-Wl,--export-all-symbols"}
 			}
-			checkDirectVariadicCalls(t, session, bindings)
+			compile(compiler, append(linkFlags, optimization, "testdata/exports.c", "-o", library)...)
+			for _, input := range []struct{ name, path string }{{"object", object}, {"archive", archive}, {"library", library}} {
+				t.Run(input.name, func(t *testing.T) {
+					session, err := load(input.path)
+					if err != nil {
+						t.Fatal(err)
+					}
+					defer session.Close()
+					bindings, err := NewBindings(session)
+					if err != nil {
+						t.Fatal(err)
+					}
+					checkDirectVariadicCalls(t, session, bindings)
+					checkDirectNarrowCalls(t, session, bindings)
+				})
+			}
 		})
 	}
 }

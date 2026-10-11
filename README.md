@@ -461,9 +461,13 @@ Returned variadic pointer types expose `__llgo_va_list ...any`; pass explicitly
 promoted `int32`/`float64` values, match the C argument contract, and retain the
 producer image throughout later calls. Variadic Go callback entries are not supported.
 
-The qualified llgo compiler has a macOS ARM64 signed narrow-argument issue
-([#2767](https://github.com/xgo-dev/llgo/issues/2767)). Use `CgoSource` or dynamic
-`Session.Bind` for affected signatures until the compiler fix is qualified.
+Direct narrow integer parameters require the merged
+[llgo C ABI fix](https://github.com/xgo-dev/llgo/pull/2776). Native variadic pointer
+locals also require the [debug snapshot fix](https://github.com/xgo-dev/llgo/pull/2783);
+CI temporarily pins that contribution while it is reviewed. Runtime tests check wide
+results, native function pointers, callbacks,
+stack parameters and variadic prefixes in objects, archives and libraries at
+`-O0` and `-O2`. See the [direct binding contracts](docs/clang.md#direct-llgo-bindings).
 
 This complements [llcppg](https://github.com/goplus/llcppg)'s static bindings.
 

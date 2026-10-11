@@ -52,3 +52,14 @@ Small record_variable(Small, ...);
 typedef int (*Variadic)(int, ...);
 Variadic variadic_factory(void);
 int forward_variadic(Variadic);
+
+int narrow(signed char, unsigned char, short, unsigned short, _Bool);
+typedef int (*Narrow)(signed char, unsigned char, short, unsigned short, _Bool);
+Narrow narrow_factory(void);
+int apply_narrow(Narrow, signed char, unsigned char, short, unsigned short, _Bool);
+Outer narrow_stack(int, int, int, int, int, int, int, int,
+                   signed char, unsigned char, short, unsigned short, _Bool);
+int narrow_variable(signed char, unsigned char, short, unsigned short, _Bool, int, ...);
+typedef int (*NarrowVariadic)(signed char, unsigned char, short, unsigned short, _Bool, int, ...);
+NarrowVariadic narrow_variadic_factory(void);
+int forward_narrow_variadic(NarrowVariadic);

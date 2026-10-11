@@ -195,13 +195,16 @@ keep their logical parameter types, promote narrow integers and Boolean values t
 and results retain their compiler layout checks. This requires the merged
 [llgo indirect-varargs fix](https://github.com/xgo-dev/llgo/pull/2766), included in CI's llgo `main`.
 
-The qualified compiler does not sign-extend negative `int8`/`int16` arguments
-correctly for some optimized macOS ARM64 C calls, including native function
-pointers ([llgo #2767](https://github.com/xgo-dev/llgo/issues/2767)). Narrow-result
-round trips alone do not detect this: a C `int` result exposes the incorrect
-positive value. Use `CgoSource`'s 32-bit transport or dynamic `Session.Bind` for
-affected signatures until an upstream fix is qualified. The supported direct
-fixture subset does not establish correctness for every scalar signature.
+Direct narrow integer parameters require the merged
+[llgo C ABI fix](https://github.com/xgo-dev/llgo/pull/2776). Native variadic pointer
+locals also require the [debug snapshot fix](https://github.com/xgo-dev/llgo/pull/2783);
+CI temporarily pins that contribution while it is reviewed. Runtime fixtures use
+wide C `int` results so return truncation cannot hide
+incorrect argument extension. They check signed minimum/maximum/negative/zero
+values, unsigned high bits, both Boolean values, native factories and forwarding,
+C-to-Go callback arguments, stack parameters with a hidden aggregate result, and
+fixed variadic prefixes. Objects, archives and shared libraries execute at both
+`-O0` and `-O2` on the six qualified targets.
 
 The constructor checks `Target.CheckHost` and compares generated record
 `unsafe.Sizeof`, `unsafe.Alignof` and `unsafe.Offsetof` values with the saved Clang
@@ -241,6 +244,10 @@ Use separately owned `abi.NewCallback` registrations and address leases for
 captures or C-created threads, with the optional libffi backend. Higher-order
 function pointers, multiple indirection and function-pointer record fields remain
 unsupported by declaration parsing.
+Noncapturing Go C entries with narrow integer results are not qualified by these
+tests: their result-extension contract requires a separate compiler adapter. Use
+`abi.NewCallback` or a compiled C bridge for that result boundary. Narrow results
+from actual C entries are covered separately.
 The [direct example](../examples/directdeclarations/main.go) and its tests execute
 all integer widths, float/double, Boolean, native/null pointers, zero arguments,
 void results and mixed calls, plus padded records, nested arrays, large and
