@@ -105,3 +105,36 @@ Small record_variable(Small value, ...) {
 
 Variadic variadic_factory(void) { return variable; }
 int forward_variadic(Variadic entry) { return entry(20, 10, 12.0); }
+
+/* Wide results expose incorrect argument extension that narrow returns hide. */
+int narrow(signed char a, unsigned char b, short c, unsigned short d, _Bool flag) {
+    return 3 * a + b + 5 * c + d + (flag ? 101 : 0);
+}
+Narrow narrow_factory(void) { return narrow; }
+int apply_narrow(Narrow entry, signed char a, unsigned char b, short c,
+                 unsigned short d, _Bool flag) {
+    return entry(a, b, c, d, flag);
+}
+Outer narrow_stack(int p0, int p1, int p2, int p3, int p4, int p5, int p6, int p7,
+                   signed char a, unsigned char b, short c, unsigned short d, _Bool flag) {
+    Outer result = {0};
+    result.values[0][0] = narrow(a, b, c, d, flag);
+    result.values[0][1] = p0 + 2*p1 + 3*p2 + 4*p3 + 5*p4 + 6*p5 + 7*p6 + 8*p7;
+    return result;
+}
+int narrow_variable(signed char a, unsigned char b, short c, unsigned short d,
+                    _Bool flag, int count, ...) {
+    int result = narrow(a, b, c, d, flag);
+    if (count) {
+        va_list ap;
+        va_start(ap, count);
+        result += va_arg(ap, int);
+        result += (int)va_arg(ap, double);
+        va_end(ap);
+    }
+    return result;
+}
+NarrowVariadic narrow_variadic_factory(void) { return narrow_variable; }
+int forward_narrow_variadic(NarrowVariadic entry) {
+    return entry(-8, 255, -300, 65535, 1, 2, -7, 12.0);
+}

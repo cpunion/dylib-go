@@ -56,6 +56,13 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "record_variable", Symbol: "record_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I32, abi.F64}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "a", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "b", Type: abi.TypeDesc{Type: abi.I32}}}}, abi.TypeDesc{Type: abi.I32}, abi.TypeDesc{Type: abi.F64}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "a", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "b", Type: abi.TypeDesc{Type: abi.I32}}}}}},
 		{Name: "variadic_factory", Symbol: "variadic_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.I32}}}}},
 		{Name: "forward_variadic", Symbol: "forward_variadic", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.I32}}}}},
+		{Name: "narrow", Symbol: "narrow", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I8, abi.U8, abi.I16, abi.U16, abi.Bool}}},
+		{Name: "narrow_factory", Symbol: "narrow_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I8, abi.U8, abi.I16, abi.U16, abi.Bool}}}}},
+		{Name: "apply_narrow", Symbol: "apply_narrow", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.I8, abi.U8, abi.I16, abi.U16, abi.Bool}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I8, abi.U8, abi.I16, abi.U16, abi.Bool}}}}},
+		{Name: "narrow_stack", Symbol: "narrow_stack", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32, abi.I32, abi.I32, abi.I32, abi.I32, abi.I32, abi.I32, abi.I8, abi.U8, abi.I16, abi.U16, abi.Bool}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 3, Elem: &abi.TypeDesc{Type: abi.I32}}}}, {Name: "next", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
+		{Name: "narrow_variable", Symbol: "narrow_variable", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 6, Args: []abi.Type{abi.I8, abi.U8, abi.I16, abi.U16, abi.Bool, abi.I32, abi.I8, abi.F32}}},
+		{Name: "narrow_variadic_factory", Symbol: "narrow_variadic_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 6, Args: []abi.Type{abi.I8, abi.U8, abi.I16, abi.U16, abi.Bool, abi.I32}}}}},
+		{Name: "forward_narrow_variadic", Symbol: "forward_narrow_variadic", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 6, Args: []abi.Type{abi.I8, abi.U8, abi.I16, abi.U16, abi.Bool, abi.I32}}}}},
 	},
 	Records: []clang.Record{
 		{Name: "Pair", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}}}, Layout: abi.Layout{Size: 24, Alignment: 8, Offsets: []uint64{0, 8, 16}}},
@@ -132,6 +139,16 @@ type BindingsCallback3 func(*BindingsRecord0) *BindingsRecord0
 //llgo:type C
 type BindingsCallback4 func(p0 int32, __llgo_va_list ...any) int32
 
+// BindingsCallback5 is a native C entry; retain its code and callback registration while invoking it.
+//
+//llgo:type C
+type BindingsCallback5 func(int8, uint8, int16, uint16, bool) int32
+
+// BindingsCallback6 is a native C entry; retain its code and callback registration while invoking it.
+//
+//llgo:type C
+type BindingsCallback6 func(p0 int8, p1 uint8, p2 int16, p3 uint16, p4 bool, p5 int32, __llgo_va_list ...any) int32
+
 // Bindings retains symbol handles; its caller owns the Session.
 type Bindings struct {
 	symbol0  *dylib.Symbol
@@ -175,6 +192,13 @@ type Bindings struct {
 	symbol38 *dylib.Symbol
 	symbol39 *dylib.Symbol
 	symbol40 *dylib.Symbol
+	symbol41 *dylib.Symbol
+	symbol42 *dylib.Symbol
+	symbol43 *dylib.Symbol
+	symbol44 *dylib.Symbol
+	symbol45 *dylib.Symbol
+	symbol46 *dylib.Symbol
+	symbol47 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -406,6 +430,41 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol40 = symbol40
+	symbol41, err := session.Resolve("narrow")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol41 = symbol41
+	symbol42, err := session.Resolve("narrow_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol42 = symbol42
+	symbol43, err := session.Resolve("apply_narrow")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol43 = symbol43
+	symbol44, err := session.Resolve("narrow_stack")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol44 = symbol44
+	symbol45, err := session.Resolve("narrow_variable")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol45 = symbol45
+	symbol46, err := session.Resolve("narrow_variadic_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol46 = symbol46
+	symbol47, err := session.Resolve("forward_narrow_variadic")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol47 = symbol47
 	return b, nil
 }
 
@@ -1024,6 +1083,111 @@ func (b *Bindings) Forward_variadic(p0 BindingsCallback4) (result int32, err err
 	}
 	err = b.symbol40.WithAddress(func(address uintptr) error {
 		function := *(*_BindingsFunction40)(unsafe.Pointer(&address))
+		result = function(p0)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction41 func(p0 int8, p1 uint8, p2 int16, p3 uint16, p4 bool) int32
+
+func (b *Bindings) Narrow(p0 int8, p1 uint8, p2 int16, p3 uint16, p4 bool) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol41.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction41)(unsafe.Pointer(&address))
+		result = function(p0, p1, p2, p3, p4)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction42 func() BindingsCallback5
+
+func (b *Bindings) Narrow_factory() (result BindingsCallback5, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol42.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction42)(unsafe.Pointer(&address))
+		result = function()
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction43 func(p0 BindingsCallback5, p1 int8, p2 uint8, p3 int16, p4 uint16, p5 bool) int32
+
+func (b *Bindings) Apply_narrow(p0 BindingsCallback5, p1 int8, p2 uint8, p3 int16, p4 uint16, p5 bool) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol43.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction43)(unsafe.Pointer(&address))
+		result = function(p0, p1, p2, p3, p4, p5)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction44 func(p0 int32, p1 int32, p2 int32, p3 int32, p4 int32, p5 int32, p6 int32, p7 int32, p8 int8, p9 uint8, p10 int16, p11 uint16, p12 bool) BindingsRecord1
+
+func (b *Bindings) Narrow_stack(p0 int32, p1 int32, p2 int32, p3 int32, p4 int32, p5 int32, p6 int32, p7 int32, p8 int8, p9 uint8, p10 int16, p11 uint16, p12 bool) (result BindingsRecord1, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol44.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction44)(unsafe.Pointer(&address))
+		result = function(p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction45 func(p0 int8, p1 uint8, p2 int16, p3 uint16, p4 bool, p5 int32, __llgo_va_list ...any) int32
+
+func (b *Bindings) Narrow_variable(p0 int8, p1 uint8, p2 int16, p3 uint16, p4 bool, p5 int32, p6 int8, p7 float32) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol45.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction45)(unsafe.Pointer(&address))
+		result = function(p0, p1, p2, p3, p4, p5, int32(p6), float64(p7))
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction46 func() BindingsCallback6
+
+func (b *Bindings) Narrow_variadic_factory() (result BindingsCallback6, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol46.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction46)(unsafe.Pointer(&address))
+		result = function()
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction47 func(p0 BindingsCallback6) int32
+
+func (b *Bindings) Forward_narrow_variadic(p0 BindingsCallback6) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol47.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction47)(unsafe.Pointer(&address))
 		result = function(p0)
 		return nil
 	})
