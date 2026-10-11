@@ -44,7 +44,7 @@ type astNode struct {
 	Inner                                                         []astNode
 }
 
-func decodeDeclarations(data []byte, triple string, names []string) (*Header, error) {
+func decodeDeclarations(data []byte, triple string, names []string, fieldTypes map[recordField]astNode) (*Header, error) {
 	var root astNode
 	if err := json.Unmarshal(data, &root); err != nil {
 		return nil, fmt.Errorf("clang: invalid AST JSON: %w", err)
@@ -87,6 +87,7 @@ func decodeDeclarations(data []byte, triple string, names []string) (*Header, er
 	}
 	found := make(map[string]Declaration)
 	resolver := newTypeResolver(root, aliases, sizes)
+	resolver.fieldTypes = fieldTypes
 	prototypes := make(map[string]astNode)
 	for _, node := range root.Inner {
 		if node.Kind == "TypedefDecl" && strings.HasPrefix(node.Name, "dylib_function_probe_") {
@@ -109,6 +110,9 @@ func decodeDeclarations(data []byte, triple string, names []string) (*Header, er
 			return nil, fmt.Errorf("clang: incompatible declarations for %s", node.Name)
 		}
 		found[node.Name] = declaration
+	}
+	if err := resolver.resolveFieldPointers(target); err != nil {
+		return nil, err
 	}
 	header := &Header{Target: target, Records: resolver.records}
 	for _, name := range names {

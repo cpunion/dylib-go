@@ -48,7 +48,8 @@ Run
 | C cdecl | All eight qualified native targets |
 | stdcall / fastcall | Windows 386; retain compiler symbol decoration |
 | Higher-order and multiply indirect function pointers | Nested argument/result prototypes and 1–8 pointer layers; caller owns code and pointee lifetimes |
-| Unions, bitfields, attributed records/fields/typedefs, flexible/zero-length arrays, enums, function-pointer fields, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
+| Function-pointer record fields | Opaque native address storage with separate field-indexed prototypes; supports typedef/direct pointers, nested record arrays and self-referencing callback signatures |
+| Unions, bitfields, attributed records/fields/typedefs, flexible/zero-length arrays, arrays of function pointers, enums, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
 | Static/inline functions and old-style declarations without prototypes | Rejected; provide an exported C facade/prototype |
 
 `Header.Records` saves the C type spelling, `abi.TypeDesc` and compiler layout for
@@ -81,8 +82,31 @@ invocation. Their parameter/result types and effective calling convention avoid
 parsing nested C declarator text. Function-pointer signatures support ordinary
 records and typed struct pointers, along with the existing primitive types.
 Callbacks can accept/return other native function pointers and use up to eight
-prototype levels and eight pointer layers. Function-pointer record fields still
-require manual adapters.
+prototype levels and eight pointer layers.
+
+`Record.FunctionPointers` uses `Position` for the zero-based field index.
+`Record.LookupFunctionPointer(fieldName)` returns a cloned prototype, including
+its nested callbacks. `Header.ForHostRecord(name)` checks the target and native
+layouts before returning the record. `ForHost` also validates records used only
+by a field callback prototype. Field type nodes come from an extra batched
+Clang `__typeof__(((Record *)0)->field)` probe when ordinary spelling resolution
+cannot describe a field; C declarator text is not parsed. Physical record
+descriptions are completed before callback prototypes, so a callback accepting
+its enclosing record does not create a recursive metadata graph.
+
+Generated cgo and llgo record fields use `unsafe.Pointer`. Prototype metadata
+does not make an address callable as a Go function value or own its lifetime.
+Pass a native entry with its image lease, or create a captured Go entry with
+`abi.NewCallback(recordPrototype.Signature, handler)`. Hold a callback lease while
+C retains the field. `Registration` can couple the image and callback leases
+with an explicit operation that clears native storage before releasing them.
+The [record example](../examples/recordcallbacks/call.go) and its tests exercise
+by-value arguments/results, nested record arrays, native struct pointers,
+field replacement, null entries, direct noncapturing llgo entries and retained
+Go captures. Runtime tests use objects, archives and shared libraries at Clang
+`-O0` and `-O2`; cgo runs on eight targets and direct llgo on six. Arrays whose
+elements are function pointers remain unsupported; arrays of records containing
+callback fields are supported.
 
 For native function-pointer results, retain the image while calling the returned
 address, for example inside the factory symbol's `Symbol.WithAddress` lease.
@@ -250,7 +274,8 @@ captures or C-created threads, with the optional libffi backend. Higher-order
 entries retain nested native callback types in arguments/results. A multiply
 indirect entry uses pointers to that callback type; these are borrowed slots,
 not Go closure storage. Keep slot storage and referenced entries alive, and
-synchronize slot mutation. Function-pointer record fields remain unsupported.
+synchronize slot mutation. Callback record fields use opaque native addresses
+and the separate prototypes described above.
 Noncapturing Go C entries with narrow integer results are not qualified by these
 tests: their result-extension contract requires a separate compiler adapter. Use
 `abi.NewCallback` or a compiled C bridge for that result boundary. Narrow results

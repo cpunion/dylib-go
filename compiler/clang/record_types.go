@@ -18,6 +18,8 @@ type typeResolver struct {
 	resolved        map[string]abi.TypeDesc
 	building        map[string]bool
 	records         []Record
+	fieldTypes      map[recordField]astNode
+	fieldPointers   map[recordField]astNode
 }
 
 func newTypeResolver(root astNode, aliases map[string]string, sizes map[string]int) *typeResolver {
@@ -204,7 +206,7 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		}
 		// Recursive record pointers are ordinary addresses. Only function root
 		// struct pointers receive typed temporary-pointee descriptions.
-		field, err := r.describe(child.Type.QualType, false, depth+1)
+		field, err := r.describeField(name, child, depth+1)
 		if err != nil {
 			return abi.TypeDesc{}, fmt.Errorf("%s.%s: %w", name, child.Name, err)
 		}

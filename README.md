@@ -414,13 +414,20 @@ callback to C. Run
 `examples/run.sh <go|llgo> declarations <library>`.
 
 Generation covers supported scalars, typedefs, ordinary structs, fixed array
-members, typed struct pointers, function-pointer parameter/result prototypes,
+members, typed struct pointers, function-pointer parameter/result and record-field prototypes,
 variadic prefixes, C cdecl, and Windows 386 stdcall/fastcall. `ForHost` checks compiler record sizes, alignments and offsets
 against the actual backend before calls, including callback records.
 `LookupFunctionPointer` supplies signatures for `abi.NewCallback` or returned native
 addresses, including nested prototypes and multiple pointer layers. Unions,
-packed records, enums and function-pointer record fields need
+packed records and enums need
 separate adapters. See [types, targets and limits](docs/clang.md).
+
+Records containing callbacks use opaque native address fields with independent
+prototype metadata. `Header.ForHostRecord` and `Record.LookupFunctionPointer`
+validate and inspect these entries. The [tested record example](examples/recordcallbacks/call.go)
+passes and returns callback records, including nested arrays, with cgo and direct
+llgo bindings. Retained Go callback fields use `abi.NewCallback` and `Registration`
+to keep entries alive until native code clears them.
 
 | Generator | Host compiler | Native calls | libffi required |
 | --- | --- | --- | --- |

@@ -53,7 +53,12 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 			for _, offset := range record.Layout.Offsets {
 				fmt.Fprintf(&output, "%d,", offset)
 			}
-			fmt.Fprint(&output, "}}},\n")
+			fmt.Fprint(&output, "}}")
+			if len(record.FunctionPointers) != 0 {
+				fmt.Fprint(&output, ",FunctionPointers:")
+				writeFunctionPointers(&output, record.FunctionPointers)
+			}
+			fmt.Fprint(&output, "},\n")
 		}
 		fmt.Fprint(&output, "},\n")
 	}
