@@ -54,6 +54,9 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 				fmt.Fprintf(&output, "%d,", offset)
 			}
 			fmt.Fprint(&output, "}}")
+			if record.Packed {
+				fmt.Fprint(&output, ",Packed:true")
+			}
 			if len(record.FunctionPointers) != 0 {
 				fmt.Fprint(&output, ",FunctionPointers:")
 				writeFunctionPointers(&output, record.FunctionPointers)

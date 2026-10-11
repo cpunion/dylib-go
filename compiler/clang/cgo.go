@@ -11,7 +11,9 @@ import (
 
 // CgoSource emits typed C bindings using fixed cgo bridges, without libffi.
 // Go and llgo can compile the generated source. Scalars, opaque native pointers,
-// ordinary record values and function-pointer addresses are supported. WithTail
+// ordinary/explicitly packed record values and function-pointer addresses are
+// supported. Packed values cross the Go boundary as ordinary transport records;
+// C constructs and calls the actual packed native type. WithTail
 // specifies a concrete variadic call shape; C performs default promotions.
 // Windows 386 also supports fixed stdcall/fastcall prototypes. Struct pointees
 // use opaque native addresses; no Go struct pointer conversion is inferred.
@@ -203,7 +205,10 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 		} else {
 			goArgs = append(goArgs, argument)
 		}
-		if transport != kind {
+		if s.Args[i] == abi.Struct && transport != kind {
+			index, _ := mapper.recordIndex(s.ArgumentType(i))
+			argument = mapper.cConversion(index, true) + "(" + argument + ")"
+		} else if transport != kind {
 			argument = "(" + kind + ")" + argument
 		}
 		if callback, ok := boundaryC[i]; ok {
@@ -231,7 +236,14 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 			fmt.Fprint(c, "(void *)")
 		}
 	}
-	fmt.Fprintf(c, "((%s_function)address)(%s);\n}\n", helper, strings.Join(callArgs, ","))
+	nativeCall := fmt.Sprintf("((%s_function)address)(%s)", helper, strings.Join(callArgs, ","))
+	if s.Result == abi.Struct {
+		index, _ := mapper.recordIndex(s.ReturnType())
+		if mapper.needsTransport(index) {
+			nativeCall = mapper.cConversion(index, false) + "(" + nativeCall + ")"
+		}
+	}
+	fmt.Fprintf(c, "%s;\n}\n", nativeCall)
 	params := strings.Join(goParams, ",")
 	call := fmt.Sprintf("C.%s(%s)", helper, strings.Join(goArgs, ","))
 	convert := strings.Join(conversions, "")

@@ -124,9 +124,10 @@ const maxFunctions = 256
 
 // Parse asks Clang to preprocess a C17 header and evaluate primitive size probes.
 // It extracts only requested external prototypes, supported scalars/typedefs,
-// ordinary records, array members, pointers and function-pointer prototypes. Record layouts are compiler
-// evaluated; ForHost checks the native backend before calls. Unions, bitfields,
-// packed/aligned records, enums, inline/static
+// ordinary and explicitly packed records, array members, pointers and
+// function-pointer prototypes. Record layouts are compiler evaluated; ForHost
+// checks the native backend before calls. Packed records require CgoSource for
+// Go or llgo. Unions, bitfields, aligned records, enums, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes
 // must stay stable during parsing; they are read by Clang at their original paths.
 func Parse(ctx context.Context, path string, opts Options) (*Header, error) {

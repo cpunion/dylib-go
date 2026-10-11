@@ -28,6 +28,11 @@ func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 	if h.Target.Arch != "amd64" && h.Target.Arch != "arm64" {
 		return nil, fmt.Errorf("clang: direct llgo adapters require a qualified amd64/arm64 target")
 	}
+	for _, record := range h.Records {
+		if record.Packed {
+			return nil, fmt.Errorf("clang: packed record %s requires CgoSource for Go or llgo", record.Name)
+		}
+	}
 	metadata := "_" + bindingType + "Declarations"
 	source, err := h.GoSource(packageName, metadata)
 	if err != nil {
