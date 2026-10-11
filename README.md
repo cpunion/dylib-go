@@ -422,10 +422,11 @@ addresses, including nested prototypes and multiple pointer layers. Unions,
 packed records and enums need
 separate adapters. See [types, targets and limits](docs/clang.md).
 
-Records containing callbacks use opaque native address fields with independent
+Records containing callbacks use opaque native address fields or fixed arrays
+of addresses, with independent
 prototype metadata. `Header.ForHostRecord` and `Record.LookupFunctionPointer`
 validate and inspect these entries. The [tested record example](examples/recordcallbacks/call.go)
-passes and returns callback records, including nested arrays, with cgo and direct
+passes and returns callback records, including multidimensional callback arrays, with cgo and direct
 llgo bindings. Retained Go callback fields use `abi.NewCallback` and `Registration`
 to keep entries alive until native code clears them.
 

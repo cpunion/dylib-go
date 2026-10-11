@@ -31,6 +31,17 @@ case 2:return offsetof(dylib_go_4342696e64696e6773_record1,f0);
 default:return UINT64_MAX;
 }
 }
+typedef struct {
+void * f0[2][2];
+} dylib_go_4342696e64696e6773_record2;
+static uint64_t dylib_go_4342696e64696e6773_record2_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_4342696e64696e6773_record2);
+case 1:return _Alignof(dylib_go_4342696e64696e6773_record2);
+case 2:return offsetof(dylib_go_4342696e64696e6773_record2,f0);
+default:return UINT64_MAX;
+}
+}
 typedef dylib_go_4342696e64696e6773_record0 (*dylib_go_4342696e64696e6773_call0_function)(int32_t);
 static dylib_go_4342696e64696e6773_record0 dylib_go_4342696e64696e6773_call0(uintptr_t address,int32_t p0) {
 return ((dylib_go_4342696e64696e6773_call0_function)address)(p0);
@@ -75,6 +86,30 @@ typedef void (*dylib_go_4342696e64696e6773_call10_function)(void);
 static void dylib_go_4342696e64696e6773_call10(uintptr_t address) {
 ((dylib_go_4342696e64696e6773_call10_function)address)();
 }
+typedef dylib_go_4342696e64696e6773_record2 (*dylib_go_4342696e64696e6773_call11_function)(void);
+static dylib_go_4342696e64696e6773_record2 dylib_go_4342696e64696e6773_call11(uintptr_t address) {
+return ((dylib_go_4342696e64696e6773_call11_function)address)();
+}
+typedef dylib_go_4342696e64696e6773_record2 (*dylib_go_4342696e64696e6773_call12_function)(dylib_go_4342696e64696e6773_record2);
+static dylib_go_4342696e64696e6773_record2 dylib_go_4342696e64696e6773_call12(uintptr_t address,dylib_go_4342696e64696e6773_record2 p0) {
+return ((dylib_go_4342696e64696e6773_call12_function)address)(p0);
+}
+typedef int32_t (*dylib_go_4342696e64696e6773_call13_function)(dylib_go_4342696e64696e6773_record2,int32_t,int32_t,int32_t,int32_t);
+static int32_t dylib_go_4342696e64696e6773_call13(uintptr_t address,dylib_go_4342696e64696e6773_record2 p0,int32_t p1,int32_t p2,int32_t p3,int32_t p4) {
+return ((dylib_go_4342696e64696e6773_call13_function)address)(p0,p1,p2,p3,p4);
+}
+typedef void (*dylib_go_4342696e64696e6773_call14_function)(dylib_go_4342696e64696e6773_record2);
+static void dylib_go_4342696e64696e6773_call14(uintptr_t address,dylib_go_4342696e64696e6773_record2 p0) {
+((dylib_go_4342696e64696e6773_call14_function)address)(p0);
+}
+typedef int32_t (*dylib_go_4342696e64696e6773_call15_function)(int32_t,int32_t,int32_t,int32_t);
+static int32_t dylib_go_4342696e64696e6773_call15(uintptr_t address,int32_t p0,int32_t p1,int32_t p2,int32_t p3) {
+return ((dylib_go_4342696e64696e6773_call15_function)address)(p0,p1,p2,p3);
+}
+typedef void (*dylib_go_4342696e64696e6773_call16_function)(void);
+static void dylib_go_4342696e64696e6773_call16(uintptr_t address) {
+((dylib_go_4342696e64696e6773_call16_function)address)();
+}
 */
 import "C"
 
@@ -101,10 +136,17 @@ var _CBindingsDeclarations = clang.Header{
 		{Name: "callbacks_store", Symbol: "callbacks_store", Signature: abi.Signature{Result: abi.Void, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bias", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "add", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}},
 		{Name: "callbacks_run", Symbol: "callbacks_run", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}},
 		{Name: "callbacks_clear", Symbol: "callbacks_clear", Signature: abi.Signature{Result: abi.Void, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}},
+		{Name: "callback_array_factory", Symbol: "callback_array_factory", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}}},
+		{Name: "callback_array_echo", Symbol: "callback_array_echo", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}}},
+		{Name: "callback_array_apply", Symbol: "callback_array_apply", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct, abi.I32, abi.I32, abi.I32, abi.I32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}, abi.TypeDesc{Type: abi.I32}, abi.TypeDesc{Type: abi.I32}, abi.TypeDesc{Type: abi.I32}, abi.TypeDesc{Type: abi.I32}}}},
+		{Name: "callback_array_store", Symbol: "callback_array_store", Signature: abi.Signature{Result: abi.Void, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}}}},
+		{Name: "callback_array_run", Symbol: "callback_array_run", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32, abi.I32, abi.I32}}},
+		{Name: "callback_array_clear", Symbol: "callback_array_clear", Signature: abi.Signature{Result: abi.Void, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}},
 	},
 	Records: []clang.Record{
 		{Name: "Callbacks", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bias", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "add", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 16, Alignment: 8, Offsets: []uint64{0, 8}}, FunctionPointers: []clang.FunctionPointer{{Position: 1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}},
 		{Name: "NestedCallbacks", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "items", Type: abi.TypeDesc{Type: abi.Array, Len: 3, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bias", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "add", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}}, Layout: abi.Layout{Size: 48, Alignment: 8, Offsets: []uint64{0}}},
+		{Name: "ArrayCallbacks", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}, Layout: abi.Layout{Size: 32, Alignment: 8, Offsets: []uint64{0}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}},
 	},
 }
 
@@ -121,6 +163,13 @@ type CBindingsRecord0 struct {
 //llgo:type C
 type CBindingsRecord1 struct {
 	Items [3]CBindingsRecord0
+}
+
+// CBindingsRecord2 describes ArrayCallbacks; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type CBindingsRecord2 struct {
+	Entries [2][2]unsafe.Pointer
 }
 
 func _CBindingsRecord0ToC(value CBindingsRecord0) (result C.dylib_go_4342696e64696e6773_record0) {
@@ -149,6 +198,24 @@ func _CBindingsRecord1FromC(value C.dylib_go_4342696e64696e6773_record1) (result
 	return result
 }
 
+func _CBindingsRecord2ToC(value CBindingsRecord2) (result C.dylib_go_4342696e64696e6773_record2) {
+	for i0 := range 2 {
+		for i1 := range 2 {
+			result.f0[i0][i1] = value.Entries[i0][i1]
+		}
+	}
+	return result
+}
+
+func _CBindingsRecord2FromC(value C.dylib_go_4342696e64696e6773_record2) (result CBindingsRecord2) {
+	for i0 := range 2 {
+		for i1 := range 2 {
+			result.Entries[i0][i1] = value.f0[i0][i1]
+		}
+	}
+	return result
+}
+
 // CBindings retains symbol handles; its caller owns the Session.
 type CBindings struct {
 	symbol0  *dylib.Symbol
@@ -162,6 +229,12 @@ type CBindings struct {
 	symbol8  *dylib.Symbol
 	symbol9  *dylib.Symbol
 	symbol10 *dylib.Symbol
+	symbol11 *dylib.Symbol
+	symbol12 *dylib.Symbol
+	symbol13 *dylib.Symbol
+	symbol14 *dylib.Symbol
+	symbol15 *dylib.Symbol
+	symbol16 *dylib.Symbol
 }
 
 // NewCBindings validates the host and resolves each requested export.
@@ -178,6 +251,9 @@ func NewCBindings(session *dylib.Session) (*CBindings, error) {
 	}
 	if uint64(C.dylib_go_4342696e64696e6773_record1_layout(0)) != 48 || uint64(C.dylib_go_4342696e64696e6773_record1_layout(1)) != 8 || uint64(C.dylib_go_4342696e64696e6773_record1_layout(2)) != 0 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for NestedCallbacks")
+	}
+	if uint64(C.dylib_go_4342696e64696e6773_record2_layout(0)) != 32 || uint64(C.dylib_go_4342696e64696e6773_record2_layout(1)) != 8 || uint64(C.dylib_go_4342696e64696e6773_record2_layout(2)) != 0 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for ArrayCallbacks")
 	}
 	symbol0, err := session.Resolve("callbacks_factory")
 	if err != nil {
@@ -234,6 +310,36 @@ func NewCBindings(session *dylib.Session) (*CBindings, error) {
 		return nil, err
 	}
 	b.symbol10 = symbol10
+	symbol11, err := session.Resolve("callback_array_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol11 = symbol11
+	symbol12, err := session.Resolve("callback_array_echo")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol12 = symbol12
+	symbol13, err := session.Resolve("callback_array_apply")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol13 = symbol13
+	symbol14, err := session.Resolve("callback_array_store")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol14 = symbol14
+	symbol15, err := session.Resolve("callback_array_run")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol15 = symbol15
+	symbol16, err := session.Resolve("callback_array_clear")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol16 = symbol16
 	return b, nil
 }
 
@@ -352,6 +458,70 @@ func (b *CBindings) Callbacks_clear() error {
 	}
 	return b.symbol10.WithAddress(func(address uintptr) error {
 		C.dylib_go_4342696e64696e6773_call10(C.uintptr_t(address))
+		return nil
+	})
+}
+
+func (b *CBindings) Callback_array_factory() (result CBindingsRecord2, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol11.WithAddress(func(address uintptr) error {
+		result = _CBindingsRecord2FromC(C.dylib_go_4342696e64696e6773_call11(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *CBindings) Callback_array_echo(p0 CBindingsRecord2) (result CBindingsRecord2, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol12.WithAddress(func(address uintptr) error {
+		result = _CBindingsRecord2FromC(C.dylib_go_4342696e64696e6773_call12(C.uintptr_t(address), _CBindingsRecord2ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *CBindings) Callback_array_apply(p0 CBindingsRecord2, p1 int32, p2 int32, p3 int32, p4 int32) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol13.WithAddress(func(address uintptr) error {
+		result = int32(C.dylib_go_4342696e64696e6773_call13(C.uintptr_t(address), _CBindingsRecord2ToC(p0), C.int32_t(p1), C.int32_t(p2), C.int32_t(p3), C.int32_t(p4)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *CBindings) Callback_array_store(p0 CBindingsRecord2) error {
+	if b == nil {
+		return dylib.ErrClosed
+	}
+	return b.symbol14.WithAddress(func(address uintptr) error {
+		C.dylib_go_4342696e64696e6773_call14(C.uintptr_t(address), _CBindingsRecord2ToC(p0))
+		return nil
+	})
+}
+
+func (b *CBindings) Callback_array_run(p0 int32, p1 int32, p2 int32, p3 int32) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol15.WithAddress(func(address uintptr) error {
+		result = int32(C.dylib_go_4342696e64696e6773_call15(C.uintptr_t(address), C.int32_t(p0), C.int32_t(p1), C.int32_t(p2), C.int32_t(p3)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *CBindings) Callback_array_clear() error {
+	if b == nil {
+		return dylib.ErrClosed
+	}
+	return b.symbol16.WithAddress(func(address uintptr) error {
+		C.dylib_go_4342696e64696e6773_call16(C.uintptr_t(address))
 		return nil
 	})
 }

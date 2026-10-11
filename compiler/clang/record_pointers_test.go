@@ -29,13 +29,19 @@ Callbacks echo(Callbacks);
 Nested nested(Nested);
 Callbacks *pointer(Callbacks *);
 struct Unused { int (*old_style)(); int flag:1; };
+typedef struct {
+ Adder entries[2][3];
+ Maker makers[2];
+ Adder *slots[2];
+} ArrayCallbacks;
+ArrayCallbacks arrays(ArrayCallbacks);
 `
 
 func TestCallbackRecordFieldsAcrossTargets(t *testing.T) {
 	path := headerFile(t, recordPointerHeader)
 	for _, target := range targets {
 		t.Run(target.triple, func(t *testing.T) {
-			h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Target: target.triple, Functions: []string{"echo", "nested", "pointer"}})
+			h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Target: target.triple, Functions: []string{"echo", "nested", "pointer", "arrays"}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -71,6 +77,26 @@ func TestCallbackRecordFieldsAcrossTargets(t *testing.T) {
 			self, _ := r.LookupFunctionPointer("self")
 			if len(self.Signature.ArgTypes[0].Fields) != 8 {
 				t.Fatal("self-referencing prototype", self)
+			}
+			array, err := h.LookupRecord("ArrayCallbacks")
+			if err != nil || len(array.FunctionPointers) != 3 {
+				t.Fatal(array, err)
+			}
+			shape := array.Description.Fields[0].Type
+			if shape.Type != abi.Array || shape.Len != 2 || shape.Elem.Type != abi.Array || shape.Elem.Len != 3 || shape.Elem.Elem.Type != abi.Pointer {
+				t.Fatal("array shape", shape)
+			}
+			entry, err := array.LookupFunctionPointer("entries")
+			if err != nil || entry.Signature.Result != abi.I32 || len(entry.Signature.Args) != 2 {
+				t.Fatal(entry, err)
+			}
+			maker, _ := array.LookupFunctionPointer("makers")
+			if _, err := maker.LookupFunctionPointer(-1); err != nil {
+				t.Fatal(err)
+			}
+			slots, _ := array.LookupFunctionPointer("slots")
+			if slots.Indirection != 2 {
+				t.Fatal(slots)
 			}
 			make.FunctionPointers[0].Signature.Args[0] = abi.F64
 			r.FunctionPointers[3].Signature.Result = abi.Void
@@ -177,5 +203,15 @@ func TestCallbackRecordFieldValidation(t *testing.T) {
 	}
 	if _, err := (&Header{}).ForHostRecord("R"); err == nil {
 		t.Fatal("invalid host accepted")
+	}
+	// Array metadata still requires a pointer leaf, not a scalar or record.
+	element := abi.TypeDesc{Type: abi.I32}
+	r.Description.Fields[0].Type = abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &element}
+	if _, err := r.LookupFunctionPointer("callback"); err == nil {
+		t.Fatal("non-pointer array accepted")
+	}
+	element.Type = abi.Pointer
+	if _, err := r.LookupFunctionPointer("callback"); err != nil {
+		t.Fatal("pointer array rejected", err)
 	}
 }

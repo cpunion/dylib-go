@@ -26,10 +26,17 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "callbacks_store", Symbol: "callbacks_store", Signature: abi.Signature{Result: abi.Void, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bias", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "add", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}},
 		{Name: "callbacks_run", Symbol: "callbacks_run", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}},
 		{Name: "callbacks_clear", Symbol: "callbacks_clear", Signature: abi.Signature{Result: abi.Void, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}},
+		{Name: "callback_array_factory", Symbol: "callback_array_factory", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}}},
+		{Name: "callback_array_echo", Symbol: "callback_array_echo", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}}},
+		{Name: "callback_array_apply", Symbol: "callback_array_apply", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct, abi.I32, abi.I32, abi.I32, abi.I32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}, abi.TypeDesc{Type: abi.I32}, abi.TypeDesc{Type: abi.I32}, abi.TypeDesc{Type: abi.I32}, abi.TypeDesc{Type: abi.I32}}}},
+		{Name: "callback_array_store", Symbol: "callback_array_store", Signature: abi.Signature{Result: abi.Void, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}}}},
+		{Name: "callback_array_run", Symbol: "callback_array_run", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32, abi.I32, abi.I32}}},
+		{Name: "callback_array_clear", Symbol: "callback_array_clear", Signature: abi.Signature{Result: abi.Void, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}},
 	},
 	Records: []clang.Record{
 		{Name: "Callbacks", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bias", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "add", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 16, Alignment: 8, Offsets: []uint64{0, 8}}, FunctionPointers: []clang.FunctionPointer{{Position: 1, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}},
 		{Name: "NestedCallbacks", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "items", Type: abi.TypeDesc{Type: abi.Array, Len: 3, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bias", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "add", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}}, Layout: abi.Layout{Size: 48, Alignment: 8, Offsets: []uint64{0}}},
+		{Name: "ArrayCallbacks", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}, Layout: abi.Layout{Size: 32, Alignment: 8, Offsets: []uint64{0}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.I32}}}}},
 	},
 }
 
@@ -48,6 +55,13 @@ type BindingsRecord1 struct {
 	Items [3]BindingsRecord0
 }
 
+// BindingsRecord2 describes ArrayCallbacks; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord2 struct {
+	Entries [2][2]unsafe.Pointer
+}
+
 // Bindings retains symbol handles; its caller owns the Session.
 type Bindings struct {
 	symbol0  *dylib.Symbol
@@ -61,6 +75,12 @@ type Bindings struct {
 	symbol8  *dylib.Symbol
 	symbol9  *dylib.Symbol
 	symbol10 *dylib.Symbol
+	symbol11 *dylib.Symbol
+	symbol12 *dylib.Symbol
+	symbol13 *dylib.Symbol
+	symbol14 *dylib.Symbol
+	symbol15 *dylib.Symbol
+	symbol16 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -77,6 +97,9 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 	}
 	if uint64(unsafe.Sizeof(BindingsRecord1{})) != 48 || uint64(unsafe.Alignof(BindingsRecord1{})) != 8 || uint64(unsafe.Offsetof(BindingsRecord1{}.Items)) != 0 {
 		return nil, fmt.Errorf("clang: compiler/llgo layout mismatch for NestedCallbacks")
+	}
+	if uint64(unsafe.Sizeof(BindingsRecord2{})) != 32 || uint64(unsafe.Alignof(BindingsRecord2{})) != 8 || uint64(unsafe.Offsetof(BindingsRecord2{}.Entries)) != 0 {
+		return nil, fmt.Errorf("clang: compiler/llgo layout mismatch for ArrayCallbacks")
 	}
 	symbol0, err := session.Resolve("callbacks_factory")
 	if err != nil {
@@ -133,6 +156,36 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol10 = symbol10
+	symbol11, err := session.Resolve("callback_array_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol11 = symbol11
+	symbol12, err := session.Resolve("callback_array_echo")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol12 = symbol12
+	symbol13, err := session.Resolve("callback_array_apply")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol13 = symbol13
+	symbol14, err := session.Resolve("callback_array_store")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol14 = symbol14
+	symbol15, err := session.Resolve("callback_array_run")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol15 = symbol15
+	symbol16, err := session.Resolve("callback_array_clear")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol16 = symbol16
 	return b, nil
 }
 
@@ -294,6 +347,94 @@ func (b *Bindings) Callbacks_clear() error {
 	}
 	return b.symbol10.WithAddress(func(address uintptr) error {
 		function := *(*_BindingsFunction10)(unsafe.Pointer(&address))
+		function()
+		return nil
+	})
+}
+
+//llgo:type C
+type _BindingsFunction11 func() BindingsRecord2
+
+func (b *Bindings) Callback_array_factory() (result BindingsRecord2, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol11.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction11)(unsafe.Pointer(&address))
+		result = function()
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction12 func(p0 BindingsRecord2) BindingsRecord2
+
+func (b *Bindings) Callback_array_echo(p0 BindingsRecord2) (result BindingsRecord2, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol12.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction12)(unsafe.Pointer(&address))
+		result = function(p0)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction13 func(p0 BindingsRecord2, p1 int32, p2 int32, p3 int32, p4 int32) int32
+
+func (b *Bindings) Callback_array_apply(p0 BindingsRecord2, p1 int32, p2 int32, p3 int32, p4 int32) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol13.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction13)(unsafe.Pointer(&address))
+		result = function(p0, p1, p2, p3, p4)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction14 func(p0 BindingsRecord2)
+
+func (b *Bindings) Callback_array_store(p0 BindingsRecord2) error {
+	if b == nil {
+		return dylib.ErrClosed
+	}
+	return b.symbol14.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction14)(unsafe.Pointer(&address))
+		function(p0)
+		return nil
+	})
+}
+
+//llgo:type C
+type _BindingsFunction15 func(p0 int32, p1 int32, p2 int32, p3 int32) int32
+
+func (b *Bindings) Callback_array_run(p0 int32, p1 int32, p2 int32, p3 int32) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol15.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction15)(unsafe.Pointer(&address))
+		result = function(p0, p1, p2, p3)
+		return nil
+	})
+	return result, err
+}
+
+//llgo:type C
+type _BindingsFunction16 func()
+
+func (b *Bindings) Callback_array_clear() error {
+	if b == nil {
+		return dylib.ErrClosed
+	}
+	return b.symbol16.WithAddress(func(address uintptr) error {
+		function := *(*_BindingsFunction16)(unsafe.Pointer(&address))
 		function()
 		return nil
 	})

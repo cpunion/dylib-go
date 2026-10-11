@@ -70,7 +70,22 @@ func decodeFieldTypes(data []byte, keys map[string]recordField) (map[recordField
 func (r *typeResolver) describeField(name string, field astNode, depth int) (abi.TypeDesc, error) {
 	key := recordField{name, field.Name}
 	if node, ok := r.fieldTypes[key]; ok {
-		pointee, layers, err := r.pointerPointee(node)
+		effective, err := r.effectiveType(node)
+		if err != nil {
+			return abi.TypeDesc{}, err
+		}
+		var lengths []int
+		for effective.Kind == "ConstantArrayType" && len(effective.Inner) == 1 {
+			if effective.Size < 1 || effective.Size > 65536 || len(lengths) >= 8 {
+				return abi.TypeDesc{}, fmt.Errorf("unsupported function-pointer array shape")
+			}
+			lengths = append(lengths, effective.Size)
+			effective, err = r.effectiveType(effective.Inner[0])
+			if err != nil {
+				return abi.TypeDesc{}, err
+			}
+		}
+		pointee, layers, err := r.pointerPointee(effective)
 		if err != nil {
 			return abi.TypeDesc{}, err
 		}
@@ -78,8 +93,13 @@ func (r *typeResolver) describeField(name string, field astNode, depth int) (abi
 			if r.fieldPointers == nil {
 				r.fieldPointers = make(map[recordField]astNode)
 			}
-			r.fieldPointers[key] = node
-			return abi.TypeDesc{Type: abi.Pointer}, nil
+			r.fieldPointers[key] = effective
+			description := abi.TypeDesc{Type: abi.Pointer}
+			for i := len(lengths) - 1; i >= 0; i-- {
+				element := description
+				description = abi.TypeDesc{Type: abi.Array, Len: lengths[i], Elem: &element}
+			}
+			return description, description.Validate()
 		}
 	}
 	description, err := r.describe(field.Type.QualType, false, depth)

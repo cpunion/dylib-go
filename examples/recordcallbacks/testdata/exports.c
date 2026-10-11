@@ -20,3 +20,17 @@ int callbacks_nested_apply(NestedCallbacks value, int a, int b) {
 void callbacks_store(Callbacks value) { stored = value; }
 int callbacks_run(int a, int b) { return callbacks_apply(stored, a, b); }
 void callbacks_clear(void) { stored = (Callbacks){0, 0}; }
+static ArrayCallbacks stored_array;
+ArrayCallbacks callback_array_factory(void) {
+    return (ArrayCallbacks){{{add, subtract}, {add, 0}}};
+}
+ArrayCallbacks callback_array_echo(ArrayCallbacks value) { return value; }
+int callback_array_apply(ArrayCallbacks value, int row, int column, int a, int b) {
+    if (row < 0 || row >= 2 || column < 0 || column >= 2 || !value.entries[row][column]) return -1;
+    return value.entries[row][column](a, b);
+}
+void callback_array_store(ArrayCallbacks value) { stored_array = value; }
+int callback_array_run(int row, int column, int a, int b) {
+    return callback_array_apply(stored_array, row, column, a, b);
+}
+void callback_array_clear(void) { stored_array = (ArrayCallbacks){0}; }

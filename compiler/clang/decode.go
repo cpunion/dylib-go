@@ -40,6 +40,7 @@ type astNode struct {
 	ID, Kind, Name, MangledName, StorageClass, Value, TagUsed, CC string
 	Type                                                          nodeType
 	Inline, Variadic, CompleteDefinition, IsBitfield              bool
+	Size                                                          int
 	Decl                                                          *astNode
 	Inner                                                         []astNode
 }
