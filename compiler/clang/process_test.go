@@ -98,7 +98,7 @@ func TestInputsAndCompilerFailures(t *testing.T) {
 		t.Fatal("invalid compiler output:", err)
 	}
 	for _, input := range []string{"{}", `{"kind":"FunctionDecl"}`, `{"kind":"TranslationUnitDecl"}`} {
-		if _, err := decodeDeclarations([]byte(input), nativeTriple(), []string{"add"}); err == nil {
+		if _, err := decodeDeclarations([]byte(input), nativeTriple(), []string{"add"}, nil); err == nil {
 			t.Fatal("missing AST/probe metadata accepted")
 		}
 	}

@@ -4,6 +4,7 @@ package clang
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -125,7 +126,7 @@ const maxFunctions = 256
 // It extracts only requested external prototypes, supported scalars/typedefs,
 // ordinary records, array members, pointers and function-pointer prototypes. Record layouts are compiler
 // evaluated; ForHost checks the native backend before calls. Unions, bitfields,
-// packed/aligned records, enums, function-pointer record fields, inline/static
+// packed/aligned records, enums, arrays of function pointers, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes
 // must stay stable during parsing; they are read by Clang at their original paths.
 func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
@@ -182,7 +183,22 @@ func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 	if err != nil {
 		return nil, err
 	}
-	header, err := decodeDeclarations(data, string(triple), opts.Functions)
+	header, err := decodeDeclarations(data, string(triple), opts.Functions, nil)
+	if errors.Is(err, errRecordFieldTypes) {
+		probes, keys, probeErr := recordFieldProbes(data)
+		if probeErr != nil {
+			return nil, probeErr
+		}
+		data, err = runCompiler(ctx, compiler, args, functionProbes(opts.Functions)+probes, maxASTSize)
+		if err != nil {
+			return nil, err
+		}
+		fields, fieldErr := decodeFieldTypes(data, keys)
+		if fieldErr != nil {
+			return nil, fieldErr
+		}
+		header, err = decodeDeclarations(data, string(triple), opts.Functions, fields)
+	}
 	if err != nil {
 		return nil, err
 	}

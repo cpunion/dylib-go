@@ -91,7 +91,7 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Direct llgo narrow-parameter qualification with wide results, signed/unsigned boundaries, Boolean values, native factories/forwarding, C-to-Go callback arguments, stack/sret parameters and fixed variadic prefixes; objects/archives/libraries at `-O0` and `-O2` require llgo's C ABI and debug-pointer fixes.
 - [x] Typed by-value cgo records for Go/llgo, recursive field copies, native C layout checks, nested arrays/large returns and record-valued native function pointers without libffi.
 - [x] Higher-order/multiple-indirection function pointers, recursive prototype snapshots and generated cgo/llgo factories, consumers and pointer slots.
-- [ ] Callback record fields.
+- [x] Callback record fields with cloned prototype metadata, native-address cgo/llgo records, nested arrays and retained Go callback registrations.
 - [ ] C++ constructor/method/object adapters, followed by inheritance and virtual dispatch.
 - [x] Explicit retained session-to-session function/data symbol providers, transitive code leases and cleanup ordering without libffi.
 - [ ] Automatic provider discovery, dependency manifests, and version contracts.

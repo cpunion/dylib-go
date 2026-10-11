@@ -113,7 +113,8 @@ func TestUnsupportedRecords(t *testing.T) {
 		"typedef struct {int value;} S __attribute__((aligned(16))); S f(S);",
 		"struct S {union {int a;float b;};}; struct S f(struct S);",
 		"struct S {long double value;}; struct S f(struct S);",
-		"struct S {int (*callback)(int);}; struct S f(struct S);",
+		"struct S {int (*callback)();}; struct S f(struct S);",
+		"struct S {int (*callbacks[2])(int);}; struct S f(struct S);",
 	} {
 		if _, err := Parse(context.Background(), headerFile(t, source), Options{Compiler: compiler, Functions: []string{"f"}}); err == nil {
 			t.Fatal("unsupported record accepted:", source)

@@ -18,6 +18,51 @@ type Record struct {
 	Name        string
 	Description abi.TypeDesc
 	Layout      abi.Layout
+	// FunctionPointers describes pointer fields. Position is the field index;
+	// field values remain opaque native addresses with caller-managed lifetimes.
+	FunctionPointers []FunctionPointer
+}
+
+// LookupFunctionPointer returns an independent prototype for a named field.
+// Validate the header with ForHostRecord before calling addresses or callbacks.
+func (r Record) LookupFunctionPointer(field string) (FunctionPointer, error) {
+	if err := (&Header{Records: []Record{r}}).validateDescriptions(); err != nil {
+		return FunctionPointer{}, err
+	}
+	for _, pointer := range r.FunctionPointers {
+		if r.Description.Fields[pointer.Position].Name == field {
+			return pointer.clone(), nil
+		}
+	}
+	return FunctionPointer{}, fmt.Errorf("clang: no function pointer field %q in %s", field, r.Name)
+}
+
+// ForHostRecord checks native record and callback-prototype layouts before
+// returning an independent snapshot. Addresses and registrations are borrowed.
+func (h *Header) ForHostRecord(name string) (Record, error) {
+	if h == nil {
+		return Record{}, fmt.Errorf("clang: nil header")
+	}
+	if err := h.Target.CheckHost(); err != nil {
+		return Record{}, err
+	}
+	record, err := h.LookupRecord(name)
+	if err != nil {
+		return Record{}, err
+	}
+	if err := h.validateHostRecords(abi.Signature{Result: abi.Struct, ResultType: &record.Description}); err != nil {
+		return Record{}, err
+	}
+	return record, nil
+}
+
+func recordFieldSignature(record Record) abi.Signature {
+	s := abi.Signature{}
+	for _, field := range record.Description.Fields {
+		s.Args = append(s.Args, field.Type.Type)
+		s.ArgTypes = append(s.ArgTypes, field.Type)
+	}
+	return s
 }
 
 // LookupRecord returns an independent snapshot for constructing logical values.
@@ -34,6 +79,7 @@ func (h *Header) LookupRecord(name string) (Record, error) {
 				}
 				record.Description = record.Description.Clone()
 				record.Layout.Offsets = append([]uint64(nil), record.Layout.Offsets...)
+				record.FunctionPointers = cloneFunctionPointers(record.FunctionPointers)
 				return record, nil
 			}
 		}
@@ -81,6 +127,14 @@ func (h *Header) validateDescriptions() error {
 			return err
 		}
 		if err := record.Description.Validate(); err != nil {
+			return err
+		}
+		for _, pointer := range record.FunctionPointers {
+			if pointer.Position < 0 {
+				return fmt.Errorf("clang: invalid function-pointer field position")
+			}
+		}
+		if err := validateFunctionPointers(recordFieldSignature(record), record.FunctionPointers, &budget, 0); err != nil {
 			return err
 		}
 	}
@@ -168,11 +222,36 @@ func validRecordLayout(record Record) error {
 
 func (h *Header) validateHostRecords(signature abi.Signature) error {
 	var check func(abi.TypeDesc) error
+	var checkSignature func(abi.Signature) error
+	var checkPointers func([]FunctionPointer) error
+	seen := make(map[int]bool)
+	checkPointers = func(pointers []FunctionPointer) error {
+		for _, pointer := range pointers {
+			if err := checkSignature(pointer.Signature); err != nil {
+				return err
+			}
+			if err := checkPointers(pointer.FunctionPointers); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	checkSignature = func(s abi.Signature) error {
+		if err := check(s.ReturnType()); err != nil {
+			return err
+		}
+		for i := range s.Args {
+			if err := check(s.ArgumentType(i)); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 	check = func(d abi.TypeDesc) error {
 		if d.Type == abi.Struct {
 			found := false
 			var native abi.Layout
-			for _, record := range h.Records {
+			for i, record := range h.Records {
 				if !reflect.DeepEqual(record.Description, d) {
 					continue
 				}
@@ -190,6 +269,12 @@ func (h *Header) validateHostRecords(signature abi.Signature) error {
 				if !reflect.DeepEqual(native, record.Layout) {
 					return fmt.Errorf("clang: compiler/backend layout mismatch for %s", record.Name)
 				}
+				if !seen[i] {
+					seen[i] = true
+					if err := checkPointers(record.FunctionPointers); err != nil {
+						return err
+					}
+				}
 			}
 			if !found {
 				return fmt.Errorf("clang: missing compiler record layout")
@@ -205,15 +290,7 @@ func (h *Header) validateHostRecords(signature abi.Signature) error {
 		}
 		return nil
 	}
-	if err := check(signature.ReturnType()); err != nil {
-		return err
-	}
-	for i := range signature.Args {
-		if err := check(signature.ArgumentType(i)); err != nil {
-			return err
-		}
-	}
-	return nil
+	return checkSignature(signature)
 }
 
 func (h *Header) recordProbes() string {

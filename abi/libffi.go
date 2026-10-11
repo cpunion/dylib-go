@@ -225,7 +225,7 @@ static dylib_callback *dylib_callback_new(dylib_call_plan *plan, uintptr_t handl
     return NULL;
 #endif
 }
-static uintptr_t dylib_callback_code(dylib_callback *callback) { return (uintptr_t)callback->code; }
+static void *dylib_callback_code(dylib_callback *callback) { return callback->code; }
 static void dylib_callback_free(dylib_callback *callback) {
 #if FFI_CLOSURES
     ffi_closure_free(callback->writable);
@@ -909,7 +909,7 @@ func prepareCallback(state *callbackState) (callbackBackend, error) {
 	return b, nil
 }
 
-func (b *ffiCallbackBackend) address() uintptr { return uintptr(C.dylib_callback_code(b.native)) }
+func (b *ffiCallbackBackend) pointer() unsafe.Pointer { return C.dylib_callback_code(b.native) }
 func (b *ffiCallbackBackend) close() {
 	C.dylib_callback_free(b.native)
 	cgo.Handle(b.handle).Delete()

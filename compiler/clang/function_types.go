@@ -7,9 +7,9 @@ import (
 	"github.com/cpunion/dylib-go/abi"
 )
 
-// FunctionPointer describes an address at a function boundary. Position is a
-// zero-based argument index, or -1 for the result. It does not own an address,
-// callback lease or native registration.
+// FunctionPointer describes a native entry prototype. Position is a zero-based
+// argument index or -1 for the result; on Record it is a zero-based field index.
+// It does not own an address, callback lease or native registration.
 type FunctionPointer struct {
 	Position  int
 	Signature abi.Signature
@@ -180,10 +180,10 @@ func (r *typeResolver) prototype(node astNode, target Target, depth int) (abi.Si
 	return signature, pointers, signature.Validate()
 }
 
-func (r *typeResolver) boundaryType(node astNode, target Target, depth int) (abi.TypeDesc, *FunctionPointer, error) {
+func (r *typeResolver) pointerPointee(node astNode) (astNode, int, error) {
 	effective, err := r.effectiveType(node)
 	if err != nil {
-		return abi.TypeDesc{}, nil, err
+		return astNode{}, 0, err
 	}
 	pointee := effective
 	layers := 0
@@ -191,8 +191,16 @@ func (r *typeResolver) boundaryType(node astNode, target Target, depth int) (abi
 		layers++
 		pointee, err = r.effectiveType(pointee.Inner[0])
 		if err != nil {
-			return abi.TypeDesc{}, nil, err
+			return astNode{}, 0, err
 		}
+	}
+	return pointee, layers, nil
+}
+
+func (r *typeResolver) boundaryType(node astNode, target Target, depth int) (abi.TypeDesc, *FunctionPointer, error) {
+	pointee, layers, err := r.pointerPointee(node)
+	if err != nil {
+		return abi.TypeDesc{}, nil, err
 	}
 	if layers != 0 && (pointee.Kind == "FunctionProtoType" || pointee.Kind == "FunctionNoProtoType") {
 		if layers > 8 {

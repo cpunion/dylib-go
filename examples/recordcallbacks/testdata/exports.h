@@ -1,0 +1,14 @@
+typedef int (*Adder)(int, int);
+typedef struct { int bias; Adder add; } Callbacks;
+typedef struct { Callbacks items[3]; } NestedCallbacks;
+Callbacks callbacks_factory(int);
+Callbacks callbacks_subtract(void);
+Callbacks callbacks_echo(Callbacks);
+int callbacks_apply(Callbacks, int, int);
+int callbacks_pointer(Callbacks *, int, int);
+Callbacks *callbacks_slot(void);
+NestedCallbacks callbacks_nested(NestedCallbacks);
+int callbacks_nested_apply(NestedCallbacks, int, int);
+void callbacks_store(Callbacks);
+int callbacks_run(int, int);
+void callbacks_clear(void);
