@@ -41,9 +41,17 @@ func (t *cgoTypes) cConversion(index int, toNative bool) string {
 	return t.cRecordName(index) + direction
 }
 
+func (t *cgoTypes) cTransportName(index int) string {
+	name := t.cRecordName(index)
+	if t.needsTransport(index) {
+		name += "_transport"
+	}
+	return name
+}
+
 func (t *cgoTypes) writeTransport(output *bytes.Buffer, index int) error {
 	record := t.records[index]
-	native, transport := t.cRecordName(index), t.transport(record.Description)
+	native, transport := t.cRecordName(index), t.cTransportName(index)
 	fmt.Fprint(output, "typedef struct {\n")
 	for j, field := range record.Description.Fields {
 		declaration, err := t.cFieldType(field.Type, fmt.Sprintf("f%d", j), true)

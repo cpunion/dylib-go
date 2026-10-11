@@ -64,3 +64,30 @@ Plain plain(Plain); Packed packed(Packed);`), Options{Compiler: compilerTool(t),
 		t.Fatal("indistinguishable logical records with different native layouts accepted:", err)
 	}
 }
+
+func TestPackedRecordEquivalentDeclarations(t *testing.T) {
+	path := headerFile(t, `typedef struct __attribute__((packed)) { char tag; double value; } First;
+typedef struct __attribute__((packed)) { char tag; double value; } Second;
+First first(First); Second second(Second);`)
+	for _, target := range targets {
+		t.Run(target.triple, func(t *testing.T) {
+			compiler := compilerTool(t)
+			h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: target.triple, Functions: []string{"first", "second"}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			source, err := h.CgoSource("bindings", "Bindings")
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Equivalent logical types may share call prototypes, but each emitted
+			// record still needs its own transport/conversion declarations.
+			text := string(source)
+			start := strings.Index(text, "/*") + 2
+			end := strings.Index(text[start:], "*/") + start
+			if _, err := runCompiler(context.Background(), compiler, []string{"--target=" + target.triple, "-ffreestanding", "-x", "c", "-std=c17", "-fsyntax-only", "-"}, text[start:end], maxDiagnostics); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}

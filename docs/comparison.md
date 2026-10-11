@@ -102,7 +102,9 @@ C promotions without libffi. C++ adapters remain separate work.
 
 `CgoSource` also generates typed scalar/record/native-address methods for Go and
 llgo without libffi. Record conversions copy fields into independently checked C
-storage, including nested arrays and large returns. Complete struct pointees use
+storage, including nested arrays and large returns. Explicit packed records use
+ordinary transport records across Go/C and compiler conversions inside C, with
+layout checks and no libffi dependency. Complete struct pointees use
 opaque native addresses with saved C prototypes, including returned pointers and
 native function-pointer forwarding; Go struct pointer casts are not inferred.
 

@@ -58,11 +58,7 @@ func (t *cgoTypes) goType(description abi.TypeDesc) (string, error) {
 func (t *cgoTypes) transport(description abi.TypeDesc) string {
 	if description.Type == abi.Struct {
 		index, _ := t.recordIndex(description)
-		name := t.cRecordName(index)
-		if t.needsTransport(index) {
-			name += "_transport"
-		}
-		return name
+		return t.cTransportName(index)
 	}
 	return cgoTransportType(description.Type)
 }
@@ -168,7 +164,7 @@ func (t *cgoTypes) writeCLayoutChecks(output *bytes.Buffer) {
 func (t *cgoTypes) writeConversions(output *bytes.Buffer) error {
 	for i, record := range t.records {
 		for _, toC := range []bool{true, false} {
-			from, to := t.recordName(i), "C."+t.transport(record.Description)
+			from, to := t.recordName(i), "C."+t.cTransportName(i)
 			if !toC {
 				from, to = to, from
 			}
