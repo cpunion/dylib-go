@@ -12,7 +12,20 @@ import (
 )
 
 func TestPackedBitfieldBridgeMSVCAndMinGW(t *testing.T) {
-	path := headerFile(t, `typedef struct __attribute__((packed)) { unsigned a:3; signed b:5; _Bool on:1; unsigned long long big:40; double real; } Bits; Bits echo(Bits);`)
+	testPackedBitfieldBridgeMSVCAndMinGW(t, `typedef struct __attribute__((packed)) { unsigned a:3; signed b:5; _Bool on:1; unsigned long long big:40; double real; } Bits; Bits echo(Bits);`)
+}
+
+func TestPackedPaddingBridgeMSVCAndMinGW(t *testing.T) {
+	testPackedBitfieldBridgeMSVCAndMinGW(t, `typedef struct __attribute__((packed)) { unsigned :3; unsigned a:5; unsigned :0; signed b:7; unsigned :1; _Bool on:1; double real; unsigned :5; } Bits; Bits echo(Bits);`)
+}
+
+func TestPackedPaddingWideBoundaries(t *testing.T) {
+	testPackedBitfieldBridgeMSVCAndMinGW(t, `typedef struct __attribute__((packed)) { unsigned char first:1; unsigned long long :0; unsigned :3; signed value:5; unsigned long long :0; void *pointer; double items[2]; unsigned long long :0; } Bits; Bits echo(Bits);`)
+}
+
+func testPackedBitfieldBridgeMSVCAndMinGW(t *testing.T, source string) {
+	t.Helper()
+	path := headerFile(t, source)
 	compiler := compilerTool(t)
 	for _, target := range targets {
 		if target.os != "windows" {

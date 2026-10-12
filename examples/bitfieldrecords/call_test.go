@@ -38,12 +38,16 @@ func TestBitfieldCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_bits", "echo_packed_bits", "echo_envelope", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "echo_signed_wide"}
+	names := []string{"echo_bits", "echo_packed_bits", "echo_envelope", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "echo_signed_wide", "echo_gaps", "echo_prefix", "echo_packed_gaps", "echo_gap_envelope", "gaps_pointer", "mutate_gaps", "sum_gaps", "gaps_factory", "apply_gaps", "gaps_variable", "echo_floating_gap"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
 	}
 	h.Functions[8], err = h.Functions[8].WithTail(abi.I8, abi.F32)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.Functions[19], err = h.Functions[19].WithTail(abi.I8, abi.F32)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -189,6 +193,43 @@ func checkCalls(t *testing.T, path string) {
 		for _, value := range []int64{-1 << 39, -1, 0, (1 << 39) - 2} {
 			wide, err := b.Echo_signed_wide(BindingsRecord3{Value: value, All: ^uint64(0)})
 			check("signed 40-bit and full 64-bit widths", wide, BindingsRecord3{Value: value + 1}, err)
+		}
+		gap := BindingsRecord4{Low: 31, High: -64, Enabled: true, Value: 20}
+		wantGap := BindingsRecord4{Low: 0, High: -63, Enabled: false, Value: 22}
+		gotGap, err := b.Echo_gaps(gap)
+		check("unnamed allocation gaps and zero-width boundaries", gotGap, wantGap, err)
+		prefix, err := b.Echo_prefix(BindingsRecord5{Octet: 15})
+		check("leading padding without named bitfields", prefix, BindingsRecord5{Octet: 240}, err)
+		packedGap := BindingsRecord6{Low: 31, High: -64, Enabled: true, Real: 20.5}
+		wantPackedGap := BindingsRecord6{Low: 0, High: -63, Enabled: false, Real: 22}
+		gotPackedGap, err := b.Echo_packed_gaps(packedGap)
+		check("packed unnamed and zero-width fields", gotPackedGap, wantPackedGap, err)
+		floatingGap, err := b.Echo_floating_gap(BindingsRecord8{First: 20, Second: 18})
+		check("floating members with unnamed gaps", floatingGap, BindingsRecord8{First: 21.5, Second: 20.5}, err)
+		gapEnvelope := BindingsRecord7{Items: [2]BindingsRecord4{gap, gap}, Prefix: BindingsRecord5{Octet: 15}, Packed: [2]BindingsRecord6{packedGap, packedGap}}
+		gotGapEnvelope, err := b.Echo_gap_envelope(gapEnvelope)
+		check("nested gap records and arrays", gotGapEnvelope, BindingsRecord7{Items: [2]BindingsRecord4{wantGap, wantGap}, Prefix: BindingsRecord5{Octet: 240}, Packed: [2]BindingsRecord6{wantPackedGap, wantPackedGap}}, err)
+		gapFn, err := b.Gaps_factory()
+		if err != nil || gapFn == nil {
+			t.Fatal(gapFn, err)
+		}
+		gotGap, err = b.Apply_gaps(gapFn, gap)
+		check("gap record native factory", gotGap, wantGap, err)
+		gap.High = 10
+		gotGap, err = b.Gaps_variable(gap, -8, 1.5)
+		gap.High, gap.Value = 2, 21
+		check("gap record variadic prefix/result", gotGap, gap, err)
+		gapPointer, err := b.Gaps_pointer()
+		if err != nil || gapPointer == nil {
+			t.Fatal(gapPointer, err)
+		}
+		if got, err := b.Mutate_gaps(gapPointer); err != nil || got != gapPointer {
+			t.Fatal(got, err)
+		}
+		gapSum, err := b.Sum_gaps(gapPointer)
+		check("native gap pointer mutation", gapSum, uint32(22), err)
+		if got, err := b.Mutate_gaps(nil); err != nil || got != nil {
+			t.Fatal(got, err)
 		}
 		envelope := BindingsRecord2{Regular: p, Packed: [2][2]BindingsRecord1{{packed, packed}, {packed, packed}}}
 		gotEnvelope, err := b.Echo_envelope(envelope)

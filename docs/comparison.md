@@ -102,10 +102,11 @@ C promotions without libffi. C++ adapters remain separate work.
 
 `CgoSource` also generates typed scalar/record/native-address methods for Go and
 llgo without libffi. Record conversions copy fields into independently checked C
-storage, including nested arrays and large returns. Explicit packed records and named bitfields use
+storage, including nested arrays and large returns. Explicit packed records and bitfields use
 ordinary transport records across Go/C and compiler conversions inside C, with
 layout checks and no libffi dependency. Bitfield byte masks are compiler-probed
-and checked before binding. Complete struct pointees use
+and checked before binding. Unnamed/zero-width fields preserve native allocation
+boundaries without becoming public Go values. Complete struct pointees use
 opaque native addresses with saved C prototypes, including returned pointers and
 native function-pointer forwarding; Go struct pointer casts are not inferred.
 

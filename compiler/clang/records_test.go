@@ -103,7 +103,7 @@ func TestRecordsAcrossTargets(t *testing.T) {
 func TestUnsupportedRecords(t *testing.T) {
 	compiler := compilerTool(t)
 	for _, source := range []string{
-		"struct S {int :1; int value;}; struct S f(struct S);",
+		"struct S {int :1;}; struct S f(struct S);",
 		"struct S {int values[];}; struct S f(struct S);",
 		"struct S {int values[0];}; struct S f(struct S);",
 		"struct S {}; struct S f(struct S);",

@@ -14,6 +14,25 @@ type Bitfield struct {
 	Mask            []byte
 }
 
+// BitfieldPadding describes an unnamed C bitfield before a logical field.
+// Before may equal the field count for trailing padding. Width zero requests
+// the C compiler's allocation-unit boundary; it is not a Go value field.
+type BitfieldPadding struct {
+	Before int
+	Type   abi.Type
+	Width  int
+	// Offset is the compiler-confirmed byte boundary for a zero-width field.
+	Offset uint64
+}
+
+func (r Record) hasBitfields() bool {
+	return len(r.Bitfields) != 0 || len(r.Padding) != 0
+}
+
+func (r Record) requiresCAdapter() bool {
+	return r.Packed || r.hasBitfields()
+}
+
 func cloneBitfields(fields []Bitfield) []Bitfield {
 	result := append([]Bitfield(nil), fields...)
 	for i := range result {
@@ -58,6 +77,20 @@ func bitfieldValue(kind abi.Type, width int) string {
 }
 
 func validateBitfields(r Record, complete bool) error {
+	if len(r.Padding)+len(r.Description.Fields) > 32 {
+		return fmt.Errorf("clang: at most 32 named/padding fields in %s", r.Name)
+	}
+	before := 0
+	for _, f := range r.Padding {
+		bits := bitfieldTypeBits(f.Type)
+		if f.Before < before || f.Before > len(r.Description.Fields) || bits == 0 || f.Width < 0 || f.Width > bits {
+			return fmt.Errorf("clang: invalid unnamed bitfield in %s", r.Name)
+		}
+		if f.Width != 0 && f.Offset != 0 || complete && f.Offset > r.Layout.Size {
+			return fmt.Errorf("clang: invalid unnamed bitfield boundary in %s", r.Name)
+		}
+		before = f.Before
+	}
 	seen := make(map[int]bool)
 	for index, f := range r.Bitfields {
 		if f.Position < 0 || f.Position >= len(r.Description.Fields) || seen[f.Position] {
