@@ -124,14 +124,6 @@ func TestInvalidAlignmentMetadata(t *testing.T) {
 	if err := validRecordLayout(r); err == nil {
 		t.Fatal("record alignment larger than native layout accepted")
 	}
-	for _, declaration := range []string{
-		`typedef struct { unsigned :2 __attribute__((aligned(8))); int value; } S;`,
-		`typedef struct { unsigned :2 __attribute__((aligned)); int value; } S;`,
-	} {
-		if _, err := Parse(context.Background(), headerFile(t, declaration+` S echo(S);`), Options{Compiler: compilerTool(t), Functions: []string{"echo"}}); err == nil {
-			t.Fatal("unsupported unnamed alignment accepted:", declaration)
-		}
-	}
 }
 
 func TestZeroAlignmentRequest(t *testing.T) {

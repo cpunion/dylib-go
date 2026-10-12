@@ -461,9 +461,12 @@ For bitfields, Clang emits constants whose byte masks are read with Go's object
 parsers; generated C bridges verify both masks and layout before binding. Public
 Go fields hold ordinary scalar values. The [tested bitfield example](examples/bitfieldrecords/call.go)
 covers signed/Boolean fields, cross-byte widths, unnamed/zero-width boundaries,
-leading padding, floating fields and packed combinations.
+leading padding, numeric/omitted unnamed alignment, floating fields and packed
+combinations.
 Named and unnamed member-level `packed` bitfields use validated C bridges,
-including small value returns, packed/aligned named members and mixed zero-width boundaries; see the [packing limits](docs/clang.md#explicitly-packed-c-records).
+including small value returns, packed/aligned named and unnamed members, ignored
+MSVC alignment requests and mixed zero-width boundaries; see the
+[packing limits](docs/clang.md#explicitly-packed-c-records).
 Compiler-evaluated record/member alignment also uses C transport records,
 including omitted GNU `aligned` arguments and `_Alignas(type)` members. The
 [tested aligned example](examples/alignedrecords/call.go) covers packed/bitfield

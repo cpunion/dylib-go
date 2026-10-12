@@ -21,6 +21,16 @@ func (h *Header) probeBitfields(ctx context.Context, compiler, header string, fl
 	var source strings.Builder
 	var size uint64
 	for i, r := range h.Records {
+		for j, p := range r.Padding {
+			if p.Width == 0 || p.Aligned == 0 {
+				continue
+			}
+			if r.Layout.Size == 0 || r.Layout.Size > 65536 || size > maxBitfieldProbe-r.Layout.Size {
+				return fmt.Errorf("clang: bitfield probes exceed storage limit")
+			}
+			size += r.Layout.Size
+			fmt.Fprintf(&source, "%s", r.alignedPaddingProbe(i, j))
+		}
 		for _, f := range r.Bitfields {
 			if r.Layout.Size == 0 || r.Layout.Size > 65536 || size > maxBitfieldProbe-r.Layout.Size {
 				return fmt.Errorf("clang: bitfield probes exceed storage limit")
@@ -84,6 +94,32 @@ func (h *Header) probeBitfields(ctx context.Context, compiler, header string, fl
 			r.Layout.Offsets[f.Position] = uint64(first)
 			f.Mask = append([]byte(nil), value[first:last+1]...)
 		}
+		for j := range r.Padding {
+			p := &r.Padding[j]
+			if p.Width == 0 || p.Aligned == 0 {
+				continue
+			}
+			value, err := symbols.value(fmt.Sprintf("dylib_bitfield_padding_%d_%d", i, j), r.Layout.Size)
+			if err != nil {
+				return err
+			}
+			first := -1
+			count := 0
+			for index, b := range value {
+				if b != 0 && first < 0 {
+					first = index
+				}
+				for b != 0 {
+					count++
+					b &= b - 1
+				}
+			}
+			if first < 0 || count != p.Width {
+				return fmt.Errorf("clang: invalid compiler unnamed bitfield mask")
+			}
+			p.Offset = uint64(first)
+		}
+
 		if err := validRecordLayout(*r); err != nil {
 			return err
 		}

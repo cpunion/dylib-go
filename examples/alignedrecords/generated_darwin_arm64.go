@@ -118,33 +118,6 @@ result.f1 = value.f1;
 result.f2 = value.f2;
 return result;
 }
-#if defined(_WIN32) && !defined(_MSC_VER)
-#pragma pack(push,1)
-typedef struct __attribute__((packed)) {
-uint32_t f0:3;
-int32_t f1:5;
-unsigned char :0;
-} dylib_go_42696e64696e6773_record3_padding0;
-_Static_assert(sizeof(dylib_go_42696e64696e6773_record3_padding0)<=4 && 4-sizeof(dylib_go_42696e64696e6773_record3_padding0)<=7,"incompatible zero-width boundary");
-typedef struct __attribute__((packed,aligned(16))) {
-uint32_t f0:3;
-int32_t f1:5;
-unsigned char :0;
-unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record3_padding0)>0?8:0);
-unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record3_padding0)>1?8:0);
-unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record3_padding0)>2?8:0);
-unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record3_padding0)>3?8:0);
-unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record3_padding0)>4?8:0);
-unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record3_padding0)>5?8:0);
-unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record3_padding0)>6?8:0);
-double f2;
-uint32_t f3:1;
-} dylib_go_42696e64696e6773_record3;
-#pragma pack(pop)
-#else
-#if defined(_WIN32)
-#pragma pack(push,1)
-#endif
 typedef struct __attribute__((packed,aligned(16))) {
 uint32_t f0:3;
 int32_t f1:5;
@@ -152,10 +125,6 @@ uint32_t :0;
 double f2;
 uint32_t f3:1;
 } dylib_go_42696e64696e6773_record3;
-#if defined(_WIN32)
-#pragma pack(pop)
-#endif
-#endif
 static uint64_t dylib_go_42696e64696e6773_record3_mask(int32_t field,uint64_t byte) {
 volatile dylib_go_42696e64696e6773_record3 value;
 volatile unsigned char *data = (volatile unsigned char *)&value;
@@ -387,117 +356,6 @@ result.f1[i0] = value.f1[i0];
 result.f2 = value.f2;
 return result;
 }
-#if defined(_WIN32) && !defined(_MSC_VER)
-#pragma pack(push,1)
-typedef struct __attribute__((packed)) {
-uint32_t f0:5;
-unsigned char :0;
- unsigned char marker;
-} dylib_go_42696e64696e6773_record8_aligned1;
-_Static_assert(offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)<=16 && 16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)<16,"incompatible field alignment");
-typedef struct __attribute__((packed)) {
-uint32_t f0:5;
-unsigned char :0;
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>0?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>1?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>2?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>3?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>4?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>5?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>6?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>7?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>8?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>9?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>10?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>11?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>12?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>13?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>14?8:0);
-unsigned char :0;
-int32_t f1 __attribute__((aligned(16)));
-unsigned char :0;
- unsigned char marker;
-} dylib_go_42696e64696e6773_record8_aligned2;
-_Static_assert(offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)<=24 && 24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)<8,"incompatible field alignment");
-typedef struct __attribute__((packed)) {
-uint32_t f0:5;
-unsigned char :0;
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>0?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>1?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>2?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>3?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>4?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>5?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>6?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>7?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>8?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>9?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>10?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>11?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>12?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>13?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>14?8:0);
-unsigned char :0;
-int32_t f1 __attribute__((aligned(16)));
-unsigned char :0;
-unsigned char :(24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)>0?8:0);
-unsigned char :(24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)>1?8:0);
-unsigned char :(24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)>2?8:0);
-unsigned char :(24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)>3?8:0);
-unsigned char :(24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)>4?8:0);
-unsigned char :(24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)>5?8:0);
-unsigned char :(24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)>6?8:0);
-unsigned char :0;
-int32_t f2:7 __attribute__((aligned(8)));
-unsigned char :0;
-unsigned char marker;
-} dylib_go_42696e64696e6773_record8_padding0;
-_Static_assert(offsetof(dylib_go_42696e64696e6773_record8_padding0,marker)<=28 && 28-offsetof(dylib_go_42696e64696e6773_record8_padding0,marker)<=7,"incompatible zero-width boundary");
-typedef struct __attribute__((packed,aligned(32))) {
-uint32_t f0:5;
-unsigned char :0;
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>0?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>1?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>2?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>3?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>4?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>5?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>6?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>7?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>8?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>9?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>10?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>11?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>12?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>13?8:0);
-unsigned char :(16-offsetof(dylib_go_42696e64696e6773_record8_aligned1,marker)>14?8:0);
-unsigned char :0;
-int32_t f1 __attribute__((aligned(16)));
-unsigned char :0;
-unsigned char :(24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)>0?8:0);
-unsigned char :(24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)>1?8:0);
-unsigned char :(24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)>2?8:0);
-unsigned char :(24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)>3?8:0);
-unsigned char :(24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)>4?8:0);
-unsigned char :(24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)>5?8:0);
-unsigned char :(24-offsetof(dylib_go_42696e64696e6773_record8_aligned2,marker)>6?8:0);
-unsigned char :0;
-int32_t f2:7 __attribute__((aligned(8)));
-unsigned char :0;
-unsigned char :(28-offsetof(dylib_go_42696e64696e6773_record8_padding0,marker)>0?8:0);
-unsigned char :(28-offsetof(dylib_go_42696e64696e6773_record8_padding0,marker)>1?8:0);
-unsigned char :(28-offsetof(dylib_go_42696e64696e6773_record8_padding0,marker)>2?8:0);
-unsigned char :(28-offsetof(dylib_go_42696e64696e6773_record8_padding0,marker)>3?8:0);
-unsigned char :(28-offsetof(dylib_go_42696e64696e6773_record8_padding0,marker)>4?8:0);
-unsigned char :(28-offsetof(dylib_go_42696e64696e6773_record8_padding0,marker)>5?8:0);
-unsigned char :(28-offsetof(dylib_go_42696e64696e6773_record8_padding0,marker)>6?8:0);
-int8_t f3;
-} dylib_go_42696e64696e6773_record8;
-#pragma pack(pop)
-#else
-#if defined(_WIN32)
-#pragma pack(push,1)
-#endif
 typedef struct __attribute__((packed,aligned(32))) {
 uint32_t f0:5;
 int32_t f1 __attribute__((aligned(16)));
@@ -505,10 +363,6 @@ int32_t f2:7 __attribute__((aligned(8)));
 uint32_t :0;
 int8_t f3;
 } dylib_go_42696e64696e6773_record8;
-#if defined(_WIN32)
-#pragma pack(pop)
-#endif
-#endif
 static uint64_t dylib_go_42696e64696e6773_record8_mask(int32_t field,uint64_t byte) {
 volatile dylib_go_42696e64696e6773_record8 value;
 volatile unsigned char *data = (volatile unsigned char *)&value;

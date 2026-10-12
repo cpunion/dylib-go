@@ -98,6 +98,9 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 					if field.Packed {
 						fmt.Fprint(&output, ",Packed:true")
 					}
+					if field.Aligned != 0 {
+						fmt.Fprintf(&output, ",Aligned:%d", field.Aligned)
+					}
 					fmt.Fprint(&output, "},")
 				}
 				fmt.Fprint(&output, "}")

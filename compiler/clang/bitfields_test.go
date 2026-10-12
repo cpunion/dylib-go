@@ -38,13 +38,16 @@ func testPackedBitfieldBridgeMSVCAndMinGW(t *testing.T, source string, functions
 	t.Helper()
 	path := headerFile(t, source)
 	compiler := compilerTool(t)
+	var producers []string
 	for _, target := range targets {
-		if target.os != "windows" {
-			continue
+		if target.os == "windows" {
+			producers = append(producers, target.triple, strings.Replace(target.triple, "pc-windows-msvc", "w64-windows-gnu", 1))
 		}
-		t.Run(target.triple, func(t *testing.T) {
+	}
+	for _, producer := range producers {
+		t.Run(producer, func(t *testing.T) {
 			t.Parallel()
-			h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: target.triple, Functions: functions})
+			h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: producer, Functions: functions})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -73,7 +76,11 @@ func testPackedBitfieldBridgeMSVCAndMinGW(t *testing.T, source string, functions
 				}
 			}
 			// The host bridge may use MinGW while the producer uses MSVC.
-			for _, triple := range []string{target.triple, strings.Replace(target.triple, "pc-windows-msvc", "w64-windows-gnu", 1)} {
+			triples := []string{producer}
+			if strings.Contains(producer, "msvc") {
+				triples = append(triples, strings.Replace(producer, "pc-windows-msvc", "w64-windows-gnu", 1))
+			}
+			for _, triple := range triples {
 				object := filepath.Join(t.TempDir(), "probe.o")
 				if _, err := runCompiler(context.Background(), compiler, []string{"--target=" + triple, "-ffreestanding", "-x", "c", "-std=c17", "-c", "-o", object, "-"}, probe.String(), maxDiagnostics); err != nil {
 					t.Fatal(triple, err)
