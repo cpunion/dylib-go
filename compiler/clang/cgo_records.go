@@ -118,7 +118,8 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 		}
 		name := t.cRecordName(i)
-		if record.Packed && len(record.Padding) != 0 {
+		packedBridge := record.Packed && (len(record.Padding) != 0 || record.hasBitfields() && len(record.FieldAlignments) != 0)
+		if packedBridge {
 			fmt.Fprint(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n")
 			if err := t.writePackedPadding(output, i); err != nil {
 				return err
@@ -126,16 +127,15 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			fmt.Fprint(output, "#else\n")
 		}
 		// MinGW ignores a record's packed attribute for MS-layout bitfields.
-		// Preserve an explicitly packed, byte-aligned producer layout with a
-		// scoped pragma; the existing size/offset/mask checks remain authoritative.
-		packedBits := record.Packed && record.hasBitfields() && record.Layout.Alignment == 1
+		// Preserve the packed allocation units with a scoped pragma. Explicit
+		// aligned attributes restore record alignment; size/offset/mask checks
+		// remain authoritative.
+		packedBits := record.Packed && record.hasBitfields() && (record.Layout.Alignment == 1 || record.Aligned != 0 || len(record.FieldAlignments) != 0)
 		if packedBits {
 			fmt.Fprint(output, "#if defined(_WIN32)\n#pragma pack(push,1)\n#endif\n")
 		}
 		fmt.Fprint(output, "typedef struct ")
-		if record.Packed {
-			fmt.Fprint(output, "__attribute__((packed)) ")
-		}
+		fmt.Fprint(output, record.cAttributes())
 		fmt.Fprint(output, "{\n")
 		padding := 0
 		for j := 0; j <= len(record.Description.Fields); j++ {
@@ -159,13 +159,14 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			if bit := record.bitfieldAt(j); bit != nil {
 				declaration += fmt.Sprintf(":%d", bit.Width)
 			}
+			declaration += record.cFieldAlignment(j)
 			fmt.Fprintf(output, "%s;\n", declaration)
 		}
 		fmt.Fprintf(output, "} %s;\n", name)
 		if packedBits {
 			fmt.Fprint(output, "#if defined(_WIN32)\n#pragma pack(pop)\n#endif\n")
 		}
-		if record.Packed && len(record.Padding) != 0 {
+		if packedBridge {
 			fmt.Fprint(output, "#endif\n")
 		}
 		if len(record.Bitfields) != 0 {

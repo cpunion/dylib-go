@@ -28,6 +28,9 @@ func (h *Header) writeCgoFunctionPointer(output *bytes.Buffer, pointer FunctionP
 		if kind, ok := boundary[position]; ok {
 			return kind, nil
 		}
+		if position >= 0 {
+			return mapper.cParameterType(description)
+		}
 		return mapper.cType(description)
 	}
 	result, err := kindAt(-1, s.ReturnType())
@@ -51,6 +54,6 @@ func (h *Header) writeCgoFunctionPointer(output *bytes.Buffer, pointer FunctionP
 	} else if count == 0 {
 		parameters = append(parameters, "void")
 	}
-	fmt.Fprintf(output, "typedef %s (%s*%s)(%s);\n", result, attribute, name, strings.Join(parameters, ","))
+	mapper.writeNativePrototype(output, s, name, result, attribute, parameters)
 	return name + strings.Repeat("*", pointer.pointerDepth()-1), nil
 }

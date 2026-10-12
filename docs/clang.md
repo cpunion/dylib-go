@@ -44,6 +44,7 @@ Run
 | Explicit `__attribute__((packed))` structs | `CgoSource` for Go/llgo; logical fields are transported through ordinary records and converted inside C; dynamic and direct llgo bindings reject them |
 | Named integral/Boolean bitfields, including explicit packed records | `CgoSource` for Go/llgo; compiler byte masks and layout are validated before binding; public fields remain ordinary scalars |
 | Unnamed/zero-width bitfields | `CgoSource` preserves storage boundaries without adding public Go value fields; leading/trailing padding and packed combinations are supported |
+| Explicit numeric record/member alignment | `CgoSource` preserves GNU `aligned(N)`, field `_Alignas(N)` and MS `__declspec(align(N))`; packed/bitfield combinations and nested arrays are supported |
 | Fixed array members | Scalars, pointers, records and nested arrays; positive evaluated lengths |
 | Function parameters/results pointing to a complete ordinary struct | Typed single-struct pointees; `abi.AddressOf` supplies a temporary copy, with mutation/return identity checks |
 | Function pointers at parameter/result boundaries | Typedefs, anonymous pointers and decayed function parameters; retain their exact prototype/convention independently of the outer pointer |
@@ -134,7 +135,7 @@ No language runtime, C++ ownership or exception adaptation is inferred.
 ## Typed cgo bridges for Go and llgo
 
 `Header.CgoSource(packageName, bindingType)` emits typed methods with static C
-bridges in an `import "C"` preamble. It supports cdecl scalars, ordinary/explicitly packed and bitfield record
+bridges in an `import "C"` preamble. It supports cdecl scalars, ordinary/explicitly packed or aligned and bitfield record
 values and opaque native pointer arguments/results on all eight native Go targets and six qualified llgo
 targets, without the optional libffi backend. Fixed Windows 386 stdcall/fastcall
 exports and function-pointer prototypes are supported with Go. A C toolchain is needed when building
@@ -198,7 +199,7 @@ storage for their pointers; `abi.NewNativeValue` cannot allocate packed storage
 from the logical description. Native function pointers using packed values need
 a matching compiled adapter; `abi.NewCallback` does not supply this ABI.
 
-Global packing flags, `#pragma pack`, field packing/alignment attributes and
+Global packing flags, `#pragma pack`, field packing attributes and
 unions are not inferred by this adapter. When two records have identical
 logical fields but different native layouts, typed generation rejects the
 ambiguity rather than selecting a layout from metadata order. Generate separate
@@ -210,6 +211,61 @@ setup-go/setup-llgo jobs. They verify packed values/returns, ordinary parents wi
 packed multidimensional arrays, signed boundaries, Boolean and pointer fields,
 factories/consumers, native struct pointers, variadic promotions, stale generated
 source, target guards and session retirement.
+
+### Explicit C alignment
+
+`Record.Aligned` retains a numeric record alignment; zero means no explicit
+request. `Record.FieldAlignments` records the logical position and alignment of
+each named member, including array and bitfield members. Clang evaluates constant
+alignment expressions. Multiple declarations use the greatest requested value.
+The adapter accepts powers of two up to 65536 bytes, subject to the same maximum
+record size. `_Alignas(0)` has no effect.
+
+Generated native types reproduce these requests with `aligned(N)` attributes.
+Logical Go fields cross the boundary through ordinary transport records; C
+creates the aligned values and applies their native argument/result ABI. This
+also preserves nested array strides, packed combinations, aligned bitfields,
+native function-pointer prototypes and concrete variadic calls. Constructors
+compare native size, alignment, field offsets and bit masks before resolving
+symbols. Explicitly aligned records and reachable nested records are rejected
+by dynamic `ForHost` and direct `LLGoSource` adapters.
+
+For MSVC i386, Clang also emits small argument-lowering probes as LLVM IR.
+Go reads these probes without executing foreign code and saves
+`Record.IndirectArgument` and `Record.IndirectResult`.
+Required fixed arguments can use an implicit pointer
+even when an ordinary record has the same storage alignment. Generated bridges
+reconcile this with a MinGW host using local aligned C copies, including native
+function pointers, cdecl variadic prefixes and fixed stdcall/fastcall calls.
+Unnamed variadic aggregate arguments retain their by-value ABI. This follows
+the [Clang MSVC i386 argument classification](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.0/clang/lib/CodeGen/Targets/X86.cpp#L762).
+GCC fastcall also places an implicit result pointer differently from MSVC/Clang.
+Its bridge places register arguments first, then an explicit stack result carrier
+and the remaining stack arguments; the producer keeps its original ABI. Return
+probes also cover ordinary records used by fastcall exports or native pointers,
+including inline record arguments before the register arguments. These
+MSVC i386 hidden-result records require a compiled C adapter as well.
+
+For MinGW packed bitfields, the byte-packing pragma can also suppress member
+alignment. The bridge reproduces compiler-confirmed member boundaries with
+unnamed byte fields and restores record alignment. Prefix marker offsets avoid
+mistaking tail padding for the boundary after a zero-width field. Native layout
+and mask checks still run before binding.
+
+Use producer-owned storage for aligned record pointers. `abi.NewNativeValue`
+uses the logical description and cannot provide this attributed layout or its
+stronger alignment. Generated pointer methods borrow native addresses; they do
+not reinterpret Go structs. Function pointers with these values also require a
+matching compiled adapter; dynamic callbacks do not supply it.
+
+Alignment on typedefs, unnamed bitfields, omitted-argument GNU `aligned` and
+type-based `_Alignas(type)` requests remain unsupported. Other packing policies
+are not inferred. The [aligned example](../examples/alignedrecords/call.go)
+executes object/archive/library calls at `-O0` and `-O2` on the eight Go and six
+llgo native targets, including large nested arrays, floating aggregates,
+native storage alignment, factories, variadic calls and deliberate alignment
+mismatch rejection before symbol resolution. Windows 386 also runs aligned
+stdcall/fastcall exports and native factories with mixed register/stack arguments.
 
 ### C bitfields and padding
 

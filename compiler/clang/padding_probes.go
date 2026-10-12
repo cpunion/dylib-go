@@ -22,9 +22,7 @@ func (h *Header) paddingProbes() (declarations, constants string) {
 				if p.Width == 0 {
 					name := fmt.Sprintf("dylib_padding_%d_%d", i, padding)
 					fmt.Fprint(&types, "typedef struct ")
-					if r.Packed {
-						fmt.Fprint(&types, "__attribute__((packed)) ")
-					}
+					fmt.Fprint(&types, r.cAttributes())
 					fmt.Fprintf(&types, "{\n%s unsigned char marker;\n} %s;\n", body.String(), name)
 					fmt.Fprintf(&values, "dylib_record_%d_padding_%d=__builtin_offsetof(%s,marker),\n", i, padding, name)
 				}
@@ -35,9 +33,9 @@ func (h *Header) paddingProbes() (declarations, constants string) {
 			}
 			field := r.Description.Fields[j]
 			if bit := r.bitfieldAt(j); bit != nil {
-				fmt.Fprintf(&body, "%s f%d:%d;\n", bitfieldBaseType(field.Type.Type), j, bit.Width)
+				fmt.Fprintf(&body, "%s f%d:%d%s;\n", bitfieldBaseType(field.Type.Type), j, bit.Width, r.cFieldAlignment(j))
 			} else {
-				fmt.Fprintf(&body, "__typeof__(((%s *)0)->%s) f%d;\n", r.Name, field.Name, j)
+				fmt.Fprintf(&body, "__typeof__(((%s *)0)->%s) f%d%s;\n", r.Name, field.Name, j, r.cFieldAlignment(j))
 			}
 		}
 	}

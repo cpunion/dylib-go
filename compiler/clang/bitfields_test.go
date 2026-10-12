@@ -23,6 +23,14 @@ func TestPackedPaddingWideBoundaries(t *testing.T) {
 	testPackedBitfieldBridgeMSVCAndMinGW(t, `typedef struct __attribute__((packed)) { unsigned char first:1; unsigned long long :0; unsigned :3; signed value:5; unsigned long long :0; void *pointer; double items[2]; unsigned long long :0; } Bits; Bits echo(Bits);`)
 }
 
+func TestAlignedBitfieldBridgeMSVCAndMinGW(t *testing.T) {
+	testPackedBitfieldBridgeMSVCAndMinGW(t, `typedef struct __attribute__((packed,aligned(32))) { unsigned a:3; signed b:5; _Bool on:1; double real; } Bits; Bits echo(Bits);`)
+	testPackedBitfieldBridgeMSVCAndMinGW(t, `typedef struct __attribute__((packed,aligned(32))) { unsigned :3; unsigned a:5; unsigned :0; signed b:7; double real; } Bits; Bits echo(Bits);`)
+	testPackedBitfieldBridgeMSVCAndMinGW(t, `typedef struct { unsigned a:5; int value __attribute__((aligned(16))); signed b:7 __attribute__((aligned(8))); unsigned :0; char tag; } Bits; Bits echo(Bits);`)
+	testPackedBitfieldBridgeMSVCAndMinGW(t, `typedef struct __attribute__((packed,aligned(32))) { char tag; double values[2] __attribute__((aligned(16))); short tail; } Bits; Bits echo(Bits);`)
+	testPackedBitfieldBridgeMSVCAndMinGW(t, `typedef struct __attribute__((packed,aligned(32))) { unsigned a:5; int value __attribute__((aligned(16))); signed b:7 __attribute__((aligned(8))); unsigned :0; char tag; } Bits; Bits echo(Bits);`)
+}
+
 func testPackedBitfieldBridgeMSVCAndMinGW(t *testing.T, source string) {
 	t.Helper()
 	path := headerFile(t, source)

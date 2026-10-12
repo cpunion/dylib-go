@@ -21,6 +21,17 @@ type Record struct {
 	// Packed requests the C compiler's packed attribute. Description remains a
 	// logical field model; only compiled C adapters may pass this record by value.
 	Packed bool
+	// Aligned preserves an explicit record alignment in bytes; zero is absent.
+	// FieldAlignments preserves explicit alignment on named members. These
+	// declarations require compiled C adapters, never a Go memory view.
+	Aligned         uint64
+	FieldAlignments []FieldAlignment
+	// IndirectArgument is compiler-observed MSVC i386 argument lowering for an
+	// aligned record. Generated bridges reconcile this with a MinGW host.
+	IndirectArgument bool
+	// IndirectResult records an MSVC i386 hidden result pointer requiring a
+	// compiled C adapter for GCC fastcall interoperability.
+	IndirectResult bool
 	// Bitfields retains the width and native byte mask of each named bitfield.
 	// Layout.Offsets stores its first byte. Description remains logical fields.
 	Bitfields []Bitfield
@@ -96,6 +107,7 @@ func (h *Header) LookupRecord(name string) (Record, error) {
 				record.FunctionPointers = cloneFunctionPointers(record.FunctionPointers)
 				record.Bitfields = cloneBitfields(record.Bitfields)
 				record.Padding = append([]BitfieldPadding(nil), record.Padding...)
+				record.FieldAlignments = append([]FieldAlignment(nil), record.FieldAlignments...)
 				return record, nil
 			}
 		}
@@ -147,6 +159,12 @@ func (h *Header) validateDescriptions() error {
 		}
 		if err := validateBitfields(record, false); err != nil {
 			return err
+		}
+		if err := validateAlignments(record, false); err != nil {
+			return err
+		}
+		if (record.IndirectArgument || record.IndirectResult) && (h.Target.OS != "windows" || h.Target.Arch != "386" || !strings.Contains(h.Target.Triple, "msvc")) {
+			return fmt.Errorf("clang: compiler-observed indirect records require an MSVC i386 target")
 		}
 		for _, pointer := range record.FunctionPointers {
 			if pointer.Position < 0 {
@@ -230,6 +248,9 @@ func validRecordLayout(record Record) error {
 	if err := validateBitfields(record, true); err != nil {
 		return err
 	}
+	if err := validateAlignments(record, true); err != nil {
+		return err
+	}
 	l := record.Layout
 	if l.Size == 0 || l.Size > 65536 || l.Alignment == 0 || l.Alignment > l.Size || l.Alignment&(l.Alignment-1) != 0 || l.Size%l.Alignment != 0 || len(l.Offsets) != len(record.Description.Fields) {
 		return fmt.Errorf("clang: invalid compiler layout for %s", record.Name)
@@ -295,7 +316,7 @@ func (h *Header) validateHostRecords(signature abi.Signature) error {
 					return err
 				}
 				if record.requiresCAdapter() {
-					return fmt.Errorf("clang: packed/bitfield record %s requires a compiled C adapter", record.Name)
+					return fmt.Errorf("clang: record %s requires a compiled C adapter", record.Name)
 				}
 				if !found {
 					var err error

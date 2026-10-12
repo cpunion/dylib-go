@@ -11,8 +11,8 @@ import (
 
 // CgoSource emits typed C bindings using fixed cgo bridges, without libffi.
 // Go and llgo can compile the generated source. Scalars, opaque native pointers,
-// ordinary/explicitly packed records, named bitfields and function-pointer
-// addresses are supported. Packed/bitfield values cross the Go boundary as
+// ordinary/explicitly packed or aligned records, bitfields and function-pointer
+// addresses are supported. Attributed values cross the Go boundary as
 // ordinary transport records; C constructs and calls the native type. WithTail
 // specifies a concrete variadic call shape; C performs default promotions.
 // Windows 386 also supports fixed stdcall/fastcall prototypes. Struct pointees
@@ -41,6 +41,7 @@ func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
 		if err := mapper.writeCRecords(&preamble); err != nil {
 			return nil, err
 		}
+		mapper.writeArgumentTypes(&preamble)
 	}
 	seen := make(map[string]bool)
 	needsUnsafe := false
@@ -145,7 +146,7 @@ func (h *Header) cgoPrototype(s abi.Signature, mapper *cgoTypes) (string, string
 	}
 	var parameters []string
 	for i := 0; i < count; i++ {
-		kind, err := mapper.cType(s.ArgumentType(i))
+		kind, err := mapper.cParameterType(s.ArgumentType(i))
 		if err != nil {
 			return "", "", err
 		}
@@ -177,7 +178,7 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 		}
 		boundaryC[pointer.Position] = kind
 	}
-	var prototype, bridge, callArgs, goParams, goArgs, conversions []string
+	var prototype, bridge, callArgs, goParams, goArgs, conversions, nativeLocals []string
 	bridge = append(bridge, "uintptr_t address")
 	goArgs = append(goArgs, "C.uintptr_t(address)")
 	count := len(s.Args)
@@ -215,6 +216,12 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 			kind = callback
 			argument = "(" + callback + ")" + argument
 		}
+		if record, ok := mapper.indirectArgument(s.ArgumentType(i)); ok && i < count {
+			local := fmt.Sprintf("native%d", i)
+			nativeLocals = append(nativeLocals, fmt.Sprintf("%s %s=%s;\n", kind, local, argument))
+			kind, _ = mapper.cParameterType(s.ArgumentType(i))
+			argument = mapper.cRecordName(record) + "_arg(" + local + ")"
+		}
 		callArgs = append(callArgs, argument)
 		if i < count {
 			prototype = append(prototype, kind)
@@ -229,7 +236,21 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 	if callback, ok := boundaryC[-1]; ok {
 		prototypeResult = callback
 	}
-	fmt.Fprintf(c, "typedef %s (%s*%s_function)(%s);\nstatic %s %s(%s) {\n", prototypeResult, attribute, helper, strings.Join(prototype, ","), mapper.transport(s.ReturnType()), helper, strings.Join(bridge, ","))
+	mapper.writeNativePrototype(c, s, helper+"_function", prototypeResult, attribute, prototype)
+	fmt.Fprintf(c, "static %s %s(%s) {\n", mapper.transport(s.ReturnType()), helper, strings.Join(bridge, ","))
+	fmt.Fprint(c, strings.Join(nativeLocals, ""))
+	if i, ok := mapper.fastResult(s); ok {
+		name := mapper.cRecordName(i)
+		var arguments []string
+		for _, position := range mapper.fastResultOrder(s) {
+			argument := fmt.Sprintf("(%s_result_pointer){&nativeResult}", name)
+			if position >= 0 {
+				argument = callArgs[position]
+			}
+			arguments = append(arguments, argument)
+		}
+		fmt.Fprintf(c, "#if %s\n%s nativeResult={0};\n((%s_function)address)(%s);\nreturn %s(nativeResult);\n#else\n", gccFastResult, name, helper, strings.Join(arguments, ","), mapper.cConversion(i, false))
+	}
 	if s.Result != abi.Void {
 		fmt.Fprint(c, "return ")
 		if s.Result == abi.Pointer {
@@ -243,7 +264,11 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 			nativeCall = mapper.cConversion(index, false) + "(" + nativeCall + ")"
 		}
 	}
-	fmt.Fprintf(c, "%s;\n}\n", nativeCall)
+	fmt.Fprintf(c, "%s;\n", nativeCall)
+	if _, ok := mapper.fastResult(s); ok {
+		fmt.Fprint(c, "#endif\n")
+	}
+	fmt.Fprint(c, "}\n")
 	params := strings.Join(goParams, ",")
 	call := fmt.Sprintf("C.%s(%s)", helper, strings.Join(goArgs, ","))
 	convert := strings.Join(conversions, "")

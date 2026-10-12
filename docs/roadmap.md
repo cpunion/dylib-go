@@ -15,7 +15,7 @@ The CLI now accepts Go-style signature declarations and typed invocations throug
 | 386 and additional ISAs | 386 executes C cdecl on Linux/Windows with Go; Windows 386 stdcall/fastcall are implemented; other conventions and llgo qualification remain. Additional ISAs need linker/ABI backends and execution tests |
 | BSD and Apple mobile hosts | Native OS backend, ABI/runtime integration, platform policy compatibility, and device tests |
 | Additional containers | Nonstandard import tables and automatic LTO archive member selection |
-| Full dynamic C/C++ interfaces | Unions, additional packing/alignment forms, callback conventions/aggregates, and C++ adapters; explicit packed structs and bitfields use compiled C bridges |
+| Full dynamic C/C++ interfaces | Unions, remaining packing/alignment forms, callback conventions/aggregates, and C++ adapters; explicit packed/aligned structs and bitfields use compiled C bridges |
 | Swift, ObjC, and other language ABIs | Dedicated metadata, ownership, calling-convention, initialization, and runtime adapters |
 | Foreign CPU or OS execution | An appropriate emulator/system process plus RPC; native relocation cannot supply OS services |
 | Wasm, GPU, eBPF | Separate executors, drivers, or kernel loaders, with independent interfaces and tests |
@@ -71,7 +71,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Explicit packed record values through compiler-validated C bridges for Go/llgo, ordinary transport records, nested arrays, native pointers, factories and variadic calls without libffi.
 - [x] Named integral/Boolean bitfields through compiler byte-mask probes and validated Go/llgo C bridges, including packed combinations, nested arrays, native factories and variadic calls.
 - [x] Unnamed/zero-width bitfields with compiler-qualified declaration positions, leading/trailing padding, packed combinations, nested arrays, floating fields and native pointer/factory/variadic calls.
-- [ ] Unions and additional packing/alignment layouts through validated compiler adapters where libffi cannot represent the ABI.
+- [x] Explicit numeric record/member alignment through validated C bridges, including packed/bitfield combinations, nested arrays, floating aggregates, native factories and variadic calls.
+- [ ] Unions and remaining packing/alignment forms through validated compiler adapters where libffi cannot represent the ABI.
 - [x] Dynamic argument counts for scalar/aggregate calls, variadic shapes, and callbacks; reproducible call/allocation benchmarks.
 - [x] Session-owned logical-signature CIF reuse, aggregate layout deduplication, and lazy typed pointee layout caches with rollback.
 - [x] Indexed signature lookup and canonical omitted/explicit scalar metadata, preserving logical type distinctions.
