@@ -37,6 +37,7 @@ Mixed mixed(Mixed); Tiny tiny(Tiny); Aligned aligned(Aligned); Units units(Units
 	compiler := compilerTool(t)
 	for _, target := range targets {
 		t.Run(target.triple, func(t *testing.T) {
+			t.Parallel()
 			names := []string{"mixed", "tiny", "aligned", "units", "later", "overaligned", "gaps", "boundaries", "leading", "trailing", "aligned_gaps", "type_changes", "padding_only", "shared_padding", "packed_zero", "ignored_zero", "global_padding"}
 			h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: target.triple, Functions: names})
 			if err != nil {

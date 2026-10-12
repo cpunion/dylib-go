@@ -43,6 +43,7 @@ func testPackedBitfieldBridgeMSVCAndMinGW(t *testing.T, source string, functions
 			continue
 		}
 		t.Run(target.triple, func(t *testing.T) {
+			t.Parallel()
 			h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: target.triple, Functions: functions})
 			if err != nil {
 				t.Fatal(err)
@@ -106,6 +107,7 @@ typedef struct { Bits items[2]; } Outer;
 Bits echo(Bits); Outer nest(Outer); Bits *pointer(Bits *);`)
 	for _, target := range targets {
 		t.Run(target.triple, func(t *testing.T) {
+			t.Parallel()
 			h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Target: target.triple, Functions: []string{"echo", "nest", "pointer"}})
 			if err != nil {
 				t.Fatal(err)
