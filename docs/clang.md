@@ -213,9 +213,13 @@ The generated C bridge groups each affected allocation unit in an anonymous
 record with a scoped packing pragma and restores any explicit unit alignment.
 Neighboring ordinary fields retain their natural alignment. Size, alignment,
 ordinary offsets, and every bit mask must match the producer before binding.
-On Windows, member-packed bitfields in otherwise unpacked records currently
-require no unnamed/zero-width declarations; that combination is rejected by
-`CgoSource`. Record-wide packed padding remains supported.
+Unnamed fields remain in declaration order inside their allocation units.
+A zero-width boundary immediately after a wrapped unit uses a zero-length C
+array on MinGW to retain natural alignment without allocating bytes; a static
+assert checks its offset against the producer. Leading and consecutive zero-width
+fields keep their original semantics. These combinations are supported in both
+otherwise unpacked and record-wide packed records. Attributes on unnamed
+bitfields remain unqualified.
 
 `Record.Packed` preserves Clang's explicit `PackedAttr`. `Record.Description`
 remains a logical field model, not a descriptor of packed native memory. Generated

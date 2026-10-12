@@ -28,10 +28,12 @@ typedef struct { signed long long value:40; unsigned long long all:64; } SignedW
 SignedWide echo_signed_wide(SignedWide);
 typedef struct {
     unsigned :3;
-    unsigned low:5;
+    unsigned low:5 __attribute__((packed));
     unsigned :0;
-    signed high:7;
+    signed high:7 __attribute__((packed,aligned(2)));
     unsigned :4;
+    unsigned long long :0;
+    unsigned :0;
     _Bool enabled:1;
     unsigned :0;
     unsigned value;
@@ -64,3 +66,5 @@ typedef struct __attribute__((packed)) { unsigned :3; double first; unsigned :0;
 FloatingGap echo_floating_gap(FloatingGap);
 typedef struct { unsigned low:3 __attribute__((packed)); signed high:5 __attribute__((packed)); } MemberTiny;
 MemberTiny echo_member_tiny(MemberTiny);
+typedef struct { unsigned code:3 __attribute__((packed)); unsigned :4; unsigned long long :0; unsigned :0; } MemberTrailing;
+MemberTrailing echo_member_trailing(MemberTrailing);
