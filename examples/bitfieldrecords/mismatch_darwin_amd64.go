@@ -8,10 +8,10 @@ package bitfieldrecords
 #include <stdint.h>
 #include <stddef.h>
 typedef struct {
-uint32_t f0:3;
+uint32_t f0:3 __attribute__((packed));
 int32_t f1:5;
 _Bool f2:1;
-uint64_t f3:40;
+uint64_t f3:40 __attribute__((packed)) __attribute__((aligned(16)));
 double f4;
 void * f5;
 } dylib_go_42616442696e64696e6773_record0;
@@ -95,7 +95,7 @@ var _BadBindingsDeclarations = clang.Header{
 		{Name: "echo_bits", Symbol: "echo_bits", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "delta", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "delta", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
 	},
 	Records: []clang.Record{
-		{Name: "Bits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "delta", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 24, Alignment: 8, Offsets: []uint64{0, 0, 1, 1, 8, 16}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 1, Mask: []byte{1}}, {Position: 3, Width: 40, Mask: []byte{252, 255, 255, 255, 255, 3}}}},
+		{Name: "Bits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "delta", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 48, Alignment: 16, Offsets: []uint64{0, 0, 1, 16, 24, 32}}, PackedFields: []int{0, 3}, FieldAlignments: []clang.FieldAlignment{{Position: 3, Aligned: 16}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 1, Mask: []byte{1}}, {Position: 3, Width: 40, Mask: []byte{254, 255, 255, 255, 255, 1}}}},
 	},
 }
 
@@ -145,7 +145,7 @@ func NewBadBindings(session *dylib.Session) (*BadBindings, error) {
 		return nil, err
 	}
 	b := &BadBindings{}
-	if uint64(C.dylib_go_42616442696e64696e6773_record0_layout(0)) != 24 || uint64(C.dylib_go_42616442696e64696e6773_record0_layout(1)) != 8 || uint64(C.dylib_go_42616442696e64696e6773_record0_layout(2)) != 0 || uint64(C.dylib_go_42616442696e64696e6773_record0_layout(3)) != 0 || uint64(C.dylib_go_42616442696e64696e6773_record0_layout(4)) != 1 || uint64(C.dylib_go_42616442696e64696e6773_record0_layout(5)) != 1 || uint64(C.dylib_go_42616442696e64696e6773_record0_layout(6)) != 8 || uint64(C.dylib_go_42616442696e64696e6773_record0_layout(7)) != 16 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(0, 0)) != 7 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(1, 0)) != 248 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(2, 1)) != 1 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(3, 1)) != 252 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(3, 2)) != 255 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(3, 3)) != 255 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(3, 4)) != 255 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(3, 5)) != 255 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(3, 6)) != 3 {
+	if uint64(C.dylib_go_42616442696e64696e6773_record0_layout(0)) != 48 || uint64(C.dylib_go_42616442696e64696e6773_record0_layout(1)) != 16 || uint64(C.dylib_go_42616442696e64696e6773_record0_layout(2)) != 0 || uint64(C.dylib_go_42616442696e64696e6773_record0_layout(3)) != 0 || uint64(C.dylib_go_42616442696e64696e6773_record0_layout(4)) != 1 || uint64(C.dylib_go_42616442696e64696e6773_record0_layout(5)) != 16 || uint64(C.dylib_go_42616442696e64696e6773_record0_layout(6)) != 24 || uint64(C.dylib_go_42616442696e64696e6773_record0_layout(7)) != 32 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(0, 0)) != 7 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(1, 0)) != 248 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(2, 1)) != 1 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(3, 16)) != 254 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(3, 17)) != 255 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(3, 18)) != 255 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(3, 19)) != 255 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(3, 20)) != 255 || uint64(C.dylib_go_42616442696e64696e6773_record0_mask(3, 21)) != 1 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for Bits")
 	}
 	symbol0, err := session.Resolve("echo_bits")

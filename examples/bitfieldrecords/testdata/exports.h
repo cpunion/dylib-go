@@ -1,8 +1,8 @@
 typedef struct {
-    unsigned flags:3;
+    unsigned flags:3 __attribute__((packed));
     signed delta:5;
     _Bool active:1;
-    unsigned long long wide:40;
+    unsigned long long wide:40 __attribute__((packed,aligned(16)));
     double value;
     void *context;
 } Bits;
@@ -62,3 +62,5 @@ GapBits apply_gaps(GapFn, GapBits);
 GapBits gaps_variable(GapBits, ...);
 typedef struct __attribute__((packed)) { unsigned :3; double first; unsigned :0; double second; unsigned :5; } FloatingGap;
 FloatingGap echo_floating_gap(FloatingGap);
+typedef struct { unsigned low:3 __attribute__((packed)); signed high:5 __attribute__((packed)); } MemberTiny;
+MemberTiny echo_member_tiny(MemberTiny);

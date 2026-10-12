@@ -38,7 +38,7 @@ func TestBitfieldCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_bits", "echo_packed_bits", "echo_envelope", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "echo_signed_wide", "echo_gaps", "echo_prefix", "echo_packed_gaps", "echo_gap_envelope", "gaps_pointer", "mutate_gaps", "sum_gaps", "gaps_factory", "apply_gaps", "gaps_variable", "echo_floating_gap"}
+	names := []string{"echo_bits", "echo_packed_bits", "echo_envelope", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "echo_signed_wide", "echo_gaps", "echo_prefix", "echo_packed_gaps", "echo_gap_envelope", "gaps_pointer", "mutate_gaps", "sum_gaps", "gaps_factory", "apply_gaps", "gaps_variable", "echo_floating_gap", "echo_member_tiny"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -165,6 +165,10 @@ func checkCalls(t *testing.T, path string) {
 		if err != nil || !reflect.DeepEqual(got, want) {
 			t.Fatalf("%s: %+v, %v; want %+v", name, got, err, want)
 		}
+	}
+	for _, high := range []int32{-16, -1, 0, 14} {
+		got, err := b.Echo_member_tiny(BindingsRecord9{Low: 7, High: high})
+		check("small member-packed signed/unsigned fields", got, BindingsRecord9{High: high + 1}, err)
 	}
 	owner, err := s.Resolve("echo_bits")
 	if err != nil {

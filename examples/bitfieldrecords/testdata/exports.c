@@ -89,3 +89,8 @@ FloatingGap echo_floating_gap(FloatingGap p) {
     p.second += 2.5;
     return p;
 }
+MemberTiny echo_member_tiny(MemberTiny p) {
+    p.low ^= 7;
+    p.high += 1;
+    return p;
+}
