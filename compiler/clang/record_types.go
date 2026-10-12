@@ -10,6 +10,7 @@ import (
 
 type typeResolver struct {
 	aliases         map[string]string
+	enums           map[string]*enumType
 	aliasAttributes map[string]string
 	sizes           map[string]int
 	nodes           map[string]astNode
@@ -24,6 +25,7 @@ type typeResolver struct {
 
 func newTypeResolver(root astNode, aliases map[string]string, sizes map[string]int) *typeResolver {
 	r := &typeResolver{aliases: aliases, aliasAttributes: make(map[string]string), sizes: sizes, nodes: make(map[string]astNode), names: make(map[string]string), spellings: make(map[string]string), resolved: make(map[string]abi.TypeDesc), building: make(map[string]bool)}
+	r.enums = indexEnums(root)
 	var index func(astNode)
 	index = func(node astNode) {
 		if node.Kind != "RecordDecl" {
@@ -114,6 +116,9 @@ func (r *typeResolver) describe(spelling string, typedPointers bool, depth int) 
 	}
 	if id := r.names[spelling]; id != "" {
 		return r.record(id, depth)
+	}
+	if e := r.enums[spelling]; e != nil {
+		return r.describeEnum(e)
 	}
 	if alias, ok := r.aliases[spelling]; ok {
 		return r.describe(alias, typedPointers, depth+1)

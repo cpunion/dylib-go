@@ -22,6 +22,20 @@ import (
 )
 
 func TestGeneratedDirectDeclarations(t *testing.T) {
+	for _, enumTypes := range []bool{false, true} {
+		name := "integer"
+		if enumTypes {
+			name = "enum"
+		}
+		t.Run(name, func(t *testing.T) { testGeneratedDirectDeclarations(t, enumTypes) })
+	}
+}
+
+func testGeneratedDirectDeclarations(t *testing.T, enumTypes bool) {
+	var enumFlags []string
+	if enumTypes {
+		enumFlags = []string{"-DDYLIB_ENUM_TYPES"}
+	}
 	compiler := os.Getenv("DYLIB_LLVM_CLANG")
 	if compiler == "" {
 		compiler = os.Getenv("CLANG")
@@ -39,7 +53,7 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 	names = append(names, "variable", "promotions", "empty_variable", "mixed_variable", "void_variable", "data_pointer", "many_variable", "record_variable", "variadic_factory", "forward_variadic")
 	names = append(names, "narrow", "narrow_factory", "apply_narrow", "narrow_stack", "narrow_variable", "narrow_variadic_factory", "forward_narrow_variadic")
 	names = append(names, "maker_factory", "meta_factory", "consumer_factory", "subtract_factory", "apply_maker", "apply_meta", "apply_consumer", "adder_slot", "replace_adder")
-	header, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
+	header, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Flags: enumFlags, Functions: names})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,6 +89,7 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 	}
 	object := filepath.Join(t.TempDir(), "exports.o")
 	flags := []string{"--target=" + header.Target.Triple, "-O0", "-c", "-fno-stack-protector", "testdata/exports.c"}
+	flags = append(flags, enumFlags...)
 	if runtime.GOOS != "windows" {
 		flags = append(flags, "-fPIC")
 	}
@@ -220,7 +235,7 @@ func TestGeneratedDirectDeclarations(t *testing.T) {
 	localPair, err := b.Apply_small(localRecord, small)
 	check("local Go record entry", localPair, BindingsRecord3{A: 21, B: 21}, err)
 	// A separately generated packed binding must fail before symbol resolution.
-	packed, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: header.Target.Triple, Flags: []string{"-fpack-struct=1"}, Functions: []string{"echo_pair"}})
+	packed, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: header.Target.Triple, Flags: append(append([]string(nil), enumFlags...), "-fpack-struct=1"), Functions: []string{"echo_pair"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -334,6 +349,20 @@ func checkDirectVariadicCalls(t *testing.T, session *dylib.Session, b *Bindings)
 }
 
 func TestDirectCallsAcrossContainersAndOptimizations(t *testing.T) {
+	for _, enumTypes := range []bool{false, true} {
+		name := "integer"
+		if enumTypes {
+			name = "enum"
+		}
+		t.Run(name, func(t *testing.T) { testDirectCallsAcrossContainersAndOptimizations(t, enumTypes) })
+	}
+}
+
+func testDirectCallsAcrossContainersAndOptimizations(t *testing.T, enumTypes bool) {
+	var enumFlags []string
+	if enumTypes {
+		enumFlags = []string{"-DDYLIB_ENUM_TYPES"}
+	}
 	compiler := os.Getenv("DYLIB_LLVM_CLANG")
 	if compiler == "" {
 		compiler = os.Getenv("CLANG")
@@ -364,6 +393,7 @@ func TestDirectCallsAcrossContainersAndOptimizations(t *testing.T) {
 			if runtime.GOOS != "windows" {
 				flags = append(flags, "-fPIC")
 			}
+			flags = append(flags, enumFlags...)
 			compile(compiler, flags...)
 			compile("llvm-ar", "rcs", archive, object)
 			library, linkFlags := filepath.Join(dir, "exports.so"), []string{"-shared", "-fPIC"}
@@ -373,7 +403,7 @@ func TestDirectCallsAcrossContainersAndOptimizations(t *testing.T) {
 			case "windows":
 				library, linkFlags = filepath.Join(dir, "exports.dll"), []string{"-shared", "-Wl,--export-all-symbols"}
 			}
-			compile(compiler, append(linkFlags, optimization, "testdata/exports.c", "-o", library)...)
+			compile(compiler, append(append(linkFlags, enumFlags...), optimization, "testdata/exports.c", "-o", library)...)
 			for _, input := range []struct{ name, path string }{{"object", object}, {"archive", archive}, {"library", library}} {
 				t.Run(input.name, func(t *testing.T) {
 					session, err := load(input.path)
