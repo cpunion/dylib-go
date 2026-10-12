@@ -198,15 +198,24 @@ unsupported; record fields use opaque addresses.
 ### Explicitly packed C records
 
 `Record.PackedFields` preserves the logical positions of explicitly packed
-non-bitfield members. It reduces those members' alignment while leaving the
+named members, including bitfields. It reduces those members' alignment while leaving the
 other members' natural alignment intact. C bridges reproduce field attributes,
 including `packed` combined with numeric `aligned(N)`, and validate the resulting
 size, alignment and every offset. Public Go fields remain ordinary values.
 Nested arrays and pointer/factory/variadic calls use the same C transport path.
 Dynamic and direct llgo adapters reject these attributed records. Use native
 producer storage for their pointers; `abi.NewNativeValue` describes logical
-storage and does not reproduce member packing. Packing attributes on individual
-bitfields and typedefs remain unqualified.
+storage and does not reproduce member packing. Attributes on unnamed bitfields
+and packing through typedefs remain unqualified.
+
+For member-packed MS-layout bitfields, MinGW ignores the member attribute.
+The generated C bridge groups each affected allocation unit in an anonymous
+record with a scoped packing pragma and restores any explicit unit alignment.
+Neighboring ordinary fields retain their natural alignment. Size, alignment,
+ordinary offsets, and every bit mask must match the producer before binding.
+On Windows, member-packed bitfields in otherwise unpacked records currently
+require no unnamed/zero-width declarations; that combination is rejected by
+`CgoSource`. Record-wide packed padding remains supported.
 
 `Record.Packed` preserves Clang's explicit `PackedAttr`. `Record.Description`
 remains a logical field model, not a descriptor of packed native memory. Generated

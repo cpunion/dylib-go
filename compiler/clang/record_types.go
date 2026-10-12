@@ -228,7 +228,7 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		fieldAligned := uint64(0)
 		fieldPacked := false
 		for _, attr := range child.Inner {
-			if attr.Kind == "PackedAttr" && !child.IsBitfield {
+			if attr.Kind == "PackedAttr" && !unnamed {
 				fieldPacked = true
 				continue
 			}

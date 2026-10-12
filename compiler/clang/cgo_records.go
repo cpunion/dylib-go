@@ -13,6 +13,7 @@ import (
 type cgoTypes struct {
 	*directTypes
 	cPrefix    string
+	targetOS   string
 	transports map[int]bool
 }
 
@@ -118,6 +119,14 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 		}
 		name := t.cRecordName(i)
+		var packedUnits []packedBitfieldUnit
+		if t.targetOS == "windows" {
+			var err error
+			packedUnits, err = packedBitfieldUnits(record)
+			if err != nil {
+				return err
+			}
+		}
 		packedBridge := record.Packed && (len(record.Padding) != 0 || record.hasBitfields() && len(record.FieldAlignments) != 0)
 		if packedBridge {
 			fmt.Fprint(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n")
@@ -152,6 +161,11 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 				break
 			}
 			field := record.Description.Fields[j]
+			for _, unit := range packedUnits {
+				if unit.first == j {
+					beginPackedBitfieldUnit(output)
+				}
+			}
 			declaration, err := t.cField(field.Type, fmt.Sprintf("f%d", j))
 			if err != nil {
 				return fmt.Errorf("clang: %s.%s: %w", record.Name, field.Name, err)
@@ -161,6 +175,11 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 			declaration += record.cFieldAttributes(j)
 			fmt.Fprintf(output, "%s;\n", declaration)
+			for _, unit := range packedUnits {
+				if unit.last == j {
+					endPackedBitfieldUnit(output, record.fieldAlignment(unit.first))
+				}
+			}
 		}
 		fmt.Fprintf(output, "} %s;\n", name)
 		if packedBits {

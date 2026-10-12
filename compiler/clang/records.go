@@ -21,8 +21,8 @@ type Record struct {
 	// Packed requests the C compiler's packed attribute. Description remains a
 	// logical field model; only compiled C adapters may pass this record by value.
 	Packed bool
-	// PackedFields indexes explicitly packed non-bitfield members. Public
-	// values remain ordinary Go fields and require a compiled C adapter.
+	// PackedFields indexes explicitly packed named members, including bitfields.
+	// Public values remain ordinary Go fields and require a compiled C adapter.
 	PackedFields []int
 	// Aligned preserves a compiler-evaluated record alignment request in bytes;
 	// zero is absent. Omitted GNU arguments use the target maximum alignment.

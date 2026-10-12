@@ -61,11 +61,11 @@ func TestPackedMemberValidation(t *testing.T) {
 		}
 	}
 	r.PackedFields, r.Bitfields = []int{0}, []Bitfield{{Position: 0, Width: 3}}
-	if err := validatePackedFields(r); err == nil {
-		t.Fatal("packed bitfield accepted as an ordinary member")
+	if err := validatePackedFields(r); err != nil {
+		t.Fatal("named packed bitfield rejected:", err)
 	}
-	_, err := Parse(context.Background(), headerFile(t, `typedef struct { unsigned n:3 __attribute__((packed)); } S; S echo(S);`), Options{Compiler: compilerTool(t), Functions: []string{"echo"}})
+	_, err := Parse(context.Background(), headerFile(t, `typedef struct { unsigned :3 __attribute__((packed)); unsigned n; } S; S echo(S);`), Options{Compiler: compilerTool(t), Functions: []string{"echo"}})
 	if err == nil || !strings.Contains(err.Error(), "unsupported field attribute") {
-		t.Fatal("unqualified bitfield packing accepted:", err)
+		t.Fatal("unqualified unnamed bitfield packing accepted:", err)
 	}
 }
