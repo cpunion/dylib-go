@@ -52,7 +52,7 @@ func (m recordMember) packed(r Record) bool {
 	return r.fieldPacked(m.field)
 }
 
-type packedBitfieldUnit struct {
+type bitfieldUnit struct {
 	first, last int // Indexes in the complete declaration stream.
 }
 
@@ -61,11 +61,21 @@ type packedBitfieldUnit struct {
 // without changing the natural alignment of neighboring ordinary members.
 // MS layout groups successive equal-sized base types while the widths fit;
 // zero-width fields and ordinary members always end an allocation unit.
-func packedBitfieldUnits(r Record, members []recordMember) []packedBitfieldUnit {
+func packedBitfieldUnits(r Record, members []recordMember) []bitfieldUnit {
 	if r.Packed {
 		return nil // Record-wide packing already has its own bridge.
 	}
-	var units []packedBitfieldUnit
+	var packed []bitfieldUnit
+	for _, unit := range bitfieldUnits(r, members) {
+		if members[unit.first].packed(r) {
+			packed = append(packed, unit)
+		}
+	}
+	return packed
+}
+
+func bitfieldUnits(r Record, members []recordMember) []bitfieldUnit {
+	var units []bitfieldUnit
 	for first := 0; first < len(members); {
 		capacity, used := members[first].bitfield(r)
 		if used == 0 {
@@ -81,12 +91,26 @@ func packedBitfieldUnits(r Record, members []recordMember) []packedBitfieldUnit 
 			used += width
 			last = next
 		}
-		if members[first].packed(r) {
-			units = append(units, packedBitfieldUnit{first, last})
-		}
+		units = append(units, bitfieldUnit{first, last})
 		first = last + 1
 	}
 	return units
+}
+
+// In MS layout, nonzero fields honor alignment only at unit starts. A zero-width
+// declaration only honors it immediately after a nonzero bitfield.
+func bitfieldUnitStarts(r Record, members []recordMember) map[int]bool {
+	starts := make(map[int]bool)
+	for _, unit := range bitfieldUnits(r, members) {
+		starts[unit.first] = true
+	}
+	for i, member := range members {
+		if member.padding >= 0 && r.Padding[member.padding].Width == 0 && i > 0 {
+			_, width := members[i-1].bitfield(r)
+			starts[i] = width != 0
+		}
+	}
+	return starts
 }
 
 // A zero-width field after a wrapped unit now follows an ordinary anonymous

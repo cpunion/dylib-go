@@ -232,7 +232,7 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 				fieldPacked = true
 				continue
 			}
-			if attr.Kind == "AlignedAttr" && !unnamed {
+			if attr.Kind == "AlignedAttr" {
 				value, err := r.memberAlignment(name, child, attr)
 				if err != nil {
 					return abi.TypeDesc{}, fmt.Errorf("%s.%s: %w", name, child.Name, err)
@@ -259,7 +259,7 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 				return abi.TypeDesc{}, fmt.Errorf("unsupported bitfield %s.%s", name, child.Name)
 			}
 			if unnamed {
-				padding = append(padding, BitfieldPadding{Before: len(d.Fields), Type: field.Type, Width: width, Packed: fieldPacked})
+				padding = append(padding, BitfieldPadding{Before: len(d.Fields), Type: field.Type, Width: width, Packed: fieldPacked, Aligned: fieldAligned})
 			} else {
 				bitfields = append(bitfields, Bitfield{Position: len(d.Fields), Width: width})
 			}

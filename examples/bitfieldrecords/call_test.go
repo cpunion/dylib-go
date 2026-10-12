@@ -38,7 +38,7 @@ func TestBitfieldCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_bits", "echo_packed_bits", "echo_envelope", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "echo_signed_wide", "echo_gaps", "echo_prefix", "echo_packed_gaps", "echo_gap_envelope", "gaps_pointer", "mutate_gaps", "sum_gaps", "gaps_factory", "apply_gaps", "gaps_variable", "echo_floating_gap", "echo_member_tiny", "echo_member_trailing", "echo_packed_zero"}
+	names := []string{"echo_bits", "echo_packed_bits", "echo_envelope", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "echo_signed_wide", "echo_gaps", "echo_prefix", "echo_packed_gaps", "echo_gap_envelope", "gaps_pointer", "mutate_gaps", "sum_gaps", "gaps_factory", "apply_gaps", "gaps_variable", "echo_floating_gap", "echo_member_tiny", "echo_member_trailing", "echo_packed_zero", "echo_ignored_float_zero", "echo_aligned_unit", "echo_packed_aligned_unit"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -178,6 +178,14 @@ func checkCalls(t *testing.T, path string) {
 		got, err := b.Echo_packed_zero(BindingsRecord11{Marker: -5, Code: code, Tail: 20})
 		check("packed zero-width small record argument/result", got, BindingsRecord11{Marker: -4, Code: code ^ 7, Tail: 22}, err)
 	}
+	for _, code := range []uint32{0, 15, 31} {
+		got, err := b.Echo_aligned_unit(BindingsRecord13{Aligned_marker: -5, Aligned_code: code, Aligned_tail: 20})
+		check("aligned unnamed units and ignored shared alignment", got, BindingsRecord13{Aligned_marker: -4, Aligned_code: code ^ 31, Aligned_tail: 22}, err)
+		packed, err := b.Echo_packed_aligned_unit(BindingsRecord14{Packed_marker: -5, Packed_code: code, Packed_tail: 20})
+		check("record-packed aligned unnamed units", packed, BindingsRecord14{Packed_marker: -4, Packed_code: code ^ 31, Packed_tail: 22}, err)
+	}
+	floating, err := b.Echo_ignored_float_zero(BindingsRecord12{Left: 20, Right: 18})
+	check("floating record with ignored MSVC zero-width alignment", floating, BindingsRecord12{Left: 21.5, Right: 20.5}, err)
 	owner, err := s.Resolve("echo_bits")
 	if err != nil {
 		t.Fatal(err)

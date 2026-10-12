@@ -45,7 +45,7 @@ Run
 | Explicit `__attribute__((packed))` structs | `CgoSource` for Go/llgo; logical fields are transported through ordinary records and converted inside C; dynamic and direct llgo bindings reject them |
 | Explicit `__attribute__((packed))` non-bitfield members | `CgoSource` for Go/llgo; retain natural alignment of other members and combine packing with explicit member alignment; includes fixed arrays, nested records and native addresses |
 | Named integral/Boolean bitfields, including explicit packed records | `CgoSource` for Go/llgo; compiler byte masks and layout are validated before binding; public fields remain ordinary scalars |
-| Unnamed/zero-width bitfields | `CgoSource` preserves storage boundaries without adding public Go value fields; leading/trailing padding and packed combinations are supported |
+| Unnamed/zero-width bitfields | `CgoSource` preserves storage boundaries without adding public Go value fields; leading/trailing padding, explicit packing/alignment and packed combinations are supported |
 | Compiler-evaluated record/member alignment | `CgoSource` preserves GNU `aligned(N)` and omitted `aligned`, field `_Alignas(N)`/`_Alignas(type)` and MS `__declspec(align(N))`; packed/bitfield combinations and nested arrays are supported |
 | Fixed array members | Scalars, pointers, records and nested arrays; positive evaluated lengths |
 | Function parameters/results pointing to a complete ordinary struct | Typed single-struct pointees; `abi.AddressOf` supplies a temporary copy, with mutation/return identity checks |
@@ -205,8 +205,7 @@ size, alignment and every offset. Public Go fields remain ordinary values.
 Nested arrays and pointer/factory/variadic calls use the same C transport path.
 Dynamic and direct llgo adapters reject these attributed records. Use native
 producer storage for their pointers; `abi.NewNativeValue` describes logical
-storage and does not reproduce member packing. Alignment attributes on unnamed bitfields
-and packing through typedefs remain unqualified.
+storage and does not reproduce member packing. Packing through typedefs remains unqualified.
 
 For member-packed MS-layout bitfields, MinGW ignores the member attribute.
 The generated C bridge groups each affected allocation unit in an anonymous
@@ -222,7 +221,7 @@ otherwise unpacked and record-wide packed records. `BitfieldPadding.Packed`
 preserves explicit packing on unnamed declarations, including zero-width fields.
 The bridge also wraps allocation units whose first member is unnamed and packed;
 packed zero-width boundaries retain byte alignment through the zero-length array.
-Alignment attributes on unnamed bitfields remain unqualified.
+Explicit unnamed alignment is preserved as described below.
 
 `Record.Packed` preserves Clang's explicit `PackedAttr`. `Record.Description`
 remains a logical field model, not a descriptor of packed native memory. Generated
@@ -307,11 +306,17 @@ stronger alignment. Generated pointer methods borrow native addresses; they do
 not reinterpret Go structs. Function pointers with these values also require a
 matching compiled adapter; dynamic callbacks do not supply it.
 
-Alignment on typedefs and unnamed bitfields remains unsupported. Attributes
-whose requested alignment cannot be confirmed in the native layout are rejected;
-this includes MS bitfields that share an allocation unit while the compiler
-ignores a member alignment request. Other packing policies
-are not inferred. The [aligned example](../examples/alignedrecords/call.go)
+`BitfieldPadding.Aligned` retains numeric or omitted GNU alignment requests on
+unnamed and zero-width bitfields. MSVC can ignore these requests inside a shared
+allocation unit or on a leading/consecutive zero-width declaration. The saved
+request is therefore separate from the effective native layout. For an MSVC
+producer, MinGW bridges suppress ignored requests and reproduce effective
+boundaries with aligned allocation units or compiler-confirmed byte gaps.
+MinGW producers retain their original declarations and ABI.
+
+Alignment on typedefs remains unsupported. Named member requests whose alignment
+cannot be confirmed in the native layout are rejected, including ignored MS
+bitfield requests. Other packing policies are not inferred. The [aligned example](../examples/alignedrecords/call.go)
 executes object/archive/library calls at `-O0` and `-O2` on the eight Go and six
 llgo native targets, including large nested arrays, floating aggregates,
 native storage alignment, type-based member requests, omitted GNU arguments,
@@ -325,7 +330,9 @@ stdcall/fastcall exports and native factories with mixed register/stack argument
 native byte mask. `Layout.Offsets` contains the mask's first byte. Signed and
 unsigned integral base types up to 64 bits and `_Bool` are supported.
 `Record.Padding` retains unnamed and zero-width declarations by logical field
-position, base type, width and compiler-confirmed zero-width byte boundary. They are omitted from public Go value fields,
+position, base type, width, explicit packing/alignment and compiler-confirmed
+zero-width byte boundary. Aligned nonzero padding also saves its first byte.
+These declarations are omitted from public Go value fields,
 including leading/trailing padding. A record needs at least one named value
 field, with at most 32 named/padding declarations in total.
 
@@ -334,6 +341,10 @@ for each field with all its bits set, then reads the target ELF, COFF or Mach-O
 object with Go's object parsers. Cross-target parsing does not execute foreign
 code. Generated C declarations restore the field widths and constructors check
 the masks as well as size, alignment and offsets before resolving exports.
+For aligned nonzero padding, a synthetic declaration names just that field and
+emits an all-bits-set constant. Naming it can increase tail alignment, so only
+the original record's byte range is read; size and alignment always come from
+the original declaration. This also qualifies records without named bitfields.
 On Windows, byte-aligned packed bitfields also use a scoped packing pragma:
 MinGW otherwise ignores the record's packed attribute for MS-layout bitfields.
 Producer objects and libraries must use the ABI selected during parsing. Tests
@@ -356,8 +367,9 @@ storage; logical descriptions cannot allocate or reinterpret native bitfields.
 The [bitfield example](../examples/bitfieldrecords/call.go) executes optimized and
 unoptimized objects, archives and libraries with Go and llgo. Tests cover signed
 boundaries, Boolean values, cross-byte 40-bit fields, unnamed/zero-width
-boundaries, leading padding, floating fields, packed combinations,
-nested arrays, native pointers/function pointers and variadic promotions. A
+boundaries, leading padding, numeric/omitted unnamed alignment, ignored MSVC
+requests, floating fields, packed combinations, nested arrays, native
+pointers/function pointers and variadic promotions. A
 binding with a shifted mask verifies rejection even when size, alignment and
 the field's first byte still match.
 

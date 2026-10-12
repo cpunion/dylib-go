@@ -13,7 +13,7 @@ import (
 type cgoTypes struct {
 	*directTypes
 	cPrefix    string
-	targetOS   string
+	msLayout   bool
 	transports map[int]bool
 }
 
@@ -120,11 +120,11 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		}
 		name := t.cRecordName(i)
 		members := recordMembers(record)
-		var packedUnits []packedBitfieldUnit
-		if t.targetOS == "windows" {
+		var packedUnits []bitfieldUnit
+		if t.msLayout {
 			packedUnits = packedBitfieldUnits(record, members)
 		}
-		packedBridge := record.Packed && (len(record.Padding) != 0 || record.hasBitfields() && len(record.FieldAlignments) != 0)
+		packedBridge := t.msLayout && record.Packed && (len(record.Padding) != 0 || record.hasBitfields() && len(record.FieldAlignments) != 0)
 		if packedBridge {
 			fmt.Fprint(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n")
 			if err := t.writePackedPadding(output, i); err != nil {
@@ -136,7 +136,7 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		// Preserve the packed allocation units with a scoped pragma. Explicit
 		// aligned attributes restore record alignment; size/offset/mask checks
 		// remain authoritative.
-		packedBits := record.Packed && record.hasBitfields() && (record.Layout.Alignment == 1 || record.Aligned != 0 || len(record.FieldAlignments) != 0)
+		packedBits := t.msLayout && record.Packed && record.hasBitfields() && (record.Layout.Alignment == 1 || record.Aligned != 0 || len(record.FieldAlignments) != 0)
 		if packedBits {
 			fmt.Fprint(output, "#if defined(_WIN32)\n#pragma pack(push,1)\n#endif\n")
 		}
@@ -144,12 +144,15 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		fmt.Fprint(output, record.cAttributes())
 		fmt.Fprint(output, "{\n")
 		var packedBoundaries []int
+		unitStarts := bitfieldUnitStarts(record, members)
 		for position, member := range members {
 			for _, unit := range packedUnits {
 				if unit.first == position {
 					alignment := uint64(0)
 					if member.field >= 0 {
 						alignment = record.fieldAlignment(member.field)
+					} else {
+						alignment = record.Padding[member.padding].Aligned
 					}
 					beginPackedBitfieldUnit(output, alignment)
 				}
@@ -157,7 +160,7 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			if member.padding >= 0 {
 				p := record.Padding[member.padding]
 				boundary := false
-				if t.targetOS == "windows" && !record.Packed && p.Packed && p.Width == 0 && position > 0 {
+				if t.msLayout && !record.Packed && (p.Packed || p.Aligned != 0) && p.Width == 0 && position > 0 {
 					_, previousWidth := members[position-1].bitfield(record)
 					boundary = previousWidth != 0
 				}
@@ -172,7 +175,16 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 					if err != nil {
 						return err
 					}
-					fmt.Fprintf(output, "%s :%d%s;\n", kind, p.Width, p.cAttributes())
+					if t.msLayout && p.Aligned != 0 && !unitStarts[position] {
+						// MSVC ignores alignment within an existing unit, and on
+						// leading/consecutive zero-width fields. MinGW can still
+						// raise record alignment, so suppress only that request.
+						plain := p
+						plain.Aligned = 0
+						fmt.Fprintf(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n%s :%d%s;\n#else\n%s :%d%s;\n#endif\n", kind, p.Width, plain.cAttributes(), kind, p.Width, p.cAttributes())
+					} else {
+						fmt.Fprintf(output, "%s :%d%s;\n", kind, p.Width, p.cAttributes())
+					}
 				}
 			} else {
 				j := member.field

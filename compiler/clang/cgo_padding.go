@@ -13,10 +13,31 @@ func (t *cgoTypes) writePackedPadding(output *bytes.Buffer, index int) error {
 	r, name := t.records[index], t.cRecordName(index)
 	var body bytes.Buffer
 	fmt.Fprint(output, "#pragma pack(push,1)\n")
+	members := recordMembers(r)
+	starts := bitfieldUnitStarts(r, members)
+	paddingStarts := make(map[int]bool)
+	for position, member := range members {
+		if member.padding >= 0 {
+			paddingStarts[member.padding] = starts[position]
+		}
+	}
 	padding := 0
 	for j := 0; j <= len(r.Description.Fields); j++ {
 		for padding < len(r.Padding) && r.Padding[padding].Before == j {
 			p := r.Padding[padding]
+			if p.Width != 0 && p.Aligned != 0 && paddingStarts[padding] {
+				// MinGW's packing pragma suppresses this request. Reproduce
+				// the original bit position measured from a compiler constant.
+				fmt.Fprint(&body, "unsigned char :0;\n")
+				prefix := fmt.Sprintf("%s_unnamed%d", name, padding)
+				fmt.Fprintf(output, "typedef struct __attribute__((packed)) {\n%s unsigned char marker;\n} %s;\n", body.String(), prefix)
+				end := fmt.Sprintf("offsetof(%s,marker)", prefix)
+				fmt.Fprintf(output, "_Static_assert(%s<=%d && %d-%s<%d,\"incompatible unnamed alignment\");\n", end, p.Offset, p.Offset, end, p.Aligned)
+				for b := uint64(0); b < p.Aligned-1; b++ {
+					fmt.Fprintf(&body, "unsigned char :(%d-%s>%d?8:0);\n", p.Offset, end, b)
+				}
+				fmt.Fprint(&body, "unsigned char :0;\n")
+			}
 			kind := bitfieldBaseType(p.Type)
 			if p.Width == 0 {
 				kind = "unsigned char"
@@ -37,8 +58,12 @@ func (t *cgoTypes) writePackedPadding(output *bytes.Buffer, index int) error {
 					end = fmt.Sprintf("offsetof(%s,marker)", prefix)
 				}
 				fmt.Fprintf(output, "typedef struct __attribute__((packed)) {\n%s%s} %s;\n", body.String(), marker, prefix)
-				fmt.Fprintf(output, "_Static_assert(%s<=%d && %d-%s<=7,\"incompatible zero-width boundary\");\n", end, p.Offset, p.Offset, end)
-				for b := 0; b < 7; b++ {
+				alignment := uint64(8)
+				if p.Aligned > alignment {
+					alignment = p.Aligned
+				}
+				fmt.Fprintf(output, "_Static_assert(%s<=%d && %d-%s<=%d,\"incompatible zero-width boundary\");\n", end, p.Offset, p.Offset, end, alignment-1)
+				for b := uint64(0); b < alignment-1; b++ {
 					fmt.Fprintf(&body, "unsigned char :(%d-%s>%d?8:0);\n", p.Offset, end, b)
 				}
 			}

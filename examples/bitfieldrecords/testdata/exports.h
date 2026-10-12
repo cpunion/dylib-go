@@ -27,9 +27,9 @@ Bits bits_variable(Bits, ...);
 typedef struct { signed long long value:40; unsigned long long all:64; } SignedWide;
 SignedWide echo_signed_wide(SignedWide);
 typedef struct {
-    unsigned :3 __attribute__((packed));
+    unsigned :3 __attribute__((packed,aligned));
     unsigned low:5 __attribute__((packed));
-    unsigned :0;
+    unsigned :0 __attribute__((aligned(16)));
     signed high:7 __attribute__((packed,aligned(2)));
     unsigned :4;
     unsigned long long :0;
@@ -39,11 +39,11 @@ typedef struct {
     unsigned value;
     unsigned :5;
 } GapBits;
-typedef struct { unsigned :7 __attribute__((packed)); unsigned char octet; } PrefixBits;
+typedef struct { unsigned :7 __attribute__((packed,aligned(16))); unsigned char octet; } PrefixBits;
 typedef struct __attribute__((packed)) {
-    unsigned :3 __attribute__((packed));
+    unsigned :3 __attribute__((packed,aligned(16)));
     unsigned low:5;
-    unsigned :0;
+    unsigned :0 __attribute__((aligned(16)));
     signed high:7;
     unsigned :1;
     _Bool enabled:1;
@@ -70,3 +70,10 @@ typedef struct { unsigned code:3 __attribute__((packed)); unsigned :4; unsigned 
 MemberTrailing echo_member_trailing(MemberTrailing);
 typedef struct { signed char marker; unsigned code:3 __attribute__((packed)); unsigned :0 __attribute__((packed)); signed char tail; } PackedZero;
 PackedZero echo_packed_zero(PackedZero);
+
+typedef struct { float left; unsigned :0 __attribute__((aligned(16))); float right; } IgnoredFloatZero;
+IgnoredFloatZero echo_ignored_float_zero(IgnoredFloatZero);
+typedef struct { signed char aligned_marker; unsigned :3 __attribute__((aligned(16))); unsigned aligned_code:5; unsigned :5 __attribute__((aligned(32))); signed char aligned_tail; } AlignedUnit;
+AlignedUnit echo_aligned_unit(AlignedUnit);
+typedef struct __attribute__((packed)) { signed char packed_marker; unsigned :3 __attribute__((aligned(16))); unsigned packed_code:5; unsigned :5 __attribute__((aligned(32))); signed char packed_tail; } PackedAlignedUnit;
+PackedAlignedUnit echo_packed_aligned_unit(PackedAlignedUnit);

@@ -104,3 +104,21 @@ PackedZero echo_packed_zero(PackedZero p) {
     p.tail += 2;
     return p;
 }
+
+IgnoredFloatZero echo_ignored_float_zero(IgnoredFloatZero value) {
+    value.left += 1.5f;
+    value.right += 2.5f;
+    return value;
+}
+AlignedUnit echo_aligned_unit(AlignedUnit value) {
+    value.aligned_marker++;
+    value.aligned_code ^= 31;
+    value.aligned_tail += 2;
+    return value;
+}
+PackedAlignedUnit echo_packed_aligned_unit(PackedAlignedUnit value) {
+    value.packed_marker++;
+    value.packed_code ^= 31;
+    value.packed_tail += 2;
+    return value;
+}

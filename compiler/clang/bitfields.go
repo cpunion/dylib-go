@@ -23,15 +23,23 @@ type BitfieldPadding struct {
 	Width  int
 	// Packed preserves an explicit packed attribute on this unnamed declaration.
 	Packed bool
-	// Offset is the compiler-confirmed byte boundary for a zero-width field.
+	// Aligned preserves an explicit alignment request, including omitted GNU
+	// arguments. A producer may ignore it within a shared allocation unit.
+	Aligned uint64
+	// Offset is the compiler-confirmed boundary for a zero-width field, or the
+	// first byte of a nonzero-width field with an explicit alignment request.
 	Offset uint64
 }
 
 func (p BitfieldPadding) cAttributes() string {
+	packing := ""
 	if p.Packed {
-		return " __attribute__((packed))"
+		packing = " __attribute__((packed))"
 	}
-	return ""
+	if p.Aligned != 0 {
+		return packing + fmt.Sprintf(" __attribute__((aligned(%d)))", p.Aligned)
+	}
+	return packing
 }
 
 func (r Record) hasBitfields() bool {
@@ -92,10 +100,10 @@ func validateBitfields(r Record, complete bool) error {
 	before := 0
 	for _, f := range r.Padding {
 		bits := bitfieldTypeBits(f.Type)
-		if f.Before < before || f.Before > len(r.Description.Fields) || bits == 0 || f.Width < 0 || f.Width > bits {
+		if f.Before < before || f.Before > len(r.Description.Fields) || bits == 0 || f.Width < 0 || f.Width > bits || !validAlignment(f.Aligned) {
 			return fmt.Errorf("clang: invalid unnamed bitfield in %s", r.Name)
 		}
-		if f.Width != 0 && f.Offset != 0 || complete && f.Offset > r.Layout.Size {
+		if f.Width != 0 && f.Aligned == 0 && f.Offset != 0 || complete && (f.Offset > r.Layout.Size || f.Width != 0 && f.Aligned != 0 && f.Offset == r.Layout.Size) {
 			return fmt.Errorf("clang: invalid unnamed bitfield boundary in %s", r.Name)
 		}
 		before = f.Before
