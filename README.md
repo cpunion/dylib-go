@@ -505,8 +505,8 @@ producer image throughout later calls. Variadic Go callback entries are not supp
 
 Direct narrow integer parameters require the merged
 [llgo C ABI fix](https://github.com/xgo-dev/llgo/pull/2776). Native variadic pointer
-locals also require the [debug snapshot fix](https://github.com/xgo-dev/llgo/pull/2783);
-CI temporarily pins that contribution while it is reviewed. Runtime tests check wide
+locals also require the merged [debug snapshot fix](https://github.com/xgo-dev/llgo/pull/2783);
+CI pins the main commit containing that fix. Runtime tests check wide
 results, native function pointers, callbacks,
 stack parameters and variadic prefixes in objects, archives and libraries at
 Clang `-O0` and `-O2` builds. See the [direct binding contracts](docs/clang.md#direct-llgo-bindings).

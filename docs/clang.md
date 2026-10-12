@@ -476,8 +476,8 @@ and results retain their compiler layout checks. This requires the merged
 
 Direct narrow integer parameters require the merged
 [llgo C ABI fix](https://github.com/xgo-dev/llgo/pull/2776). Native variadic pointer
-locals also require the [debug snapshot fix](https://github.com/xgo-dev/llgo/pull/2783);
-CI temporarily pins that contribution while it is reviewed. Runtime fixtures use
+locals also require the merged [debug snapshot fix](https://github.com/xgo-dev/llgo/pull/2783);
+CI pins the main commit containing that fix. Runtime fixtures use
 wide C `int` results so return truncation cannot hide
 incorrect argument extension. They check signed minimum/maximum/negative/zero
 values, unsigned high bits, both Boolean values, native factories and forwarding,

@@ -41,9 +41,8 @@ jobs:
       - uses: xgo-dev/setup-llgo@v0.2.0
         id: llgo
         with:
-          # main includes #2776; pin #2783's debug-pointer fix while it is reviewed.
-          # Return to main once https://github.com/xgo-dev/llgo/pull/2783 is merged.
-          llgo-version: 8f1e304068b49856ac9f899cbb5e26c12462a52d
+          # Pin the main commit that merged #2783's debug-pointer fix.
+          llgo-version: 1f3baf90db6dadd6438fbc822a02ab4d9967f598
           install-method: source
           go-version: '1.27.x'
           llvm-version: '22'
