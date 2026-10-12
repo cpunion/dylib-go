@@ -42,6 +42,7 @@ Run
 | Typedefs and ordinary qualifiers | Desugared/resolved, including integer and pointer aliases |
 | Object/opaque pointers | Native addresses; no automatic pointee allocation, copying or ownership |
 | Ordinary structs, including anonymous typedef records | Arguments/results; compiler-evaluated layout checked against the native backend |
+| Ordinary structs with `#pragma pack` | `CgoSource` for Go/llgo; caps 1/2/4/8/16, nested arrays, native addresses/function-pointer fields and record-level explicit alignment; bitfield and over-aligned nested/member combinations remain unqualified |
 | Explicit `__attribute__((packed))` structs | `CgoSource` for Go/llgo; logical fields are transported through ordinary records and converted inside C; dynamic and direct llgo bindings reject them |
 | Explicit `__attribute__((packed))` non-bitfield members | `CgoSource` for Go/llgo; retain natural alignment of other members and combine packing with explicit member alignment; includes fixed arrays, nested records and native addresses |
 | Named integral/Boolean bitfields, including explicit packed records | `CgoSource` for Go/llgo; compiler byte masks and layout are validated before binding; public fields remain ordinary scalars |
@@ -254,6 +255,38 @@ setup-go/setup-llgo jobs. They verify packed values/returns, ordinary parents wi
 packed multidimensional arrays, signed boundaries, Boolean and pointer fields,
 factories/consumers, native struct pointers, variadic promotions, stale generated
 source, target guards and session retirement.
+
+### Pragma packing
+
+`Record.MaxFieldAlignment` preserves the compiler's numeric `#pragma pack`
+member-alignment cap; zero means absent. Caps of 1, 2, 4, 8 and 16 bytes are
+qualified for ordinary records. Nested push/pop directives are evaluated by
+Clang, including directives in included headers. This is separate from the
+`packed` attribute and from the record's effective alignment.
+
+Clang JSON identifies `MaxFieldAlignmentAttr` without its numeric argument.
+A bounded supplemental text AST query uses synthetic typedefs to link each
+accessible record spelling to its compiler-reported cap. IDs are matched only
+within that invocation. Missing, duplicate, ambiguous or invalid probes fail
+parsing; source pragma tokens and layout guesses are not used.
+
+Generated C declarations use a scoped packing pragma, restored before emitting
+transport records. Public Go fields carry logical values. Native layout checks
+run before binding, and dynamic/direct llgo adapters reject these records.
+Arrays, nested ordinary records, native struct addresses, function-pointer
+fields/factories and concrete variadic prefixes/results use the same C bridge.
+Record-level explicit alignment can increase alignment while member offsets
+remain packed. Use producer-owned storage for pointers.
+
+Bitfields under pragma packing and nested bitfield values remain unqualified.
+Member or nested explicit alignment greater than the packing cap also remains
+unqualified: MSVC can override the cap while MinGW limits alignment. These
+combinations are rejected explicitly. Global compiler packing flags and typedef
+alignment/packing are not covered by this pragma adapter. The
+[packed example](../examples/packedrecords/call.go) executes object/archive/library
+calls at `-O0`/`-O2`, including nested packing levels, restored natural outer
+layout, floating arrays, Boolean/address fields, native factories/pointers,
+function-pointer fields and variadic calls with Go and llgo.
 
 ### Explicit C alignment
 

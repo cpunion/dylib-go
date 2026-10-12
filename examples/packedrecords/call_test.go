@@ -38,7 +38,7 @@ func TestPackedCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_packed", "echo_envelope", "packed_factory", "apply_packed", "packed_pointer", "mutate_packed", "sum_packed", "packed_variable", "echo_member", "echo_members", "echo_member_aligned", "member_factory", "apply_member", "member_pointer", "mutate_member", "sum_member", "member_variable"}
+	names := []string{"echo_packed", "echo_envelope", "packed_factory", "apply_packed", "packed_pointer", "mutate_packed", "sum_packed", "packed_variable", "echo_member", "echo_members", "echo_member_aligned", "member_factory", "apply_member", "member_pointer", "mutate_member", "sum_member", "member_variable", "echo_pragma", "echo_pragma_envelope", "echo_pragma_aligned", "echo_pragma_outer", "pragma_factory", "apply_pragma", "pragma_pointer", "mutate_pragma", "sum_pragma", "pragma_variable", "apply_pragma_slot"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -48,6 +48,10 @@ func TestPackedCalls(t *testing.T) {
 		t.Fatal(err)
 	}
 	h.Functions[16], err = h.Functions[16].WithTail(abi.I8, abi.F32)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.Functions[26], err = h.Functions[26].WithTail(abi.I8, abi.F32)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,6 +195,45 @@ func checkCalls(t *testing.T, path string) {
 		check("unaligned member native storage", memberSum, float64(43), err)
 		if got, err := b.Mutate_member(nil); err != nil || got != nil {
 			t.Fatal("null member pointer:", got, err)
+		}
+		pragmaAddress, err := b.Pragma_pointer()
+		if err != nil || pragmaAddress == nil {
+			t.Fatal("pragma native storage:", pragmaAddress, err)
+		}
+		pragma := BindingsRecord5{Pragma_tag: -128, Pragma_samples: [2]float64{20.5, 19.5}, Pragma_count: 20, Pragma_truth: true, Pragma_context: pragmaAddress}
+		pragmaWant := BindingsRecord5{Pragma_tag: -127, Pragma_samples: [2]float64{22, 22}, Pragma_count: 21, Pragma_context: pragmaAddress}
+		pragmaGot, err := b.Echo_pragma(pragma)
+		check("pragma scalar/array/Boolean/address values", pragmaGot, pragmaWant, err)
+		pragmaEntry, err := b.Pragma_factory()
+		if err != nil || pragmaEntry == nil {
+			t.Fatal("pragma factory:", pragmaEntry, err)
+		}
+		pragmaGot, err = b.Apply_pragma(pragmaEntry, pragma)
+		check("pragma native function pointer", pragmaGot, pragmaWant, err)
+		slotWant := pragmaWant
+		slotWant.Pragma_tag++
+		pragmaGot, err = b.Apply_pragma_slot(BindingsRecord9{Slot_tag: 1, Entry: pragmaEntry}, pragma)
+		check("packed record function-pointer field", pragmaGot, slotWant, err)
+		pragmaGot, err = b.Apply_pragma_slot(BindingsRecord9{}, pragma)
+		check("null packed record function-pointer field", pragmaGot, pragma, err)
+		pragmaEnvelope := BindingsRecord6{Envelope_tag: -5, Pragma_items: [2][2]BindingsRecord5{{pragma, pragma}, {pragma, pragma}}, Checksum: 20}
+		pragmaEnvelopeWant := BindingsRecord6{Envelope_tag: -4, Pragma_items: [2][2]BindingsRecord5{{pragmaWant, pragmaWant}, {pragmaWant, pragmaWant}}, Checksum: 22}
+		pragmaEnvelopeGot, err := b.Echo_pragma_envelope(pragmaEnvelope)
+		check("nested pragma packing and arrays", pragmaEnvelopeGot, pragmaEnvelopeWant, err)
+		pragmaAligned, err := b.Echo_pragma_aligned(BindingsRecord7{Aligned_tag: -5, Aligned_count: 20, Aligned_value: 20.5})
+		check("record alignment with pragma members", pragmaAligned, BindingsRecord7{Aligned_tag: -4, Aligned_count: 22, Aligned_value: 22}, err)
+		pragmaOuter, err := b.Echo_pragma_outer(BindingsRecord8{Payload: pragmaEnvelope, Natural_tail: 19.5})
+		check("pragma pop restores outer natural layout", pragmaOuter, BindingsRecord8{Payload: pragmaEnvelopeWant, Natural_tail: 22}, err)
+		pragmaGot, err = b.Pragma_variable(pragma, 2, 1.5)
+		pragma.Pragma_count, pragma.Pragma_samples[0] = 22, 22
+		check("pragma variadic prefix/result", pragmaGot, pragma, err)
+		if got, err := b.Mutate_pragma(pragmaAddress); err != nil || got != pragmaAddress {
+			t.Fatal("pragma pointer mutation:", got, err)
+		}
+		pragmaSum, err := b.Sum_pragma(pragmaAddress)
+		check("pragma native storage mutation", pragmaSum, float64(45), err)
+		if got, err := b.Mutate_pragma(nil); err != nil || got != nil {
+			t.Fatal("null pragma pointer:", got, err)
 		}
 		p.Tag, p.Tail, p.Truth, p.Context = 125, 20, false, nil
 		got, err = b.Echo_packed(p)

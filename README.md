@@ -437,7 +437,7 @@ to keep entries alive until native code clears them.
 | Generator | Host compiler | Native calls | libffi required |
 | --- | --- | --- | --- |
 | `Header.GoSource` | Go / llgo | Dynamic `Session.Bind`, including supported records and variadic shapes | Yes |
-| `Header.CgoSource` | Go / llgo | Typed scalars, ordinary/explicitly packed or aligned records and bitfields, native addresses and concrete cdecl variadic shapes; fixed Windows 386 stdcall/fastcall | No |
+| `Header.CgoSource` | Go / llgo | Typed scalars, ordinary/pragma-packed/explicitly packed or aligned records and bitfields, native addresses and concrete cdecl variadic shapes; fixed Windows 386 stdcall/fastcall | No |
 | `Header.LLGoSource` | llgo | Typed cdecl scalars, ordinary records, concrete variadic shapes and fixed/variadic native function pointers | No |
 
 `Header.CgoSource(packageName, bindingType)` generates typed methods usable with
@@ -455,8 +455,11 @@ verify C sizes, alignments and offsets against Clang before resolving symbols.
 Explicit `__attribute__((packed))` records and bitfields, including nested arrays, use ordinary
 transport records across Go/C and field copies inside C. These native values
 never cross that boundary directly. The [tested packed example](examples/packedrecords/call.go)
-also covers native factories, struct pointers and variadic record calls with Go
-and llgo. Dynamic libffi binding and direct `LLGoSource` reject these layouts.
+also covers ordinary `#pragma pack` records, nested packing levels, floating
+arrays, record alignment, native factories/function-pointer fields, struct
+pointers and variadic record calls with Go and llgo. Pragma bitfield and
+over-aligned member/nested combinations remain unqualified; see the
+[pragma packing scope](docs/clang.md#pragma-packing). Dynamic libffi binding and direct `LLGoSource` reject these layouts.
 For bitfields, Clang emits constants whose byte masks are read with Go's object
 parsers; generated C bridges verify both masks and layout before binding. Public
 Go fields hold ordinary scalar values. The [tested bitfield example](examples/bitfieldrecords/call.go)

@@ -21,6 +21,7 @@ type typeResolver struct {
 	records         []Record
 	fieldProbes     map[recordField]recordFieldProbe
 	fieldPointers   map[recordField]astNode
+	packings        map[string]uint64
 }
 
 func newTypeResolver(root astNode, aliases map[string]string, sizes map[string]int) *typeResolver {
@@ -195,12 +196,20 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 	defer delete(r.building, id)
 	d := abi.TypeDesc{Type: abi.Struct}
 	packed := false
+	packing := uint64(0)
 	aligned := uint64(0)
 	var fieldAlignments []FieldAlignment
 	var packedFields []int
 	var bitfields []Bitfield
 	var padding []BitfieldPadding
 	for _, child := range node.Inner {
+		if child.Kind == "MaxFieldAlignmentAttr" {
+			packing = r.packings[name]
+			if packing == 0 {
+				return abi.TypeDesc{}, errRecordPacking
+			}
+			continue
+		}
 		if child.Kind == "PackedAttr" {
 			packed = true
 			continue
@@ -285,6 +294,6 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		return abi.TypeDesc{}, fmt.Errorf("at most %d records are supported", maxRecords)
 	}
 	r.resolved[id] = d
-	r.records = append(r.records, Record{Name: name, Description: d, Packed: packed, PackedFields: packedFields, Aligned: aligned, FieldAlignments: fieldAlignments, Bitfields: bitfields, Padding: padding})
+	r.records = append(r.records, Record{Name: name, Description: d, Packed: packed, MaxFieldAlignment: packing, PackedFields: packedFields, Aligned: aligned, FieldAlignments: fieldAlignments, Bitfields: bitfields, Padding: padding})
 	return d, nil
 }

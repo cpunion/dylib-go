@@ -74,7 +74,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Member-packed bitfields mixed with unnamed/zero-width declarations in otherwise unpacked Windows records, preserving allocation units, consecutive/trailing boundaries and alignment with real Go/llgo calls.
 - [x] Explicit packing on unnamed and zero-width bitfields, including padding-only allocation units, shared units and packed zero-width boundaries with native small-record and nested calls.
 - [x] Numeric/omitted GNU alignment on unnamed and zero-width bitfields, including ignored MSVC requests, padding-only units, packed combinations and native Go/llgo calls.
-- [ ] Remaining typedef/pragma packing and typedef alignment forms.
+- [x] Compiler-qualified ordinary `#pragma pack` records with nested packing levels, record alignment, arrays, native addresses/function-pointer fields, factories and variadic calls through Go/llgo C bridges.
+- [ ] Pragma packing with bitfields or over-aligned members/nested values, global compiler packing flags, and typedef packing/alignment forms.
 - [x] Named integral/Boolean bitfields through compiler byte-mask probes and validated Go/llgo C bridges, including packed combinations, nested arrays, native factories and variadic calls.
 - [x] Unnamed/zero-width bitfields with compiler-qualified declaration positions, leading/trailing padding, packed combinations, nested arrays, floating fields and native pointer/factory/variadic calls.
 - [x] Explicit numeric record/member alignment through validated C bridges, including packed/bitfield combinations, nested arrays, floating aggregates, native factories and variadic calls.

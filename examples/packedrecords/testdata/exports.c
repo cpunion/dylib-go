@@ -46,3 +46,16 @@ Member *member_pointer(void){member_stored.context=&context;return &member_store
 Member *mutate_member(Member *p){if(p)*p=echo_member(*p);return p;}
 double sum_member(Member *p){return p?p->values[0]+p->tail:-1;}
 Member member_variable(Member p,...){va_list args;va_start(args,p);p.tail+=va_arg(args,int);p.values[0]+=va_arg(args,double);va_end(args);return p;}
+
+static Pragma pragma_stored={-128,{20.5,19.5},22,1,0};
+Pragma echo_pragma(Pragma p){p.pragma_tag++;p.pragma_samples[0]+=1.5;p.pragma_samples[1]+=2.5;p.pragma_count++;p.pragma_truth=!p.pragma_truth;return p;}
+PragmaEnvelope echo_pragma_envelope(PragmaEnvelope p){for(int i=0;i<2;i++)for(int j=0;j<2;j++)p.pragma_items[i][j]=echo_pragma(p.pragma_items[i][j]);p.envelope_tag++;p.checksum+=2;return p;}
+PragmaAligned echo_pragma_aligned(PragmaAligned p){p.aligned_tag++;p.aligned_count+=2;p.aligned_value+=1.5;return p;}
+PragmaOuter echo_pragma_outer(PragmaOuter p){p.payload=echo_pragma_envelope(p.payload);p.natural_tail+=2.5;return p;}
+PragmaFn pragma_factory(void){return echo_pragma;}
+Pragma apply_pragma(PragmaFn fn,Pragma p){return fn(p);}
+Pragma *pragma_pointer(void){pragma_stored.pragma_context=&context;return &pragma_stored;}
+Pragma *mutate_pragma(Pragma *p){if(p)*p=echo_pragma(*p);return p;}
+double sum_pragma(Pragma *p){return p?p->pragma_samples[0]+p->pragma_count:-1;}
+Pragma pragma_variable(Pragma p,...){va_list args;va_start(args,p);p.pragma_count+=va_arg(args,int);p.pragma_samples[0]+=va_arg(args,double);va_end(args);return p;}
+Pragma apply_pragma_slot(PragmaSlot p,Pragma v){v.pragma_tag+=p.slot_tag;return p.entry?p.entry(v):v;}

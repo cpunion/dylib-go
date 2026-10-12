@@ -215,6 +215,196 @@ result.f2 = value.f2;
 result.f3 = value.f3;
 return result;
 }
+#pragma pack(push,2)
+typedef struct {
+int8_t f0;
+double f1[2];
+int32_t f2;
+_Bool f3;
+void * f4;
+} dylib_go_42696e64696e6773_record5;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record5_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record5);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record5);
+case 2:return offsetof(dylib_go_42696e64696e6773_record5,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record5,f1);
+case 4:return offsetof(dylib_go_42696e64696e6773_record5,f2);
+case 5:return offsetof(dylib_go_42696e64696e6773_record5,f3);
+case 6:return offsetof(dylib_go_42696e64696e6773_record5,f4);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+double f1[2];
+int32_t f2;
+_Bool f3;
+void * f4;
+} dylib_go_42696e64696e6773_record5_transport;
+static dylib_go_42696e64696e6773_record5 dylib_go_42696e64696e6773_record5_from_transport(dylib_go_42696e64696e6773_record5_transport value) {
+dylib_go_42696e64696e6773_record5 result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+result.f2 = value.f2;
+result.f3 = value.f3;
+result.f4 = value.f4;
+return result;
+}
+static dylib_go_42696e64696e6773_record5_transport dylib_go_42696e64696e6773_record5_to_transport(dylib_go_42696e64696e6773_record5 value) {
+dylib_go_42696e64696e6773_record5_transport result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+result.f2 = value.f2;
+result.f3 = value.f3;
+result.f4 = value.f4;
+return result;
+}
+#pragma pack(push,4)
+typedef struct {
+uint8_t f0;
+dylib_go_42696e64696e6773_record5 f1[2][2];
+int32_t f2;
+} dylib_go_42696e64696e6773_record6;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record6_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record6);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record6);
+case 2:return offsetof(dylib_go_42696e64696e6773_record6,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record6,f1);
+case 4:return offsetof(dylib_go_42696e64696e6773_record6,f2);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+uint8_t f0;
+dylib_go_42696e64696e6773_record5_transport f1[2][2];
+int32_t f2;
+} dylib_go_42696e64696e6773_record6_transport;
+static dylib_go_42696e64696e6773_record6 dylib_go_42696e64696e6773_record6_from_transport(dylib_go_42696e64696e6773_record6_transport value) {
+dylib_go_42696e64696e6773_record6 result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+for (uint32_t i1 = 0; i1 < 2; ++i1) {
+result.f1[i0][i1] = dylib_go_42696e64696e6773_record5_from_transport(value.f1[i0][i1]);
+}
+}
+result.f2 = value.f2;
+return result;
+}
+static dylib_go_42696e64696e6773_record6_transport dylib_go_42696e64696e6773_record6_to_transport(dylib_go_42696e64696e6773_record6 value) {
+dylib_go_42696e64696e6773_record6_transport result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+for (uint32_t i1 = 0; i1 < 2; ++i1) {
+result.f1[i0][i1] = dylib_go_42696e64696e6773_record5_to_transport(value.f1[i0][i1]);
+}
+}
+result.f2 = value.f2;
+return result;
+}
+#pragma pack(push,2)
+typedef struct __attribute__((aligned(32))) {
+uint8_t f0;
+int32_t f1;
+double f2;
+} dylib_go_42696e64696e6773_record7;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record7_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record7);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record7);
+case 2:return offsetof(dylib_go_42696e64696e6773_record7,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record7,f1);
+case 4:return offsetof(dylib_go_42696e64696e6773_record7,f2);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+uint8_t f0;
+int32_t f1;
+double f2;
+} dylib_go_42696e64696e6773_record7_transport;
+static dylib_go_42696e64696e6773_record7 dylib_go_42696e64696e6773_record7_from_transport(dylib_go_42696e64696e6773_record7_transport value) {
+dylib_go_42696e64696e6773_record7 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+return result;
+}
+static dylib_go_42696e64696e6773_record7_transport dylib_go_42696e64696e6773_record7_to_transport(dylib_go_42696e64696e6773_record7 value) {
+dylib_go_42696e64696e6773_record7_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+return result;
+}
+typedef struct {
+dylib_go_42696e64696e6773_record6 f0;
+double f1;
+} dylib_go_42696e64696e6773_record8;
+static uint64_t dylib_go_42696e64696e6773_record8_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record8);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record8);
+case 2:return offsetof(dylib_go_42696e64696e6773_record8,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record8,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+dylib_go_42696e64696e6773_record6_transport f0;
+double f1;
+} dylib_go_42696e64696e6773_record8_transport;
+static dylib_go_42696e64696e6773_record8 dylib_go_42696e64696e6773_record8_from_transport(dylib_go_42696e64696e6773_record8_transport value) {
+dylib_go_42696e64696e6773_record8 result = {0};
+result.f0 = dylib_go_42696e64696e6773_record6_from_transport(value.f0);
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record8_transport dylib_go_42696e64696e6773_record8_to_transport(dylib_go_42696e64696e6773_record8 value) {
+dylib_go_42696e64696e6773_record8_transport result = {0};
+result.f0 = dylib_go_42696e64696e6773_record6_to_transport(value.f0);
+result.f1 = value.f1;
+return result;
+}
+#pragma pack(push,2)
+typedef struct {
+int8_t f0;
+void * f1;
+} dylib_go_42696e64696e6773_record9;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record9_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record9);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record9);
+case 2:return offsetof(dylib_go_42696e64696e6773_record9,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record9,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+void * f1;
+} dylib_go_42696e64696e6773_record9_transport;
+static dylib_go_42696e64696e6773_record9 dylib_go_42696e64696e6773_record9_from_transport(dylib_go_42696e64696e6773_record9_transport value) {
+dylib_go_42696e64696e6773_record9 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record9_transport dylib_go_42696e64696e6773_record9_to_transport(dylib_go_42696e64696e6773_record9 value) {
+dylib_go_42696e64696e6773_record9_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
 typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call0_function)(dylib_go_42696e64696e6773_record0);
 static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call0(uintptr_t address,dylib_go_42696e64696e6773_record0_transport p0) {
 return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call0_function)address)(dylib_go_42696e64696e6773_record0_from_transport(p0)));
@@ -287,6 +477,52 @@ typedef dylib_go_42696e64696e6773_record2 (*dylib_go_42696e64696e6773_call16_fun
 static dylib_go_42696e64696e6773_record2_transport dylib_go_42696e64696e6773_call16(uintptr_t address,dylib_go_42696e64696e6773_record2_transport p0,int32_t p1,float p2) {
 return dylib_go_42696e64696e6773_record2_to_transport(((dylib_go_42696e64696e6773_call16_function)address)(dylib_go_42696e64696e6773_record2_from_transport(p0),(int8_t)p1,p2));
 }
+typedef dylib_go_42696e64696e6773_record5 (*dylib_go_42696e64696e6773_call17_function)(dylib_go_42696e64696e6773_record5);
+static dylib_go_42696e64696e6773_record5_transport dylib_go_42696e64696e6773_call17(uintptr_t address,dylib_go_42696e64696e6773_record5_transport p0) {
+return dylib_go_42696e64696e6773_record5_to_transport(((dylib_go_42696e64696e6773_call17_function)address)(dylib_go_42696e64696e6773_record5_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record6 (*dylib_go_42696e64696e6773_call18_function)(dylib_go_42696e64696e6773_record6);
+static dylib_go_42696e64696e6773_record6_transport dylib_go_42696e64696e6773_call18(uintptr_t address,dylib_go_42696e64696e6773_record6_transport p0) {
+return dylib_go_42696e64696e6773_record6_to_transport(((dylib_go_42696e64696e6773_call18_function)address)(dylib_go_42696e64696e6773_record6_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record7 (*dylib_go_42696e64696e6773_call19_function)(dylib_go_42696e64696e6773_record7);
+static dylib_go_42696e64696e6773_record7_transport dylib_go_42696e64696e6773_call19(uintptr_t address,dylib_go_42696e64696e6773_record7_transport p0) {
+return dylib_go_42696e64696e6773_record7_to_transport(((dylib_go_42696e64696e6773_call19_function)address)(dylib_go_42696e64696e6773_record7_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record8 (*dylib_go_42696e64696e6773_call20_function)(dylib_go_42696e64696e6773_record8);
+static dylib_go_42696e64696e6773_record8_transport dylib_go_42696e64696e6773_call20(uintptr_t address,dylib_go_42696e64696e6773_record8_transport p0) {
+return dylib_go_42696e64696e6773_record8_to_transport(((dylib_go_42696e64696e6773_call20_function)address)(dylib_go_42696e64696e6773_record8_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record5 (*dylib_go_42696e64696e6773_call21_pointer0)(dylib_go_42696e64696e6773_record5);
+typedef dylib_go_42696e64696e6773_call21_pointer0 (*dylib_go_42696e64696e6773_call21_function)(void);
+static void * dylib_go_42696e64696e6773_call21(uintptr_t address) {
+return (void *)((dylib_go_42696e64696e6773_call21_function)address)();
+}
+typedef dylib_go_42696e64696e6773_record5 (*dylib_go_42696e64696e6773_call22_pointer1)(dylib_go_42696e64696e6773_record5);
+typedef dylib_go_42696e64696e6773_record5 (*dylib_go_42696e64696e6773_call22_function)(dylib_go_42696e64696e6773_call22_pointer1,dylib_go_42696e64696e6773_record5);
+static dylib_go_42696e64696e6773_record5_transport dylib_go_42696e64696e6773_call22(uintptr_t address,void * p0,dylib_go_42696e64696e6773_record5_transport p1) {
+return dylib_go_42696e64696e6773_record5_to_transport(((dylib_go_42696e64696e6773_call22_function)address)((dylib_go_42696e64696e6773_call22_pointer1)p0,dylib_go_42696e64696e6773_record5_from_transport(p1)));
+}
+typedef dylib_go_42696e64696e6773_record5 * (*dylib_go_42696e64696e6773_call23_function)(void);
+static void * dylib_go_42696e64696e6773_call23(uintptr_t address) {
+return (void *)((dylib_go_42696e64696e6773_call23_function)address)();
+}
+typedef dylib_go_42696e64696e6773_record5 * (*dylib_go_42696e64696e6773_call24_function)(dylib_go_42696e64696e6773_record5 *);
+static void * dylib_go_42696e64696e6773_call24(uintptr_t address,void * p0) {
+return (void *)((dylib_go_42696e64696e6773_call24_function)address)((dylib_go_42696e64696e6773_record5 *)p0);
+}
+typedef double (*dylib_go_42696e64696e6773_call25_function)(dylib_go_42696e64696e6773_record5 *);
+static double dylib_go_42696e64696e6773_call25(uintptr_t address,void * p0) {
+return ((dylib_go_42696e64696e6773_call25_function)address)((dylib_go_42696e64696e6773_record5 *)p0);
+}
+typedef dylib_go_42696e64696e6773_record5 (*dylib_go_42696e64696e6773_call26_function)(dylib_go_42696e64696e6773_record5,...);
+static dylib_go_42696e64696e6773_record5_transport dylib_go_42696e64696e6773_call26(uintptr_t address,dylib_go_42696e64696e6773_record5_transport p0,int32_t p1,float p2) {
+return dylib_go_42696e64696e6773_record5_to_transport(((dylib_go_42696e64696e6773_call26_function)address)(dylib_go_42696e64696e6773_record5_from_transport(p0),(int8_t)p1,p2));
+}
+typedef dylib_go_42696e64696e6773_record5 (*dylib_go_42696e64696e6773_call27_function)(dylib_go_42696e64696e6773_record9,dylib_go_42696e64696e6773_record5);
+static dylib_go_42696e64696e6773_record5_transport dylib_go_42696e64696e6773_call27(uintptr_t address,dylib_go_42696e64696e6773_record9_transport p0,dylib_go_42696e64696e6773_record5_transport p1) {
+return dylib_go_42696e64696e6773_record5_to_transport(((dylib_go_42696e64696e6773_call27_function)address)(dylib_go_42696e64696e6773_record9_from_transport(p0),dylib_go_42696e64696e6773_record5_from_transport(p1)));
+}
 */
 import "C"
 
@@ -319,6 +555,17 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "mutate_member", Symbol: "mutate_member", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}},
 		{Name: "sum_member", Symbol: "sum_member", Signature: abi.Signature{Result: abi.F64, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
 		{Name: "member_variable", Symbol: "member_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
+		{Name: "echo_pragma", Symbol: "echo_pragma", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
+		{Name: "echo_pragma_envelope", Symbol: "echo_pragma_envelope", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "envelope_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "pragma_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}, {Name: "checksum", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "envelope_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "pragma_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}, {Name: "checksum", Type: abi.TypeDesc{Type: abi.I32}}}}}},
+		{Name: "echo_pragma_aligned", Symbol: "echo_pragma_aligned", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "aligned_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "aligned_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "aligned_value", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "aligned_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "aligned_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "aligned_value", Type: abi.TypeDesc{Type: abi.F64}}}}}},
+		{Name: "echo_pragma_outer", Symbol: "echo_pragma_outer", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "payload", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "envelope_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "pragma_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}, {Name: "checksum", Type: abi.TypeDesc{Type: abi.I32}}}}}, {Name: "natural_tail", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "payload", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "envelope_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "pragma_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}, {Name: "checksum", Type: abi.TypeDesc{Type: abi.I32}}}}}, {Name: "natural_tail", Type: abi.TypeDesc{Type: abi.F64}}}}}},
+		{Name: "pragma_factory", Symbol: "pragma_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
+		{Name: "apply_pragma", Symbol: "apply_pragma", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
+		{Name: "pragma_pointer", Symbol: "pragma_pointer", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}},
+		{Name: "mutate_pragma", Symbol: "mutate_pragma", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}},
+		{Name: "sum_pragma", Symbol: "sum_pragma", Signature: abi.Signature{Result: abi.F64, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
+		{Name: "pragma_variable", Symbol: "pragma_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
+		{Name: "apply_pragma_slot", Symbol: "apply_pragma_slot", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct, abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "slot_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
 	},
 	Records: []clang.Record{
 		{Name: "Packed", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 20, Alignment: 1, Offsets: []uint64{0, 1, 9, 11, 12}}, Packed: true},
@@ -326,6 +573,11 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "Member", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 28, Alignment: 2, Offsets: []uint64{0, 1, 18, 20}}, PackedFields: []int{1, 3}},
 		{Name: "MemberEnvelope", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}, {Name: "count", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 116, Alignment: 4, Offsets: []uint64{0, 112}}},
 		{Name: "MemberAligned", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "marker", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "counter", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "truth", Type: abi.TypeDesc{Type: abi.Bool}}}}, Layout: abi.Layout{Size: 28, Alignment: 4, Offsets: []uint64{0, 4, 20, 24}}, PackedFields: []int{1, 3}, FieldAlignments: []clang.FieldAlignment{{Position: 1, Aligned: 4}}},
+		{Name: "Pragma", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 32, Alignment: 2, Offsets: []uint64{0, 2, 18, 22, 24}}, MaxFieldAlignment: 2},
+		{Name: "PragmaEnvelope", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "envelope_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "pragma_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}, {Name: "checksum", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 136, Alignment: 4, Offsets: []uint64{0, 2, 132}}, MaxFieldAlignment: 4},
+		{Name: "PragmaAligned", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "aligned_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "aligned_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "aligned_value", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 32, Alignment: 32, Offsets: []uint64{0, 2, 6}}, MaxFieldAlignment: 2, Aligned: 32},
+		{Name: "PragmaOuter", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "payload", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "envelope_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "pragma_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}, {Name: "checksum", Type: abi.TypeDesc{Type: abi.I32}}}}}, {Name: "natural_tail", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 144, Alignment: 8, Offsets: []uint64{0, 136}}},
+		{Name: "PragmaSlot", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "slot_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 10, Alignment: 2, Offsets: []uint64{0, 2}}, MaxFieldAlignment: 2, FunctionPointers: []clang.FunctionPointer{{Position: 1, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
 	},
 }
 
@@ -374,6 +626,51 @@ type BindingsRecord4 struct {
 	Samples [2]float64
 	Counter int32
 	Truth   bool
+}
+
+// BindingsRecord5 describes Pragma; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord5 struct {
+	Pragma_tag     int8
+	Pragma_samples [2]float64
+	Pragma_count   int32
+	Pragma_truth   bool
+	Pragma_context unsafe.Pointer
+}
+
+// BindingsRecord6 describes PragmaEnvelope; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord6 struct {
+	Envelope_tag uint8
+	Pragma_items [2][2]BindingsRecord5
+	Checksum     int32
+}
+
+// BindingsRecord7 describes PragmaAligned; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord7 struct {
+	Aligned_tag   uint8
+	Aligned_count int32
+	Aligned_value float64
+}
+
+// BindingsRecord8 describes PragmaOuter; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord8 struct {
+	Payload      BindingsRecord6
+	Natural_tail float64
+}
+
+// BindingsRecord9 describes PragmaSlot; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord9 struct {
+	Slot_tag int8
+	Entry    unsafe.Pointer
 }
 
 func _BindingsRecord0ToC(value BindingsRecord0) (result C.dylib_go_42696e64696e6773_record0_transport) {
@@ -478,6 +775,88 @@ func _BindingsRecord4FromC(value C.dylib_go_42696e64696e6773_record4_transport) 
 	return result
 }
 
+func _BindingsRecord5ToC(value BindingsRecord5) (result C.dylib_go_42696e64696e6773_record5_transport) {
+	result.f0 = C.int8_t(value.Pragma_tag)
+	for i0 := range 2 {
+		result.f1[i0] = C.double(value.Pragma_samples[i0])
+	}
+	result.f2 = C.int32_t(value.Pragma_count)
+	result.f3 = C._Bool(value.Pragma_truth)
+	result.f4 = value.Pragma_context
+	return result
+}
+
+func _BindingsRecord5FromC(value C.dylib_go_42696e64696e6773_record5_transport) (result BindingsRecord5) {
+	result.Pragma_tag = int8(value.f0)
+	for i0 := range 2 {
+		result.Pragma_samples[i0] = float64(value.f1[i0])
+	}
+	result.Pragma_count = int32(value.f2)
+	result.Pragma_truth = bool(value.f3)
+	result.Pragma_context = value.f4
+	return result
+}
+
+func _BindingsRecord6ToC(value BindingsRecord6) (result C.dylib_go_42696e64696e6773_record6_transport) {
+	result.f0 = C.uint8_t(value.Envelope_tag)
+	for i0 := range 2 {
+		for i1 := range 2 {
+			result.f1[i0][i1] = _BindingsRecord5ToC(value.Pragma_items[i0][i1])
+		}
+	}
+	result.f2 = C.int32_t(value.Checksum)
+	return result
+}
+
+func _BindingsRecord6FromC(value C.dylib_go_42696e64696e6773_record6_transport) (result BindingsRecord6) {
+	result.Envelope_tag = uint8(value.f0)
+	for i0 := range 2 {
+		for i1 := range 2 {
+			result.Pragma_items[i0][i1] = _BindingsRecord5FromC(value.f1[i0][i1])
+		}
+	}
+	result.Checksum = int32(value.f2)
+	return result
+}
+
+func _BindingsRecord7ToC(value BindingsRecord7) (result C.dylib_go_42696e64696e6773_record7_transport) {
+	result.f0 = C.uint8_t(value.Aligned_tag)
+	result.f1 = C.int32_t(value.Aligned_count)
+	result.f2 = C.double(value.Aligned_value)
+	return result
+}
+
+func _BindingsRecord7FromC(value C.dylib_go_42696e64696e6773_record7_transport) (result BindingsRecord7) {
+	result.Aligned_tag = uint8(value.f0)
+	result.Aligned_count = int32(value.f1)
+	result.Aligned_value = float64(value.f2)
+	return result
+}
+
+func _BindingsRecord8ToC(value BindingsRecord8) (result C.dylib_go_42696e64696e6773_record8_transport) {
+	result.f0 = _BindingsRecord6ToC(value.Payload)
+	result.f1 = C.double(value.Natural_tail)
+	return result
+}
+
+func _BindingsRecord8FromC(value C.dylib_go_42696e64696e6773_record8_transport) (result BindingsRecord8) {
+	result.Payload = _BindingsRecord6FromC(value.f0)
+	result.Natural_tail = float64(value.f1)
+	return result
+}
+
+func _BindingsRecord9ToC(value BindingsRecord9) (result C.dylib_go_42696e64696e6773_record9_transport) {
+	result.f0 = C.int8_t(value.Slot_tag)
+	result.f1 = value.Entry
+	return result
+}
+
+func _BindingsRecord9FromC(value C.dylib_go_42696e64696e6773_record9_transport) (result BindingsRecord9) {
+	result.Slot_tag = int8(value.f0)
+	result.Entry = value.f1
+	return result
+}
+
 // Bindings retains symbol handles; its caller owns the Session.
 type Bindings struct {
 	symbol0  *dylib.Symbol
@@ -497,6 +876,17 @@ type Bindings struct {
 	symbol14 *dylib.Symbol
 	symbol15 *dylib.Symbol
 	symbol16 *dylib.Symbol
+	symbol17 *dylib.Symbol
+	symbol18 *dylib.Symbol
+	symbol19 *dylib.Symbol
+	symbol20 *dylib.Symbol
+	symbol21 *dylib.Symbol
+	symbol22 *dylib.Symbol
+	symbol23 *dylib.Symbol
+	symbol24 *dylib.Symbol
+	symbol25 *dylib.Symbol
+	symbol26 *dylib.Symbol
+	symbol27 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -522,6 +912,21 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 	}
 	if uint64(C.dylib_go_42696e64696e6773_record4_layout(0)) != 28 || uint64(C.dylib_go_42696e64696e6773_record4_layout(1)) != 4 || uint64(C.dylib_go_42696e64696e6773_record4_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record4_layout(3)) != 4 || uint64(C.dylib_go_42696e64696e6773_record4_layout(4)) != 20 || uint64(C.dylib_go_42696e64696e6773_record4_layout(5)) != 24 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for MemberAligned")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record5_layout(0)) != 32 || uint64(C.dylib_go_42696e64696e6773_record5_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record5_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record5_layout(3)) != 2 || uint64(C.dylib_go_42696e64696e6773_record5_layout(4)) != 18 || uint64(C.dylib_go_42696e64696e6773_record5_layout(5)) != 22 || uint64(C.dylib_go_42696e64696e6773_record5_layout(6)) != 24 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for Pragma")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record6_layout(0)) != 136 || uint64(C.dylib_go_42696e64696e6773_record6_layout(1)) != 4 || uint64(C.dylib_go_42696e64696e6773_record6_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record6_layout(3)) != 2 || uint64(C.dylib_go_42696e64696e6773_record6_layout(4)) != 132 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PragmaEnvelope")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record7_layout(0)) != 32 || uint64(C.dylib_go_42696e64696e6773_record7_layout(1)) != 32 || uint64(C.dylib_go_42696e64696e6773_record7_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record7_layout(3)) != 2 || uint64(C.dylib_go_42696e64696e6773_record7_layout(4)) != 6 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PragmaAligned")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record8_layout(0)) != 144 || uint64(C.dylib_go_42696e64696e6773_record8_layout(1)) != 8 || uint64(C.dylib_go_42696e64696e6773_record8_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record8_layout(3)) != 136 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PragmaOuter")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record9_layout(0)) != 10 || uint64(C.dylib_go_42696e64696e6773_record9_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record9_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record9_layout(3)) != 2 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PragmaSlot")
 	}
 	symbol0, err := session.Resolve("echo_packed")
 	if err != nil {
@@ -608,6 +1013,61 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol16 = symbol16
+	symbol17, err := session.Resolve("echo_pragma")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol17 = symbol17
+	symbol18, err := session.Resolve("echo_pragma_envelope")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol18 = symbol18
+	symbol19, err := session.Resolve("echo_pragma_aligned")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol19 = symbol19
+	symbol20, err := session.Resolve("echo_pragma_outer")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol20 = symbol20
+	symbol21, err := session.Resolve("pragma_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol21 = symbol21
+	symbol22, err := session.Resolve("apply_pragma")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol22 = symbol22
+	symbol23, err := session.Resolve("pragma_pointer")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol23 = symbol23
+	symbol24, err := session.Resolve("mutate_pragma")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol24 = symbol24
+	symbol25, err := session.Resolve("sum_pragma")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol25 = symbol25
+	symbol26, err := session.Resolve("pragma_variable")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol26 = symbol26
+	symbol27, err := session.Resolve("apply_pragma_slot")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol27 = symbol27
 	return b, nil
 }
 
@@ -793,6 +1253,127 @@ func (b *Bindings) Member_variable(p0 BindingsRecord2, p1 int8, p2 float32) (res
 	}
 	err = b.symbol16.WithAddress(func(address uintptr) error {
 		result = _BindingsRecord2FromC(C.dylib_go_42696e64696e6773_call16(C.uintptr_t(address), _BindingsRecord2ToC(p0), C.int32_t(p1), C.float(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_pragma(p0 BindingsRecord5) (result BindingsRecord5, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol17.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord5FromC(C.dylib_go_42696e64696e6773_call17(C.uintptr_t(address), _BindingsRecord5ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_pragma_envelope(p0 BindingsRecord6) (result BindingsRecord6, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol18.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord6FromC(C.dylib_go_42696e64696e6773_call18(C.uintptr_t(address), _BindingsRecord6ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_pragma_aligned(p0 BindingsRecord7) (result BindingsRecord7, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol19.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord7FromC(C.dylib_go_42696e64696e6773_call19(C.uintptr_t(address), _BindingsRecord7ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_pragma_outer(p0 BindingsRecord8) (result BindingsRecord8, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol20.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord8FromC(C.dylib_go_42696e64696e6773_call20(C.uintptr_t(address), _BindingsRecord8ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Pragma_factory() (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol21.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call21(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Apply_pragma(p0 unsafe.Pointer, p1 BindingsRecord5) (result BindingsRecord5, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol22.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord5FromC(C.dylib_go_42696e64696e6773_call22(C.uintptr_t(address), p0, _BindingsRecord5ToC(p1)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Pragma_pointer() (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol23.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call23(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Mutate_pragma(p0 unsafe.Pointer) (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol24.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call24(C.uintptr_t(address), p0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Sum_pragma(p0 unsafe.Pointer) (result float64, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol25.WithAddress(func(address uintptr) error {
+		result = float64(C.dylib_go_42696e64696e6773_call25(C.uintptr_t(address), p0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Pragma_variable(p0 BindingsRecord5, p1 int8, p2 float32) (result BindingsRecord5, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol26.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord5FromC(C.dylib_go_42696e64696e6773_call26(C.uintptr_t(address), _BindingsRecord5ToC(p0), C.int32_t(p1), C.float(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Apply_pragma_slot(p0 BindingsRecord9, p1 BindingsRecord5) (result BindingsRecord5, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol27.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord5FromC(C.dylib_go_42696e64696e6773_call27(C.uintptr_t(address), _BindingsRecord9ToC(p0), _BindingsRecord5ToC(p1)))
 		return nil
 	})
 	return result, err

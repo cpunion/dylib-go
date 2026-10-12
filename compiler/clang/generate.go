@@ -64,6 +64,9 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 				}
 				fmt.Fprint(&output, "}")
 			}
+			if record.MaxFieldAlignment != 0 {
+				fmt.Fprintf(&output, ",MaxFieldAlignment:%d", record.MaxFieldAlignment)
+			}
 			if record.Aligned != 0 {
 				fmt.Fprintf(&output, ",Aligned:%d", record.Aligned)
 			}
