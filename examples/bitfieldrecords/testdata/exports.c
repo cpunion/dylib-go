@@ -47,3 +47,45 @@ SignedWide echo_signed_wide(SignedWide p) {
     p.all ^= ~0ULL;
     return p;
 }
+GapBits echo_gaps(GapBits p) {
+    p.low ^= 31;
+    p.high += 1;
+    p.enabled = !p.enabled;
+    p.value += 2;
+    return p;
+}
+PrefixBits echo_prefix(PrefixBits p) { p.octet ^= 255; return p; }
+PackedGapBits echo_packed_gaps(PackedGapBits p) {
+    p.low ^= 31;
+    p.high += 1;
+    p.enabled = !p.enabled;
+    p.real += 1.5;
+    return p;
+}
+GapEnvelope echo_gap_envelope(GapEnvelope p) {
+    for(int i=0;i<2;++i) {
+        p.items[i]=echo_gaps(p.items[i]);
+        p.packed[i]=echo_packed_gaps(p.packed[i]);
+    }
+    p.prefix=echo_prefix(p.prefix);
+    return p;
+}
+static GapBits stored_gaps = {31,-64,1,20};
+GapBits *gaps_pointer(void) { return &stored_gaps; }
+GapBits *mutate_gaps(GapBits *p) { if(p) *p=echo_gaps(*p); return p; }
+unsigned sum_gaps(GapBits *p) { return p ? p->value+p->low : 0; }
+GapFn gaps_factory(void) { return echo_gaps; }
+GapBits apply_gaps(GapFn fn, GapBits p) { return fn(p); }
+GapBits gaps_variable(GapBits p, ...) {
+    va_list args;
+    va_start(args,p);
+    p.high += va_arg(args,int);
+    p.value += (unsigned)va_arg(args,double);
+    va_end(args);
+    return p;
+}
+FloatingGap echo_floating_gap(FloatingGap p) {
+    p.first += 1.5;
+    p.second += 2.5;
+    return p;
+}

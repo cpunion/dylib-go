@@ -33,7 +33,7 @@ func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	mapper := &cgoTypes{directTypes: direct, cPrefix: prefix}
+	mapper := &cgoTypes{directTypes: direct, cPrefix: prefix, pointerSize: uint64(h.Target.PointerSize)}
 	var preamble, methods bytes.Buffer
 	fmt.Fprint(&preamble, "/*\n#include <stdint.h>\n")
 	if len(h.Records) != 0 {

@@ -24,6 +24,8 @@ type Record struct {
 	// Bitfields retains the width and native byte mask of each named bitfield.
 	// Layout.Offsets stores its first byte. Description remains logical fields.
 	Bitfields []Bitfield
+	// Padding retains unnamed/zero-width C bitfields in declaration order.
+	Padding []BitfieldPadding
 	// FunctionPointers describes pointer fields and fixed arrays of entries.
 	// Position is the field index; array shape remains in Description. All
 	// elements share the prototype and have caller-managed address lifetimes.
@@ -93,6 +95,7 @@ func (h *Header) LookupRecord(name string) (Record, error) {
 				record.Layout.Offsets = append([]uint64(nil), record.Layout.Offsets...)
 				record.FunctionPointers = cloneFunctionPointers(record.FunctionPointers)
 				record.Bitfields = cloneBitfields(record.Bitfields)
+				record.Padding = append([]BitfieldPadding(nil), record.Padding...)
 				return record, nil
 			}
 		}
@@ -233,7 +236,8 @@ func validRecordLayout(record Record) error {
 	}
 	for i, offset := range l.Offsets {
 		sharedBits := i > 0 && record.bitfieldAt(i) != nil && record.bitfieldAt(i-1) != nil
-		if offset >= l.Size || i == 0 && offset != 0 || i > 0 && (offset < l.Offsets[i-1] || offset == l.Offsets[i-1] && !sharedBits) {
+		leadingPadding := len(record.Padding) != 0 && record.Padding[0].Before == 0
+		if offset >= l.Size || i == 0 && offset != 0 && !leadingPadding || i > 0 && (offset < l.Offsets[i-1] || offset == l.Offsets[i-1] && !sharedBits) {
 			return fmt.Errorf("clang: invalid compiler offsets for %s", record.Name)
 		}
 	}
@@ -290,7 +294,7 @@ func (h *Header) validateHostRecords(signature abi.Signature) error {
 				if err := validRecordLayout(record); err != nil {
 					return err
 				}
-				if record.Packed || len(record.Bitfields) != 0 {
+				if record.requiresCAdapter() {
 					return fmt.Errorf("clang: packed/bitfield record %s requires a compiled C adapter", record.Name)
 				}
 				if !found {

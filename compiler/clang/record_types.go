@@ -191,6 +191,7 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 	d := abi.TypeDesc{Type: abi.Struct}
 	packed := false
 	var bitfields []Bitfield
+	var padding []BitfieldPadding
 	for _, child := range node.Inner {
 		if child.Kind == "PackedAttr" {
 			packed = true
@@ -202,7 +203,8 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		if child.Kind != "FieldDecl" {
 			continue
 		}
-		if !cIdentifier(child.Name) {
+		unnamed := child.IsBitfield && child.Name == ""
+		if !unnamed && !cIdentifier(child.Name) {
 			return abi.TypeDesc{}, fmt.Errorf("unnamed record fields are unsupported")
 		}
 		for _, attr := range child.Inner {
@@ -218,14 +220,21 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		}
 		if child.IsBitfield {
 			width, ok := constantValue(child)
-			if !ok || width < 1 || width > bitfieldTypeBits(field.Type) || field.Elem != nil {
-				return abi.TypeDesc{}, fmt.Errorf("unsupported named bitfield %s.%s", name, child.Name)
+			bits := bitfieldTypeBits(field.Type)
+			if !ok || bits == 0 || width < 0 || !unnamed && width == 0 || width > bits || field.Elem != nil {
+				return abi.TypeDesc{}, fmt.Errorf("unsupported bitfield %s.%s", name, child.Name)
 			}
-			bitfields = append(bitfields, Bitfield{Position: len(d.Fields), Width: width})
+			if unnamed {
+				padding = append(padding, BitfieldPadding{Before: len(d.Fields), Type: field.Type, Width: width})
+			} else {
+				bitfields = append(bitfields, Bitfield{Position: len(d.Fields), Width: width})
+			}
 		}
-		d.Fields = append(d.Fields, abi.Field{Name: child.Name, Type: field})
-		if len(d.Fields) > 32 {
-			return abi.TypeDesc{}, fmt.Errorf("structs require 1 to 32 fields")
+		if !unnamed {
+			d.Fields = append(d.Fields, abi.Field{Name: child.Name, Type: field})
+		}
+		if len(d.Fields)+len(padding) > 32 {
+			return abi.TypeDesc{}, fmt.Errorf("structs require at most 32 named/padding fields")
 		}
 	}
 	if err := d.Validate(); err != nil {
@@ -236,6 +245,6 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		return abi.TypeDesc{}, fmt.Errorf("at most %d records are supported", maxRecords)
 	}
 	r.resolved[id] = d
-	r.records = append(r.records, Record{Name: name, Description: d, Packed: packed, Bitfields: bitfields})
+	r.records = append(r.records, Record{Name: name, Description: d, Packed: packed, Bitfields: bitfields, Padding: padding})
 	return d, nil
 }

@@ -12,8 +12,9 @@ import (
 // the cgo boundary, so their padding/alignment need not match Go storage.
 type cgoTypes struct {
 	*directTypes
-	cPrefix    string
-	transports map[int]bool
+	cPrefix     string
+	transports  map[int]bool
+	pointerSize uint64
 }
 
 func (t *cgoTypes) recordIndex(description abi.TypeDesc) (int, error) {
@@ -118,10 +119,17 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 		}
 		name := t.cRecordName(i)
+		if record.Packed && len(record.Padding) != 0 {
+			fmt.Fprint(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n")
+			if err := t.writePackedPadding(output, i); err != nil {
+				return err
+			}
+			fmt.Fprint(output, "#else\n")
+		}
 		// MinGW ignores a record's packed attribute for MS-layout bitfields.
 		// Preserve an explicitly packed, byte-aligned producer layout with a
 		// scoped pragma; the existing size/offset/mask checks remain authoritative.
-		packedBits := record.Packed && len(record.Bitfields) != 0 && record.Layout.Alignment == 1
+		packedBits := record.Packed && record.hasBitfields() && record.Layout.Alignment == 1
 		if packedBits {
 			fmt.Fprint(output, "#if defined(_WIN32)\n#pragma pack(push,1)\n#endif\n")
 		}
@@ -130,7 +138,21 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			fmt.Fprint(output, "__attribute__((packed)) ")
 		}
 		fmt.Fprint(output, "{\n")
-		for j, field := range record.Description.Fields {
+		padding := 0
+		for j := 0; j <= len(record.Description.Fields); j++ {
+			for padding < len(record.Padding) && record.Padding[padding].Before == j {
+				p := record.Padding[padding]
+				kind, err := cgoScalarType(abi.TypeDesc{Type: p.Type})
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(output, "%s :%d;\n", kind, p.Width)
+				padding++
+			}
+			if j == len(record.Description.Fields) {
+				break
+			}
+			field := record.Description.Fields[j]
 			declaration, err := t.cField(field.Type, fmt.Sprintf("f%d", j))
 			if err != nil {
 				return fmt.Errorf("clang: %s.%s: %w", record.Name, field.Name, err)
@@ -143,6 +165,9 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		fmt.Fprintf(output, "} %s;\n", name)
 		if packedBits {
 			fmt.Fprint(output, "#if defined(_WIN32)\n#pragma pack(pop)\n#endif\n")
+		}
+		if record.Packed && len(record.Padding) != 0 {
+			fmt.Fprint(output, "#endif\n")
 		}
 		if len(record.Bitfields) != 0 {
 			t.writeBitfieldMasks(output, i)

@@ -68,6 +68,13 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 				}
 				fmt.Fprint(&output, "}")
 			}
+			if len(record.Padding) != 0 {
+				fmt.Fprint(&output, ",Padding:[]clang.BitfieldPadding{")
+				for _, field := range record.Padding {
+					fmt.Fprintf(&output, "{Before:%d,Type:abi.Type(%d),Width:%d},", field.Before, field.Type, field.Width)
+				}
+				fmt.Fprint(&output, "}")
+			}
 			if len(record.FunctionPointers) != 0 {
 				fmt.Fprint(&output, ",FunctionPointers:")
 				writeFunctionPointers(&output, record.FunctionPointers)

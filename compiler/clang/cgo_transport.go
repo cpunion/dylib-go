@@ -18,7 +18,7 @@ func (t *cgoTypes) needsTransport(index int) bool {
 		t.transports = make(map[int]bool)
 	}
 	record := t.records[index]
-	needed := record.Packed || len(record.Bitfields) != 0
+	needed := record.requiresCAdapter()
 	for _, field := range record.Description.Fields {
 		d := field.Type
 		for d.Type == abi.Array {
