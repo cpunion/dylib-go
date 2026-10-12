@@ -85,3 +85,8 @@ Aligned apply_fastcall(AlignedFastFn, Aligned, int, Aligned, int);
 Aligned ALIGNED_FASTCALL fastcall_empty(void);
 Aligned ALIGNED_FASTCALL fastcall_one(double, int, double);
 Aligned ALIGNED_FASTCALL fastcall_mixed(double, unsigned long long, Aligned, int, double);
+typedef struct { float left; float right; int marker; } FastPlain;
+FastPlain ALIGNED_FASTCALL fastcall_plain(double, FastPlain, int, double, int);
+typedef FastPlain (ALIGNED_FASTCALL *PlainFastFn)(double, FastPlain, int, double, int);
+PlainFastFn plain_factory(void);
+FastPlain apply_plain(PlainFastFn, double, FastPlain, int, double, int);

@@ -38,7 +38,7 @@ func TestAlignedCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_aligned", "echo_fields", "echo_packed", "echo_bits", "echo_envelope", "aligned_factory", "apply_aligned", "aligned_pointer", "mutate_aligned", "sum_aligned", "aligned_variable", "echo_floats", "echo_field_bits", "echo_packed_fields", "aligned_address", "echo_packed_field_bits", "echo_stdcall", "echo_fastcall", "stdcall_factory", "fastcall_factory", "apply_stdcall", "apply_fastcall", "fastcall_empty", "fastcall_one", "fastcall_mixed"}
+	names := []string{"echo_aligned", "echo_fields", "echo_packed", "echo_bits", "echo_envelope", "aligned_factory", "apply_aligned", "aligned_pointer", "mutate_aligned", "sum_aligned", "aligned_variable", "echo_floats", "echo_field_bits", "echo_packed_fields", "aligned_address", "echo_packed_field_bits", "echo_stdcall", "echo_fastcall", "stdcall_factory", "fastcall_factory", "apply_stdcall", "apply_fastcall", "fastcall_empty", "fastcall_one", "fastcall_mixed", "fastcall_plain", "plain_factory", "apply_plain"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -204,6 +204,16 @@ func checkCalls(t *testing.T, path string) {
 		mixedWant := p
 		mixedWant.Value, mixedWant.Tail = 42, 12
 		check("fastcall registers after wide stack arguments", got, mixedWant, err)
+		plain := BindingsRecord9{Left: 20.5, Right: 19.5, Marker: 20}
+		plainWant := BindingsRecord9{Left: 22, Right: 22, Marker: 22}
+		plainGot, err := b.Fastcall_plain(1.5, plain, -8, 2.5, 10)
+		check("ordinary fastcall stack record and hidden result", plainGot, plainWant, err)
+		plainEntry, err := b.Plain_factory()
+		if err != nil || plainEntry == nil {
+			t.Fatal("ordinary fastcall factory:", plainEntry, err)
+		}
+		plainGot, err = b.Apply_plain(plainEntry, 1.5, plain, -8, 2.5, 10)
+		check("ordinary fastcall native function pointer", plainGot, plainWant, err)
 		fields := BindingsRecord1{Tag: -128, Values: [2]float64{20.5, 19.5}, Count: 20}
 		wantFields := BindingsRecord1{Tag: -127, Values: [2]float64{22, 22}, Count: 22}
 		gotFields, err := b.Echo_fields(fields)

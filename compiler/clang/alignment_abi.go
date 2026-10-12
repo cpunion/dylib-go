@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/cpunion/dylib-go/abi"
@@ -12,14 +13,32 @@ import (
 // MSVC i386 can pass explicitly aligned aggregates through a hidden pointer;
 // MinGW's ordinary C prototype passes inline bytes instead. Observe the producer
 // lowering rather than deriving required alignment from storage alignment.
-func (h *Header) probeAlignedArguments(ctx context.Context, compiler, path string, flags []string) error {
+func (h *Header) probeRecordABI(ctx context.Context, compiler, path string, flags []string) error {
 	if h.Target.OS != "windows" || h.Target.Arch != "386" || !strings.Contains(h.Target.Triple, "msvc") {
 		return nil
 	}
 	var source strings.Builder
 	var indexes []int
+	var fastResults []abi.TypeDesc
+	var collect func(abi.Signature, []FunctionPointer)
+	collect = func(signature abi.Signature, pointers []FunctionPointer) {
+		if signature.Convention == abi.FastCall && signature.Result == abi.Struct {
+			fastResults = append(fastResults, signature.ReturnType())
+		}
+		for _, pointer := range pointers {
+			collect(pointer.Signature, pointer.FunctionPointers)
+		}
+	}
+	for _, function := range h.Functions {
+		collect(function.Signature, function.FunctionPointers)
+	}
+	for _, record := range h.Records {
+		for _, pointer := range record.FunctionPointers {
+			collect(pointer.Signature, pointer.FunctionPointers)
+		}
+	}
 	for i, record := range h.Records {
-		if record.Layout.Alignment <= 4 {
+		if record.Layout.Alignment <= 4 && !hasFastResult(record.Description, fastResults) {
 			continue
 		}
 		indexes = append(indexes, i)
@@ -40,7 +59,7 @@ func (h *Header) probeAlignedArguments(ctx context.Context, compiler, path strin
 			return err
 		}
 		h.Records[i].IndirectArgument = indirect
-		if indirect {
+		if indirect || hasFastResult(h.Records[i].Description, fastResults) {
 			parameters, err := recordProbeParameters(string(data), fmt.Sprintf("dylib_record_%d_result", i))
 			if err != nil {
 				return err
@@ -49,6 +68,15 @@ func (h *Header) probeAlignedArguments(ctx context.Context, compiler, path strin
 		}
 	}
 	return nil
+}
+
+func hasFastResult(description abi.TypeDesc, results []abi.TypeDesc) bool {
+	for _, result := range results {
+		if reflect.DeepEqual(description, result) {
+			return true
+		}
+	}
+	return false
 }
 
 func indirectRecordArgument(ir, name string) (bool, error) {
@@ -108,11 +136,10 @@ func (t *cgoTypes) cParameterType(d abi.TypeDesc) (string, error) {
 
 func (t *cgoTypes) writeArgumentTypes(output *bytes.Buffer) {
 	for i, record := range t.records {
-		if !record.IndirectArgument {
-			continue
-		}
 		name := t.cRecordName(i)
-		fmt.Fprintf(output, "#if defined(_WIN32) && defined(__i386__) && !defined(_MSC_VER)\ntypedef %s *%s_argument;\n#define %s_arg(value) (&(value))\n#else\ntypedef %s %s_argument;\n#define %s_arg(value) (value)\n#endif\n", name, name, name, name, name, name)
+		if record.IndirectArgument {
+			fmt.Fprintf(output, "#if defined(_WIN32) && defined(__i386__) && !defined(_MSC_VER)\ntypedef %s *%s_argument;\n#define %s_arg(value) (&(value))\n#else\ntypedef %s %s_argument;\n#define %s_arg(value) (value)\n#endif\n", name, name, name, name, name, name)
+		}
 		if record.IndirectResult {
 			fmt.Fprintf(output, "typedef struct { %s *value; } %s_result_pointer;\n", name, name)
 		}

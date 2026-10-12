@@ -232,7 +232,7 @@ by dynamic `ForHost` and direct `LLGoSource` adapters.
 
 For MSVC i386, Clang also emits small argument-lowering probes as LLVM IR.
 Go reads these probes without executing foreign code and saves
-`Record.IndirectArgument` and the aligned type's `Record.IndirectResult`.
+`Record.IndirectArgument` and `Record.IndirectResult`.
 Required fixed arguments can use an implicit pointer
 even when an ordinary record has the same storage alignment. Generated bridges
 reconcile this with a MinGW host using local aligned C copies, including native
@@ -241,7 +241,10 @@ Unnamed variadic aggregate arguments retain their by-value ABI. This follows
 the [Clang MSVC i386 argument classification](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.0/clang/lib/CodeGen/Targets/X86.cpp#L762).
 GCC fastcall also places an implicit result pointer differently from MSVC/Clang.
 Its bridge places register arguments first, then an explicit stack result carrier
-and the remaining stack arguments; the producer keeps its original ABI.
+and the remaining stack arguments; the producer keeps its original ABI. Return
+probes also cover ordinary records used by fastcall exports or native pointers,
+including inline record arguments before the register arguments. These
+MSVC i386 hidden-result records require a compiled C adapter as well.
 
 For MinGW packed bitfields, the byte-packing pragma can also suppress member
 alignment. The bridge reproduces compiler-confirmed member boundaries with

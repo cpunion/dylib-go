@@ -53,3 +53,6 @@ Aligned apply_fastcall(AlignedFastFn fn, Aligned p, int delta, Aligned q, int ex
 Aligned ALIGNED_FASTCALL fastcall_empty(void) { Aligned p = {-128, 20.5, 22, 0}; return p; }
 Aligned ALIGNED_FASTCALL fastcall_one(double first, int delta, double last) { Aligned p = {-128, first + last, delta, 0}; return p; }
 Aligned ALIGNED_FASTCALL fastcall_mixed(double first, unsigned long long wide, Aligned p, int delta, double last) { p.value += first + last; p.tail += delta + (int)(wide & 15); return p; }
+FastPlain ALIGNED_FASTCALL fastcall_plain(double first, FastPlain p, int delta, double last, int extra) { p.left += first; p.right += last; p.marker += delta + extra; return p; }
+PlainFastFn plain_factory(void) { return fastcall_plain; }
+FastPlain apply_plain(PlainFastFn fn, double first, FastPlain p, int delta, double last, int extra) { return fn(first, p, delta, last, extra); }

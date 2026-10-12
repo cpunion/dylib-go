@@ -192,6 +192,29 @@ Required variable(Required,...);`)
 	}
 }
 
+func TestOrdinaryFastcallResultLowering(t *testing.T) {
+	path := headerFile(t, `typedef struct { float left; float right; int marker; } Plain;
+typedef Plain (__attribute__((fastcall)) *Entry)(double,Plain,int);
+Entry factory(void); Plain apply(Entry,Plain);`)
+	for _, triple := range []string{"i686-pc-windows-msvc", "i686-w64-windows-gnu"} {
+		h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Target: triple, Functions: []string{"factory", "apply"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := strings.Contains(triple, "msvc")
+		if len(h.Records) != 1 || h.Records[0].IndirectArgument || h.Records[0].IndirectResult != want || h.Records[0].requiresCAdapter() != want {
+			t.Fatal("ordinary fastcall result lowering:", triple, h.Records)
+		}
+		source, err := h.CgoSource("bindings", "Bindings")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(string(source), "_record0_result_pointer") != want {
+			t.Fatal("ordinary fastcall native prototype:", triple)
+		}
+	}
+}
+
 func TestIndirectRecordIRProbe(t *testing.T) {
 	for _, test := range []struct {
 		parameters string
