@@ -699,6 +699,317 @@ result.f1 = value.f1;
 result.f2 = value.f2;
 return result;
 }
+#pragma pack(push,2)
+typedef struct {
+int8_t f0;
+uint32_t :3 __attribute__((aligned(2)));
+uint32_t f1:5 __attribute__((packed));
+uint32_t :0;
+uint64_t :0;
+int32_t f2:7 __attribute__((packed));
+uint32_t :0 __attribute__((packed));
+_Bool f3:1;
+uint64_t f4:40;
+double f5[2];
+void * f6;
+uint32_t :5;
+} dylib_go_42696e64696e6773_record15;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record15_mask(int32_t field,uint64_t byte) {
+volatile dylib_go_42696e64696e6773_record15 value;
+volatile unsigned char *data = (volatile unsigned char *)&value;
+for (uint64_t i=0;i<sizeof(value);++i) data[i]=0;
+switch(field) {
+case 1:value.f1=31ULL;break;
+case 2:value.f2=-1;break;
+case 3:value.f3=1ULL;break;
+case 4:value.f4=1099511627775ULL;break;
+default:return UINT64_MAX;
+}
+if (byte==UINT64_MAX) {
+for (uint64_t i=0;i<sizeof(value);++i) if (data[i]) return i;
+return UINT64_MAX;
+}
+return byte<sizeof(value)?data[byte]:UINT64_MAX;
+}
+static uint64_t dylib_go_42696e64696e6773_record15_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record15);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record15);
+case 2:return offsetof(dylib_go_42696e64696e6773_record15,f0);
+case 3:return dylib_go_42696e64696e6773_record15_mask(1,UINT64_MAX);
+case 4:return dylib_go_42696e64696e6773_record15_mask(2,UINT64_MAX);
+case 5:return dylib_go_42696e64696e6773_record15_mask(3,UINT64_MAX);
+case 6:return dylib_go_42696e64696e6773_record15_mask(4,UINT64_MAX);
+case 7:return offsetof(dylib_go_42696e64696e6773_record15,f5);
+case 8:return offsetof(dylib_go_42696e64696e6773_record15,f6);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+uint32_t f1;
+int32_t f2;
+_Bool f3;
+uint64_t f4;
+double f5[2];
+void * f6;
+} dylib_go_42696e64696e6773_record15_transport;
+static dylib_go_42696e64696e6773_record15 dylib_go_42696e64696e6773_record15_from_transport(dylib_go_42696e64696e6773_record15_transport value) {
+dylib_go_42696e64696e6773_record15 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+result.f3 = value.f3;
+result.f4 = value.f4;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f5[i0] = value.f5[i0];
+}
+result.f6 = value.f6;
+return result;
+}
+static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_record15_to_transport(dylib_go_42696e64696e6773_record15 value) {
+dylib_go_42696e64696e6773_record15_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+result.f3 = value.f3;
+result.f4 = value.f4;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f5[i0] = value.f5[i0];
+}
+result.f6 = value.f6;
+return result;
+}
+#pragma pack(push,1)
+typedef struct {
+uint32_t f0:3;
+int32_t f1:5;
+uint32_t :4;
+uint64_t :0;
+uint32_t :0;
+} dylib_go_42696e64696e6773_record16;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record16_mask(int32_t field,uint64_t byte) {
+volatile dylib_go_42696e64696e6773_record16 value;
+volatile unsigned char *data = (volatile unsigned char *)&value;
+for (uint64_t i=0;i<sizeof(value);++i) data[i]=0;
+switch(field) {
+case 0:value.f0=7ULL;break;
+case 1:value.f1=-1;break;
+default:return UINT64_MAX;
+}
+if (byte==UINT64_MAX) {
+for (uint64_t i=0;i<sizeof(value);++i) if (data[i]) return i;
+return UINT64_MAX;
+}
+return byte<sizeof(value)?data[byte]:UINT64_MAX;
+}
+static uint64_t dylib_go_42696e64696e6773_record16_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record16);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record16);
+case 2:return dylib_go_42696e64696e6773_record16_mask(0,UINT64_MAX);
+case 3:return dylib_go_42696e64696e6773_record16_mask(1,UINT64_MAX);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+uint32_t f0;
+int32_t f1;
+} dylib_go_42696e64696e6773_record16_transport;
+static dylib_go_42696e64696e6773_record16 dylib_go_42696e64696e6773_record16_from_transport(dylib_go_42696e64696e6773_record16_transport value) {
+dylib_go_42696e64696e6773_record16 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record16_transport dylib_go_42696e64696e6773_record16_to_transport(dylib_go_42696e64696e6773_record16 value) {
+dylib_go_42696e64696e6773_record16_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+#pragma pack(push,2)
+typedef struct __attribute__((packed)) {
+int8_t f0;
+uint32_t :3 __attribute__((aligned(2)));
+uint32_t f1:5;
+uint64_t :0;
+int32_t f2:7;
+uint32_t :0;
+double f3;
+} dylib_go_42696e64696e6773_record17;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record17_mask(int32_t field,uint64_t byte) {
+volatile dylib_go_42696e64696e6773_record17 value;
+volatile unsigned char *data = (volatile unsigned char *)&value;
+for (uint64_t i=0;i<sizeof(value);++i) data[i]=0;
+switch(field) {
+case 1:value.f1=31ULL;break;
+case 2:value.f2=-1;break;
+default:return UINT64_MAX;
+}
+if (byte==UINT64_MAX) {
+for (uint64_t i=0;i<sizeof(value);++i) if (data[i]) return i;
+return UINT64_MAX;
+}
+return byte<sizeof(value)?data[byte]:UINT64_MAX;
+}
+static uint64_t dylib_go_42696e64696e6773_record17_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record17);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record17);
+case 2:return offsetof(dylib_go_42696e64696e6773_record17,f0);
+case 3:return dylib_go_42696e64696e6773_record17_mask(1,UINT64_MAX);
+case 4:return dylib_go_42696e64696e6773_record17_mask(2,UINT64_MAX);
+case 5:return offsetof(dylib_go_42696e64696e6773_record17,f3);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+uint32_t f1;
+int32_t f2;
+double f3;
+} dylib_go_42696e64696e6773_record17_transport;
+static dylib_go_42696e64696e6773_record17 dylib_go_42696e64696e6773_record17_from_transport(dylib_go_42696e64696e6773_record17_transport value) {
+dylib_go_42696e64696e6773_record17 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+result.f3 = value.f3;
+return result;
+}
+static dylib_go_42696e64696e6773_record17_transport dylib_go_42696e64696e6773_record17_to_transport(dylib_go_42696e64696e6773_record17 value) {
+dylib_go_42696e64696e6773_record17_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+result.f3 = value.f3;
+return result;
+}
+#pragma pack(push,2)
+typedef struct {
+float f0;
+uint64_t :0;
+float f1;
+} dylib_go_42696e64696e6773_record18;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record18_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record18);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record18);
+case 2:return offsetof(dylib_go_42696e64696e6773_record18,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record18,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+float f0;
+float f1;
+} dylib_go_42696e64696e6773_record18_transport;
+static dylib_go_42696e64696e6773_record18 dylib_go_42696e64696e6773_record18_from_transport(dylib_go_42696e64696e6773_record18_transport value) {
+dylib_go_42696e64696e6773_record18 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record18_transport dylib_go_42696e64696e6773_record18_to_transport(dylib_go_42696e64696e6773_record18 value) {
+dylib_go_42696e64696e6773_record18_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+#pragma pack(push,4)
+typedef struct {
+int8_t f0;
+dylib_go_42696e64696e6773_record15 f1[2][2];
+dylib_go_42696e64696e6773_record17 f2[2];
+dylib_go_42696e64696e6773_record16 f3;
+dylib_go_42696e64696e6773_record18 f4;
+} dylib_go_42696e64696e6773_record19;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record19_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record19);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record19);
+case 2:return offsetof(dylib_go_42696e64696e6773_record19,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record19,f1);
+case 4:return offsetof(dylib_go_42696e64696e6773_record19,f2);
+case 5:return offsetof(dylib_go_42696e64696e6773_record19,f3);
+case 6:return offsetof(dylib_go_42696e64696e6773_record19,f4);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+dylib_go_42696e64696e6773_record15_transport f1[2][2];
+dylib_go_42696e64696e6773_record17_transport f2[2];
+dylib_go_42696e64696e6773_record16_transport f3;
+dylib_go_42696e64696e6773_record18_transport f4;
+} dylib_go_42696e64696e6773_record19_transport;
+static dylib_go_42696e64696e6773_record19 dylib_go_42696e64696e6773_record19_from_transport(dylib_go_42696e64696e6773_record19_transport value) {
+dylib_go_42696e64696e6773_record19 result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+for (uint32_t i1 = 0; i1 < 2; ++i1) {
+result.f1[i0][i1] = dylib_go_42696e64696e6773_record15_from_transport(value.f1[i0][i1]);
+}
+}
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f2[i0] = dylib_go_42696e64696e6773_record17_from_transport(value.f2[i0]);
+}
+result.f3 = dylib_go_42696e64696e6773_record16_from_transport(value.f3);
+result.f4 = dylib_go_42696e64696e6773_record18_from_transport(value.f4);
+return result;
+}
+static dylib_go_42696e64696e6773_record19_transport dylib_go_42696e64696e6773_record19_to_transport(dylib_go_42696e64696e6773_record19 value) {
+dylib_go_42696e64696e6773_record19_transport result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+for (uint32_t i1 = 0; i1 < 2; ++i1) {
+result.f1[i0][i1] = dylib_go_42696e64696e6773_record15_to_transport(value.f1[i0][i1]);
+}
+}
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f2[i0] = dylib_go_42696e64696e6773_record17_to_transport(value.f2[i0]);
+}
+result.f3 = dylib_go_42696e64696e6773_record16_to_transport(value.f3);
+result.f4 = dylib_go_42696e64696e6773_record18_to_transport(value.f4);
+return result;
+}
+#pragma pack(push,2)
+typedef struct {
+int8_t f0;
+void * f1;
+} dylib_go_42696e64696e6773_record20;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record20_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record20);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record20);
+case 2:return offsetof(dylib_go_42696e64696e6773_record20,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record20,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+void * f1;
+} dylib_go_42696e64696e6773_record20_transport;
+static dylib_go_42696e64696e6773_record20 dylib_go_42696e64696e6773_record20_from_transport(dylib_go_42696e64696e6773_record20_transport value) {
+dylib_go_42696e64696e6773_record20 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record20_transport dylib_go_42696e64696e6773_record20_to_transport(dylib_go_42696e64696e6773_record20 value) {
+dylib_go_42696e64696e6773_record20_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
 typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call0_function)(dylib_go_42696e64696e6773_record0);
 static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call0(uintptr_t address,dylib_go_42696e64696e6773_record0_transport p0) {
 return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call0_function)address)(dylib_go_42696e64696e6773_record0_from_transport(p0)));
@@ -811,6 +1122,56 @@ typedef dylib_go_42696e64696e6773_record14 (*dylib_go_42696e64696e6773_call26_fu
 static dylib_go_42696e64696e6773_record14_transport dylib_go_42696e64696e6773_call26(uintptr_t address,dylib_go_42696e64696e6773_record14_transport p0) {
 return dylib_go_42696e64696e6773_record14_to_transport(((dylib_go_42696e64696e6773_call26_function)address)(dylib_go_42696e64696e6773_record14_from_transport(p0)));
 }
+typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call27_function)(dylib_go_42696e64696e6773_record15);
+static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call27(uintptr_t address,dylib_go_42696e64696e6773_record15_transport p0) {
+return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call27_function)address)(dylib_go_42696e64696e6773_record15_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record16 (*dylib_go_42696e64696e6773_call28_function)(dylib_go_42696e64696e6773_record16);
+static dylib_go_42696e64696e6773_record16_transport dylib_go_42696e64696e6773_call28(uintptr_t address,dylib_go_42696e64696e6773_record16_transport p0) {
+return dylib_go_42696e64696e6773_record16_to_transport(((dylib_go_42696e64696e6773_call28_function)address)(dylib_go_42696e64696e6773_record16_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record17 (*dylib_go_42696e64696e6773_call29_function)(dylib_go_42696e64696e6773_record17);
+static dylib_go_42696e64696e6773_record17_transport dylib_go_42696e64696e6773_call29(uintptr_t address,dylib_go_42696e64696e6773_record17_transport p0) {
+return dylib_go_42696e64696e6773_record17_to_transport(((dylib_go_42696e64696e6773_call29_function)address)(dylib_go_42696e64696e6773_record17_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record18 (*dylib_go_42696e64696e6773_call30_function)(dylib_go_42696e64696e6773_record18);
+static dylib_go_42696e64696e6773_record18_transport dylib_go_42696e64696e6773_call30(uintptr_t address,dylib_go_42696e64696e6773_record18_transport p0) {
+return dylib_go_42696e64696e6773_record18_to_transport(((dylib_go_42696e64696e6773_call30_function)address)(dylib_go_42696e64696e6773_record18_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record19 (*dylib_go_42696e64696e6773_call31_function)(dylib_go_42696e64696e6773_record19);
+static dylib_go_42696e64696e6773_record19_transport dylib_go_42696e64696e6773_call31(uintptr_t address,dylib_go_42696e64696e6773_record19_transport p0) {
+return dylib_go_42696e64696e6773_record19_to_transport(((dylib_go_42696e64696e6773_call31_function)address)(dylib_go_42696e64696e6773_record19_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call32_pointer0)(dylib_go_42696e64696e6773_record15);
+typedef dylib_go_42696e64696e6773_call32_pointer0 (*dylib_go_42696e64696e6773_call32_function)(void);
+static void * dylib_go_42696e64696e6773_call32(uintptr_t address) {
+return (void *)((dylib_go_42696e64696e6773_call32_function)address)();
+}
+typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call33_pointer1)(dylib_go_42696e64696e6773_record15);
+typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call33_function)(dylib_go_42696e64696e6773_call33_pointer1,dylib_go_42696e64696e6773_record15);
+static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call33(uintptr_t address,void * p0,dylib_go_42696e64696e6773_record15_transport p1) {
+return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call33_function)address)((dylib_go_42696e64696e6773_call33_pointer1)p0,dylib_go_42696e64696e6773_record15_from_transport(p1)));
+}
+typedef dylib_go_42696e64696e6773_record15 * (*dylib_go_42696e64696e6773_call34_function)(void);
+static void * dylib_go_42696e64696e6773_call34(uintptr_t address) {
+return (void *)((dylib_go_42696e64696e6773_call34_function)address)();
+}
+typedef dylib_go_42696e64696e6773_record15 * (*dylib_go_42696e64696e6773_call35_function)(dylib_go_42696e64696e6773_record15 *);
+static void * dylib_go_42696e64696e6773_call35(uintptr_t address,void * p0) {
+return (void *)((dylib_go_42696e64696e6773_call35_function)address)((dylib_go_42696e64696e6773_record15 *)p0);
+}
+typedef double (*dylib_go_42696e64696e6773_call36_function)(dylib_go_42696e64696e6773_record15 *);
+static double dylib_go_42696e64696e6773_call36(uintptr_t address,void * p0) {
+return ((dylib_go_42696e64696e6773_call36_function)address)((dylib_go_42696e64696e6773_record15 *)p0);
+}
+typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call37_function)(dylib_go_42696e64696e6773_record15,...);
+static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call37(uintptr_t address,dylib_go_42696e64696e6773_record15_transport p0,int32_t p1,float p2) {
+return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call37_function)address)(dylib_go_42696e64696e6773_record15_from_transport(p0),(int8_t)p1,p2));
+}
+typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call38_function)(dylib_go_42696e64696e6773_record20,dylib_go_42696e64696e6773_record15);
+static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call38(uintptr_t address,dylib_go_42696e64696e6773_record20_transport p0,dylib_go_42696e64696e6773_record15_transport p1) {
+return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call38_function)address)(dylib_go_42696e64696e6773_record20_from_transport(p0),dylib_go_42696e64696e6773_record15_from_transport(p1)));
+}
 */
 import "C"
 
@@ -853,6 +1214,18 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "echo_ignored_float_zero", Symbol: "echo_ignored_float_zero", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "right", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
 		{Name: "echo_aligned_unit", Symbol: "echo_aligned_unit", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "aligned_marker", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "aligned_code", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "aligned_tail", Type: abi.TypeDesc{Type: abi.I8}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "aligned_marker", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "aligned_code", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "aligned_tail", Type: abi.TypeDesc{Type: abi.I8}}}}}},
 		{Name: "echo_packed_aligned_unit", Symbol: "echo_packed_aligned_unit", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_marker", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_code", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I8}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_marker", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_code", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I8}}}}}},
+		{Name: "echo_pragma_bits", Symbol: "echo_pragma_bits", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
+		{Name: "echo_pragma_tiny", Symbol: "echo_pragma_tiny", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}}},
+		{Name: "echo_pragma_packed", Symbol: "echo_pragma_packed", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
+		{Name: "echo_pragma_float", Symbol: "echo_pragma_float", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "echo_pragma_bits_envelope", Symbol: "echo_pragma_bits_envelope", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "envelope_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "bits", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}, {Name: "packed", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}, {Name: "tiny", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}}, {Name: "floating", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F32}}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "envelope_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "bits", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}, {Name: "packed", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}, {Name: "tiny", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}}, {Name: "floating", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F32}}}}}}}}},
+		{Name: "pragma_bits_factory", Symbol: "pragma_bits_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
+		{Name: "apply_pragma_bits", Symbol: "apply_pragma_bits", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
+		{Name: "pragma_bits_pointer", Symbol: "pragma_bits_pointer", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}},
+		{Name: "mutate_pragma_bits", Symbol: "mutate_pragma_bits", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}},
+		{Name: "sum_pragma_bits", Symbol: "sum_pragma_bits", Signature: abi.Signature{Result: abi.F64, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
+		{Name: "pragma_bits_variable", Symbol: "pragma_bits_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
+		{Name: "apply_pragma_bits_slot", Symbol: "apply_pragma_bits_slot", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct, abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "slot_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
 	},
 	Records: []clang.Record{
 		{Name: "Bits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "delta", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 48, Alignment: 16, Offsets: []uint64{0, 0, 1, 16, 24, 32}}, PackedFields: []int{0, 3}, FieldAlignments: []clang.FieldAlignment{{Position: 3, Aligned: 16}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 1, Mask: []byte{1}}, {Position: 3, Width: 40, Mask: []byte{255, 255, 255, 255, 255}}}},
@@ -870,6 +1243,12 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "IgnoredFloatZero", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 20, Alignment: 4, Offsets: []uint64{0, 16}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 0, Offset: 16, Aligned: 16}}},
 		{Name: "AlignedUnit", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "aligned_marker", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "aligned_code", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "aligned_tail", Type: abi.TypeDesc{Type: abi.I8}}}}, Layout: abi.Layout{Size: 36, Alignment: 4, Offsets: []uint64{0, 16, 33}}, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 16, Aligned: 16}, {Before: 2, Type: abi.Type(2), Width: 5, Offset: 32, Aligned: 32}}},
 		{Name: "PackedAlignedUnit", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_marker", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_code", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I8}}}}, Layout: abi.Layout{Size: 34, Alignment: 1, Offsets: []uint64{0, 16, 33}}, Packed: true, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 16, Aligned: 16}, {Before: 2, Type: abi.Type(2), Width: 5, Offset: 32, Aligned: 32}}},
+		{Name: "PragmaBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 36, Alignment: 2, Offsets: []uint64{0, 2, 4, 8, 8, 14, 30}}, PackedFields: []int{1, 2}, MaxFieldAlignment: 2, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 7, Mask: []byte{127}}, {Position: 3, Width: 1, Mask: []byte{1}}, {Position: 4, Width: 40, Mask: []byte{254, 255, 255, 255, 255, 1}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 2, Aligned: 2}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 4}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 4}, {Before: 3, Type: abi.Type(2), Width: 0, Offset: 8, Packed: true}, {Before: 7, Type: abi.Type(2), Width: 5, Offset: 0}}},
+		{Name: "PragmaTiny", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 4, Alignment: 1, Offsets: []uint64{0, 0}}, MaxFieldAlignment: 1, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 2, Type: abi.Type(2), Width: 4, Offset: 0}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 4}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 4}}},
+		{Name: "PragmaPacked", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 16, Alignment: 2, Offsets: []uint64{0, 2, 4, 8}}, Packed: true, MaxFieldAlignment: 2, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 7, Mask: []byte{127}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 2, Aligned: 2}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 4}, {Before: 3, Type: abi.Type(2), Width: 0, Offset: 8}}},
+		{Name: "PragmaFloat", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 8, Alignment: 2, Offsets: []uint64{0, 4}}, MaxFieldAlignment: 2, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(4), Width: 0, Offset: 4}}},
+		{Name: "PragmaBitsEnvelope", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "envelope_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "bits", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}, {Name: "packed", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}, {Name: "tiny", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}}, {Name: "floating", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F32}}}}}}}, Layout: abi.Layout{Size: 190, Alignment: 2, Offsets: []uint64{0, 2, 146, 178, 182}}, MaxFieldAlignment: 4},
+		{Name: "PragmaBitsSlot", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "slot_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 6, Alignment: 2, Offsets: []uint64{0, 2}}, MaxFieldAlignment: 2, FunctionPointers: []clang.FunctionPointer{{Position: 1, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
 	},
 }
 
@@ -1004,6 +1383,64 @@ type BindingsRecord14 struct {
 	Packed_marker int8
 	Packed_code   uint32
 	Packed_tail   int8
+}
+
+// BindingsRecord15 describes PragmaBits; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord15 struct {
+	Pragma_tag     int8
+	Pragma_low     uint32
+	Pragma_high    int32
+	Pragma_active  bool
+	Pragma_wide    uint64
+	Pragma_samples [2]float64
+	Pragma_context unsafe.Pointer
+}
+
+// BindingsRecord16 describes PragmaTiny; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord16 struct {
+	Tiny_low  uint32
+	Tiny_high int32
+}
+
+// BindingsRecord17 describes PragmaPacked; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord17 struct {
+	Packed_tag  int8
+	Packed_low  uint32
+	Packed_high int32
+	Packed_real float64
+}
+
+// BindingsRecord18 describes PragmaFloat; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord18 struct {
+	Float_left  float32
+	Float_right float32
+}
+
+// BindingsRecord19 describes PragmaBitsEnvelope; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord19 struct {
+	Envelope_tag int8
+	Bits         [2][2]BindingsRecord15
+	Packed       [2]BindingsRecord17
+	Tiny         BindingsRecord16
+	Floating     BindingsRecord18
+}
+
+// BindingsRecord20 describes PragmaBitsSlot; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord20 struct {
+	Slot_tag int8
+	Entry    unsafe.Pointer
 }
 
 func _BindingsRecord0ToC(value BindingsRecord0) (result C.dylib_go_42696e64696e6773_record0_transport) {
@@ -1228,6 +1665,114 @@ func _BindingsRecord14FromC(value C.dylib_go_42696e64696e6773_record14_transport
 	return result
 }
 
+func _BindingsRecord15ToC(value BindingsRecord15) (result C.dylib_go_42696e64696e6773_record15_transport) {
+	result.f0 = C.int8_t(value.Pragma_tag)
+	result.f1 = C.uint32_t(value.Pragma_low)
+	result.f2 = C.int32_t(value.Pragma_high)
+	result.f3 = C._Bool(value.Pragma_active)
+	result.f4 = C.uint64_t(value.Pragma_wide)
+	for i0 := range 2 {
+		result.f5[i0] = C.double(value.Pragma_samples[i0])
+	}
+	result.f6 = value.Pragma_context
+	return result
+}
+
+func _BindingsRecord15FromC(value C.dylib_go_42696e64696e6773_record15_transport) (result BindingsRecord15) {
+	result.Pragma_tag = int8(value.f0)
+	result.Pragma_low = uint32(value.f1)
+	result.Pragma_high = int32(value.f2)
+	result.Pragma_active = bool(value.f3)
+	result.Pragma_wide = uint64(value.f4)
+	for i0 := range 2 {
+		result.Pragma_samples[i0] = float64(value.f5[i0])
+	}
+	result.Pragma_context = value.f6
+	return result
+}
+
+func _BindingsRecord16ToC(value BindingsRecord16) (result C.dylib_go_42696e64696e6773_record16_transport) {
+	result.f0 = C.uint32_t(value.Tiny_low)
+	result.f1 = C.int32_t(value.Tiny_high)
+	return result
+}
+
+func _BindingsRecord16FromC(value C.dylib_go_42696e64696e6773_record16_transport) (result BindingsRecord16) {
+	result.Tiny_low = uint32(value.f0)
+	result.Tiny_high = int32(value.f1)
+	return result
+}
+
+func _BindingsRecord17ToC(value BindingsRecord17) (result C.dylib_go_42696e64696e6773_record17_transport) {
+	result.f0 = C.int8_t(value.Packed_tag)
+	result.f1 = C.uint32_t(value.Packed_low)
+	result.f2 = C.int32_t(value.Packed_high)
+	result.f3 = C.double(value.Packed_real)
+	return result
+}
+
+func _BindingsRecord17FromC(value C.dylib_go_42696e64696e6773_record17_transport) (result BindingsRecord17) {
+	result.Packed_tag = int8(value.f0)
+	result.Packed_low = uint32(value.f1)
+	result.Packed_high = int32(value.f2)
+	result.Packed_real = float64(value.f3)
+	return result
+}
+
+func _BindingsRecord18ToC(value BindingsRecord18) (result C.dylib_go_42696e64696e6773_record18_transport) {
+	result.f0 = C.float(value.Float_left)
+	result.f1 = C.float(value.Float_right)
+	return result
+}
+
+func _BindingsRecord18FromC(value C.dylib_go_42696e64696e6773_record18_transport) (result BindingsRecord18) {
+	result.Float_left = float32(value.f0)
+	result.Float_right = float32(value.f1)
+	return result
+}
+
+func _BindingsRecord19ToC(value BindingsRecord19) (result C.dylib_go_42696e64696e6773_record19_transport) {
+	result.f0 = C.int8_t(value.Envelope_tag)
+	for i0 := range 2 {
+		for i1 := range 2 {
+			result.f1[i0][i1] = _BindingsRecord15ToC(value.Bits[i0][i1])
+		}
+	}
+	for i0 := range 2 {
+		result.f2[i0] = _BindingsRecord17ToC(value.Packed[i0])
+	}
+	result.f3 = _BindingsRecord16ToC(value.Tiny)
+	result.f4 = _BindingsRecord18ToC(value.Floating)
+	return result
+}
+
+func _BindingsRecord19FromC(value C.dylib_go_42696e64696e6773_record19_transport) (result BindingsRecord19) {
+	result.Envelope_tag = int8(value.f0)
+	for i0 := range 2 {
+		for i1 := range 2 {
+			result.Bits[i0][i1] = _BindingsRecord15FromC(value.f1[i0][i1])
+		}
+	}
+	for i0 := range 2 {
+		result.Packed[i0] = _BindingsRecord17FromC(value.f2[i0])
+	}
+	result.Tiny = _BindingsRecord16FromC(value.f3)
+	result.Floating = _BindingsRecord18FromC(value.f4)
+	return result
+}
+
+func _BindingsRecord20ToC(value BindingsRecord20) (result C.dylib_go_42696e64696e6773_record20_transport) {
+	result.f0 = C.int8_t(value.Slot_tag)
+	result.f1 = value.Entry
+	return result
+}
+
+func _BindingsRecord20FromC(value C.dylib_go_42696e64696e6773_record20_transport) (result BindingsRecord20) {
+	result.Slot_tag = int8(value.f0)
+	result.Entry = value.f1
+	return result
+}
+
 // Bindings retains symbol handles; its caller owns the Session.
 type Bindings struct {
 	symbol0  *dylib.Symbol
@@ -1257,6 +1802,18 @@ type Bindings struct {
 	symbol24 *dylib.Symbol
 	symbol25 *dylib.Symbol
 	symbol26 *dylib.Symbol
+	symbol27 *dylib.Symbol
+	symbol28 *dylib.Symbol
+	symbol29 *dylib.Symbol
+	symbol30 *dylib.Symbol
+	symbol31 *dylib.Symbol
+	symbol32 *dylib.Symbol
+	symbol33 *dylib.Symbol
+	symbol34 *dylib.Symbol
+	symbol35 *dylib.Symbol
+	symbol36 *dylib.Symbol
+	symbol37 *dylib.Symbol
+	symbol38 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -1312,6 +1869,24 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 	}
 	if uint64(C.dylib_go_42696e64696e6773_record14_layout(0)) != 34 || uint64(C.dylib_go_42696e64696e6773_record14_layout(1)) != 1 || uint64(C.dylib_go_42696e64696e6773_record14_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record14_layout(3)) != 16 || uint64(C.dylib_go_42696e64696e6773_record14_layout(4)) != 33 || uint64(C.dylib_go_42696e64696e6773_record14_mask(1, 16)) != 248 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PackedAlignedUnit")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record15_layout(0)) != 36 || uint64(C.dylib_go_42696e64696e6773_record15_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record15_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record15_layout(3)) != 2 || uint64(C.dylib_go_42696e64696e6773_record15_layout(4)) != 4 || uint64(C.dylib_go_42696e64696e6773_record15_layout(5)) != 8 || uint64(C.dylib_go_42696e64696e6773_record15_layout(6)) != 8 || uint64(C.dylib_go_42696e64696e6773_record15_layout(7)) != 14 || uint64(C.dylib_go_42696e64696e6773_record15_layout(8)) != 30 || uint64(C.dylib_go_42696e64696e6773_record15_mask(1, 2)) != 248 || uint64(C.dylib_go_42696e64696e6773_record15_mask(2, 4)) != 127 || uint64(C.dylib_go_42696e64696e6773_record15_mask(3, 8)) != 1 || uint64(C.dylib_go_42696e64696e6773_record15_mask(4, 8)) != 254 || uint64(C.dylib_go_42696e64696e6773_record15_mask(4, 9)) != 255 || uint64(C.dylib_go_42696e64696e6773_record15_mask(4, 10)) != 255 || uint64(C.dylib_go_42696e64696e6773_record15_mask(4, 11)) != 255 || uint64(C.dylib_go_42696e64696e6773_record15_mask(4, 12)) != 255 || uint64(C.dylib_go_42696e64696e6773_record15_mask(4, 13)) != 1 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PragmaBits")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record16_layout(0)) != 4 || uint64(C.dylib_go_42696e64696e6773_record16_layout(1)) != 1 || uint64(C.dylib_go_42696e64696e6773_record16_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record16_layout(3)) != 0 || uint64(C.dylib_go_42696e64696e6773_record16_mask(0, 0)) != 7 || uint64(C.dylib_go_42696e64696e6773_record16_mask(1, 0)) != 248 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PragmaTiny")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record17_layout(0)) != 16 || uint64(C.dylib_go_42696e64696e6773_record17_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record17_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record17_layout(3)) != 2 || uint64(C.dylib_go_42696e64696e6773_record17_layout(4)) != 4 || uint64(C.dylib_go_42696e64696e6773_record17_layout(5)) != 8 || uint64(C.dylib_go_42696e64696e6773_record17_mask(1, 2)) != 248 || uint64(C.dylib_go_42696e64696e6773_record17_mask(2, 4)) != 127 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PragmaPacked")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record18_layout(0)) != 8 || uint64(C.dylib_go_42696e64696e6773_record18_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record18_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record18_layout(3)) != 4 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PragmaFloat")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record19_layout(0)) != 190 || uint64(C.dylib_go_42696e64696e6773_record19_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record19_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record19_layout(3)) != 2 || uint64(C.dylib_go_42696e64696e6773_record19_layout(4)) != 146 || uint64(C.dylib_go_42696e64696e6773_record19_layout(5)) != 178 || uint64(C.dylib_go_42696e64696e6773_record19_layout(6)) != 182 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PragmaBitsEnvelope")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record20_layout(0)) != 6 || uint64(C.dylib_go_42696e64696e6773_record20_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record20_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record20_layout(3)) != 2 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PragmaBitsSlot")
 	}
 	symbol0, err := session.Resolve("echo_bits")
 	if err != nil {
@@ -1448,6 +2023,66 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol26 = symbol26
+	symbol27, err := session.Resolve("echo_pragma_bits")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol27 = symbol27
+	symbol28, err := session.Resolve("echo_pragma_tiny")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol28 = symbol28
+	symbol29, err := session.Resolve("echo_pragma_packed")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol29 = symbol29
+	symbol30, err := session.Resolve("echo_pragma_float")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol30 = symbol30
+	symbol31, err := session.Resolve("echo_pragma_bits_envelope")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol31 = symbol31
+	symbol32, err := session.Resolve("pragma_bits_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol32 = symbol32
+	symbol33, err := session.Resolve("apply_pragma_bits")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol33 = symbol33
+	symbol34, err := session.Resolve("pragma_bits_pointer")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol34 = symbol34
+	symbol35, err := session.Resolve("mutate_pragma_bits")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol35 = symbol35
+	symbol36, err := session.Resolve("sum_pragma_bits")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol36 = symbol36
+	symbol37, err := session.Resolve("pragma_bits_variable")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol37 = symbol37
+	symbol38, err := session.Resolve("apply_pragma_bits_slot")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol38 = symbol38
 	return b, nil
 }
 
@@ -1743,6 +2378,138 @@ func (b *Bindings) Echo_packed_aligned_unit(p0 BindingsRecord14) (result Binding
 	}
 	err = b.symbol26.WithAddress(func(address uintptr) error {
 		result = _BindingsRecord14FromC(C.dylib_go_42696e64696e6773_call26(C.uintptr_t(address), _BindingsRecord14ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_pragma_bits(p0 BindingsRecord15) (result BindingsRecord15, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol27.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call27(C.uintptr_t(address), _BindingsRecord15ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_pragma_tiny(p0 BindingsRecord16) (result BindingsRecord16, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol28.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord16FromC(C.dylib_go_42696e64696e6773_call28(C.uintptr_t(address), _BindingsRecord16ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_pragma_packed(p0 BindingsRecord17) (result BindingsRecord17, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol29.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord17FromC(C.dylib_go_42696e64696e6773_call29(C.uintptr_t(address), _BindingsRecord17ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_pragma_float(p0 BindingsRecord18) (result BindingsRecord18, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol30.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord18FromC(C.dylib_go_42696e64696e6773_call30(C.uintptr_t(address), _BindingsRecord18ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_pragma_bits_envelope(p0 BindingsRecord19) (result BindingsRecord19, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol31.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord19FromC(C.dylib_go_42696e64696e6773_call31(C.uintptr_t(address), _BindingsRecord19ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Pragma_bits_factory() (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol32.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call32(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Apply_pragma_bits(p0 unsafe.Pointer, p1 BindingsRecord15) (result BindingsRecord15, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol33.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call33(C.uintptr_t(address), p0, _BindingsRecord15ToC(p1)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Pragma_bits_pointer() (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol34.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call34(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Mutate_pragma_bits(p0 unsafe.Pointer) (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol35.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call35(C.uintptr_t(address), p0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Sum_pragma_bits(p0 unsafe.Pointer) (result float64, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol36.WithAddress(func(address uintptr) error {
+		result = float64(C.dylib_go_42696e64696e6773_call36(C.uintptr_t(address), p0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Pragma_bits_variable(p0 BindingsRecord15, p1 int8, p2 float32) (result BindingsRecord15, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol37.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call37(C.uintptr_t(address), _BindingsRecord15ToC(p0), C.int32_t(p1), C.float(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Apply_pragma_bits_slot(p0 BindingsRecord20, p1 BindingsRecord15) (result BindingsRecord15, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol38.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call38(C.uintptr_t(address), _BindingsRecord20ToC(p0), _BindingsRecord15ToC(p1)))
 		return nil
 	})
 	return result, err

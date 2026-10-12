@@ -77,3 +77,52 @@ typedef struct { signed char aligned_marker; unsigned :3 __attribute__((aligned(
 AlignedUnit echo_aligned_unit(AlignedUnit);
 typedef struct __attribute__((packed)) { signed char packed_marker; unsigned :3 __attribute__((aligned(16))); unsigned packed_code:5; unsigned :5 __attribute__((aligned(32))); signed char packed_tail; } PackedAlignedUnit;
 PackedAlignedUnit echo_packed_aligned_unit(PackedAlignedUnit);
+
+#pragma pack(push,2)
+typedef struct {
+    signed char pragma_tag;
+    unsigned :3 __attribute__((aligned(2)));
+    unsigned pragma_low:5 __attribute__((packed));
+    unsigned :0;
+    unsigned long long :0;
+    signed pragma_high:7 __attribute__((packed));
+    unsigned :0 __attribute__((packed));
+    _Bool pragma_active:1;
+    unsigned long long pragma_wide:40;
+    double pragma_samples[2];
+    void *pragma_context;
+    unsigned :5;
+} PragmaBits;
+typedef struct __attribute__((packed)) {
+    signed char packed_tag;
+    unsigned :3 __attribute__((aligned(2)));
+    unsigned packed_low:5;
+    unsigned long long :0;
+    signed packed_high:7;
+    unsigned :0;
+    double packed_real;
+} PragmaPacked;
+typedef struct { float float_left; unsigned long long :0; float float_right; } PragmaFloat;
+#pragma pack(push,1)
+typedef struct { unsigned tiny_low:3; signed tiny_high:5; unsigned :4; unsigned long long :0; unsigned :0; } PragmaTiny;
+#pragma pack(pop)
+#pragma pack(pop)
+#pragma pack(push,4)
+typedef struct { signed char envelope_tag; PragmaBits bits[2][2]; PragmaPacked packed[2]; PragmaTiny tiny; PragmaFloat floating; } PragmaBitsEnvelope;
+#pragma pack(pop)
+PragmaBits echo_pragma_bits(PragmaBits);
+PragmaTiny echo_pragma_tiny(PragmaTiny);
+PragmaPacked echo_pragma_packed(PragmaPacked);
+PragmaFloat echo_pragma_float(PragmaFloat);
+PragmaBitsEnvelope echo_pragma_bits_envelope(PragmaBitsEnvelope);
+typedef PragmaBits (*PragmaBitsFn)(PragmaBits);
+PragmaBitsFn pragma_bits_factory(void);
+PragmaBits apply_pragma_bits(PragmaBitsFn, PragmaBits);
+PragmaBits *pragma_bits_pointer(void);
+PragmaBits *mutate_pragma_bits(PragmaBits *);
+double sum_pragma_bits(PragmaBits *);
+PragmaBits pragma_bits_variable(PragmaBits, ...);
+#pragma pack(push,2)
+typedef struct { signed char slot_tag; PragmaBitsFn entry; } PragmaBitsSlot;
+#pragma pack(pop)
+PragmaBits apply_pragma_bits_slot(PragmaBitsSlot, PragmaBits);

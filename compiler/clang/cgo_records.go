@@ -119,9 +119,6 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 		}
 		name := t.cRecordName(i)
-		if record.MaxFieldAlignment != 0 {
-			fmt.Fprintf(output, "#pragma pack(push,%d)\n", record.MaxFieldAlignment)
-		}
 		members := recordMembers(record)
 		var packedUnits []bitfieldUnit
 		if t.msLayout {
@@ -134,6 +131,9 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 				return err
 			}
 			fmt.Fprint(output, "#else\n")
+		}
+		if record.MaxFieldAlignment != 0 {
+			fmt.Fprintf(output, "#pragma pack(push,%d)\n", record.MaxFieldAlignment)
 		}
 		// MinGW ignores a record's packed attribute for MS-layout bitfields.
 		// Preserve the packed allocation units with a scoped pragma. Explicit
@@ -163,7 +163,10 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			if member.padding >= 0 {
 				p := record.Padding[member.padding]
 				boundary := false
-				if t.msLayout && !record.Packed && (p.Packed || p.Aligned != 0) && p.Width == 0 && position > 0 {
+				// MinGW zero-width fields can bypass a pragma's alignment cap.
+				// Replace only active boundaries; leading/consecutive requests
+				// must retain MSVC's ignored-field behavior.
+				if t.msLayout && !record.Packed && (p.Packed || p.Aligned != 0 || record.MaxFieldAlignment != 0) && p.Width == 0 && position > 0 {
 					_, previousWidth := members[position-1].bitfield(record)
 					boundary = previousWidth != 0
 				}

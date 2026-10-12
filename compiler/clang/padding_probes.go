@@ -13,6 +13,12 @@ import (
 func (h *Header) paddingProbes() (declarations, constants string) {
 	var types, values strings.Builder
 	for i, r := range h.Records {
+		if len(r.Padding) == 0 {
+			continue
+		}
+		if r.MaxFieldAlignment != 0 {
+			fmt.Fprintf(&types, "#pragma pack(push,%d)\n", r.MaxFieldAlignment)
+		}
 		var body strings.Builder
 		padding := 0
 		for j := 0; j <= len(r.Description.Fields); j++ {
@@ -37,6 +43,9 @@ func (h *Header) paddingProbes() (declarations, constants string) {
 			} else {
 				fmt.Fprintf(&body, "__typeof__(((%s *)0)->%s) f%d%s;\n", r.Name, field.Name, j, r.cFieldAttributes(j))
 			}
+		}
+		if r.MaxFieldAlignment != 0 {
+			fmt.Fprint(&types, "#pragma pack(pop)\n")
 		}
 	}
 	return types.String(), values.String()

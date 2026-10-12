@@ -122,3 +122,59 @@ PackedAlignedUnit echo_packed_aligned_unit(PackedAlignedUnit value) {
     value.packed_tail += 2;
     return value;
 }
+
+PragmaBits echo_pragma_bits(PragmaBits value) {
+    value.pragma_tag++;
+    value.pragma_low ^= 31;
+    value.pragma_high++;
+    value.pragma_active = !value.pragma_active;
+    value.pragma_wide--;
+    value.pragma_samples[0] += 1.5;
+    value.pragma_samples[1] += 2.5;
+    return value;
+}
+PragmaTiny echo_pragma_tiny(PragmaTiny value) {
+    value.tiny_low ^= 7;
+    value.tiny_high++;
+    return value;
+}
+PragmaPacked echo_pragma_packed(PragmaPacked value) {
+    value.packed_tag++;
+    value.packed_low ^= 31;
+    value.packed_high++;
+    value.packed_real += 1.5;
+    return value;
+}
+PragmaFloat echo_pragma_float(PragmaFloat value) {
+    value.float_left += 1.5f;
+    value.float_right += 2.5f;
+    return value;
+}
+PragmaBitsEnvelope echo_pragma_bits_envelope(PragmaBitsEnvelope value) {
+    value.envelope_tag++;
+    for(int i=0;i<2;++i) {
+        for(int j=0;j<2;++j) value.bits[i][j]=echo_pragma_bits(value.bits[i][j]);
+        value.packed[i]=echo_pragma_packed(value.packed[i]);
+    }
+    value.tiny=echo_pragma_tiny(value.tiny);
+    value.floating=echo_pragma_float(value.floating);
+    return value;
+}
+PragmaBitsFn pragma_bits_factory(void) { return echo_pragma_bits; }
+PragmaBits apply_pragma_bits(PragmaBitsFn entry, PragmaBits value) { return entry(value); }
+static PragmaBits stored_pragma = {-5,31,-64,1,1099511627775ULL,{20.5,18.5},0};
+PragmaBits *pragma_bits_pointer(void) { stored_pragma.pragma_context=&context; return &stored_pragma; }
+PragmaBits *mutate_pragma_bits(PragmaBits *value) { if(value) *value=echo_pragma_bits(*value); return value; }
+double sum_pragma_bits(PragmaBits *value) { return value ? value->pragma_samples[0]+value->pragma_high : -1; }
+PragmaBits pragma_bits_variable(PragmaBits value, ...) {
+    va_list args;
+    va_start(args,value);
+    value.pragma_high += va_arg(args,int);
+    value.pragma_samples[0] += va_arg(args,double);
+    va_end(args);
+    return value;
+}
+PragmaBits apply_pragma_bits_slot(PragmaBitsSlot slot, PragmaBits value) {
+    value.pragma_tag += slot.slot_tag;
+    return slot.entry ? slot.entry(value) : value;
+}

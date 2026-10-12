@@ -25,12 +25,14 @@ func validatePacking(r Record) error {
 	if r.MaxFieldAlignment == 0 {
 		return nil
 	}
-	if r.hasBitfields() {
-		return fmt.Errorf("clang: pragma packing with bitfields is not qualified")
-	}
 	for _, field := range r.FieldAlignments {
 		if field.Aligned > r.MaxFieldAlignment {
 			return fmt.Errorf("clang: member alignment exceeding pragma packing is not qualified")
+		}
+	}
+	for _, padding := range r.Padding {
+		if padding.Aligned > r.MaxFieldAlignment {
+			return fmt.Errorf("clang: unnamed alignment exceeding pragma packing is not qualified")
 		}
 	}
 	return nil
@@ -52,8 +54,13 @@ func validatePackingChildren(r Record, records []Record) error {
 			if !reflect.DeepEqual(child.Description, d) {
 				continue
 			}
-			if child.hasBitfields() || child.Aligned > r.MaxFieldAlignment {
-				return fmt.Errorf("clang: nested bitfields/over-aligned records under pragma packing are not qualified")
+			if child.Aligned > r.MaxFieldAlignment {
+				return fmt.Errorf("clang: nested over-aligned records under pragma packing are not qualified")
+			}
+			for _, padding := range child.Padding {
+				if padding.Aligned > r.MaxFieldAlignment {
+					return fmt.Errorf("clang: nested unnamed alignment exceeding pragma packing is not qualified")
+				}
 			}
 			for _, field := range child.FieldAlignments {
 				if field.Aligned > r.MaxFieldAlignment {

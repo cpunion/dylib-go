@@ -39,6 +39,7 @@ func TestBitfieldCalls(t *testing.T) {
 	}
 	compiler = tool(t, compiler)
 	names := []string{"echo_bits", "echo_packed_bits", "echo_envelope", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "echo_signed_wide", "echo_gaps", "echo_prefix", "echo_packed_gaps", "echo_gap_envelope", "gaps_pointer", "mutate_gaps", "sum_gaps", "gaps_factory", "apply_gaps", "gaps_variable", "echo_floating_gap", "echo_member_tiny", "echo_member_trailing", "echo_packed_zero", "echo_ignored_float_zero", "echo_aligned_unit", "echo_packed_aligned_unit"}
+	names = append(names, "echo_pragma_bits", "echo_pragma_tiny", "echo_pragma_packed", "echo_pragma_float", "echo_pragma_bits_envelope", "pragma_bits_factory", "apply_pragma_bits", "pragma_bits_pointer", "mutate_pragma_bits", "sum_pragma_bits", "pragma_bits_variable", "apply_pragma_bits_slot")
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -48,6 +49,10 @@ func TestBitfieldCalls(t *testing.T) {
 		t.Fatal(err)
 	}
 	h.Functions[19], err = h.Functions[19].WithTail(abi.I8, abi.F32)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.Functions[37], err = h.Functions[37].WithTail(abi.I8, abi.F32)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,6 +196,7 @@ func checkCalls(t *testing.T, path string) {
 		t.Fatal(err)
 	}
 	err = owner.WithAddress(func(uintptr) error {
+		checkPragmaCalls(t, b)
 		ptr, err := b.Bits_pointer()
 		if err != nil || ptr == nil {
 			t.Fatal(ptr, err)
@@ -279,6 +285,72 @@ func checkCalls(t *testing.T, path string) {
 	if got, err := b.Echo_bits(BindingsRecord0{}); got != (BindingsRecord0{}) || !errors.Is(err, dylib.ErrClosed) {
 		t.Fatal(got, err)
 	}
+}
+
+func checkPragmaCalls(t *testing.T, b *Bindings) {
+	t.Helper()
+	check := func(name string, got, want any, err error) {
+		t.Helper()
+		if err != nil || !reflect.DeepEqual(got, want) {
+			t.Fatalf("%s: %+v, %v; want %+v", name, got, err, want)
+		}
+	}
+	ptr, err := b.Pragma_bits_pointer()
+	if err != nil || ptr == nil {
+		t.Fatal(ptr, err)
+	}
+	const maximum = uint64(1<<40) - 1
+	p := BindingsRecord15{Pragma_tag: -5, Pragma_low: 31, Pragma_high: -64, Pragma_active: true, Pragma_wide: maximum, Pragma_samples: [2]float64{20.5, 18.5}, Pragma_context: ptr}
+	want := BindingsRecord15{Pragma_tag: -4, Pragma_low: 0, Pragma_high: -63, Pragma_active: false, Pragma_wide: maximum - 1, Pragma_samples: [2]float64{22, 21}, Pragma_context: ptr}
+	got, err := b.Echo_pragma_bits(p)
+	check("pragma bitfields, zero-width boundaries and native address", got, want, err)
+	entry, err := b.Pragma_bits_factory()
+	if err != nil || entry == nil {
+		t.Fatal(entry, err)
+	}
+	got, err = b.Apply_pragma_bits(entry, p)
+	check("pragma bitfield native factory", got, want, err)
+	got, err = b.Apply_pragma_bits_slot(BindingsRecord20{Slot_tag: 1, Entry: entry}, p)
+	slotWant := want
+	slotWant.Pragma_tag++
+	check("pragma function-pointer field", got, slotWant, err)
+	got, err = b.Apply_pragma_bits_slot(BindingsRecord20{Slot_tag: 1}, p)
+	slotWant = p
+	slotWant.Pragma_tag++
+	check("pragma null function-pointer field", got, slotWant, err)
+	for _, high := range []int32{-16, -1, 0, 14} {
+		got, err := b.Echo_pragma_tiny(BindingsRecord16{Tiny_low: 7, Tiny_high: high})
+		check("pragma tiny signed/unsigned return", got, BindingsRecord16{Tiny_high: high + 1}, err)
+	}
+	packed := BindingsRecord17{Packed_tag: -5, Packed_low: 31, Packed_high: -64, Packed_real: 20.5}
+	wantPacked := BindingsRecord17{Packed_tag: -4, Packed_low: 0, Packed_high: -63, Packed_real: 22}
+	gotPacked, err := b.Echo_pragma_packed(packed)
+	check("pragma plus record packing and aligned unnamed bits", gotPacked, wantPacked, err)
+	floating := BindingsRecord18{Float_left: 20, Float_right: 18}
+	wantFloating := BindingsRecord18{Float_left: 21.5, Float_right: 20.5}
+	gotFloating, err := b.Echo_pragma_float(floating)
+	check("pragma floating aggregate with inactive zero-width bits", gotFloating, wantFloating, err)
+	envelope := BindingsRecord19{Envelope_tag: -5, Bits: [2][2]BindingsRecord15{{p, p}, {p, p}}, Packed: [2]BindingsRecord17{packed, packed}, Tiny: BindingsRecord16{Tiny_low: 7, Tiny_high: -16}, Floating: floating}
+	wantEnvelope := BindingsRecord19{Envelope_tag: -4, Bits: [2][2]BindingsRecord15{{want, want}, {want, want}}, Packed: [2]BindingsRecord17{wantPacked, wantPacked}, Tiny: BindingsRecord16{Tiny_high: -15}, Floating: wantFloating}
+	gotEnvelope, err := b.Echo_pragma_bits_envelope(envelope)
+	check("pragma nested arrays, large returns and restored packing", gotEnvelope, wantEnvelope, err)
+	p.Pragma_high = 10
+	got, err = b.Pragma_bits_variable(p, -8, 1.5)
+	p.Pragma_high, p.Pragma_samples[0] = 2, 22
+	check("pragma bitfield variadic prefix/result", got, p, err)
+	if got, err := b.Mutate_pragma_bits(ptr); err != nil || got != ptr {
+		t.Fatal(got, err)
+	}
+	sum, err := b.Sum_pragma_bits(ptr)
+	check("pragma native pointer mutation", sum, float64(-41), err)
+	if got, err := b.Mutate_pragma_bits(nil); err != nil || got != nil {
+		t.Fatal(got, err)
+	}
+	sum, err = b.Sum_pragma_bits(nil)
+	check("pragma null native pointer", sum, float64(-1), err)
+	p = BindingsRecord15{Pragma_low: 0, Pragma_high: 62, Pragma_wide: 1}
+	got, err = b.Echo_pragma_bits(p)
+	check("pragma positive/false/zero/null boundaries", got, BindingsRecord15{Pragma_tag: 1, Pragma_low: 31, Pragma_high: 63, Pragma_active: true, Pragma_samples: [2]float64{1.5, 2.5}}, err)
 }
 
 func TestBitfieldBindingValidation(t *testing.T) {
