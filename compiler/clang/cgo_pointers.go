@@ -28,6 +28,9 @@ func (h *Header) writeCgoFunctionPointer(output *bytes.Buffer, pointer FunctionP
 		if kind, ok := boundary[position]; ok {
 			return kind, nil
 		}
+		if position >= 0 {
+			return mapper.cParameterType(description)
+		}
 		return mapper.cType(description)
 	}
 	result, err := kindAt(-1, s.ReturnType())

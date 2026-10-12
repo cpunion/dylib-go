@@ -230,6 +230,21 @@ compare native size, alignment, field offsets and bit masks before resolving
 symbols. Explicitly aligned records and reachable nested records are rejected
 by dynamic `ForHost` and direct `LLGoSource` adapters.
 
+For MSVC i386, Clang also emits small argument-lowering probes as LLVM IR.
+Go reads these probes without executing foreign code and saves
+`Record.IndirectArgument`. Required fixed arguments can use an implicit pointer
+even when an ordinary record has the same storage alignment. Generated bridges
+reconcile this with a MinGW host using local aligned C copies, including native
+function pointers, cdecl variadic prefixes and fixed stdcall/fastcall calls.
+Unnamed variadic aggregate arguments retain their by-value ABI. This follows
+the [Clang MSVC i386 argument classification](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.0/clang/lib/CodeGen/Targets/X86.cpp#L762).
+
+For MinGW packed bitfields, the byte-packing pragma can also suppress member
+alignment. The bridge reproduces compiler-confirmed member boundaries with
+unnamed byte fields and restores record alignment. Prefix marker offsets avoid
+mistaking tail padding for the boundary after a zero-width field. Native layout
+and mask checks still run before binding.
+
 Use producer-owned storage for aligned record pointers. `abi.NewNativeValue`
 uses the logical description and cannot provide this attributed layout or its
 stronger alignment. Generated pointer methods borrow native addresses; they do
@@ -242,7 +257,8 @@ are not inferred. The [aligned example](../examples/alignedrecords/call.go)
 executes object/archive/library calls at `-O0` and `-O2` on the eight Go and six
 llgo native targets, including large nested arrays, floating aggregates,
 native storage alignment, factories, variadic calls and deliberate alignment
-mismatch rejection before symbol resolution.
+mismatch rejection before symbol resolution. Windows 386 also runs aligned
+stdcall/fastcall exports and native factories with mixed register/stack arguments.
 
 ### C bitfields and padding
 

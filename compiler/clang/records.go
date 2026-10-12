@@ -26,6 +26,9 @@ type Record struct {
 	// declarations require compiled C adapters, never a Go memory view.
 	Aligned         uint64
 	FieldAlignments []FieldAlignment
+	// IndirectArgument is compiler-observed MSVC i386 argument lowering for an
+	// aligned record. Generated bridges reconcile this with a MinGW host.
+	IndirectArgument bool
 	// Bitfields retains the width and native byte mask of each named bitfield.
 	// Layout.Offsets stores its first byte. Description remains logical fields.
 	Bitfields []Bitfield
@@ -156,6 +159,9 @@ func (h *Header) validateDescriptions() error {
 		}
 		if err := validateAlignments(record, false); err != nil {
 			return err
+		}
+		if record.IndirectArgument && (h.Target.OS != "windows" || h.Target.Arch != "386" || !strings.Contains(h.Target.Triple, "msvc")) {
+			return fmt.Errorf("clang: indirect record arguments require an MSVC i386 target")
 		}
 		for _, pointer := range record.FunctionPointers {
 			if pointer.Position < 0 {

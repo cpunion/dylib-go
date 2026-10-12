@@ -30,7 +30,7 @@ func (r Record) hasBitfields() bool {
 }
 
 func (r Record) requiresCAdapter() bool {
-	return r.Packed || r.hasBitfields() || r.Aligned != 0 || len(r.FieldAlignments) != 0
+	return r.Packed || r.hasBitfields() || r.Aligned != 0 || len(r.FieldAlignments) != 0 || r.IndirectArgument
 }
 
 func cloneBitfields(fields []Bitfield) []Bitfield {

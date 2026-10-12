@@ -151,3 +151,63 @@ Plain plain(Plain); Aligned aligned(Aligned);`), Options{Compiler: compilerTool(
 		t.Fatal("indistinguishable logical records with different alignments accepted:", err)
 	}
 }
+
+func TestAlignedArgumentLowering(t *testing.T) {
+	path := headerFile(t, `typedef struct { double value; } Natural;
+typedef struct __attribute__((aligned(8))) { int value; } Required;
+typedef struct { Required values[2]; int count; } Nested;
+Natural natural(Natural); Required required(Required); Nested nested(Nested);
+typedef Required (*Entry)(Required); Entry factory(void); Required apply(Entry,Required);
+Required variable(Required,...);`)
+	for _, triple := range []string{"i686-pc-windows-msvc", "i686-w64-windows-gnu", "i686-unknown-linux-gnu"} {
+		h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Target: triple, Functions: []string{"natural", "required", "nested", "factory", "apply", "variable"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, r := range h.Records {
+			want := strings.Contains(triple, "msvc") && r.Name != "Natural"
+			if r.IndirectArgument != want {
+				t.Fatal("required alignment lowering:", triple, r)
+			}
+		}
+		h.Functions[5].Signature.Args = append(h.Functions[5].Signature.Args, abi.Struct)
+		h.Functions[5].Signature.ArgTypes = append(h.Functions[5].Signature.ArgTypes, h.Records[1].Description)
+		source, err := h.CgoSource("bindings", "Bindings")
+		if err != nil {
+			t.Fatal(err)
+		}
+		text := string(source)
+		if strings.Contains(triple, "msvc") {
+			for _, marker := range []string{"IndirectArgument: true", "_record1_argument", "_arg(native0)", "_arg(native1)", "_record1_from_transport(p1)"} {
+				if !strings.Contains(text, marker) {
+					t.Fatal("missing native argument conversion:", marker)
+				}
+			}
+		} else if strings.Contains(text, "_arg(native") {
+			t.Fatal("GNU/Linux prototype rewritten for MSVC")
+		}
+	}
+}
+
+func TestIndirectRecordIRProbe(t *testing.T) {
+	for _, test := range []struct {
+		parameters string
+		want       bool
+	}{
+		{"ptr noundef %0", true},
+		{"%struct.Record* noundef %0", true},
+		{"ptr noundef byval(%struct.Record) align 4 %0", false},
+		{"double %0", false},
+		{"double %0, ptr %1", false},
+	} {
+		got, err := indirectRecordArgument("define void @probe("+test.parameters+") #0 {\n", "probe")
+		if err != nil || got != test.want {
+			t.Fatal(test, got, err)
+		}
+	}
+	for _, ir := range []string{"", "declare void @probe(ptr)", "define void @probe(ptr noundef %0"} {
+		if _, err := indirectRecordArgument(ir, "probe"); err == nil {
+			t.Fatal("missing/malformed argument probe accepted:", ir)
+		}
+	}
+}

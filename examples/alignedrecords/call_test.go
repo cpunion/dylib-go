@@ -38,7 +38,7 @@ func TestAlignedCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_aligned", "echo_fields", "echo_packed", "echo_bits", "echo_envelope", "aligned_factory", "apply_aligned", "aligned_pointer", "mutate_aligned", "sum_aligned", "aligned_variable", "echo_floats", "echo_field_bits", "echo_packed_fields", "aligned_address"}
+	names := []string{"echo_aligned", "echo_fields", "echo_packed", "echo_bits", "echo_envelope", "aligned_factory", "apply_aligned", "aligned_pointer", "mutate_aligned", "sum_aligned", "aligned_variable", "echo_floats", "echo_field_bits", "echo_packed_fields", "aligned_address", "echo_packed_field_bits", "echo_stdcall", "echo_fastcall", "stdcall_factory", "fastcall_factory", "apply_stdcall", "apply_fastcall"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -177,6 +177,25 @@ func checkCalls(t *testing.T, path string) {
 		}
 		got, err = b.Apply_aligned(fn, p)
 		check("aligned function pointer", got, want, err)
+		conventionWant := p
+		conventionWant.Tail += 2
+		got, err = b.Echo_stdcall(p, 2)
+		check("aligned stdcall argument", got, conventionWant, err)
+		std, err := b.Stdcall_factory()
+		if err != nil || std == nil {
+			t.Fatal("aligned stdcall factory:", std, err)
+		}
+		got, err = b.Apply_stdcall(std, p, 2)
+		check("aligned stdcall function pointer", got, conventionWant, err)
+		conventionWant.Value += p.Value
+		got, err = b.Echo_fastcall(p, -8, p, 10)
+		check("aligned fastcall register/stack arguments", got, conventionWant, err)
+		fast, err := b.Fastcall_factory()
+		if err != nil || fast == nil {
+			t.Fatal("aligned fastcall factory:", fast, err)
+		}
+		got, err = b.Apply_fastcall(fast, p, -8, p, 10)
+		check("aligned fastcall function pointer", got, conventionWant, err)
 		fields := BindingsRecord1{Tag: -128, Values: [2]float64{20.5, 19.5}, Count: 20}
 		wantFields := BindingsRecord1{Tag: -127, Values: [2]float64{22, 22}, Count: 22}
 		gotFields, err := b.Echo_fields(fields)
@@ -199,6 +218,8 @@ func checkCalls(t *testing.T, path string) {
 		check("aligned named bitfield", fieldBits, BindingsRecord6{Low: 0, Value: 22, High: -63, Tag: -127}, err)
 		packedFields, err := b.Echo_packed_fields(BindingsRecord7{Tag: -128, Values: [2]float64{20.5, 19.5}, Tail: 23})
 		check("packed aligned field", packedFields, BindingsRecord7{Tag: -127, Values: [2]float64{22, 22}, Tail: 22}, err)
+		packedFieldBits, err := b.Echo_packed_field_bits(BindingsRecord8{Lowbits: 31, Counter: 20, Highbits: -64, Marker: -128})
+		check("packed aligned fields and zero-width boundary", packedFieldBits, BindingsRecord8{Lowbits: 0, Counter: 22, Highbits: -63, Marker: -127}, err)
 		got, err = b.Aligned_variable(p, -8, 1.5)
 		p.Tail, p.Value = 12, 22
 		check("aligned variadic prefix/result", got, p, err)

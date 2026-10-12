@@ -97,7 +97,7 @@ func (r *typeResolver) effectiveType(node astNode) (astNode, error) {
 			return astNode{}, fmt.Errorf("unsupported typedef attribute %s", attr)
 		}
 		switch node.Kind {
-		case "TypedefDecl", "TypedefType", "ParenType", "AttributedType", "ElaboratedType", "TypeOfExprType", "QualType", "DecayedType", "AdjustedType":
+		case "TypedefDecl", "TypedefType", "ParenType", "AttributedType", "MacroQualifiedType", "ElaboratedType", "TypeOfExprType", "QualType", "DecayedType", "AdjustedType":
 			found := false
 			for i := len(node.Inner) - 1; i >= 0; i-- {
 				if strings.HasSuffix(node.Inner[i].Kind, "Type") {

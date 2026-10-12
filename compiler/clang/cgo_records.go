@@ -118,7 +118,8 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 		}
 		name := t.cRecordName(i)
-		if record.Packed && len(record.Padding) != 0 {
+		packedBridge := record.Packed && (len(record.Padding) != 0 || record.hasBitfields() && len(record.FieldAlignments) != 0)
+		if packedBridge {
 			fmt.Fprint(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n")
 			if err := t.writePackedPadding(output, i); err != nil {
 				return err
@@ -129,7 +130,7 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		// Preserve the packed allocation units with a scoped pragma. Explicit
 		// aligned attributes restore record alignment; size/offset/mask checks
 		// remain authoritative.
-		packedBits := record.Packed && record.hasBitfields()
+		packedBits := record.Packed && record.hasBitfields() && (record.Layout.Alignment == 1 || record.Aligned != 0 || len(record.FieldAlignments) != 0)
 		if packedBits {
 			fmt.Fprint(output, "#if defined(_WIN32)\n#pragma pack(push,1)\n#endif\n")
 		}
@@ -165,7 +166,7 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		if packedBits {
 			fmt.Fprint(output, "#if defined(_WIN32)\n#pragma pack(pop)\n#endif\n")
 		}
-		if record.Packed && len(record.Padding) != 0 {
+		if packedBridge {
 			fmt.Fprint(output, "#endif\n")
 		}
 		if len(record.Bitfields) != 0 {

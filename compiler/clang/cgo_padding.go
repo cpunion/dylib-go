@@ -24,10 +24,18 @@ func (t *cgoTypes) writePackedPadding(output *bytes.Buffer, index int) error {
 			fmt.Fprintf(&body, "%s :%d;\n", kind, p.Width)
 			if p.Width == 0 {
 				prefix := fmt.Sprintf("%s_padding%d", name, padding)
-				fmt.Fprintf(output, "typedef struct __attribute__((packed)) {\n%s} %s;\n", body.String(), prefix)
-				fmt.Fprintf(output, "_Static_assert(sizeof(%s)<=%d && %d-sizeof(%s)<=7,\"incompatible zero-width boundary\");\n", prefix, p.Offset, p.Offset, prefix)
+				end := fmt.Sprintf("sizeof(%s)", prefix)
+				marker := ""
+				if len(r.FieldAlignments) != 0 {
+					// An aligned member can add tail padding to the prefix. The
+					// marker observes the next byte rather than that rounded size.
+					marker = "unsigned char marker;\n"
+					end = fmt.Sprintf("offsetof(%s,marker)", prefix)
+				}
+				fmt.Fprintf(output, "typedef struct __attribute__((packed)) {\n%s%s} %s;\n", body.String(), marker, prefix)
+				fmt.Fprintf(output, "_Static_assert(%s<=%d && %d-%s<=7,\"incompatible zero-width boundary\");\n", end, p.Offset, p.Offset, end)
 				for b := 0; b < 7; b++ {
-					fmt.Fprintf(&body, "unsigned char :(%d-sizeof(%s)>%d?8:0);\n", p.Offset, prefix, b)
+					fmt.Fprintf(&body, "unsigned char :(%d-%s>%d?8:0);\n", p.Offset, end, b)
 				}
 			}
 			padding++
@@ -36,6 +44,21 @@ func (t *cgoTypes) writePackedPadding(output *bytes.Buffer, index int) error {
 			break
 		}
 		field := r.Description.Fields[j]
+		if alignment := r.fieldAlignment(j); alignment != 0 {
+			// MinGW's record packing pragma overrides member aligned(N).
+			// End the preceding allocation unit and reproduce the producer's
+			// field boundary with unnamed byte fields, preserving the value ABI.
+			fmt.Fprint(&body, "unsigned char :0;\n")
+			prefix := fmt.Sprintf("%s_aligned%d", name, j)
+			fmt.Fprintf(output, "typedef struct __attribute__((packed)) {\n%s unsigned char marker;\n} %s;\n", body.String(), prefix)
+			end := fmt.Sprintf("offsetof(%s,marker)", prefix)
+			offset := r.Layout.Offsets[j]
+			fmt.Fprintf(output, "_Static_assert(%s<=%d && %d-%s<%d,\"incompatible field alignment\");\n", end, offset, offset, end, alignment)
+			for b := uint64(0); b < alignment-1; b++ {
+				fmt.Fprintf(&body, "unsigned char :(%d-%s>%d?8:0);\n", offset, end, b)
+			}
+			fmt.Fprint(&body, "unsigned char :0;\n")
+		}
 		declaration, err := t.cField(field.Type, fmt.Sprintf("f%d", j))
 		if err != nil {
 			return err

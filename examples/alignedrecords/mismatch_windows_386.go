@@ -46,9 +46,17 @@ result.f2 = value.f2;
 result.f3 = value.f3;
 return result;
 }
-typedef dylib_go_42616442696e64696e6773_record0 (__attribute__((cdecl)) *dylib_go_42616442696e64696e6773_call0_function)(dylib_go_42616442696e64696e6773_record0);
+#if defined(_WIN32) && defined(__i386__) && !defined(_MSC_VER)
+typedef dylib_go_42616442696e64696e6773_record0 *dylib_go_42616442696e64696e6773_record0_argument;
+#define dylib_go_42616442696e64696e6773_record0_arg(value) (&(value))
+#else
+typedef dylib_go_42616442696e64696e6773_record0 dylib_go_42616442696e64696e6773_record0_argument;
+#define dylib_go_42616442696e64696e6773_record0_arg(value) (value)
+#endif
+typedef dylib_go_42616442696e64696e6773_record0 (__attribute__((cdecl)) *dylib_go_42616442696e64696e6773_call0_function)(dylib_go_42616442696e64696e6773_record0_argument);
 static dylib_go_42616442696e64696e6773_record0_transport dylib_go_42616442696e64696e6773_call0(uintptr_t address,dylib_go_42616442696e64696e6773_record0_transport p0) {
-return dylib_go_42616442696e64696e6773_record0_to_transport(((dylib_go_42616442696e64696e6773_call0_function)address)(dylib_go_42616442696e64696e6773_record0_from_transport(p0)));
+dylib_go_42616442696e64696e6773_record0 native0=dylib_go_42616442696e64696e6773_record0_from_transport(p0);
+return dylib_go_42616442696e64696e6773_record0_to_transport(((dylib_go_42616442696e64696e6773_call0_function)address)(dylib_go_42616442696e64696e6773_record0_arg(native0)));
 }
 */
 import "C"
@@ -68,7 +76,7 @@ var _BadBindingsDeclarations = clang.Header{
 		{Name: "echo_aligned", Symbol: "echo_aligned", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
 	},
 	Records: []clang.Record{
-		{Name: "Aligned", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 32, Alignment: 32, Offsets: []uint64{0, 8, 16, 20}}, Aligned: 16},
+		{Name: "Aligned", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 32, Alignment: 32, Offsets: []uint64{0, 8, 16, 20}}, Aligned: 16, IndirectArgument: true},
 	},
 }
 

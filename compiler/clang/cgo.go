@@ -41,6 +41,7 @@ func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
 		if err := mapper.writeCRecords(&preamble); err != nil {
 			return nil, err
 		}
+		mapper.writeArgumentTypes(&preamble)
 	}
 	seen := make(map[string]bool)
 	needsUnsafe := false
@@ -145,7 +146,7 @@ func (h *Header) cgoPrototype(s abi.Signature, mapper *cgoTypes) (string, string
 	}
 	var parameters []string
 	for i := 0; i < count; i++ {
-		kind, err := mapper.cType(s.ArgumentType(i))
+		kind, err := mapper.cParameterType(s.ArgumentType(i))
 		if err != nil {
 			return "", "", err
 		}
@@ -177,7 +178,7 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 		}
 		boundaryC[pointer.Position] = kind
 	}
-	var prototype, bridge, callArgs, goParams, goArgs, conversions []string
+	var prototype, bridge, callArgs, goParams, goArgs, conversions, nativeLocals []string
 	bridge = append(bridge, "uintptr_t address")
 	goArgs = append(goArgs, "C.uintptr_t(address)")
 	count := len(s.Args)
@@ -215,6 +216,12 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 			kind = callback
 			argument = "(" + callback + ")" + argument
 		}
+		if record, ok := mapper.indirectArgument(s.ArgumentType(i)); ok && i < count {
+			local := fmt.Sprintf("native%d", i)
+			nativeLocals = append(nativeLocals, fmt.Sprintf("%s %s=%s;\n", kind, local, argument))
+			kind, _ = mapper.cParameterType(s.ArgumentType(i))
+			argument = mapper.cRecordName(record) + "_arg(" + local + ")"
+		}
 		callArgs = append(callArgs, argument)
 		if i < count {
 			prototype = append(prototype, kind)
@@ -230,6 +237,7 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 		prototypeResult = callback
 	}
 	fmt.Fprintf(c, "typedef %s (%s*%s_function)(%s);\nstatic %s %s(%s) {\n", prototypeResult, attribute, helper, strings.Join(prototype, ","), mapper.transport(s.ReturnType()), helper, strings.Join(bridge, ","))
+	fmt.Fprint(c, strings.Join(nativeLocals, ""))
 	if s.Result != abi.Void {
 		fmt.Fprint(c, "return ")
 		if s.Result == abi.Pointer {

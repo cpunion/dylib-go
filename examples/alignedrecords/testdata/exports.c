@@ -43,3 +43,10 @@ Aligned aligned_variable(Aligned p, ...) {
 AlignedFloats echo_floats(AlignedFloats p) { p.first += 1.5; p.second += 2.5; return p; }
 FieldAlignedBits echo_field_bits(FieldAlignedBits p) { p.low += 1; p.value += 2; p.high += 1; p.tag += 1; return p; }
 PackedFields echo_packed_fields(PackedFields p) { p.tag += 1; p.values[0] += 1.5; p.values[1] += 2.5; p.tail -= 1; return p; }
+PackedFieldBits echo_packed_field_bits(PackedFieldBits p) { p.lowbits += 1; p.counter += 2; p.highbits += 1; p.marker += 1; return p; }
+Aligned ALIGNED_STDCALL echo_stdcall(Aligned p, int delta) { p.tail += delta; return p; }
+Aligned ALIGNED_FASTCALL echo_fastcall(Aligned p, int delta, Aligned q, int extra) { p.value += q.value; p.tail += delta + extra; return p; }
+AlignedStdFn stdcall_factory(void) { return echo_stdcall; }
+AlignedFastFn fastcall_factory(void) { return echo_fastcall; }
+Aligned apply_stdcall(AlignedStdFn fn, Aligned p, int delta) { return fn(p, delta); }
+Aligned apply_fastcall(AlignedFastFn fn, Aligned p, int delta, Aligned q, int extra) { return fn(p, delta, q, extra); }

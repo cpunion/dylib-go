@@ -60,6 +60,9 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 			if record.Aligned != 0 {
 				fmt.Fprintf(&output, ",Aligned:%d", record.Aligned)
 			}
+			if record.IndirectArgument {
+				fmt.Fprint(&output, ",IndirectArgument:true")
+			}
 			if len(record.FieldAlignments) != 0 {
 				fmt.Fprint(&output, ",FieldAlignments:[]clang.FieldAlignment{")
 				for _, field := range record.FieldAlignments {

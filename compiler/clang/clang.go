@@ -220,6 +220,9 @@ func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 		if err := header.probeBitfields(ctx, compiler, path, flags); err != nil {
 			return nil, err
 		}
+		if err := header.probeAlignedArguments(ctx, compiler, path, flags); err != nil {
+			return nil, err
+		}
 	}
 	if err := ctx.Err(); err != nil {
 		return nil, err
