@@ -1,6 +1,11 @@
 #include "exports.h"
 #include <stdarg.h>
 
+#if defined(_WIN32) && defined(_MSC_VER)
+// Keep the MSVC floating-point marker when a MinGW driver links this object.
+int _fltused = 0x9875;
+#endif
+
 static int context;
 static Packed stored = { -128, 20.5, 22, 1, 0 };
 
