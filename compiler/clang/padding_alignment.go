@@ -11,6 +11,9 @@ import (
 // original declaration, never this synthetic type.
 func (r Record) alignedPaddingProbe(record, padding int) string {
 	var source strings.Builder
+	if r.MaxFieldAlignment != 0 {
+		fmt.Fprintf(&source, "#pragma pack(push,%d)\n", r.MaxFieldAlignment)
+	}
 	fmt.Fprintf(&source, "const struct %s{\n", r.cAttributes())
 	for _, member := range recordMembers(r) {
 		if member.padding >= 0 {
@@ -31,5 +34,8 @@ func (r Record) alignedPaddingProbe(record, padding int) string {
 	}
 	p := r.Padding[padding]
 	fmt.Fprintf(&source, "} dylib_bitfield_padding_%d_%d = {.value=%s};\n", record, padding, bitfieldValue(p.Type, p.Width))
+	if r.MaxFieldAlignment != 0 {
+		fmt.Fprint(&source, "#pragma pack(pop)\n")
+	}
 	return source.String()
 }

@@ -42,7 +42,7 @@ Run
 | Typedefs and ordinary qualifiers | Desugared/resolved, including integer and pointer aliases |
 | Object/opaque pointers | Native addresses; no automatic pointee allocation, copying or ownership |
 | Ordinary structs, including anonymous typedef records | Arguments/results; compiler-evaluated layout checked against the native backend |
-| Ordinary structs with `#pragma pack` | `CgoSource` for Go/llgo; caps 1/2/4/8/16, nested arrays, native addresses/function-pointer fields and record-level explicit alignment; bitfield and over-aligned nested/member combinations remain unqualified |
+| Structs with `#pragma pack` | `CgoSource` for Go/llgo; caps 1/2/4/8/16, named/unnamed/zero-width bitfields, nested arrays, native addresses/function-pointer fields and record-level explicit alignment; over-aligned nested/member combinations remain unqualified |
 | Explicit `__attribute__((packed))` structs | `CgoSource` for Go/llgo; logical fields are transported through ordinary records and converted inside C; dynamic and direct llgo bindings reject them |
 | Explicit `__attribute__((packed))` non-bitfield members | `CgoSource` for Go/llgo; retain natural alignment of other members and combine packing with explicit member alignment; includes fixed arrays, nested records and native addresses |
 | Named integral/Boolean bitfields, including explicit packed records | `CgoSource` for Go/llgo; compiler byte masks and layout are validated before binding; public fields remain ordinary scalars |
@@ -260,8 +260,8 @@ source, target guards and session retirement.
 
 `Record.MaxFieldAlignment` preserves the compiler's numeric `#pragma pack`
 member-alignment cap; zero means absent. Caps of 1, 2, 4, 8 and 16 bytes are
-qualified for ordinary records. Nested push/pop directives are evaluated by
-Clang, including directives in included headers. This is separate from the
+qualified for ordinary records and bitfields. Clang evaluates nested push/pop
+directives, including directives in included headers. This is separate from the
 `packed` attribute and from the record's effective alignment.
 
 Clang JSON identifies `MaxFieldAlignmentAttr` without its numeric argument.
@@ -273,20 +273,31 @@ parsing; source pragma tokens and layout guesses are not used.
 Generated C declarations use a scoped packing pragma, restored before emitting
 transport records. Public Go fields carry logical values. Native layout checks
 run before binding, and dynamic/direct llgo adapters reject these records.
-Arrays, nested ordinary records, native struct addresses, function-pointer
+Arrays, nested ordinary/bitfield records, native struct addresses, function-pointer
 fields/factories and concrete variadic prefixes/results use the same C bridge.
 Record-level explicit alignment can increase alignment while member offsets
 remain packed. Use producer-owned storage for pointers.
 
-Bitfields under pragma packing and nested bitfield values remain unqualified.
-Member or nested explicit alignment greater than the packing cap also remains
-unqualified: MSVC can override the cap while MinGW limits alignment. These
+Named, unnamed and zero-width bitfields preserve their declaration order and
+compiler-confirmed byte masks/boundaries. Prefix and unnamed-field probes use
+the same packing cap as the original record. On Windows, MinGW zero-width
+fields can bypass that cap; the MSVC bridge restores active boundaries with
+zero-length native members while retaining ignored leading/consecutive fields.
+Record-wide and member-level packed attributes can be combined with pragma
+packing. These changes remain inside C and do not add public Go padding fields.
+
+Member, unnamed or nested explicit alignment greater than the packing cap
+remains unqualified: MSVC can override the cap while MinGW limits alignment. These
 combinations are rejected explicitly. Global compiler packing flags and typedef
 alignment/packing are not covered by this pragma adapter. The
 [packed example](../examples/packedrecords/call.go) executes object/archive/library
 calls at `-O0`/`-O2`, including nested packing levels, restored natural outer
 layout, floating arrays, Boolean/address fields, native factories/pointers,
 function-pointer fields and variadic calls with Go and llgo.
+The [bitfield example](../examples/bitfieldrecords/call.go) adds small signed
+returns, active/consecutive/trailing boundaries, packed/aligned unnamed fields,
+floating aggregates, nested arrays, native pointer mutation/factories and
+variadic bitfield prefixes/results at both optimization levels.
 
 ### Explicit C alignment
 

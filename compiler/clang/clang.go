@@ -133,8 +133,8 @@ const maxFunctions = 256
 // arguments are compiler evaluated and preserved by CgoSource, including explicit
 // packing on ordinary named members. Enums use compiler-confirmed compatible
 // integer types; attributed
-// enum alignment must match the native integer. Ordinary pragma-packed records
-// use C bridges; bitfield and over-aligned nested/member combinations are rejected.
+// enum alignment must match the native integer. Pragma-packed records and
+// bitfields use C bridges; over-aligned nested/member combinations are rejected.
 // Unions, other attributed
 // records/fields/typedefs, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes

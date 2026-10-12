@@ -457,15 +457,15 @@ transport records across Go/C and field copies inside C. These native values
 never cross that boundary directly. The [tested packed example](examples/packedrecords/call.go)
 also covers ordinary `#pragma pack` records, nested packing levels, floating
 arrays, record alignment, native factories/function-pointer fields, struct
-pointers and variadic record calls with Go and llgo. Pragma bitfield and
-over-aligned member/nested combinations remain unqualified; see the
+pointers and variadic record calls with Go and llgo. Over-aligned member/nested
+combinations under pragma packing remain unqualified; see the
 [pragma packing scope](docs/clang.md#pragma-packing). Dynamic libffi binding and direct `LLGoSource` reject these layouts.
 For bitfields, Clang emits constants whose byte masks are read with Go's object
 parsers; generated C bridges verify both masks and layout before binding. Public
 Go fields hold ordinary scalar values. The [tested bitfield example](examples/bitfieldrecords/call.go)
 covers signed/Boolean fields, cross-byte widths, unnamed/zero-width boundaries,
-leading padding, numeric/omitted unnamed alignment, floating fields and packed
-combinations.
+leading padding, numeric/omitted unnamed alignment, floating fields, pragma
+packing and packed combinations, including nested bitfield arrays and variadic calls.
 Named and unnamed member-level `packed` bitfields use validated C bridges,
 including small value returns, packed/aligned named and unnamed members, ignored
 MSVC alignment requests and mixed zero-width boundaries; see the
