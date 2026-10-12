@@ -69,6 +69,7 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [ ] Reentrant load/link initializers that can resolve staged symbols before publication.
 - [ ] Explicit raw-object TLS models, per-thread allocation, and thread destructor ownership.
 - [x] Explicit packed record values through compiler-validated C bridges for Go/llgo, ordinary transport records, nested arrays, native pointers, factories and variadic calls without libffi.
+- [x] Explicit packed non-bitfield members through validated C bridges, including arrays, nested records, native pointers/factories, concrete variadic calls and packing combined with explicit member alignment.
 - [x] Named integral/Boolean bitfields through compiler byte-mask probes and validated Go/llgo C bridges, including packed combinations, nested arrays, native factories and variadic calls.
 - [x] Unnamed/zero-width bitfields with compiler-qualified declaration positions, leading/trailing padding, packed combinations, nested arrays, floating fields and native pointer/factory/variadic calls.
 - [x] Explicit numeric record/member alignment through validated C bridges, including packed/bitfield combinations, nested arrays, floating aggregates, native factories and variadic calls.

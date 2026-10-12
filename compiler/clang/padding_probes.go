@@ -33,9 +33,9 @@ func (h *Header) paddingProbes() (declarations, constants string) {
 			}
 			field := r.Description.Fields[j]
 			if bit := r.bitfieldAt(j); bit != nil {
-				fmt.Fprintf(&body, "%s f%d:%d%s;\n", bitfieldBaseType(field.Type.Type), j, bit.Width, r.cFieldAlignment(j))
+				fmt.Fprintf(&body, "%s f%d:%d%s;\n", bitfieldBaseType(field.Type.Type), j, bit.Width, r.cFieldAttributes(j))
 			} else {
-				fmt.Fprintf(&body, "__typeof__(((%s *)0)->%s) f%d%s;\n", r.Name, field.Name, j, r.cFieldAlignment(j))
+				fmt.Fprintf(&body, "__typeof__(((%s *)0)->%s) f%d%s;\n", r.Name, field.Name, j, r.cFieldAttributes(j))
 			}
 		}
 	}

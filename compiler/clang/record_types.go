@@ -197,6 +197,7 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 	packed := false
 	aligned := uint64(0)
 	var fieldAlignments []FieldAlignment
+	var packedFields []int
 	var bitfields []Bitfield
 	var padding []BitfieldPadding
 	for _, child := range node.Inner {
@@ -225,7 +226,12 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 			return abi.TypeDesc{}, fmt.Errorf("unnamed record fields are unsupported")
 		}
 		fieldAligned := uint64(0)
+		fieldPacked := false
 		for _, attr := range child.Inner {
+			if attr.Kind == "PackedAttr" && !child.IsBitfield {
+				fieldPacked = true
+				continue
+			}
 			if attr.Kind == "AlignedAttr" && !unnamed {
 				value, err := explicitAlignment(attr)
 				if err != nil {
@@ -259,6 +265,9 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 			}
 		}
 		if !unnamed {
+			if fieldPacked {
+				packedFields = append(packedFields, len(d.Fields))
+			}
 			if fieldAligned != 0 {
 				fieldAlignments = append(fieldAlignments, FieldAlignment{Position: len(d.Fields), Aligned: fieldAligned})
 			}
@@ -276,6 +285,6 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		return abi.TypeDesc{}, fmt.Errorf("at most %d records are supported", maxRecords)
 	}
 	r.resolved[id] = d
-	r.records = append(r.records, Record{Name: name, Description: d, Packed: packed, Aligned: aligned, FieldAlignments: fieldAlignments, Bitfields: bitfields, Padding: padding})
+	r.records = append(r.records, Record{Name: name, Description: d, Packed: packed, PackedFields: packedFields, Aligned: aligned, FieldAlignments: fieldAlignments, Bitfields: bitfields, Padding: padding})
 	return d, nil
 }

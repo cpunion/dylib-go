@@ -159,7 +159,7 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			if bit := record.bitfieldAt(j); bit != nil {
 				declaration += fmt.Sprintf(":%d", bit.Width)
 			}
-			declaration += record.cFieldAlignment(j)
+			declaration += record.cFieldAttributes(j)
 			fmt.Fprintf(output, "%s;\n", declaration)
 		}
 		fmt.Fprintf(output, "} %s;\n", name)

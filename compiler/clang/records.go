@@ -21,6 +21,9 @@ type Record struct {
 	// Packed requests the C compiler's packed attribute. Description remains a
 	// logical field model; only compiled C adapters may pass this record by value.
 	Packed bool
+	// PackedFields indexes explicitly packed non-bitfield members. Public
+	// values remain ordinary Go fields and require a compiled C adapter.
+	PackedFields []int
 	// Aligned preserves an explicit record alignment in bytes; zero is absent.
 	// FieldAlignments preserves explicit alignment on named members. These
 	// declarations require compiled C adapters, never a Go memory view.
@@ -108,6 +111,7 @@ func (h *Header) LookupRecord(name string) (Record, error) {
 				record.Bitfields = cloneBitfields(record.Bitfields)
 				record.Padding = append([]BitfieldPadding(nil), record.Padding...)
 				record.FieldAlignments = append([]FieldAlignment(nil), record.FieldAlignments...)
+				record.PackedFields = append([]int(nil), record.PackedFields...)
 				return record, nil
 			}
 		}
@@ -161,6 +165,9 @@ func (h *Header) validateDescriptions() error {
 			return err
 		}
 		if err := validateAlignments(record, false); err != nil {
+			return err
+		}
+		if err := validatePackedFields(record); err != nil {
 			return err
 		}
 		if (record.IndirectArgument || record.IndirectResult) && (h.Target.OS != "windows" || h.Target.Arch != "386" || !strings.Contains(h.Target.Triple, "msvc")) {
@@ -245,6 +252,9 @@ func validateSignature(s abi.Signature, budget *int) error {
 }
 
 func validRecordLayout(record Record) error {
+	if err := validatePackedFields(record); err != nil {
+		return err
+	}
 	if err := validateBitfields(record, true); err != nil {
 		return err
 	}
