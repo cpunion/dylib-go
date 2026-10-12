@@ -242,19 +242,11 @@ func TestCompilerEvaluatedAlignmentRequests(t *testing.T) {
 	for _, target := range targets {
 		t.Run(target.triple, func(t *testing.T) {
 			compiler := compilerTool(t)
-			parse := func(source string) *Header {
-				t.Helper()
-				h, err := Parse(context.Background(), headerFile(t, source+" S echo(S);"), Options{Compiler: compiler, Target: target.triple, Functions: []string{"echo"}})
-				if err != nil {
-					t.Fatal(source, err)
-				}
-				return h
-			}
 			doubleAlignment := 8
 			if target.os == "linux" && target.arch == "386" {
 				doubleAlignment = 4
 			}
-			for _, pair := range [][2]string{
+			pairs := [][2]string{
 				{`typedef struct __attribute__((aligned)) { char tag; double value; } S;`, `typedef struct __attribute__((aligned(16))) { char tag; double value; } S;`},
 				{`typedef struct __attribute__((packed,aligned)) { char tag; double value; } S;`, `typedef struct __attribute__((packed,aligned(16))) { char tag; double value; } S;`},
 				{`typedef struct { char tag; double values[2] __attribute__((aligned)); } S;`, `typedef struct { char tag; double values[2] __attribute__((aligned(16))); } S;`},
@@ -262,24 +254,47 @@ func TestCompilerEvaluatedAlignmentRequests(t *testing.T) {
 				{`typedef struct { char tag; _Alignas(double) int value; } S;`, fmt.Sprintf(`typedef struct { char tag; _Alignas(%d) int value; } S;`, doubleAlignment)},
 				{`typedef struct __attribute__((aligned(32))) { char token; } Alignment; typedef struct { char tag; _Alignas(Alignment) double values[2]; } S;`, `typedef struct { char tag; _Alignas(32) double values[2]; } S;`},
 				{`typedef struct { char tag; _Alignas(double) int value; _Alignas(double[2]) int count; } S;`, fmt.Sprintf(`typedef struct { char tag; _Alignas(%d) int value; _Alignas(%d) int count; } S;`, doubleAlignment, doubleAlignment)},
-			} {
-				actual, numeric := parse(pair[0]), parse(pair[1])
-				if !reflect.DeepEqual(actual.Records, numeric.Records) {
-					t.Fatalf("compiler-evaluated request differs from numeric request:\n%+v\n%+v", actual.Records, numeric.Records)
+			}
+			// Share compiler invocations across spellings on each target. Generating
+			// isolated adapters still checks each native layout independently: some
+			// cases deliberately share logical fields with different C attributes.
+			var original, explicit strings.Builder
+			var names []string
+			for i, pair := range pairs {
+				record, name := fmt.Sprintf("S%d", i), fmt.Sprintf("echo%d", i)
+				names = append(names, name)
+				fmt.Fprintf(&original, "%s %s %s(%s);\n", strings.ReplaceAll(pair[0], " S;", " "+record+";"), record, name, record)
+				fmt.Fprintf(&explicit, "%s %s %s(%s);\n", strings.ReplaceAll(pair[1], " S;", " "+record+";"), record, name, record)
+			}
+			parse := func(source string) *Header {
+				t.Helper()
+				h, err := Parse(context.Background(), headerFile(t, source), Options{Compiler: compiler, Target: target.triple, Functions: names})
+				if err != nil {
+					t.Fatal(err)
 				}
-				source, err := actual.CgoSource("bindings", "Bindings")
+				return h
+			}
+			actual, numeric := parse(original.String()), parse(explicit.String())
+			if !reflect.DeepEqual(actual.Records, numeric.Records) {
+				t.Fatalf("compiler-evaluated requests differ from numeric requests:\n%+v\n%+v", actual.Records, numeric.Records)
+			}
+			var cSource strings.Builder
+			for i, record := range actual.Records {
+				isolated := &Header{Target: actual.Target, Records: []Record{record}, Functions: []Declaration{actual.Functions[i]}}
+				source, err := isolated.CgoSource("bindings", fmt.Sprintf("Bindings%d", i))
 				if err != nil {
 					t.Fatal(err)
 				}
 				text := string(source)
 				start := strings.Index(text, "/*") + 2
 				end := strings.Index(text[start:], "*/") + start
-				if _, err := runCompiler(context.Background(), compiler, []string{"--target=" + target.triple, "-ffreestanding", "-x", "c", "-std=c17", "-fsyntax-only", "-"}, text[start:end], maxDiagnostics); err != nil {
-					t.Fatal(err)
-				}
-				if _, err := actual.LLGoSource("bindings", "Bindings"); err == nil {
+				cSource.WriteString(text[start:end])
+				if _, err := isolated.LLGoSource("bindings", "Bindings"); err == nil {
 					t.Fatal("attributed direct adapter accepted")
 				}
+			}
+			if _, err := runCompiler(context.Background(), compiler, []string{"--target=" + target.triple, "-ffreestanding", "-x", "c", "-std=c17", "-fsyntax-only", "-"}, cSource.String(), maxDiagnostics); err != nil {
+				t.Fatal(err)
 			}
 		})
 	}
