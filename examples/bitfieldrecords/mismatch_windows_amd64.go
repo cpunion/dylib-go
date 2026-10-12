@@ -15,20 +15,18 @@ struct {
 uint32_t f0:3 __attribute__((packed));
 int32_t f1:5;
 #if defined(_WIN32) && !defined(_MSC_VER)
-}
+};
 #pragma pack(pop)
-;
 #endif
 _Bool f2:1;
 #if defined(_WIN32) && !defined(_MSC_VER)
 #pragma pack(push,1)
-struct {
+_Alignas(2) struct {
 #endif
 uint64_t f3:40 __attribute__((packed)) __attribute__((aligned(2)));
 #if defined(_WIN32) && !defined(_MSC_VER)
-}
+};
 #pragma pack(pop)
-__attribute__((aligned(2)));
 #endif
 double f4;
 void * f5;

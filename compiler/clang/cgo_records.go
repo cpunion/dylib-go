@@ -163,7 +163,7 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			field := record.Description.Fields[j]
 			for _, unit := range packedUnits {
 				if unit.first == j {
-					beginPackedBitfieldUnit(output)
+					beginPackedBitfieldUnit(output, record.fieldAlignment(unit.first))
 				}
 			}
 			declaration, err := t.cField(field.Type, fmt.Sprintf("f%d", j))
@@ -177,7 +177,7 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			fmt.Fprintf(output, "%s;\n", declaration)
 			for _, unit := range packedUnits {
 				if unit.last == j {
-					endPackedBitfieldUnit(output, record.fieldAlignment(unit.first))
+					endPackedBitfieldUnit(output)
 				}
 			}
 		}

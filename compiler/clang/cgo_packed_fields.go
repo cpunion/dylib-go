@@ -62,14 +62,17 @@ func packedBitfieldUnits(r Record) ([]packedBitfieldUnit, error) {
 	return units, nil
 }
 
-func beginPackedBitfieldUnit(output *bytes.Buffer) {
-	fmt.Fprint(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n#pragma pack(push,1)\nstruct {\n#endif\n")
+func beginPackedBitfieldUnit(output *bytes.Buffer, alignment uint64) {
+	fmt.Fprint(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n#pragma pack(push,1)\n")
+	if alignment != 0 {
+		// Align the anonymous member, not its type: type alignment would add
+		// tail padding to the allocation unit. A trailing GNU attribute is
+		// ignored here by MinGW, while C11 field alignment is preserved.
+		fmt.Fprintf(output, "_Alignas(%d) ", alignment)
+	}
+	fmt.Fprint(output, "struct {\n#endif\n")
 }
 
-func endPackedBitfieldUnit(output *bytes.Buffer, alignment uint64) {
-	fmt.Fprint(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n}\n#pragma pack(pop)\n")
-	if alignment != 0 {
-		fmt.Fprintf(output, "__attribute__((aligned(%d)))", alignment)
-	}
-	fmt.Fprint(output, ";\n#endif\n")
+func endPackedBitfieldUnit(output *bytes.Buffer) {
+	fmt.Fprint(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n};\n#pragma pack(pop)\n#endif\n")
 }
