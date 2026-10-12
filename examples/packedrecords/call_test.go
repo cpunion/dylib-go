@@ -38,12 +38,16 @@ func TestPackedCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_packed", "echo_envelope", "packed_factory", "apply_packed", "packed_pointer", "mutate_packed", "sum_packed", "packed_variable"}
+	names := []string{"echo_packed", "echo_envelope", "packed_factory", "apply_packed", "packed_pointer", "mutate_packed", "sum_packed", "packed_variable", "echo_member", "echo_members", "echo_member_aligned", "member_factory", "apply_member", "member_pointer", "mutate_member", "sum_member", "member_variable"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
 	}
 	h.Functions[7], err = h.Functions[7].WithTail(abi.I8, abi.F32)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.Functions[16], err = h.Functions[16].WithTail(abi.I8, abi.F32)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,6 +162,36 @@ func checkCalls(t *testing.T, path string) {
 		envelope := BindingsRecord1{Items: [2][2]BindingsRecord0{{p, p}, {p, p}}, Values: [2]int32{20, 22}}
 		gotEnvelope, err := b.Echo_envelope(envelope)
 		check("unpacked parent and packed nested arrays", gotEnvelope, BindingsRecord1{Items: [2][2]BindingsRecord0{{want, want}, {want, want}}, Values: [2]int32{21, 24}}, err)
+		member := BindingsRecord2{Tag: -128, Values: [2]float64{20.5, 19.5}, Tail: -32767, Context: native}
+		memberWant := BindingsRecord2{Tag: -127, Values: [2]float64{22, 22}, Tail: -32768, Context: native}
+		memberGot, err := b.Echo_member(member)
+		check("packed array/address members", memberGot, memberWant, err)
+		memberEntry, err := b.Member_factory()
+		if err != nil || memberEntry == nil {
+			t.Fatal("packed member factory:", memberEntry, err)
+		}
+		memberGot, err = b.Apply_member(memberEntry, member)
+		check("packed member native function pointer", memberGot, memberWant, err)
+		members := BindingsRecord3{Items: [2][2]BindingsRecord2{{member, member}, {member, member}}, Count: 20}
+		membersGot, err := b.Echo_members(members)
+		check("nested member-packed arrays", membersGot, BindingsRecord3{Items: [2][2]BindingsRecord2{{memberWant, memberWant}, {memberWant, memberWant}}, Count: 21}, err)
+		aligned, err := b.Echo_member_aligned(BindingsRecord4{Marker: -128, Samples: [2]float64{20.5, 19.5}, Counter: 20, Truth: true})
+		check("member packing and alignment", aligned, BindingsRecord4{Marker: -127, Samples: [2]float64{22, 22}, Counter: 22}, err)
+		memberGot, err = b.Member_variable(member, 10, 12)
+		member.Values[0], member.Tail = 32.5, -32757
+		check("packed member variadic prefix/result", memberGot, member, err)
+		memberAddress, err := b.Member_pointer()
+		if err != nil || memberAddress == nil {
+			t.Fatal("native member storage:", memberAddress, err)
+		}
+		if got, err := b.Mutate_member(memberAddress); err != nil || got != memberAddress {
+			t.Fatal("native member pointer mutation:", got, err)
+		}
+		memberSum, err := b.Sum_member(memberAddress)
+		check("unaligned member native storage", memberSum, float64(43), err)
+		if got, err := b.Mutate_member(nil); err != nil || got != nil {
+			t.Fatal("null member pointer:", got, err)
+		}
 		p.Tag, p.Tail, p.Truth, p.Context = 125, 20, false, nil
 		got, err = b.Echo_packed(p)
 		check("false/null fields", got, BindingsRecord0{Tag: 126, Value: 22, Tail: 19, Truth: true}, err)

@@ -15,3 +15,26 @@ Packed *packed_pointer(void);
 Packed *mutate_packed(Packed *);
 double sum_packed(Packed *);
 Packed packed_variable(Packed, ...);
+typedef struct {
+    signed char tag;
+    double values[2] __attribute__((packed));
+    short tail;
+    void *context __attribute__((packed));
+} Member;
+typedef struct { Member items[2][2]; int count; } MemberEnvelope;
+typedef struct {
+    signed char marker;
+    double samples[2] __attribute__((packed,aligned(4)));
+    int counter;
+    _Bool truth __attribute__((packed));
+} MemberAligned;
+Member echo_member(Member);
+MemberEnvelope echo_members(MemberEnvelope);
+MemberAligned echo_member_aligned(MemberAligned);
+typedef Member (*MemberFn)(Member);
+MemberFn member_factory(void);
+Member apply_member(MemberFn,Member);
+Member *member_pointer(void);
+Member *mutate_member(Member *);
+double sum_member(Member *);
+Member member_variable(Member,...);

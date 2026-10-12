@@ -57,6 +57,13 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 			if record.Packed {
 				fmt.Fprint(&output, ",Packed:true")
 			}
+			if len(record.PackedFields) != 0 {
+				fmt.Fprint(&output, ",PackedFields:[]int{")
+				for _, position := range record.PackedFields {
+					fmt.Fprintf(&output, "%d,", position)
+				}
+				fmt.Fprint(&output, "}")
+			}
 			if record.Aligned != 0 {
 				fmt.Fprintf(&output, ",Aligned:%d", record.Aligned)
 			}

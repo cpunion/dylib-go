@@ -43,6 +43,7 @@ Run
 | Object/opaque pointers | Native addresses; no automatic pointee allocation, copying or ownership |
 | Ordinary structs, including anonymous typedef records | Arguments/results; compiler-evaluated layout checked against the native backend |
 | Explicit `__attribute__((packed))` structs | `CgoSource` for Go/llgo; logical fields are transported through ordinary records and converted inside C; dynamic and direct llgo bindings reject them |
+| Explicit `__attribute__((packed))` non-bitfield members | `CgoSource` for Go/llgo; retain natural alignment of other members and combine packing with explicit member alignment; includes fixed arrays, nested records and native addresses |
 | Named integral/Boolean bitfields, including explicit packed records | `CgoSource` for Go/llgo; compiler byte masks and layout are validated before binding; public fields remain ordinary scalars |
 | Unnamed/zero-width bitfields | `CgoSource` preserves storage boundaries without adding public Go value fields; leading/trailing padding and packed combinations are supported |
 | Explicit numeric record/member alignment | `CgoSource` preserves GNU `aligned(N)`, field `_Alignas(N)` and MS `__declspec(align(N))`; packed/bitfield combinations and nested arrays are supported |
@@ -195,6 +196,17 @@ pointees and typed pointer fields in manually assembled record metadata remain
 unsupported; record fields use opaque addresses.
 
 ### Explicitly packed C records
+
+`Record.PackedFields` preserves the logical positions of explicitly packed
+non-bitfield members. It reduces those members' alignment while leaving the
+other members' natural alignment intact. C bridges reproduce field attributes,
+including `packed` combined with numeric `aligned(N)`, and validate the resulting
+size, alignment and every offset. Public Go fields remain ordinary values.
+Nested arrays and pointer/factory/variadic calls use the same C transport path.
+Dynamic and direct llgo adapters reject these attributed records. Use native
+producer storage for their pointers; `abi.NewNativeValue` describes logical
+storage and does not reproduce member packing. Packing attributes on individual
+bitfields and typedefs remain unqualified.
 
 `Record.Packed` preserves Clang's explicit `PackedAttr`. `Record.Description`
 remains a logical field model, not a descriptor of packed native memory. Generated

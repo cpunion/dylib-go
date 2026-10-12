@@ -130,7 +130,8 @@ const maxFunctions = 256
 // Go or llgo. Named integral/Boolean bitfields use compiler byte-mask probes;
 // unnamed/zero-width fields retain their declaration positions. These also
 // require CgoSource. Explicit numeric record/field alignment is preserved by
-// CgoSource. Enums use compiler-confirmed compatible integer types; attributed
+// CgoSource, including explicit packing on ordinary named members. Enums use
+// compiler-confirmed compatible integer types; attributed
 // enum alignment must match the native integer. Unions, other attributed
 // records/fields/typedefs, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes

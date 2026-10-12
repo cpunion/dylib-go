@@ -419,7 +419,7 @@ variadic prefixes, C cdecl, and Windows 386 stdcall/fastcall. `ForHost` checks c
 against the actual backend before calls, including callback records.
 `LookupFunctionPointer` supplies signatures for `abi.NewCallback` or returned native
 addresses, including nested prototypes and multiple pointer layers. Explicitly
-packed/aligned records and integral/Boolean bitfields use generated C bridges, including
+packed/aligned records and ordinary members, plus integral/Boolean bitfields, use generated C bridges, including
 unnamed and zero-width allocation boundaries. Named and typedef enums use
 compiler-confirmed integer or Boolean types, including packed/short enums and
 fixed underlying types accepted by Clang. Unions still need manual adapters.

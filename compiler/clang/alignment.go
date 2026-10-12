@@ -65,9 +65,13 @@ func (r Record) cAttributes() string {
 	return ""
 }
 
-func (r Record) cFieldAlignment(position int) string {
-	if alignment := r.fieldAlignment(position); alignment != 0 {
-		return fmt.Sprintf(" __attribute__((aligned(%d)))", alignment)
+func (r Record) cFieldAttributes(position int) string {
+	packing := ""
+	if r.fieldPacked(position) {
+		packing = " __attribute__((packed))"
 	}
-	return ""
+	if alignment := r.fieldAlignment(position); alignment != 0 {
+		return packing + fmt.Sprintf(" __attribute__((aligned(%d)))", alignment)
+	}
+	return packing
 }
