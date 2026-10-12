@@ -276,11 +276,25 @@ func TestNativeCloseDuringInitialization(t *testing.T) {
 			}
 			var workers sync.WaitGroup
 			var releaseOnce sync.Once
+			closeReady, closeStart := make(chan struct{}), make(chan struct{})
+			var closeOnce sync.Once
 			defer func() {
 				releaseOnce.Do(func() { close(release) })
+				closeOnce.Do(func() { close(closeStart) })
 				workers.Wait()
 			}()
 			initialized, closed := make(chan error, 1), make(chan error, 1)
+			// llgo goroutines use host threads. Windows delays a new thread's
+			// startup until DLL initialization releases the loader lock, so the
+			// closing worker must be running before the constructor starts.
+			workers.Add(1)
+			go func() {
+				defer workers.Done()
+				close(closeReady)
+				<-closeStart
+				closed <- s.Close()
+			}()
+			<-closeReady
 			workers.Add(1)
 			go func() {
 				defer workers.Done()
@@ -299,8 +313,7 @@ func TestNativeCloseDuringInitialization(t *testing.T) {
 			case <-time.After(5 * time.Second):
 				t.Fatalf("initializer did not enter scope: %v", cb.Err())
 			}
-			workers.Add(1)
-			go func() { defer workers.Done(); closed <- s.Close() }()
+			closeOnce.Do(func() { close(closeStart) })
 			waitSessionRetired(t, s)
 			select {
 			case err := <-closed:
