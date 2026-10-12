@@ -45,6 +45,13 @@ func (m recordMember) bitfield(r Record) (capacity, width int) {
 	return
 }
 
+func (m recordMember) packed(r Record) bool {
+	if m.padding >= 0 {
+		return r.Padding[m.padding].Packed
+	}
+	return r.fieldPacked(m.field)
+}
+
 type packedBitfieldUnit struct {
 	first, last int // Indexes in the complete declaration stream.
 }
@@ -74,7 +81,7 @@ func packedBitfieldUnits(r Record, members []recordMember) []packedBitfieldUnit 
 			used += width
 			last = next
 		}
-		if field := members[first].field; field >= 0 && r.fieldPacked(field) {
+		if members[first].packed(r) {
 			units = append(units, packedBitfieldUnit{first, last})
 		}
 		first = last + 1
@@ -83,11 +90,11 @@ func packedBitfieldUnits(r Record, members []recordMember) []packedBitfieldUnit 
 }
 
 // A zero-width field after a wrapped unit now follows an ordinary anonymous
-// member, so MS layout would ignore it. A zero-length array restores the same
-// natural alignment boundary without allocating bytes. Only that immediate
-// boundary is replaced; leading/consecutive zero-width fields remain ignored.
+// member, so MS layout would ignore it. MinGW also ignores the packed attribute
+// on zero-width bitfields. A zero-length array restores the effective boundary
+// without allocating bytes. Leading/consecutive zero-width fields stay ignored.
 func writePackedUnitBoundary(output *bytes.Buffer, p BitfieldPadding, index int) {
-	fmt.Fprintf(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n%s boundary%d[0];\n#else\n%s :0;\n#endif\n", bitfieldBaseType(p.Type), index, bitfieldBaseType(p.Type))
+	fmt.Fprintf(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n%s boundary%d[0]%s;\n#else\n%s :0%s;\n#endif\n", bitfieldBaseType(p.Type), index, p.cAttributes(), bitfieldBaseType(p.Type), p.cAttributes())
 }
 
 func beginPackedBitfieldUnit(output *bytes.Buffer, alignment uint64) {

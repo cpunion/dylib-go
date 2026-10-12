@@ -38,6 +38,7 @@ func TestCompilerQualifiedEnums(t *testing.T) {
 	for _, target := range targets {
 		for _, short := range []bool{false, true} {
 			t.Run(target.triple+map[bool]string{true: "/short", false: "/default"}[short], func(t *testing.T) {
+				t.Parallel()
 				var flags []string
 				if short {
 					flags = []string{"-fshort-enums"}

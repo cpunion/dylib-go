@@ -20,6 +20,7 @@ Aligned echo(Aligned); Fields fields(Fields); Packed packed(Packed); Outer nest(
 typedef Aligned (*Entry)(Aligned); Entry factory(void); Aligned apply(Entry,Aligned);`)
 	for _, target := range targets {
 		t.Run(target.triple, func(t *testing.T) {
+			t.Parallel()
 			compiler := compilerTool(t)
 			h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: target.triple, Functions: []string{"echo", "fields", "packed", "nest", "factory", "apply"}})
 			if err != nil {
@@ -241,6 +242,7 @@ func TestIndirectRecordIRProbe(t *testing.T) {
 func TestCompilerEvaluatedAlignmentRequests(t *testing.T) {
 	for _, target := range targets {
 		t.Run(target.triple, func(t *testing.T) {
+			t.Parallel()
 			compiler := compilerTool(t)
 			doubleAlignment := 8
 			if target.os == "linux" && target.arch == "386" {

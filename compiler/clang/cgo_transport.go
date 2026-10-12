@@ -66,7 +66,14 @@ func (t *cgoTypes) writeTransport(output *bytes.Buffer, index int) error {
 		if !toNative {
 			from, to = native, transport
 		}
-		fmt.Fprintf(output, "static %s %s(%s value) {\n%s result = {0};\n", to, t.cConversion(index, toNative), from, to)
+		initializer := "{0}"
+		if toNative && t.targetOS == "windows" && !record.Packed && len(record.Padding) != 0 && record.Padding[0].Before == 0 && record.Padding[0].Packed {
+			// A leading wrapped unit may have only unnamed fields. {0} then
+			// supplies an excess initializer; GCC/Clang's empty initializer
+			// clears the aggregate without targeting an unnamed member.
+			initializer = "{}"
+		}
+		fmt.Fprintf(output, "static %s %s(%s value) {\n%s result = %s;\n", to, t.cConversion(index, toNative), from, to, initializer)
 		for j, field := range record.Description.Fields {
 			member := fmt.Sprintf(".f%d", j)
 			t.writeTransportCopy(output, field.Type, "result"+member, "value"+member, toNative, 0)

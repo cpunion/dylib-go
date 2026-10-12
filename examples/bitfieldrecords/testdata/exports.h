@@ -27,7 +27,7 @@ Bits bits_variable(Bits, ...);
 typedef struct { signed long long value:40; unsigned long long all:64; } SignedWide;
 SignedWide echo_signed_wide(SignedWide);
 typedef struct {
-    unsigned :3;
+    unsigned :3 __attribute__((packed));
     unsigned low:5 __attribute__((packed));
     unsigned :0;
     signed high:7 __attribute__((packed,aligned(2)));
@@ -39,9 +39,9 @@ typedef struct {
     unsigned value;
     unsigned :5;
 } GapBits;
-typedef struct { unsigned :7; unsigned char octet; } PrefixBits;
+typedef struct { unsigned :7 __attribute__((packed)); unsigned char octet; } PrefixBits;
 typedef struct __attribute__((packed)) {
-    unsigned :3;
+    unsigned :3 __attribute__((packed));
     unsigned low:5;
     unsigned :0;
     signed high:7;
@@ -68,3 +68,5 @@ typedef struct { unsigned low:3 __attribute__((packed)); signed high:5 __attribu
 MemberTiny echo_member_tiny(MemberTiny);
 typedef struct { unsigned code:3 __attribute__((packed)); unsigned :4; unsigned long long :0; unsigned :0; } MemberTrailing;
 MemberTrailing echo_member_trailing(MemberTrailing);
+typedef struct { signed char marker; unsigned code:3 __attribute__((packed)); unsigned :0 __attribute__((packed)); signed char tail; } PackedZero;
+PackedZero echo_packed_zero(PackedZero);

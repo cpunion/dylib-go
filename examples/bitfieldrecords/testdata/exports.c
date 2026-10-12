@@ -98,3 +98,9 @@ MemberTrailing echo_member_trailing(MemberTrailing p) {
     p.code ^= 7;
     return p;
 }
+PackedZero echo_packed_zero(PackedZero p) {
+    p.marker += 1;
+    p.code ^= 7;
+    p.tail += 2;
+    return p;
+}

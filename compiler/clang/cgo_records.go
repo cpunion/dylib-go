@@ -147,12 +147,20 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		for position, member := range members {
 			for _, unit := range packedUnits {
 				if unit.first == position {
-					beginPackedBitfieldUnit(output, record.fieldAlignment(member.field))
+					alignment := uint64(0)
+					if member.field >= 0 {
+						alignment = record.fieldAlignment(member.field)
+					}
+					beginPackedBitfieldUnit(output, alignment)
 				}
 			}
 			if member.padding >= 0 {
 				p := record.Padding[member.padding]
 				boundary := false
+				if t.targetOS == "windows" && !record.Packed && p.Packed && p.Width == 0 && position > 0 {
+					_, previousWidth := members[position-1].bitfield(record)
+					boundary = previousWidth != 0
+				}
 				for _, unit := range packedUnits {
 					boundary = boundary || p.Width == 0 && unit.last+1 == position
 				}
@@ -164,7 +172,7 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 					if err != nil {
 						return err
 					}
-					fmt.Fprintf(output, "%s :%d;\n", kind, p.Width)
+					fmt.Fprintf(output, "%s :%d%s;\n", kind, p.Width, p.cAttributes())
 				}
 			} else {
 				j := member.field
