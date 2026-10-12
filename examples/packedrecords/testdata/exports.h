@@ -48,9 +48,9 @@ typedef struct {
     void *pragma_context;
 } Pragma;
 #pragma pack(push,4)
-typedef struct { char envelope_tag; Pragma pragma_items[2][2]; int checksum; } PragmaEnvelope;
+typedef struct { signed char envelope_tag; Pragma pragma_items[2][2]; int checksum; } PragmaEnvelope;
 #pragma pack(pop)
-typedef struct __attribute__((aligned(32))) { char aligned_tag; int aligned_count; double aligned_value; } PragmaAligned;
+typedef struct __attribute__((aligned(32))) { signed char aligned_tag; int aligned_count; double aligned_value; } PragmaAligned;
 #pragma pack(pop)
 typedef struct { PragmaEnvelope payload; double natural_tail; } PragmaOuter;
 Pragma echo_pragma(Pragma);
