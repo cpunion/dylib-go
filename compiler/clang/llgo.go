@@ -29,8 +29,8 @@ func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 		return nil, fmt.Errorf("clang: direct llgo adapters require a qualified amd64/arm64 target")
 	}
 	for _, record := range h.Records {
-		if record.Packed {
-			return nil, fmt.Errorf("clang: packed record %s requires CgoSource for Go or llgo", record.Name)
+		if record.Packed || len(record.Bitfields) != 0 {
+			return nil, fmt.Errorf("clang: packed/bitfield record %s requires CgoSource for Go or llgo", record.Name)
 		}
 	}
 	metadata := "_" + bindingType + "Declarations"

@@ -7,7 +7,7 @@ import (
 	"github.com/cpunion/dylib-go/abi"
 )
 
-// Keep packed records entirely inside compiled C. Both cgo and llgo receive an
+// Keep packed/bitfield records entirely inside compiled C. Both cgo and llgo receive an
 // ordinary C transport record, whose fields are copied rather than reinterpreted.
 // A parent containing packed records needs a transport even when it is unpacked.
 func (t *cgoTypes) needsTransport(index int) bool {
@@ -18,7 +18,7 @@ func (t *cgoTypes) needsTransport(index int) bool {
 		t.transports = make(map[int]bool)
 	}
 	record := t.records[index]
-	needed := record.Packed
+	needed := record.Packed || len(record.Bitfields) != 0
 	for _, field := range record.Description.Fields {
 		d := field.Type
 		for d.Type == abi.Array {

@@ -190,6 +190,7 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 	defer delete(r.building, id)
 	d := abi.TypeDesc{Type: abi.Struct}
 	packed := false
+	var bitfields []Bitfield
 	for _, child := range node.Inner {
 		if child.Kind == "PackedAttr" {
 			packed = true
@@ -201,8 +202,8 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		if child.Kind != "FieldDecl" {
 			continue
 		}
-		if child.IsBitfield || !cIdentifier(child.Name) {
-			return abi.TypeDesc{}, fmt.Errorf("bitfields and unnamed record fields are unsupported")
+		if !cIdentifier(child.Name) {
+			return abi.TypeDesc{}, fmt.Errorf("unnamed record fields are unsupported")
 		}
 		for _, attr := range child.Inner {
 			if strings.HasSuffix(attr.Kind, "Attr") {
@@ -214,6 +215,13 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		field, err := r.describeField(name, child, depth+1)
 		if err != nil {
 			return abi.TypeDesc{}, fmt.Errorf("%s.%s: %w", name, child.Name, err)
+		}
+		if child.IsBitfield {
+			width, ok := constantValue(child)
+			if !ok || width < 1 || width > bitfieldTypeBits(field.Type) || field.Elem != nil {
+				return abi.TypeDesc{}, fmt.Errorf("unsupported named bitfield %s.%s", name, child.Name)
+			}
+			bitfields = append(bitfields, Bitfield{Position: len(d.Fields), Width: width})
 		}
 		d.Fields = append(d.Fields, abi.Field{Name: child.Name, Type: field})
 		if len(d.Fields) > 32 {
@@ -228,6 +236,6 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		return abi.TypeDesc{}, fmt.Errorf("at most %d records are supported", maxRecords)
 	}
 	r.resolved[id] = d
-	r.records = append(r.records, Record{Name: name, Description: d, Packed: packed})
+	r.records = append(r.records, Record{Name: name, Description: d, Packed: packed, Bitfields: bitfields})
 	return d, nil
 }

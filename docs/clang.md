@@ -42,6 +42,7 @@ Run
 | Object/opaque pointers | Native addresses; no automatic pointee allocation, copying or ownership |
 | Ordinary structs, including anonymous typedef records | Arguments/results; compiler-evaluated layout checked against the native backend |
 | Explicit `__attribute__((packed))` structs | `CgoSource` for Go/llgo; logical fields are transported through ordinary records and converted inside C; dynamic and direct llgo bindings reject them |
+| Named integral/Boolean bitfields, including explicit packed records | `CgoSource` for Go/llgo; compiler byte masks and layout are validated before binding; public fields remain ordinary scalars |
 | Fixed array members | Scalars, pointers, records and nested arrays; positive evaluated lengths |
 | Function parameters/results pointing to a complete ordinary struct | Typed single-struct pointees; `abi.AddressOf` supplies a temporary copy, with mutation/return identity checks |
 | Function pointers at parameter/result boundaries | Typedefs, anonymous pointers and decayed function parameters; retain their exact prototype/convention independently of the outer pointer |
@@ -50,7 +51,7 @@ Run
 | stdcall / fastcall | Windows 386; retain compiler symbol decoration |
 | Higher-order and multiply indirect function pointers | Nested argument/result prototypes and 1–8 pointer layers; caller owns code and pointee lifetimes |
 | Function-pointer record fields and fixed arrays | Opaque native address storage with separate field-indexed prototypes; supports typedef/direct pointers, multidimensional arrays, nested record arrays and self-referencing callback signatures |
-| Unions, bitfields, other attributed records/fields/typedefs, flexible/zero-length arrays, enums, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
+| Unions, unnamed/zero-width bitfields, other attributed records/fields/typedefs, flexible/zero-length arrays, enums, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
 | Static/inline functions and old-style declarations without prototypes | Rejected; provide an exported C facade/prototype |
 
 `Header.Records` saves the C type spelling, `abi.TypeDesc` and compiler layout for
@@ -132,7 +133,7 @@ No language runtime, C++ ownership or exception adaptation is inferred.
 ## Typed cgo bridges for Go and llgo
 
 `Header.CgoSource(packageName, bindingType)` emits typed methods with static C
-bridges in an `import "C"` preamble. It supports cdecl scalars, ordinary/explicitly packed record
+bridges in an `import "C"` preamble. It supports cdecl scalars, ordinary/explicitly packed and named-bitfield record
 values and opaque native pointer arguments/results on all eight native Go targets and six qualified llgo
 targets, without the optional libffi backend. Fixed Windows 386 stdcall/fastcall
 exports and function-pointer prototypes are supported with Go. A C toolchain is needed when building
@@ -197,7 +198,7 @@ from the logical description. Native function pointers using packed values need
 a matching compiled adapter; `abi.NewCallback` does not supply this ABI.
 
 Global packing flags, `#pragma pack`, field packing/alignment attributes and
-unions/bitfields are not inferred by this adapter. When two records have identical
+unions are not inferred by this adapter. When two records have identical
 logical fields but different native layouts, typed generation rejects the
 ambiguity rather than selecting a layout from metadata order. Generate separate
 bindings for those declarations.
@@ -208,6 +209,38 @@ setup-go/setup-llgo jobs. They verify packed values/returns, ordinary parents wi
 packed multidimensional arrays, signed boundaries, Boolean and pointer fields,
 factories/consumers, native struct pointers, variadic promotions, stale generated
 source, target guards and session retirement.
+
+### Named C bitfields
+
+`Record.Bitfields` records each field's logical position, declared width and
+native byte mask. `Layout.Offsets` contains the mask's first byte. Signed and
+unsigned integral base types up to 64 bits and `_Bool` are supported; unnamed
+and zero-width fields are rejected.
+
+C forbids `offsetof` on bitfields. Parsing compiles a zero-initialized constant
+for each field with all its bits set, then reads the target ELF, COFF or Mach-O
+object with Go's object parsers. Cross-target parsing does not execute foreign
+code. Generated C declarations restore the field widths and constructors check
+the masks as well as size, alignment and offsets before resolving exports.
+On Windows, byte-aligned packed bitfields also use a scoped packing pragma:
+MinGW otherwise ignores the record's packed attribute for MS-layout bitfields.
+Producer objects and libraries must use the ABI selected during parsing. Tests
+link the target-qualified producer object into each library and compare MSVC
+and MinGW bridge sizes, alignments, ordinary offsets and bitfield masks.
+
+Public Go fields are ordinary scalar values. C converts them through ordinary
+transport structs and applies the native bitfield ABI, including narrowing and
+sign extension. Packed bitfields, nested records/arrays, native factories and
+concrete variadic calls use the same path. Dynamic libffi and direct llgo
+bindings reject these records. Their pointers require producer-owned native
+storage; logical descriptions cannot allocate or reinterpret native bitfields.
+
+The [bitfield example](../examples/bitfieldrecords/call.go) executes optimized and
+unoptimized objects, archives and libraries with Go and llgo. Tests cover signed
+boundaries, Boolean values, cross-byte 40-bit fields, packed combinations,
+nested arrays, native pointers/function pointers and variadic promotions. A
+binding with a shifted mask verifies rejection even when size, alignment and
+the field's first byte still match.
 
 Constructors check `Target.CheckHost` before layout checks and resolving exports. Methods run their
 C bridges inside `Symbol.WithAddress`, retaining the image for the call and
