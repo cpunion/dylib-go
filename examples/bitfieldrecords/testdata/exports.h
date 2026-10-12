@@ -2,7 +2,7 @@ typedef struct {
     unsigned flags:3 __attribute__((packed));
     signed delta:5;
     _Bool active:1;
-    unsigned long long wide:40 __attribute__((packed,aligned(2)));
+    unsigned long long wide:40 __attribute__((packed,aligned(16)));
     double value;
     void *context;
 } Bits;
