@@ -125,7 +125,7 @@ func TestCallingConventionsAndUnsupportedDeclarations(t *testing.T) {
 		{"inline int f(int);", "static/inline"},
 		{"long double f(long double);", "unsupported C type"},
 		{"union Pair{int a,b;}; union Pair f(union Pair);", "unsupported C type"},
-		{"enum Kind{A,B}; enum Kind f(enum Kind);", "unsupported C type"},
+		{"enum Kind; enum Kind f(enum Kind);", "unsupported incomplete C enum"},
 		{"int __attribute__((vectorcall)) f(int);", "unsupported function"},
 	} {
 		path := headerFile(t, test.source)

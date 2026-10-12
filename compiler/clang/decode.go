@@ -39,6 +39,7 @@ func (t nodeType) spelling() string {
 type astNode struct {
 	ID, Kind, Name, MangledName, StorageClass, Value, TagUsed, CC string
 	Type                                                          nodeType
+	FixedUnderlyingType                                           nodeType
 	Inline, Variadic, CompleteDefinition, IsBitfield              bool
 	Size                                                          int
 	Decl                                                          *astNode

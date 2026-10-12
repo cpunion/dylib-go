@@ -420,8 +420,10 @@ against the actual backend before calls, including callback records.
 `LookupFunctionPointer` supplies signatures for `abi.NewCallback` or returned native
 addresses, including nested prototypes and multiple pointer layers. Explicitly
 packed/aligned records and integral/Boolean bitfields use generated C bridges, including
-unnamed and zero-width allocation boundaries. Unions and enums still need manual
-adapters. See [types, targets and limits](docs/clang.md).
+unnamed and zero-width allocation boundaries. Named and typedef enums use
+compiler-confirmed integer or Boolean types, including packed/short enums and
+fixed underlying types accepted by Clang. Unions still need manual adapters.
+See [types, targets and limits](docs/clang.md).
 
 Records containing callbacks use opaque native address fields or fixed arrays
 of addresses, with independent

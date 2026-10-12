@@ -123,14 +123,16 @@ const maxDiagnostics = 32 << 10
 const maxFunctions = 256
 
 // Parse asks Clang to preprocess a C17 header and evaluate primitive size probes.
-// It extracts only requested external prototypes, supported scalars/typedefs,
+// It extracts only requested external prototypes, supported scalars/typedefs/enums,
 // ordinary and explicitly packed records, array members, pointers and
 // function-pointer prototypes. Record layouts are compiler evaluated; ForHost
 // checks the native backend before calls. Packed records require CgoSource for
 // Go or llgo. Named integral/Boolean bitfields use compiler byte-mask probes;
 // unnamed/zero-width fields retain their declaration positions. These also
 // require CgoSource. Explicit numeric record/field alignment is preserved by
-// CgoSource. Unions, other attributed records/fields/typedefs, enums, inline/static
+// CgoSource. Enums use compiler-confirmed compatible integer types; attributed
+// enum alignment must match the native integer. Unions, other attributed
+// records/fields/typedefs, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes
 // must stay stable during parsing; they are read by Clang at their original paths.
 func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
@@ -188,12 +190,16 @@ func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 		return nil, err
 	}
 	header, err := decodeDeclarations(data, string(triple), opts.Functions, nil)
-	if errors.Is(err, errRecordFieldTypes) {
+	if errors.Is(err, errRecordFieldTypes) || errors.Is(err, errEnumTypes) {
+		enums, probeErr := enumProbes(data)
+		if probeErr != nil {
+			return nil, probeErr
+		}
 		probes, keys, probeErr := recordFieldProbes(data)
 		if probeErr != nil {
 			return nil, probeErr
 		}
-		data, err = runCompiler(ctx, compiler, args, functionProbes(opts.Functions)+probes, maxASTSize)
+		data, err = runCompiler(ctx, compiler, args, functionProbes(opts.Functions)+enums+probes, maxASTSize)
 		if err != nil {
 			return nil, err
 		}

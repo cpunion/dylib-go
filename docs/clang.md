@@ -38,6 +38,7 @@ Run
 | `void`, `_Bool`, `float`, `double` | Supported scalar results/arguments; `void` is a result only |
 | Signed/unsigned C integers | Fixed ABI widths from evaluated compiler size probes |
 | Plain `char` | Compiler-confirmed signedness |
+| Named and typedef enums | Compiler-confirmed compatible signed/unsigned 8/16/32/64-bit integers or `_Bool`; packed/short enums and Clang fixed-underlying-type extensions are included |
 | Typedefs and ordinary qualifiers | Desugared/resolved, including integer and pointer aliases |
 | Object/opaque pointers | Native addresses; no automatic pointee allocation, copying or ownership |
 | Ordinary structs, including anonymous typedef records | Arguments/results; compiler-evaluated layout checked against the native backend |
@@ -53,8 +54,23 @@ Run
 | stdcall / fastcall | Windows 386; retain compiler symbol decoration |
 | Higher-order and multiply indirect function pointers | Nested argument/result prototypes and 1–8 pointer layers; caller owns code and pointee lifetimes |
 | Function-pointer record fields and fixed arrays | Opaque native address storage with separate field-indexed prototypes; supports typedef/direct pointers, multidimensional arrays, nested record arrays and self-referencing callback signatures |
-| Unions, other attributed records/fields/typedefs, flexible/zero-length arrays, enums, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
+| Unions, other attributed records/fields/typedefs, flexible/zero-length arrays, inaccessible anonymous enums, incompatible/overaligned enum integers, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
 | Static/inline functions and old-style declarations without prototypes | Rejected; provide an exported C facade/prototype |
+
+Enums are resolved with compiler `sizeof`, `_Alignof`, signedness and compatible
+integer probes. Enumerator constant types alone do not identify a packed or
+short enum's storage. The same header can produce different signatures: MSVC
+ordinary enums use `int` even where GNU/Apple targets choose an unsigned or short
+integer. Match `Options.Flags` to the producer, including `-fshort-enums`.
+Fixed underlying types are accepted when Clang supports their syntax in C17 mode.
+
+Enum values use the existing numeric/Boolean Go types and `abi.Value`
+constructors. Generated C bridges and direct llgo entries use the compatible
+integer ABI, including function pointers and record members. Enum constants and
+symbolic enum argument names are not generated or parsed. Enum pointers remain
+opaque native addresses. Incomplete enums require a fixed underlying type for
+by-value calls; anonymous enums need an accessible typedef. Extra enum alignment
+or a compatible integer outside the supported widths is rejected.
 
 `Header.Records` saves the C type spelling, `abi.TypeDesc` and compiler layout for
 each used record. `LookupRecord(name)` clones that metadata for constructing values

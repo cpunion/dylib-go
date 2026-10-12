@@ -22,6 +22,20 @@ import (
 )
 
 func TestGeneratedCgoDeclarations(t *testing.T) {
+	for _, enumTypes := range []bool{false, true} {
+		name := "integer"
+		if enumTypes {
+			name = "enum"
+		}
+		t.Run(name, func(t *testing.T) { testGeneratedCgoDeclarations(t, enumTypes) })
+	}
+}
+
+func testGeneratedCgoDeclarations(t *testing.T, enumTypes bool) {
+	var enumFlags []string
+	if enumTypes {
+		enumFlags = []string{"-DDYLIB_ENUM_TYPES"}
+	}
 	compiler := os.Getenv("DYLIB_LLVM_CLANG")
 	if compiler == "" {
 		compiler = os.Getenv("CLANG")
@@ -37,7 +51,7 @@ func TestGeneratedCgoDeclarations(t *testing.T) {
 	}
 	names := []string{"s8", "u8", "s16", "u16", "s32", "u32", "s64", "u64", "f32", "f64", "truth", "pointer", "zero", "empty", "mixed", "variable", "promotions", "empty_variable", "mixed_variable", "void_variable", "adder_factory", "apply_adder", "variadic_factory", "forward_variadic", "data_pointer"}
 	names = append(names, "maker_factory", "meta_factory", "consumer_factory", "subtract_factory", "apply_maker", "apply_meta", "apply_consumer", "adder_slot", "replace_adder")
-	header, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
+	header, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Flags: enumFlags, Functions: names})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,6 +82,7 @@ func TestGeneratedCgoDeclarations(t *testing.T) {
 	}
 	object := filepath.Join(t.TempDir(), "exports.o")
 	flags := []string{"--target=" + header.Target.Triple, "-O0", "-c", "-fno-stack-protector", "testdata/exports.c", "-o", object}
+	flags = append(flags, enumFlags...)
 	if runtime.GOOS != "windows" {
 		flags = append(flags, "-fPIC")
 	}
