@@ -71,7 +71,7 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 			if len(record.Padding) != 0 {
 				fmt.Fprint(&output, ",Padding:[]clang.BitfieldPadding{")
 				for _, field := range record.Padding {
-					fmt.Fprintf(&output, "{Before:%d,Type:abi.Type(%d),Width:%d},", field.Before, field.Type, field.Width)
+					fmt.Fprintf(&output, "{Before:%d,Type:abi.Type(%d),Width:%d,Offset:%d},", field.Before, field.Type, field.Width, field.Offset)
 				}
 				fmt.Fprint(&output, "}")
 			}

@@ -307,17 +307,31 @@ result.f0 = value.f0;
 return result;
 }
 #if defined(_WIN32) && !defined(_MSC_VER)
-typedef struct __attribute__((packed,gcc_struct,aligned(1))) {
-uint64_t :3;
+#pragma pack(push,1)
+typedef struct __attribute__((packed)) {
+unsigned int :3;
 uint32_t f0:5;
-uint64_t :24;
+unsigned char :0;
+} dylib_go_42696e64696e6773_record6_padding1;
+_Static_assert(sizeof(dylib_go_42696e64696e6773_record6_padding1)<=4 && 4-sizeof(dylib_go_42696e64696e6773_record6_padding1)<=7,"incompatible zero-width boundary");
+typedef struct __attribute__((packed,aligned(1))) {
+unsigned int :3;
+uint32_t f0:5;
+unsigned char :0;
+unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record6_padding1)>0?8:0);
+unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record6_padding1)>1?8:0);
+unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record6_padding1)>2?8:0);
+unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record6_padding1)>3?8:0);
+unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record6_padding1)>4?8:0);
+unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record6_padding1)>5?8:0);
+unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record6_padding1)>6?8:0);
 int32_t f1:7;
-uint64_t :1;
+unsigned int :1;
 _Bool f2:1;
-uint64_t :7;
 double f3;
-uint64_t :8;
+unsigned int :5;
 } dylib_go_42696e64696e6773_record6;
+#pragma pack(pop)
 #else
 #if defined(_WIN32)
 #pragma pack(push,1)
@@ -428,13 +442,28 @@ result.f2[i0] = dylib_go_42696e64696e6773_record6_to_transport(value.f2[i0]);
 return result;
 }
 #if defined(_WIN32) && !defined(_MSC_VER)
-typedef struct __attribute__((packed,gcc_struct,aligned(1))) {
-uint64_t :8;
+#pragma pack(push,1)
+typedef struct __attribute__((packed)) {
+unsigned int :3;
 double f0;
-uint64_t :24;
+unsigned char :0;
+} dylib_go_42696e64696e6773_record8_padding1;
+_Static_assert(sizeof(dylib_go_42696e64696e6773_record8_padding1)<=12 && 12-sizeof(dylib_go_42696e64696e6773_record8_padding1)<=7,"incompatible zero-width boundary");
+typedef struct __attribute__((packed,aligned(1))) {
+unsigned int :3;
+double f0;
+unsigned char :0;
+unsigned char :(12-sizeof(dylib_go_42696e64696e6773_record8_padding1)>0?8:0);
+unsigned char :(12-sizeof(dylib_go_42696e64696e6773_record8_padding1)>1?8:0);
+unsigned char :(12-sizeof(dylib_go_42696e64696e6773_record8_padding1)>2?8:0);
+unsigned char :(12-sizeof(dylib_go_42696e64696e6773_record8_padding1)>3?8:0);
+unsigned char :(12-sizeof(dylib_go_42696e64696e6773_record8_padding1)>4?8:0);
+unsigned char :(12-sizeof(dylib_go_42696e64696e6773_record8_padding1)>5?8:0);
+unsigned char :(12-sizeof(dylib_go_42696e64696e6773_record8_padding1)>6?8:0);
 double f1;
-uint64_t :8;
+unsigned int :5;
 } dylib_go_42696e64696e6773_record8;
+#pragma pack(pop)
 #else
 #if defined(_WIN32)
 #pragma pack(push,1)
@@ -605,11 +634,11 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "PackedBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "a", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "b", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "on", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "big", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 15, Alignment: 1, Offsets: []uint64{0, 0, 1, 1, 7}}, Packed: true, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 1, Mask: []byte{1}}, {Position: 3, Width: 40, Mask: []byte{254, 255, 255, 255, 255, 1}}}},
 		{Name: "Envelope", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "regular", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "delta", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, {Name: "packed", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "a", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "b", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "on", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "big", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}}}, Layout: abi.Layout{Size: 80, Alignment: 4, Offsets: []uint64{0, 20}}},
 		{Name: "SignedWide", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "value", Type: abi.TypeDesc{Type: abi.I64}}, {Name: "all", Type: abi.TypeDesc{Type: abi.U64}}}}, Layout: abi.Layout{Size: 16, Alignment: 4, Offsets: []uint64{0, 8}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 40, Mask: []byte{255, 255, 255, 255, 255}}, {Position: 1, Width: 64, Mask: []byte{255, 255, 255, 255, 255, 255, 255, 255}}}},
-		{Name: "GapBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "enabled", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "value", Type: abi.TypeDesc{Type: abi.U32}}}}, Layout: abi.Layout{Size: 16, Alignment: 4, Offsets: []uint64{0, 4, 5, 8}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 5, Mask: []byte{248}}, {Position: 1, Width: 7, Mask: []byte{127}}, {Position: 2, Width: 1, Mask: []byte{8}}}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 3}, {Before: 1, Type: abi.Type(2), Width: 0}, {Before: 2, Type: abi.Type(2), Width: 4}, {Before: 3, Type: abi.Type(2), Width: 0}, {Before: 4, Type: abi.Type(2), Width: 5}}},
-		{Name: "PrefixBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "octet", Type: abi.TypeDesc{Type: abi.U8}}}}, Layout: abi.Layout{Size: 2, Alignment: 1, Offsets: []uint64{1}}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 7}}},
-		{Name: "PackedGapBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "enabled", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 15, Alignment: 1, Offsets: []uint64{0, 4, 5, 6}}, Packed: true, Bitfields: []clang.Bitfield{{Position: 0, Width: 5, Mask: []byte{248}}, {Position: 1, Width: 7, Mask: []byte{127}}, {Position: 2, Width: 1, Mask: []byte{1}}}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 3}, {Before: 1, Type: abi.Type(2), Width: 0}, {Before: 2, Type: abi.Type(2), Width: 1}, {Before: 4, Type: abi.Type(2), Width: 5}}},
+		{Name: "GapBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "enabled", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "value", Type: abi.TypeDesc{Type: abi.U32}}}}, Layout: abi.Layout{Size: 16, Alignment: 4, Offsets: []uint64{0, 4, 5, 8}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 5, Mask: []byte{248}}, {Position: 1, Width: 7, Mask: []byte{127}}, {Position: 2, Width: 1, Mask: []byte{8}}}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 3, Offset: 0}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 4}, {Before: 2, Type: abi.Type(2), Width: 4, Offset: 0}, {Before: 3, Type: abi.Type(2), Width: 0, Offset: 8}, {Before: 4, Type: abi.Type(2), Width: 5, Offset: 0}}},
+		{Name: "PrefixBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "octet", Type: abi.TypeDesc{Type: abi.U8}}}}, Layout: abi.Layout{Size: 2, Alignment: 1, Offsets: []uint64{1}}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 7, Offset: 0}}},
+		{Name: "PackedGapBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "enabled", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 15, Alignment: 1, Offsets: []uint64{0, 4, 5, 6}}, Packed: true, Bitfields: []clang.Bitfield{{Position: 0, Width: 5, Mask: []byte{248}}, {Position: 1, Width: 7, Mask: []byte{127}}, {Position: 2, Width: 1, Mask: []byte{1}}}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 3, Offset: 0}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 4}, {Before: 2, Type: abi.Type(2), Width: 1, Offset: 0}, {Before: 4, Type: abi.Type(2), Width: 5, Offset: 0}}},
 		{Name: "GapEnvelope", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "enabled", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "value", Type: abi.TypeDesc{Type: abi.U32}}}}}}, {Name: "prefix", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "octet", Type: abi.TypeDesc{Type: abi.U8}}}}}, {Name: "packed", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "enabled", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}}, Layout: abi.Layout{Size: 64, Alignment: 4, Offsets: []uint64{0, 32, 34}}},
-		{Name: "FloatingGap", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "second", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 21, Alignment: 1, Offsets: []uint64{1, 12}}, Packed: true, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 3}, {Before: 1, Type: abi.Type(2), Width: 0}, {Before: 2, Type: abi.Type(2), Width: 5}}},
+		{Name: "FloatingGap", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "second", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 21, Alignment: 1, Offsets: []uint64{1, 12}}, Packed: true, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 3, Offset: 0}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 12}, {Before: 2, Type: abi.Type(2), Width: 5, Offset: 0}}},
 	},
 }
 

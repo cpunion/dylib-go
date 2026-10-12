@@ -21,6 +21,8 @@ type BitfieldPadding struct {
 	Before int
 	Type   abi.Type
 	Width  int
+	// Offset is the compiler-confirmed byte boundary for a zero-width field.
+	Offset uint64
 }
 
 func (r Record) hasBitfields() bool {
@@ -83,6 +85,9 @@ func validateBitfields(r Record, complete bool) error {
 		bits := bitfieldTypeBits(f.Type)
 		if f.Before < before || f.Before > len(r.Description.Fields) || bits == 0 || f.Width < 0 || f.Width > bits {
 			return fmt.Errorf("clang: invalid unnamed bitfield in %s", r.Name)
+		}
+		if f.Width != 0 && f.Offset != 0 || complete && f.Offset > r.Layout.Size {
+			return fmt.Errorf("clang: invalid unnamed bitfield boundary in %s", r.Name)
 		}
 		before = f.Before
 	}

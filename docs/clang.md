@@ -217,7 +217,7 @@ source, target guards and session retirement.
 native byte mask. `Layout.Offsets` contains the mask's first byte. Signed and
 unsigned integral base types up to 64 bits and `_Bool` are supported.
 `Record.Padding` retains unnamed and zero-width declarations by logical field
-position, base type and width. They are omitted from public Go value fields,
+position, base type, width and compiler-confirmed zero-width byte boundary. They are omitted from public Go value fields,
 including leading/trailing padding. A record needs at least one named value
 field, with at most 32 named/padding declarations in total.
 
@@ -232,9 +232,10 @@ Producer objects and libraries must use the ABI selected during parsing. Tests
 link the target-qualified producer object into each library and compare MSVC
 and MinGW bridge sizes, alignments, ordinary offsets and bitfield masks.
 For packed records with unnamed fields, MinGW also differs in zero-width
-alignment. Its generated type uses GCC-style packed bitfields, measured offsets,
-positive-width unnamed storage gaps and the saved alignment; other targets
-retain the original declarations. Named field types and prototypes remain
+alignment. Its generated type preserves MS allocation units, uses byte-aligned zero-width
+fields with compiler-confirmed gaps, and restores the saved record alignment;
+other targets retain the original declarations. Prefix size assertions reject
+an incompatible compiler boundary without depending on `gcc_struct` support. Named field types and prototypes remain
 intact, and layout/mask checks still run before binding.
 
 Public Go fields are ordinary scalar values. C converts them through ordinary

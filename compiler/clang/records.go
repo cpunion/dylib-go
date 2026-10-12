@@ -325,8 +325,11 @@ func (h *Header) validateHostRecords(signature abi.Signature) error {
 }
 
 func (h *Header) recordProbes() string {
+	declarations, boundaries := h.paddingProbes()
 	var source strings.Builder
+	source.WriteString(declarations)
 	fmt.Fprintln(&source, "enum {")
+	source.WriteString(boundaries)
 	for i, record := range h.Records {
 		fmt.Fprintf(&source, "dylib_record_%d_size=sizeof(%s),\ndylib_record_%d_align=_Alignof(%s),\n", i, record.Name, i, record.Name)
 		for j, field := range record.Description.Fields {
@@ -392,6 +395,15 @@ func (h *Header) decodeRecordLayouts(data []byte) error {
 			layout.Offsets = append(layout.Offsets, offset)
 		}
 		h.Records[i].Layout = layout
+		for j := range h.Records[i].Padding {
+			p := &h.Records[i].Padding[j]
+			if p.Width == 0 {
+				p.Offset, err = get(fmt.Sprintf("dylib_record_%d_padding_%d", i, j))
+				if err != nil {
+					return err
+				}
+			}
+		}
 		if len(h.Records[i].Bitfields) == 0 {
 			if err := validRecordLayout(h.Records[i]); err != nil {
 				return err
