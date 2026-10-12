@@ -73,6 +73,9 @@ result.f4 = value.f4;
 result.f5 = value.f5;
 return result;
 }
+#if defined(_WIN32)
+#pragma pack(push,1)
+#endif
 typedef struct __attribute__((packed)) {
 uint32_t f0:3;
 int32_t f1:5;
@@ -80,6 +83,9 @@ _Bool f2:1;
 uint64_t f3:40;
 double f4;
 } dylib_go_42696e64696e6773_record1;
+#if defined(_WIN32)
+#pragma pack(pop)
+#endif
 static uint64_t dylib_go_42696e64696e6773_record1_mask(int32_t field,uint64_t byte) {
 volatile dylib_go_42696e64696e6773_record1 value;
 volatile unsigned char *data = (volatile unsigned char *)&value;

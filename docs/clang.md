@@ -222,6 +222,11 @@ for each field with all its bits set, then reads the target ELF, COFF or Mach-O
 object with Go's object parsers. Cross-target parsing does not execute foreign
 code. Generated C declarations restore the field widths and constructors check
 the masks as well as size, alignment and offsets before resolving exports.
+On Windows, byte-aligned packed bitfields also use a scoped packing pragma:
+MinGW otherwise ignores the record's packed attribute for MS-layout bitfields.
+Producer objects and libraries must use the ABI selected during parsing. Tests
+link the target-qualified producer object into each library and compare MSVC
+and MinGW bridge sizes, alignments, ordinary offsets and bitfield masks.
 
 Public Go fields are ordinary scalar values. C converts them through ordinary
 transport structs and applies the native bitfield ABI, including narrowing and

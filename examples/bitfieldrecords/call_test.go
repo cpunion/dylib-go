@@ -132,7 +132,9 @@ func TestBitfieldCalls(t *testing.T) {
 					}
 				}
 			}
-			compile(t, compiler, append(linkFlags, optimization, "testdata/exports.c", "-o", library)...)
+			// Link the target-qualified producer object rather than recompiling
+			// the header under a different driver ABI (MSVC versus MinGW).
+			compile(t, compiler, append(linkFlags, object, "-o", library)...)
 			for _, input := range []struct{ name, path string }{{"object", object}, {"archive", archive}, {"library", library}} {
 				t.Run(input.name, func(t *testing.T) { checkCalls(t, input.path) })
 			}

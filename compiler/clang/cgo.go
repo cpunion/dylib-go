@@ -11,9 +11,9 @@ import (
 
 // CgoSource emits typed C bindings using fixed cgo bridges, without libffi.
 // Go and llgo can compile the generated source. Scalars, opaque native pointers,
-// ordinary/explicitly packed record values and function-pointer addresses are
-// supported. Packed values cross the Go boundary as ordinary transport records;
-// C constructs and calls the actual packed native type. WithTail
+// ordinary/explicitly packed records, named bitfields and function-pointer
+// addresses are supported. Packed/bitfield values cross the Go boundary as
+// ordinary transport records; C constructs and calls the native type. WithTail
 // specifies a concrete variadic call shape; C performs default promotions.
 // Windows 386 also supports fixed stdcall/fastcall prototypes. Struct pointees
 // use opaque native addresses; no Go struct pointer conversion is inferred.

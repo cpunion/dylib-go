@@ -118,6 +118,13 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 		}
 		name := t.cRecordName(i)
+		// MinGW ignores a record's packed attribute for MS-layout bitfields.
+		// Preserve an explicitly packed, byte-aligned producer layout with a
+		// scoped pragma; the existing size/offset/mask checks remain authoritative.
+		packedBits := record.Packed && len(record.Bitfields) != 0 && record.Layout.Alignment == 1
+		if packedBits {
+			fmt.Fprint(output, "#if defined(_WIN32)\n#pragma pack(push,1)\n#endif\n")
+		}
 		fmt.Fprint(output, "typedef struct ")
 		if record.Packed {
 			fmt.Fprint(output, "__attribute__((packed)) ")
@@ -134,6 +141,9 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			fmt.Fprintf(output, "%s;\n", declaration)
 		}
 		fmt.Fprintf(output, "} %s;\n", name)
+		if packedBits {
+			fmt.Fprint(output, "#if defined(_WIN32)\n#pragma pack(pop)\n#endif\n")
+		}
 		if len(record.Bitfields) != 0 {
 			t.writeBitfieldMasks(output, i)
 		}
