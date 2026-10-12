@@ -21,8 +21,17 @@ type BitfieldPadding struct {
 	Before int
 	Type   abi.Type
 	Width  int
+	// Packed preserves an explicit packed attribute on this unnamed declaration.
+	Packed bool
 	// Offset is the compiler-confirmed byte boundary for a zero-width field.
 	Offset uint64
+}
+
+func (p BitfieldPadding) cAttributes() string {
+	if p.Packed {
+		return " __attribute__((packed))"
+	}
+	return ""
 }
 
 func (r Record) hasBitfields() bool {

@@ -21,7 +21,11 @@ func (t *cgoTypes) writePackedPadding(output *bytes.Buffer, index int) error {
 			if p.Width == 0 {
 				kind = "unsigned char"
 			}
-			fmt.Fprintf(&body, "%s :%d;\n", kind, p.Width)
+			attributes := ""
+			if p.Width != 0 {
+				attributes = p.cAttributes()
+			}
+			fmt.Fprintf(&body, "%s :%d%s;\n", kind, p.Width, attributes)
 			if p.Width == 0 {
 				prefix := fmt.Sprintf("%s_padding%d", name, padding)
 				end := fmt.Sprintf("sizeof(%s)", prefix)

@@ -64,8 +64,4 @@ func TestPackedMemberValidation(t *testing.T) {
 	if err := validatePackedFields(r); err != nil {
 		t.Fatal("named packed bitfield rejected:", err)
 	}
-	_, err := Parse(context.Background(), headerFile(t, `typedef struct { unsigned :3 __attribute__((packed)); unsigned n; } S; S echo(S);`), Options{Compiler: compilerTool(t), Functions: []string{"echo"}})
-	if err == nil || !strings.Contains(err.Error(), "unsupported field attribute") {
-		t.Fatal("unqualified unnamed bitfield packing accepted:", err)
-	}
 }

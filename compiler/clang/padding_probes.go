@@ -18,7 +18,7 @@ func (h *Header) paddingProbes() (declarations, constants string) {
 		for j := 0; j <= len(r.Description.Fields); j++ {
 			for padding < len(r.Padding) && r.Padding[padding].Before == j {
 				p := r.Padding[padding]
-				fmt.Fprintf(&body, "%s :%d;\n", bitfieldBaseType(p.Type), p.Width)
+				fmt.Fprintf(&body, "%s :%d%s;\n", bitfieldBaseType(p.Type), p.Width, p.cAttributes())
 				if p.Width == 0 {
 					name := fmt.Sprintf("dylib_padding_%d_%d", i, padding)
 					fmt.Fprint(&types, "typedef struct ")

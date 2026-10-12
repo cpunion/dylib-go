@@ -205,7 +205,7 @@ size, alignment and every offset. Public Go fields remain ordinary values.
 Nested arrays and pointer/factory/variadic calls use the same C transport path.
 Dynamic and direct llgo adapters reject these attributed records. Use native
 producer storage for their pointers; `abi.NewNativeValue` describes logical
-storage and does not reproduce member packing. Attributes on unnamed bitfields
+storage and does not reproduce member packing. Alignment attributes on unnamed bitfields
 and packing through typedefs remain unqualified.
 
 For member-packed MS-layout bitfields, MinGW ignores the member attribute.
@@ -218,8 +218,11 @@ A zero-width boundary immediately after a wrapped unit uses a zero-length C
 array on MinGW to retain natural alignment without allocating bytes; a static
 assert checks its offset against the producer. Leading and consecutive zero-width
 fields keep their original semantics. These combinations are supported in both
-otherwise unpacked and record-wide packed records. Attributes on unnamed
-bitfields remain unqualified.
+otherwise unpacked and record-wide packed records. `BitfieldPadding.Packed`
+preserves explicit packing on unnamed declarations, including zero-width fields.
+The bridge also wraps allocation units whose first member is unnamed and packed;
+packed zero-width boundaries retain byte alignment through the zero-length array.
+Alignment attributes on unnamed bitfields remain unqualified.
 
 `Record.Packed` preserves Clang's explicit `PackedAttr`. `Record.Description`
 remains a logical field model, not a descriptor of packed native memory. Generated

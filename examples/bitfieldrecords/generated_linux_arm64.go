@@ -222,7 +222,7 @@ result.f1 = value.f1;
 return result;
 }
 typedef struct {
-uint32_t :3;
+uint32_t :3 __attribute__((packed));
 uint32_t f0:5 __attribute__((packed));
 uint32_t :0;
 int32_t f1:7 __attribute__((packed)) __attribute__((aligned(2)));
@@ -284,7 +284,7 @@ result.f3 = value.f3;
 return result;
 }
 typedef struct {
-uint32_t :7;
+uint32_t :7 __attribute__((packed));
 uint8_t f0;
 } dylib_go_42696e64696e6773_record5;
 static uint64_t dylib_go_42696e64696e6773_record5_layout(int32_t index) {
@@ -311,13 +311,13 @@ return result;
 #if defined(_WIN32) && !defined(_MSC_VER)
 #pragma pack(push,1)
 typedef struct __attribute__((packed)) {
-unsigned int :3;
+unsigned int :3 __attribute__((packed));
 uint32_t f0:5;
 unsigned char :0;
 } dylib_go_42696e64696e6773_record6_padding1;
 _Static_assert(sizeof(dylib_go_42696e64696e6773_record6_padding1)<=4 && 4-sizeof(dylib_go_42696e64696e6773_record6_padding1)<=7,"incompatible zero-width boundary");
 typedef struct __attribute__((packed,aligned(4))) {
-unsigned int :3;
+unsigned int :3 __attribute__((packed));
 uint32_t f0:5;
 unsigned char :0;
 unsigned char :(4-sizeof(dylib_go_42696e64696e6773_record6_padding1)>0?8:0);
@@ -336,7 +336,7 @@ unsigned int :5;
 #pragma pack(pop)
 #else
 typedef struct __attribute__((packed)) {
-uint32_t :3;
+uint32_t :3 __attribute__((packed));
 uint32_t f0:5;
 uint32_t :0;
 int32_t f1:7;
@@ -579,6 +579,55 @@ dylib_go_42696e64696e6773_record10_transport result = {0};
 result.f0 = value.f0;
 return result;
 }
+typedef struct {
+int8_t f0;
+uint32_t f1:3 __attribute__((packed));
+uint32_t :0 __attribute__((packed));
+int8_t f2;
+} dylib_go_42696e64696e6773_record11;
+static uint64_t dylib_go_42696e64696e6773_record11_mask(int32_t field,uint64_t byte) {
+volatile dylib_go_42696e64696e6773_record11 value;
+volatile unsigned char *data = (volatile unsigned char *)&value;
+for (uint64_t i=0;i<sizeof(value);++i) data[i]=0;
+switch(field) {
+case 1:value.f1=7ULL;break;
+default:return UINT64_MAX;
+}
+if (byte==UINT64_MAX) {
+for (uint64_t i=0;i<sizeof(value);++i) if (data[i]) return i;
+return UINT64_MAX;
+}
+return byte<sizeof(value)?data[byte]:UINT64_MAX;
+}
+static uint64_t dylib_go_42696e64696e6773_record11_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record11);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record11);
+case 2:return offsetof(dylib_go_42696e64696e6773_record11,f0);
+case 3:return dylib_go_42696e64696e6773_record11_mask(1,UINT64_MAX);
+case 4:return offsetof(dylib_go_42696e64696e6773_record11,f2);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+uint32_t f1;
+int8_t f2;
+} dylib_go_42696e64696e6773_record11_transport;
+static dylib_go_42696e64696e6773_record11 dylib_go_42696e64696e6773_record11_from_transport(dylib_go_42696e64696e6773_record11_transport value) {
+dylib_go_42696e64696e6773_record11 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+return result;
+}
+static dylib_go_42696e64696e6773_record11_transport dylib_go_42696e64696e6773_record11_to_transport(dylib_go_42696e64696e6773_record11 value) {
+dylib_go_42696e64696e6773_record11_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+return result;
+}
 typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call0_function)(dylib_go_42696e64696e6773_record0);
 static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call0(uintptr_t address,dylib_go_42696e64696e6773_record0_transport p0) {
 return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call0_function)address)(dylib_go_42696e64696e6773_record0_from_transport(p0)));
@@ -675,6 +724,10 @@ typedef dylib_go_42696e64696e6773_record10 (*dylib_go_42696e64696e6773_call22_fu
 static dylib_go_42696e64696e6773_record10_transport dylib_go_42696e64696e6773_call22(uintptr_t address,dylib_go_42696e64696e6773_record10_transport p0) {
 return dylib_go_42696e64696e6773_record10_to_transport(((dylib_go_42696e64696e6773_call22_function)address)(dylib_go_42696e64696e6773_record10_from_transport(p0)));
 }
+typedef dylib_go_42696e64696e6773_record11 (*dylib_go_42696e64696e6773_call23_function)(dylib_go_42696e64696e6773_record11);
+static dylib_go_42696e64696e6773_record11_transport dylib_go_42696e64696e6773_call23(uintptr_t address,dylib_go_42696e64696e6773_record11_transport p0) {
+return dylib_go_42696e64696e6773_record11_to_transport(((dylib_go_42696e64696e6773_call23_function)address)(dylib_go_42696e64696e6773_record11_from_transport(p0)));
+}
 */
 import "C"
 
@@ -713,19 +766,21 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "echo_floating_gap", Symbol: "echo_floating_gap", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "second", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "second", Type: abi.TypeDesc{Type: abi.F64}}}}}},
 		{Name: "echo_member_tiny", Symbol: "echo_member_tiny", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}}}}},
 		{Name: "echo_member_trailing", Symbol: "echo_member_trailing", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "code", Type: abi.TypeDesc{Type: abi.U32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "code", Type: abi.TypeDesc{Type: abi.U32}}}}}},
+		{Name: "echo_packed_zero", Symbol: "echo_packed_zero", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "marker", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "code", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I8}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "marker", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "code", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I8}}}}}},
 	},
 	Records: []clang.Record{
 		{Name: "Bits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "delta", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 48, Alignment: 16, Offsets: []uint64{0, 0, 1, 16, 24, 32}}, PackedFields: []int{0, 3}, FieldAlignments: []clang.FieldAlignment{{Position: 3, Aligned: 16}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 1, Mask: []byte{1}}, {Position: 3, Width: 40, Mask: []byte{255, 255, 255, 255, 255}}}},
 		{Name: "PackedBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "a", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "b", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "on", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "big", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 15, Alignment: 1, Offsets: []uint64{0, 0, 1, 1, 7}}, Packed: true, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 1, Mask: []byte{1}}, {Position: 3, Width: 40, Mask: []byte{254, 255, 255, 255, 255, 1}}}},
 		{Name: "Envelope", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "regular", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "delta", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, {Name: "packed", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "a", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "b", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "on", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "big", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}}}, Layout: abi.Layout{Size: 112, Alignment: 16, Offsets: []uint64{0, 48}}},
 		{Name: "SignedWide", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "value", Type: abi.TypeDesc{Type: abi.I64}}, {Name: "all", Type: abi.TypeDesc{Type: abi.U64}}}}, Layout: abi.Layout{Size: 16, Alignment: 8, Offsets: []uint64{0, 8}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 40, Mask: []byte{255, 255, 255, 255, 255}}, {Position: 1, Width: 64, Mask: []byte{255, 255, 255, 255, 255, 255, 255, 255}}}},
-		{Name: "GapBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "enabled", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "value", Type: abi.TypeDesc{Type: abi.U32}}}}, Layout: abi.Layout{Size: 24, Alignment: 8, Offsets: []uint64{0, 4, 8, 12}}, PackedFields: []int{0, 1}, FieldAlignments: []clang.FieldAlignment{{Position: 1, Aligned: 2}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 5, Mask: []byte{248}}, {Position: 1, Width: 7, Mask: []byte{127}}, {Position: 2, Width: 1, Mask: []byte{1}}}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 3, Offset: 0}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 4}, {Before: 2, Type: abi.Type(2), Width: 4, Offset: 0}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 8}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 8}, {Before: 3, Type: abi.Type(2), Width: 0, Offset: 12}, {Before: 4, Type: abi.Type(2), Width: 5, Offset: 0}}},
-		{Name: "PrefixBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "octet", Type: abi.TypeDesc{Type: abi.U8}}}}, Layout: abi.Layout{Size: 4, Alignment: 4, Offsets: []uint64{1}}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 7, Offset: 0}}},
-		{Name: "PackedGapBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "enabled", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 16, Alignment: 4, Offsets: []uint64{0, 4, 5, 6}}, Packed: true, Bitfields: []clang.Bitfield{{Position: 0, Width: 5, Mask: []byte{248}}, {Position: 1, Width: 7, Mask: []byte{127}}, {Position: 2, Width: 1, Mask: []byte{1}}}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 3, Offset: 0}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 4}, {Before: 2, Type: abi.Type(2), Width: 1, Offset: 0}, {Before: 4, Type: abi.Type(2), Width: 5, Offset: 0}}},
+		{Name: "GapBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "enabled", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "value", Type: abi.TypeDesc{Type: abi.U32}}}}, Layout: abi.Layout{Size: 24, Alignment: 8, Offsets: []uint64{0, 4, 8, 12}}, PackedFields: []int{0, 1}, FieldAlignments: []clang.FieldAlignment{{Position: 1, Aligned: 2}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 5, Mask: []byte{248}}, {Position: 1, Width: 7, Mask: []byte{127}}, {Position: 2, Width: 1, Mask: []byte{1}}}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 3, Offset: 0, Packed: true}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 4}, {Before: 2, Type: abi.Type(2), Width: 4, Offset: 0}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 8}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 8}, {Before: 3, Type: abi.Type(2), Width: 0, Offset: 12}, {Before: 4, Type: abi.Type(2), Width: 5, Offset: 0}}},
+		{Name: "PrefixBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "octet", Type: abi.TypeDesc{Type: abi.U8}}}}, Layout: abi.Layout{Size: 2, Alignment: 1, Offsets: []uint64{1}}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 7, Offset: 0, Packed: true}}},
+		{Name: "PackedGapBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "enabled", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 16, Alignment: 4, Offsets: []uint64{0, 4, 5, 6}}, Packed: true, Bitfields: []clang.Bitfield{{Position: 0, Width: 5, Mask: []byte{248}}, {Position: 1, Width: 7, Mask: []byte{127}}, {Position: 2, Width: 1, Mask: []byte{1}}}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 3, Offset: 0, Packed: true}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 4}, {Before: 2, Type: abi.Type(2), Width: 1, Offset: 0}, {Before: 4, Type: abi.Type(2), Width: 5, Offset: 0}}},
 		{Name: "GapEnvelope", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "enabled", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "value", Type: abi.TypeDesc{Type: abi.U32}}}}}}, {Name: "prefix", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "octet", Type: abi.TypeDesc{Type: abi.U8}}}}}, {Name: "packed", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "enabled", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}}, Layout: abi.Layout{Size: 88, Alignment: 8, Offsets: []uint64{0, 48, 52}}},
 		{Name: "FloatingGap", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "second", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 24, Alignment: 4, Offsets: []uint64{1, 12}}, Packed: true, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 3, Offset: 0}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 12}, {Before: 2, Type: abi.Type(2), Width: 5, Offset: 0}}},
 		{Name: "MemberTiny", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 1, Alignment: 1, Offsets: []uint64{0, 0}}, PackedFields: []int{0, 1}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}}},
 		{Name: "MemberTrailing", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "code", Type: abi.TypeDesc{Type: abi.U32}}}}, Layout: abi.Layout{Size: 8, Alignment: 8, Offsets: []uint64{0}}, PackedFields: []int{0}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 4, Offset: 0}, {Before: 1, Type: abi.Type(4), Width: 0, Offset: 8}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 8}}},
+		{Name: "PackedZero", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "marker", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "code", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I8}}}}, Layout: abi.Layout{Size: 8, Alignment: 4, Offsets: []uint64{0, 1, 4}}, PackedFields: []int{1}, Bitfields: []clang.Bitfield{{Position: 1, Width: 3, Mask: []byte{7}}}, Padding: []clang.BitfieldPadding{{Before: 2, Type: abi.Type(2), Width: 0, Offset: 4, Packed: true}}},
 	},
 }
 
@@ -825,6 +880,15 @@ type BindingsRecord9 struct {
 //llgo:type C
 type BindingsRecord10 struct {
 	Code uint32
+}
+
+// BindingsRecord11 describes PackedZero; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord11 struct {
+	Marker int8
+	Code   uint32
+	Tail   int8
 }
 
 func _BindingsRecord0ToC(value BindingsRecord0) (result C.dylib_go_42696e64696e6773_record0_transport) {
@@ -995,6 +1059,20 @@ func _BindingsRecord10FromC(value C.dylib_go_42696e64696e6773_record10_transport
 	return result
 }
 
+func _BindingsRecord11ToC(value BindingsRecord11) (result C.dylib_go_42696e64696e6773_record11_transport) {
+	result.f0 = C.int8_t(value.Marker)
+	result.f1 = C.uint32_t(value.Code)
+	result.f2 = C.int8_t(value.Tail)
+	return result
+}
+
+func _BindingsRecord11FromC(value C.dylib_go_42696e64696e6773_record11_transport) (result BindingsRecord11) {
+	result.Marker = int8(value.f0)
+	result.Code = uint32(value.f1)
+	result.Tail = int8(value.f2)
+	return result
+}
+
 // Bindings retains symbol handles; its caller owns the Session.
 type Bindings struct {
 	symbol0  *dylib.Symbol
@@ -1020,6 +1098,7 @@ type Bindings struct {
 	symbol20 *dylib.Symbol
 	symbol21 *dylib.Symbol
 	symbol22 *dylib.Symbol
+	symbol23 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -1046,7 +1125,7 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 	if uint64(C.dylib_go_42696e64696e6773_record4_layout(0)) != 24 || uint64(C.dylib_go_42696e64696e6773_record4_layout(1)) != 8 || uint64(C.dylib_go_42696e64696e6773_record4_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record4_layout(3)) != 4 || uint64(C.dylib_go_42696e64696e6773_record4_layout(4)) != 8 || uint64(C.dylib_go_42696e64696e6773_record4_layout(5)) != 12 || uint64(C.dylib_go_42696e64696e6773_record4_mask(0, 0)) != 248 || uint64(C.dylib_go_42696e64696e6773_record4_mask(1, 4)) != 127 || uint64(C.dylib_go_42696e64696e6773_record4_mask(2, 8)) != 1 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for GapBits")
 	}
-	if uint64(C.dylib_go_42696e64696e6773_record5_layout(0)) != 4 || uint64(C.dylib_go_42696e64696e6773_record5_layout(1)) != 4 || uint64(C.dylib_go_42696e64696e6773_record5_layout(2)) != 1 {
+	if uint64(C.dylib_go_42696e64696e6773_record5_layout(0)) != 2 || uint64(C.dylib_go_42696e64696e6773_record5_layout(1)) != 1 || uint64(C.dylib_go_42696e64696e6773_record5_layout(2)) != 1 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PrefixBits")
 	}
 	if uint64(C.dylib_go_42696e64696e6773_record6_layout(0)) != 16 || uint64(C.dylib_go_42696e64696e6773_record6_layout(1)) != 4 || uint64(C.dylib_go_42696e64696e6773_record6_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record6_layout(3)) != 4 || uint64(C.dylib_go_42696e64696e6773_record6_layout(4)) != 5 || uint64(C.dylib_go_42696e64696e6773_record6_layout(5)) != 6 || uint64(C.dylib_go_42696e64696e6773_record6_mask(0, 0)) != 248 || uint64(C.dylib_go_42696e64696e6773_record6_mask(1, 4)) != 127 || uint64(C.dylib_go_42696e64696e6773_record6_mask(2, 5)) != 1 {
@@ -1063,6 +1142,9 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 	}
 	if uint64(C.dylib_go_42696e64696e6773_record10_layout(0)) != 8 || uint64(C.dylib_go_42696e64696e6773_record10_layout(1)) != 8 || uint64(C.dylib_go_42696e64696e6773_record10_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record10_mask(0, 0)) != 7 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for MemberTrailing")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record11_layout(0)) != 8 || uint64(C.dylib_go_42696e64696e6773_record11_layout(1)) != 4 || uint64(C.dylib_go_42696e64696e6773_record11_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record11_layout(3)) != 1 || uint64(C.dylib_go_42696e64696e6773_record11_layout(4)) != 4 || uint64(C.dylib_go_42696e64696e6773_record11_mask(1, 1)) != 7 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PackedZero")
 	}
 	symbol0, err := session.Resolve("echo_bits")
 	if err != nil {
@@ -1179,6 +1261,11 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol22 = symbol22
+	symbol23, err := session.Resolve("echo_packed_zero")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol23 = symbol23
 	return b, nil
 }
 
@@ -1430,6 +1517,17 @@ func (b *Bindings) Echo_member_trailing(p0 BindingsRecord10) (result BindingsRec
 	}
 	err = b.symbol22.WithAddress(func(address uintptr) error {
 		result = _BindingsRecord10FromC(C.dylib_go_42696e64696e6773_call22(C.uintptr_t(address), _BindingsRecord10ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_packed_zero(p0 BindingsRecord11) (result BindingsRecord11, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol23.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord11FromC(C.dylib_go_42696e64696e6773_call23(C.uintptr_t(address), _BindingsRecord11ToC(p0)))
 		return nil
 	})
 	return result, err

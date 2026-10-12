@@ -25,13 +25,19 @@ typedef struct { unsigned :3; unsigned lo:5 __attribute__((packed)); unsigned :3
 typedef struct { unsigned lo:3 __attribute__((packed)); unsigned :4; unsigned long long :0; unsigned :0; } Trailing;
 typedef struct { char prefix; unsigned lo:3 __attribute__((packed,aligned(16))); unsigned :4; unsigned long long :0; signed hi:5 __attribute__((packed)); unsigned :0; char suffix; } AlignedGaps;
 typedef struct { char prefix; unsigned long long all:64 __attribute__((packed)); unsigned long long :0; _Bool flag:1 __attribute__((packed)); unsigned :2; unsigned char :0; signed char byte:7 __attribute__((packed)); unsigned :0; double real; } TypeChanges;
+typedef struct { char padding_marker; unsigned :3 __attribute__((packed)); char padding_tail; } PaddingOnly;
+typedef struct { char shared_marker; unsigned :3 __attribute__((packed)); unsigned low:5; unsigned :0 __attribute__((packed)); int shared_count; } SharedPadding;
+typedef struct { char zero_marker; unsigned low:3 __attribute__((packed)); unsigned :0 __attribute__((packed)); char zero_tail; } PackedZero;
+typedef struct { char ignored_marker; unsigned :0 __attribute__((packed)); unsigned :0 __attribute__((packed)); double ignored_real; } IgnoredZero;
+typedef struct __attribute__((packed)) { char global_marker; unsigned :3 __attribute__((packed)); signed global_value:5; unsigned long long :0 __attribute__((packed)); double global_real; } GlobalPadding;
+PaddingOnly padding_only(PaddingOnly); SharedPadding shared_padding(SharedPadding); PackedZero packed_zero(PackedZero); IgnoredZero ignored_zero(IgnoredZero); GlobalPadding global_padding(GlobalPadding);
 Boundaries boundaries(Boundaries); Leading leading(Leading); Trailing trailing(Trailing); AlignedGaps aligned_gaps(AlignedGaps); TypeChanges type_changes(TypeChanges);
 Mixed mixed(Mixed); Tiny tiny(Tiny); Aligned aligned(Aligned); Units units(Units); Later later(Later); Overaligned overaligned(Overaligned); Gaps gaps(Gaps);
 `)
 	compiler := compilerTool(t)
 	for _, target := range targets {
 		t.Run(target.triple, func(t *testing.T) {
-			names := []string{"mixed", "tiny", "aligned", "units", "later", "overaligned", "gaps", "boundaries", "leading", "trailing", "aligned_gaps", "type_changes"}
+			names := []string{"mixed", "tiny", "aligned", "units", "later", "overaligned", "gaps", "boundaries", "leading", "trailing", "aligned_gaps", "type_changes", "padding_only", "shared_padding", "packed_zero", "ignored_zero", "global_padding"}
 			h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: target.triple, Functions: names})
 			if err != nil {
 				t.Fatal(err)
@@ -41,8 +47,24 @@ Mixed mixed(Mixed); Tiny tiny(Tiny); Aligned aligned(Aligned); Units units(Units
 				t.Fatal("packed member metadata:", mixed, err)
 			}
 			mixed.PackedFields[0] = 0
-			if h.Records[0].PackedFields[0] != 1 {
+			freshMixed, _ := h.LookupRecord("Mixed")
+			if freshMixed.PackedFields[0] != 1 {
 				t.Fatal("packed member snapshot aliases the header")
+			}
+			paddingRecord, err := h.LookupRecord("PaddingOnly")
+			if err != nil || len(paddingRecord.Padding) != 1 || !paddingRecord.Padding[0].Packed || len(paddingRecord.PackedFields) != 0 {
+				t.Fatal("unnamed packing metadata:", paddingRecord, err)
+			}
+			paddingRecord.Padding[0].Packed = false
+			freshPadding, _ := h.LookupRecord("PaddingOnly")
+			if !freshPadding.Padding[0].Packed {
+				t.Fatal("unnamed packing snapshot aliases the header")
+			}
+			if target.os == "windows" {
+				zero, err := h.LookupRecord("PackedZero")
+				if err != nil || len(zero.Padding) != 1 || !zero.Padding[0].Packed || zero.Padding[0].Offset != 5 || zero.Layout.Alignment != 1 || zero.Layout.Size != 6 {
+					t.Fatal("packed zero-width boundary:", zero, err)
+				}
 			}
 			source, err := h.CgoSource("bindings", "Bindings")
 			if err != nil {
