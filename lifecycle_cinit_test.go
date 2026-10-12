@@ -201,9 +201,22 @@ func TestNativeFailedCInitializerCleanupReentersGo(t *testing.T) {
 	callback, err := abi.NewCallback(abi.Signature{Args: []abi.Type{abi.I32}}, func(args []abi.Value) (abi.Value, error) {
 		event := int32(args[0].Bits)
 		events = append(events, event)
+		if event == 1 || event == 2 {
+			if _, err := s.Resolve("cinit_root"); !errors.Is(err, ErrInitializing) {
+				return abi.Value{}, fmt.Errorf("initializing lookup: %v", err)
+			}
+			// The scoped call observes state set by this XI entry, before XC
+			// construction or image publication. The second entry then fails.
+			if err := initializationSum(s, "cinit_root", 80+event*2); err != nil {
+				return abi.Value{}, err
+			}
+		}
 		if event == 7 || event == 8 {
 			if _, err := s.Lookup("cinit_root"); !errors.Is(err, ErrClosed) {
 				return abi.Value{}, fmt.Errorf("cleanup lookup: %v", err)
+			}
+			if err := initializationSum(s, "cinit_root", 84); !errors.Is(err, ErrClosed) {
+				return abi.Value{}, fmt.Errorf("cleanup scope: %v", err)
 			}
 		}
 		return abi.Value{}, nil
@@ -229,6 +242,9 @@ func TestNativeFailedCInitializerCleanupReentersGo(t *testing.T) {
 	loadCInitializerFixture(t, s, obj)
 	if symbol, err := s.Resolve("cinit_root"); !errors.Is(err, ErrInitialization) || symbol != nil {
 		t.Fatalf("initializer failure published a symbol: %v, %v", symbol, err)
+	}
+	if err := initializationSum(s, "cinit_root", 84); !errors.Is(err, ErrInitialization) {
+		t.Fatalf("scope after failure: %v", err)
 	}
 	if err := s.Close(); err != nil {
 		t.Fatal(err)

@@ -66,7 +66,7 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Optional macOS amd64/arm64 C DWARF registration with system libunwind, implicit FDE rebasing, native traversal and deregistration.
 - [ ] Windows language/chained unwind records, POSIX personality/LSDA and additional providers, and Mach-O compact unwind registration.
 - [x] Concurrent Symbol/Function/CallPlan calls and reentrant callbacks, with retirement before cleanup and no invocation lock across native calls.
-- [ ] Reentrant load/link initializers that can resolve staged symbols before publication.
+- [x] Scoped reentrant load/link initializers with staged raw symbols, prior OS-library/retained-provider symbols, busy errors for ordinary operations, and concurrent close/failure lifetime guards before publication.
 - [ ] Explicit raw-object TLS models, per-thread allocation, and thread destructor ownership.
 - [x] Explicit packed record values through compiler-validated C bridges for Go/llgo, ordinary transport records, nested arrays, native pointers, factories and variadic calls without libffi.
 - [x] Explicit packed non-bitfield members through validated C bridges, including arrays, nested records, native pointers/factories, concrete variadic calls and packing combined with explicit member alignment.
