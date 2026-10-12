@@ -84,12 +84,12 @@ On Linux, llgo v1.0.6 misparses newline-only `pkg-config --cflags libffi` output
 
 Runner labels follow [GitHub's official list](https://docs.github.com/en/actions/reference/runners/github-hosted-runners): ubuntu-24.04, ubuntu-24.04-arm, macos-15-intel, macos-15, windows-2022, and windows-11-arm.
 
-The qualified llgo compiler also has a macOS ARM64 signed narrow-argument issue
-([#2767](https://github.com/xgo-dev/llgo/issues/2767)). The generated cgo bridge
-uses 32-bit integer transport and restores the C widths, with negative arguments
-and variadic promotions checked at runtime. Direct `LLGoSource` adapters retain
-the compiler limitation; use `CgoSource` or dynamic `Session.Bind` for affected
-signatures.
+Older llgo revisions have a macOS ARM64 signed narrow-argument issue
+([#2767](https://github.com/xgo-dev/llgo/issues/2767)). The qualified compiler
+includes the merged [C ABI fix](https://github.com/xgo-dev/llgo/pull/2776), and CI
+executes direct `LLGoSource` calls with negative narrow arguments. Generated cgo
+bridges retain 32-bit integer transport and restore the C widths, with negative
+arguments and variadic promotions checked at runtime.
 
 Raw lifecycle fixtures run in every native Go and llgo job, without requiring libffi: C++ dependency initialization/destruction, ordinary archive selection, C termination tables, `atexit`/`__cxa_atexit`, selective and recursive `__cxa_finalize`, two-image isolation, validation rollback, and close idempotence. A retained observer library verifies callbacks after raw-image release. Pure Go jobs cross-inspect the eight target lifecycle table formats. See [lifecycle coverage](lifecycle.md).
 
@@ -103,4 +103,4 @@ Linux amd64/arm64 Go and llgo jobs, and native Go 386, execute optional ELF fram
 
 macOS amd64/arm64 Go and llgo jobs execute optional per-FDE DWARF registration with system libunwind, real object/archive stack traversal, before/after-close FDE lookup, validation retry and failed initialization cleanup. Pure Go jobs inspect real `__eh_frame` compiler output and verify explicit ARM64 pairs and implicit x86-64 address rebasing.
 
-CI builds llgo `main`, which includes [public C-export foreign-thread guards](https://github.com/xgo-dev/llgo/pull/2752) for dependency packages and executables and [indirect C variadic arguments](https://github.com/xgo-dev/llgo/pull/2766). The library uses ordinary `//export` declarations and has no private llgo runtime hooks; v1.0.6 cannot qualify C-created-thread callbacks or these indirect variadic calls. `setup-llgo` resolves and builds an upstream commit from source; the job summary records that revision and the full matrix tests it without local compiler patches.
+CI pins a commit from llgo `main`, which includes [public C-export foreign-thread guards](https://github.com/xgo-dev/llgo/pull/2752) for dependency packages and executables, [indirect C variadic arguments](https://github.com/xgo-dev/llgo/pull/2766), the [C ABI fix](https://github.com/xgo-dev/llgo/pull/2776), and the [native function-pointer debug fix](https://github.com/xgo-dev/llgo/pull/2783). The library uses ordinary `//export` declarations and has no private llgo runtime hooks; v1.0.6 cannot qualify C-created-thread callbacks or these indirect variadic calls. `setup-llgo` builds the upstream commit from source; the job summary records that revision and the full matrix tests it without local compiler patches.
