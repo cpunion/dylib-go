@@ -119,6 +119,9 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 		}
 		name := t.cRecordName(i)
+		if record.MaxFieldAlignment != 0 {
+			fmt.Fprintf(output, "#pragma pack(push,%d)\n", record.MaxFieldAlignment)
+		}
 		members := recordMembers(record)
 		var packedUnits []bitfieldUnit
 		if t.msLayout {
@@ -206,6 +209,9 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 		}
 		fmt.Fprintf(output, "} %s;\n", name)
+		if record.MaxFieldAlignment != 0 {
+			fmt.Fprint(output, "#pragma pack(pop)\n")
+		}
 		if packedBits {
 			fmt.Fprint(output, "#if defined(_WIN32)\n#pragma pack(pop)\n#endif\n")
 		}

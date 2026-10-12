@@ -133,7 +133,9 @@ const maxFunctions = 256
 // arguments are compiler evaluated and preserved by CgoSource, including explicit
 // packing on ordinary named members. Enums use compiler-confirmed compatible
 // integer types; attributed
-// enum alignment must match the native integer. Unions, other attributed
+// enum alignment must match the native integer. Ordinary pragma-packed records
+// use C bridges; bitfield and over-aligned nested/member combinations are rejected.
+// Unions, other attributed
 // records/fields/typedefs, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes
 // must stay stable during parsing; they are read by Clang at their original paths.
@@ -191,25 +193,47 @@ func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 	if err != nil {
 		return nil, err
 	}
-	header, err := decodeDeclarations(data, string(triple), opts.Functions, nil)
-	if errors.Is(err, errRecordFieldTypes) || errors.Is(err, errEnumTypes) {
-		enums, probeErr := enumProbes(data)
-		if probeErr != nil {
-			return nil, probeErr
+	var fields map[recordField]recordFieldProbe
+	var packings map[string]uint64
+	var header *Header
+	for {
+		header, err = decodeDeclarations(data, string(triple), opts.Functions, fields, packings)
+		if errors.Is(err, errRecordPacking) && packings == nil {
+			probes, keys, probeErr := recordPackingProbes(data)
+			if probeErr != nil {
+				return nil, probeErr
+			}
+			packingArgs := append(append([]string(nil), flags...), "-x", "c", "-std=c17", "-include", path, "-fno-color-diagnostics", "-Xclang", "-ast-dump", "-fsyntax-only", "-")
+			text, probeErr := runCompiler(ctx, compiler, packingArgs, probes, maxASTSize)
+			if probeErr != nil {
+				return nil, probeErr
+			}
+			packings, probeErr = decodePackingProbes(text, keys)
+			if probeErr != nil {
+				return nil, probeErr
+			}
+			continue
 		}
-		probes, keys, probeErr := recordFieldProbes(data)
-		if probeErr != nil {
-			return nil, probeErr
+		if (errors.Is(err, errRecordFieldTypes) || errors.Is(err, errEnumTypes)) && fields == nil {
+			enums, probeErr := enumProbes(data)
+			if probeErr != nil {
+				return nil, probeErr
+			}
+			probes, keys, probeErr := recordFieldProbes(data)
+			if probeErr != nil {
+				return nil, probeErr
+			}
+			data, err = runCompiler(ctx, compiler, args, functionProbes(opts.Functions)+enums+probes, maxASTSize)
+			if err != nil {
+				return nil, err
+			}
+			fields, err = decodeFieldProbes(data, keys)
+			if err != nil {
+				return nil, err
+			}
+			continue
 		}
-		data, err = runCompiler(ctx, compiler, args, functionProbes(opts.Functions)+enums+probes, maxASTSize)
-		if err != nil {
-			return nil, err
-		}
-		fields, fieldErr := decodeFieldProbes(data, keys)
-		if fieldErr != nil {
-			return nil, fieldErr
-		}
-		header, err = decodeDeclarations(data, string(triple), opts.Functions, fields)
+		break
 	}
 	if err != nil {
 		return nil, err

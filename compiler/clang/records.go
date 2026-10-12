@@ -21,6 +21,9 @@ type Record struct {
 	// Packed requests the C compiler's packed attribute. Description remains a
 	// logical field model; only compiled C adapters may pass this record by value.
 	Packed bool
+	// MaxFieldAlignment retains a pragma pack member-alignment cap in bytes.
+	// Zero is absent; only compiled C adapters preserve this native layout.
+	MaxFieldAlignment uint64
 	// PackedFields indexes explicitly packed named members, including bitfields.
 	// Public values remain ordinary Go fields and require a compiled C adapter.
 	PackedFields []int
@@ -168,6 +171,12 @@ func (h *Header) validateDescriptions() error {
 		if err := validateAlignments(record, false); err != nil {
 			return err
 		}
+		if err := validatePacking(record); err != nil {
+			return err
+		}
+		if err := validatePackingChildren(record, h.Records); err != nil {
+			return err
+		}
 		if err := validatePackedFields(record); err != nil {
 			return err
 		}
@@ -253,6 +262,9 @@ func validateSignature(s abi.Signature, budget *int) error {
 }
 
 func validRecordLayout(record Record) error {
+	if err := validatePacking(record); err != nil {
+		return err
+	}
 	if err := validatePackedFields(record); err != nil {
 		return err
 	}
