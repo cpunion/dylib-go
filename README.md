@@ -44,6 +44,7 @@ Known native signatures can use caller-defined cgo or llgo adapters. For dynamic
 - `Lookup(name)`: obtain an unmanaged native address; callers manage its lifetime.
 - `Resolve(name)`: resolve once and return a session-owned, untyped `Symbol`.
 - `Symbol.WithAddress(callback)`: use an address while preventing concurrent `Close`.
+- `WithInitializingAddress(name, callback)`: temporarily use staged raw symbols or prior library/provider symbols from an initialization callback; see [initialization and lifetime rules](docs/lifecycle.md#initialization-callbacks-and-concurrent-close).
 - `Symbol.Acquire()` / `Function.Acquire()`: retain code and bound plans until unregister/join has finished, including during session retirement.
 - `Bind(name, abi.Signature)` / `Function.Call`: bind and invoke an explicit dynamic signature with libffi.
 - `abi.NewCallback(signature, handler)`: create a native C entry for a Go closure; acquire a lease before publishing its address.

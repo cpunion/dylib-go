@@ -57,6 +57,8 @@ type Session struct {
 	paths         map[string]bool
 	defined       map[string]uintptr
 	image         *image
+	initializing  bool
+	stagedImage   *image // Only scoped initialization calls can use this mapping.
 	failedImage   *image // Retain code for exit registrations until Close after init failure.
 	initErr       error
 	closed        bool
@@ -77,6 +79,9 @@ func (s *Session) mutable() error {
 	}
 	if s.initErr != nil {
 		return s.initErr
+	}
+	if s.initializing {
+		return ErrInitializing
 	}
 	if s.image != nil {
 		return ErrLinked
@@ -148,7 +153,7 @@ func (s *Session) Load(path string) error {
 		if err = checkHost(f.info); err != nil {
 			return err
 		}
-		h, e := native.Open(abs)
+		h, e := s.openLibrary(abs)
 		if e != nil {
 			return e
 		}
@@ -158,6 +163,9 @@ func (s *Session) Load(path string) error {
 				s.dllHandles = make(map[string]uintptr)
 			}
 			s.dllHandles[strings.ToLower(filepath.Base(abs))] = h
+		}
+		if s.closed {
+			return ErrClosed // Close owns the successfully opened handle.
 		}
 	default:
 		return fmt.Errorf("%s: executables cannot be loaded as libraries", path)
@@ -231,15 +239,19 @@ func checkTarget(o *object) error {
 }
 
 func (s *Session) external(name string) uintptr {
-	if p := s.defined[name]; p != 0 {
-		return p
+	return lookupExternal(name, s.defined[name], s.libs, s.opts.ProcessSymbols)
+}
+
+func lookupExternal(name string, defined uintptr, libraries []uintptr, processSymbols bool) uintptr {
+	if defined != 0 {
+		return defined
 	}
-	for _, h := range s.libs {
+	for _, h := range libraries {
 		if p := native.Lookup(h, name); p != 0 {
 			return p
 		}
 	}
-	if s.opts.ProcessSymbols {
+	if processSymbols {
 		return native.Lookup(0, name)
 	}
 	return 0
@@ -456,6 +468,8 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 // No executable image is published on failure.
 // Supported object initializers run after every link validation succeeds.
 // Native initialization side effects cannot be rolled back.
+// Reentrant/concurrent ordinary operations return ErrInitializing while native
+// initialization is running; use WithInitializingAddress for scoped access.
 func (s *Session) Link(roots ...string) error { s.mu.Lock(); defer s.mu.Unlock(); return s.link(roots) }
 func (s *Session) link(roots []string) error {
 	if s.closed {
@@ -463,6 +477,9 @@ func (s *Session) link(roots []string) error {
 	}
 	if s.initErr != nil {
 		return s.initErr
+	}
+	if s.initializing {
+		return ErrInitializing
 	}
 	for _, name := range roots {
 		if name == "" || strings.IndexByte(name, 0) >= 0 {
@@ -509,20 +526,16 @@ func (s *Session) link(roots []string) error {
 		}
 	}
 	if s.opts.RegisterUnwind && len(objs) != 0 {
-		if err := im.registerUnwind(); err != nil {
-			im.close()
+		if err := s.duringInitialization(nil, im.registerUnwind); err != nil {
+			s.duringInitialization(nil, im.close)
 			return err
 		}
 	}
-	if err := im.initialize(); err != nil {
-		// Do not run cleanup under mu: exit callbacks may reenter Go. Keep
-		// their code alive until Close retires the failed session and drains
-		// registrations outside the lock. No symbol is published meanwhile.
-		s.failedImage, s.initErr = im, err
-		return err
+	if s.closed {
+		s.duringInitialization(nil, im.close)
+		return ErrClosed
 	}
-	s.image = im
-	return nil
+	return s.initializeImage(im)
 }
 
 // Lookup links on first use. Names omit Mach-O's leading linker underscore;
@@ -544,8 +557,8 @@ func (s *Session) lookup(name string) (uintptr, error) {
 
 // Close retires the session, rejects new calls, and waits for active address
 // users and leases before releasing resources. Call it outside this session's
-// adapters, callbacks, and finalizers. Release leases after unregister/join;
-// waiting for one's own call or lease would deadlock.
+// adapters, initializers, callbacks, and finalizers. Release leases after
+// unregister/join; waiting for one's own call or lease would deadlock.
 func (s *Session) Close() error {
 	s.mu.Lock()
 	if s.closed {

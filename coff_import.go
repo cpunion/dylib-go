@@ -131,7 +131,7 @@ func (s *Session) prepareImports(objects []*object) (map[*coffImport]uintptr, er
 				if err != nil {
 					return nil, err
 				}
-				h, err = native.Open(path)
+				h, err = s.openLibrary(path)
 				if err != nil {
 					return nil, fmt.Errorf("import DLL %s: %w", entry.dll, err)
 				}
@@ -140,6 +140,9 @@ func (s *Session) prepareImports(objects []*object) (map[*coffImport]uintptr, er
 				}
 				s.dllHandles[key] = h
 				s.libs = append(s.libs, h)
+				if s.closed {
+					return nil, ErrClosed
+				}
 			}
 			var p uintptr
 			if entry.ordinal != 0 {

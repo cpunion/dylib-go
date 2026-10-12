@@ -22,6 +22,9 @@ func (s *Session) Bind(name string, signature abi.Signature) (*Function, error) 
 	if s.initErr != nil {
 		return nil, s.initErr
 	}
+	if s.initializing {
+		return nil, ErrInitializing
+	}
 	key, err := bindingKey(signature)
 	if err != nil {
 		return nil, err
