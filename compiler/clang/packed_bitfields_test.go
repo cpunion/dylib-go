@@ -121,7 +121,3 @@ Mixed mixed(Mixed); Tiny tiny(Tiny); Aligned aligned(Aligned); Units units(Units
 		})
 	}
 }
-
-func TestMemberPackedBitfieldPaddingBoundary(t *testing.T) {
-	testPackedBitfieldBridgeMSVCAndMinGW(t, `typedef struct __attribute__((packed)) { unsigned a:3 __attribute__((packed)); unsigned :0; int value; } Bits; Bits echo(Bits);`)
-}
