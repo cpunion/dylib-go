@@ -463,7 +463,7 @@ Go fields hold ordinary scalar values. The [tested bitfield example](examples/bi
 covers signed/Boolean fields, cross-byte widths, unnamed/zero-width boundaries,
 leading padding, floating fields and packed combinations.
 Named member-level `packed` bitfields also use validated C bridges, including
-small value returns and packed/aligned members; see the [packing limits](docs/clang.md#explicitly-packed-c-records).
+small value returns, packed/aligned members and mixed unnamed/zero-width fields; see the [packing limits](docs/clang.md#explicitly-packed-c-records).
 Compiler-evaluated record/member alignment also uses C transport records,
 including omitted GNU `aligned` arguments and `_Alignas(type)` members. The
 [tested aligned example](examples/alignedrecords/call.go) covers packed/bitfield

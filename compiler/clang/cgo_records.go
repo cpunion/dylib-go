@@ -119,13 +119,10 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 		}
 		name := t.cRecordName(i)
+		members := recordMembers(record)
 		var packedUnits []packedBitfieldUnit
 		if t.targetOS == "windows" {
-			var err error
-			packedUnits, err = packedBitfieldUnits(record)
-			if err != nil {
-				return err
-			}
+			packedUnits = packedBitfieldUnits(record, members)
 		}
 		packedBridge := record.Packed && (len(record.Padding) != 0 || record.hasBitfields() && len(record.FieldAlignments) != 0)
 		if packedBridge {
@@ -146,37 +143,44 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		fmt.Fprint(output, "typedef struct ")
 		fmt.Fprint(output, record.cAttributes())
 		fmt.Fprint(output, "{\n")
-		padding := 0
-		for j := 0; j <= len(record.Description.Fields); j++ {
-			for padding < len(record.Padding) && record.Padding[padding].Before == j {
-				p := record.Padding[padding]
-				kind, err := cgoScalarType(abi.TypeDesc{Type: p.Type})
+		var packedBoundaries []int
+		for position, member := range members {
+			for _, unit := range packedUnits {
+				if unit.first == position {
+					beginPackedBitfieldUnit(output, record.fieldAlignment(member.field))
+				}
+			}
+			if member.padding >= 0 {
+				p := record.Padding[member.padding]
+				boundary := false
+				for _, unit := range packedUnits {
+					boundary = boundary || p.Width == 0 && unit.last+1 == position
+				}
+				if boundary {
+					packedBoundaries = append(packedBoundaries, member.padding)
+					writePackedUnitBoundary(output, p, member.padding)
+				} else {
+					kind, err := cgoScalarType(abi.TypeDesc{Type: p.Type})
+					if err != nil {
+						return err
+					}
+					fmt.Fprintf(output, "%s :%d;\n", kind, p.Width)
+				}
+			} else {
+				j := member.field
+				field := record.Description.Fields[j]
+				declaration, err := t.cField(field.Type, fmt.Sprintf("f%d", j))
 				if err != nil {
-					return err
+					return fmt.Errorf("clang: %s.%s: %w", record.Name, field.Name, err)
 				}
-				fmt.Fprintf(output, "%s :%d;\n", kind, p.Width)
-				padding++
-			}
-			if j == len(record.Description.Fields) {
-				break
-			}
-			field := record.Description.Fields[j]
-			for _, unit := range packedUnits {
-				if unit.first == j {
-					beginPackedBitfieldUnit(output, record.fieldAlignment(unit.first))
+				if bit := record.bitfieldAt(j); bit != nil {
+					declaration += fmt.Sprintf(":%d", bit.Width)
 				}
+				declaration += record.cFieldAttributes(j)
+				fmt.Fprintf(output, "%s;\n", declaration)
 			}
-			declaration, err := t.cField(field.Type, fmt.Sprintf("f%d", j))
-			if err != nil {
-				return fmt.Errorf("clang: %s.%s: %w", record.Name, field.Name, err)
-			}
-			if bit := record.bitfieldAt(j); bit != nil {
-				declaration += fmt.Sprintf(":%d", bit.Width)
-			}
-			declaration += record.cFieldAttributes(j)
-			fmt.Fprintf(output, "%s;\n", declaration)
 			for _, unit := range packedUnits {
-				if unit.last == j {
+				if unit.last == position {
 					endPackedBitfieldUnit(output)
 				}
 			}
@@ -186,6 +190,13 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			fmt.Fprint(output, "#if defined(_WIN32)\n#pragma pack(pop)\n#endif\n")
 		}
 		if packedBridge {
+			fmt.Fprint(output, "#endif\n")
+		}
+		if len(packedBoundaries) != 0 {
+			fmt.Fprint(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n")
+			for _, index := range packedBoundaries {
+				fmt.Fprintf(output, "_Static_assert(offsetof(%s,boundary%d)==%d,\"incompatible zero-width boundary\");\n", name, index, record.Padding[index].Offset)
+			}
 			fmt.Fprint(output, "#endif\n")
 		}
 		if len(record.Bitfields) != 0 {

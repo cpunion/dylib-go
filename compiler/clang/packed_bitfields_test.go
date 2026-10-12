@@ -20,15 +20,18 @@ typedef struct { char tag; unsigned a:31 __attribute__((packed)); unsigned b:31;
 typedef struct { char tag; unsigned a:3; signed b:5 __attribute__((packed)); short tail; } Later;
 typedef struct { char marker; unsigned low:3 __attribute__((packed,aligned(16))); signed high:5; double real; } Overaligned;
 typedef struct { unsigned a:3 __attribute__((packed)); unsigned :0; signed b:7 __attribute__((packed)); double value; } Gaps;
+typedef struct { char marker; unsigned lo:3 __attribute__((packed)); unsigned :4; unsigned long long :0; unsigned :0; signed hi:5 __attribute__((packed)); unsigned :0; char tail; } Boundaries;
+typedef struct { unsigned :3; unsigned lo:5 __attribute__((packed)); unsigned :31; unsigned hi:1 __attribute__((packed)); unsigned :0; char last; } Leading;
+typedef struct { unsigned lo:3 __attribute__((packed)); unsigned :4; unsigned long long :0; unsigned :0; } Trailing;
+typedef struct { char prefix; unsigned lo:3 __attribute__((packed,aligned(16))); unsigned :4; unsigned long long :0; signed hi:5 __attribute__((packed)); unsigned :0; char suffix; } AlignedGaps;
+typedef struct { char prefix; unsigned long long all:64 __attribute__((packed)); unsigned long long :0; _Bool flag:1 __attribute__((packed)); unsigned :2; unsigned char :0; signed char byte:7 __attribute__((packed)); unsigned :0; double real; } TypeChanges;
+Boundaries boundaries(Boundaries); Leading leading(Leading); Trailing trailing(Trailing); AlignedGaps aligned_gaps(AlignedGaps); TypeChanges type_changes(TypeChanges);
 Mixed mixed(Mixed); Tiny tiny(Tiny); Aligned aligned(Aligned); Units units(Units); Later later(Later); Overaligned overaligned(Overaligned); Gaps gaps(Gaps);
 `)
 	compiler := compilerTool(t)
 	for _, target := range targets {
 		t.Run(target.triple, func(t *testing.T) {
-			names := []string{"mixed", "tiny", "aligned", "units", "later", "overaligned"}
-			if target.os != "windows" {
-				names = append(names, "gaps")
-			}
+			names := []string{"mixed", "tiny", "aligned", "units", "later", "overaligned", "gaps", "boundaries", "leading", "trailing", "aligned_gaps", "type_changes"}
 			h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: target.triple, Functions: names})
 			if err != nil {
 				t.Fatal(err)
@@ -98,20 +101,5 @@ Mixed mixed(Mixed); Tiny tiny(Tiny); Aligned aligned(Aligned); Units units(Units
 }
 
 func TestMemberPackedBitfieldPaddingBoundary(t *testing.T) {
-	path := headerFile(t, `typedef struct { unsigned a:3 __attribute__((packed)); unsigned :0; int value; } Bits; Bits echo(Bits);`)
-	for _, target := range targets {
-		if target.os != "windows" {
-			continue
-		}
-		t.Run(target.triple, func(t *testing.T) {
-			h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Target: target.triple, Functions: []string{"echo"}})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if _, err := h.CgoSource("bindings", "Bindings"); err == nil || !strings.Contains(err.Error(), "unnamed padding") {
-				t.Fatal("unqualified mixed padding accepted:", err)
-			}
-		})
-	}
 	testPackedBitfieldBridgeMSVCAndMinGW(t, `typedef struct __attribute__((packed)) { unsigned a:3 __attribute__((packed)); unsigned :0; int value; } Bits; Bits echo(Bits);`)
 }

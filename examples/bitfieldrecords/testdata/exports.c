@@ -94,3 +94,7 @@ MemberTiny echo_member_tiny(MemberTiny p) {
     p.high += 1;
     return p;
 }
+MemberTrailing echo_member_trailing(MemberTrailing p) {
+    p.code ^= 7;
+    return p;
+}

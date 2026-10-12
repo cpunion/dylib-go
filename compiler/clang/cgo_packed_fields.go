@@ -3,63 +3,91 @@ package clang
 import (
 	"bytes"
 	"fmt"
-	"math/bits"
 
 	"github.com/cpunion/dylib-go/abi"
 )
 
+// recordMember retains the full declaration order, including unnamed fields.
+// Exactly one index is nonnegative.
+type recordMember struct {
+	field, padding int
+}
+
+func recordMembers(r Record) []recordMember {
+	members := make([]recordMember, 0, len(r.Description.Fields)+len(r.Padding))
+	padding := 0
+	for field := 0; field <= len(r.Description.Fields); field++ {
+		for padding < len(r.Padding) && r.Padding[padding].Before == field {
+			members = append(members, recordMember{-1, padding})
+			padding++
+		}
+		if field < len(r.Description.Fields) {
+			members = append(members, recordMember{field, -1})
+		}
+	}
+	return members
+}
+
+func (m recordMember) bitfield(r Record) (capacity, width int) {
+	var kind abi.Type
+	if m.padding >= 0 {
+		p := r.Padding[m.padding]
+		kind, width = p.Type, p.Width
+	} else if bit := r.bitfieldAt(m.field); bit != nil {
+		kind, width = r.Description.Fields[m.field].Type.Type, bit.Width
+	} else {
+		return 0, 0
+	}
+	capacity = bitfieldTypeBits(kind)
+	if kind == abi.Bool {
+		capacity = 8 // Boolean bitfields still own a byte allocation unit.
+	}
+	return
+}
+
 type packedBitfieldUnit struct {
-	first, last int
+	first, last int // Indexes in the complete declaration stream.
 }
 
 // MinGW ignores member packed attributes on MS-layout bitfields. An anonymous
 // record with a scoped packing pragma preserves one producer allocation unit
 // without changing the natural alignment of neighboring ordinary members.
-func packedBitfieldUnits(r Record) ([]packedBitfieldUnit, error) {
+// MS layout groups successive equal-sized base types while the widths fit;
+// zero-width fields and ordinary members always end an allocation unit.
+func packedBitfieldUnits(r Record, members []recordMember) []packedBitfieldUnit {
 	if r.Packed {
-		return nil, nil // Record-wide packing already has its own bridge.
-	}
-	packed := false
-	for _, position := range r.PackedFields {
-		packed = packed || r.bitfieldAt(position) != nil
-	}
-	if !packed {
-		return nil, nil
-	}
-	if len(r.Padding) != 0 {
-		return nil, fmt.Errorf("clang: member-packed bitfields with unnamed padding in %s require a separate Windows adapter", r.Name)
+		return nil // Record-wide packing already has its own bridge.
 	}
 	var units []packedBitfieldUnit
-	for first := 0; first < len(r.Description.Fields); {
-		bit := r.bitfieldAt(first)
-		if bit == nil {
+	for first := 0; first < len(members); {
+		capacity, used := members[first].bitfield(r)
+		if used == 0 {
 			first++
 			continue
 		}
-		width := bitfieldTypeBits(r.Description.Fields[first].Type.Type)
-		if r.Description.Fields[first].Type.Type == abi.Bool {
-			width = 8 // A Boolean bitfield still owns a byte allocation unit.
-		}
-		start := r.Layout.Offsets[first] * 8
-		end := start + uint64(width)
 		last := first
-		for next := first + 1; next < len(r.Description.Fields); next++ {
-			field := r.bitfieldAt(next)
-			if field == nil {
+		for next := first + 1; next < len(members); next++ {
+			size, width := members[next].bitfield(r)
+			if width == 0 || size != capacity || used+width > capacity {
 				break
 			}
-			at := r.Layout.Offsets[next]*8 + uint64(bits.TrailingZeros8(field.Mask[0]))
-			if at >= end || at+uint64(field.Width) > end {
-				break
-			}
+			used += width
 			last = next
 		}
-		if r.fieldPacked(first) {
+		if field := members[first].field; field >= 0 && r.fieldPacked(field) {
 			units = append(units, packedBitfieldUnit{first, last})
 		}
 		first = last + 1
 	}
-	return units, nil
+	return units
+}
+
+// A zero-width field after a wrapped unit now follows an ordinary anonymous
+// member, so MS layout would ignore it. A zero-length array restores the same
+// natural alignment boundary without allocating bytes. Only that immediate
+// boundary is replaced; leading/consecutive zero-width fields remain ignored.
+func writePackedUnitBoundary(output *bytes.Buffer, p BitfieldPadding, index int) {
+	fmt.Fprintf(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n%s boundary%d[0];\n#else\n%s :0;\n#endif\n", bitfieldBaseType(p.Type), index, bitfieldBaseType(p.Type))
 }
 
 func beginPackedBitfieldUnit(output *bytes.Buffer, alignment uint64) {
