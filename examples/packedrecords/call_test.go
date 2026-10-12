@@ -116,7 +116,9 @@ func TestPackedCalls(t *testing.T) {
 					}
 				}
 			}
-			compile(t, compiler, append(linkFlags, optimization, "testdata/exports.c", "-o", library)...)
+			// Retain the producer ABI selected during parsing, including MSVC
+			// i386's indirect aligned arguments when a MinGW driver links the DLL.
+			compile(t, compiler, append(linkFlags, object, "-o", library)...)
 			for _, input := range []struct{ name, path string }{{"object", object}, {"archive", archive}, {"library", library}} {
 				t.Run(input.name, func(t *testing.T) { checkCalls(t, input.path) })
 			}
