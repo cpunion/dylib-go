@@ -21,6 +21,41 @@ func explicitAlignment(node astNode) (uint64, error) {
 	return uint64(value), nil
 }
 
+// An omitted GNU aligned argument is represented by one empty AST child.
+// Type-based _Alignas has no child; its effective member alignment needs a
+// compiler probe because Clang's JSON does not retain the requested type.
+func omittedAlignment(node astNode) bool {
+	return len(node.Inner) == 1 && node.Inner[0].Kind == ""
+}
+
+func (r *typeResolver) recordAlignment(node astNode) (uint64, error) {
+	if omittedAlignment(node) {
+		value := r.sizes["max_alignment"]
+		if value <= 0 || !validAlignment(uint64(value)) {
+			return 0, fmt.Errorf("invalid compiler maximum alignment")
+		}
+		return uint64(value), nil
+	}
+	return explicitAlignment(node)
+}
+
+func (r *typeResolver) memberAlignment(record string, field, node astNode) (uint64, error) {
+	if _, ok := constantValue(node); ok || omittedAlignment(node) {
+		return r.recordAlignment(node)
+	}
+	if len(node.Inner) != 0 || field.IsBitfield {
+		return explicitAlignment(node)
+	}
+	if r.fieldProbes == nil {
+		return 0, errRecordFieldTypes
+	}
+	probe, ok := r.fieldProbes[recordField{record, field.Name}]
+	if !ok || probe.Alignment == 0 || !validAlignment(probe.Alignment) {
+		return 0, fmt.Errorf("missing compiler member alignment")
+	}
+	return probe.Alignment, nil
+}
+
 func (r Record) fieldAlignment(position int) uint64 {
 	for _, field := range r.FieldAlignments {
 		if field.Position == position {

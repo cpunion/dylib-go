@@ -4,9 +4,10 @@ typedef struct __attribute__((aligned(32))) {
     int tail;
     void *context;
 } Aligned;
+typedef struct __attribute__((aligned(16))) { char token; } FieldAlignment;
 typedef struct {
     signed char tag;
-    _Alignas(16) double values[2];
+    _Alignas(FieldAlignment) double values[2];
     int count;
 } FieldAligned;
 typedef struct __attribute__((packed,aligned(32))) {
@@ -28,18 +29,18 @@ typedef struct {
     AlignedBits bits[2];
     int count;
 } Envelope;
-typedef struct __attribute__((aligned(32))) { double first; double second; } AlignedFloats;
+typedef struct __attribute__((aligned)) { double first; double second; } AlignedFloats;
 typedef struct {
     unsigned low:5;
     int value __attribute__((aligned(16)));
-    signed high:7 __attribute__((aligned(8)));
+    signed high:7 __attribute__((aligned));
     unsigned :0;
     signed char tag;
 } FieldAlignedBits;
 typedef struct __attribute__((packed,aligned(32))) {
     signed char tag;
-    double values[2] __attribute__((aligned(16)));
-    short tail;
+    double values[2] __attribute__((aligned));
+    _Alignas(double) short tail;
 } PackedFields;
 typedef struct __attribute__((packed,aligned(32))) {
     unsigned lowbits:5;

@@ -24,7 +24,8 @@ type Record struct {
 	// PackedFields indexes explicitly packed non-bitfield members. Public
 	// values remain ordinary Go fields and require a compiled C adapter.
 	PackedFields []int
-	// Aligned preserves an explicit record alignment in bytes; zero is absent.
+	// Aligned preserves a compiler-evaluated record alignment request in bytes;
+	// zero is absent. Omitted GNU arguments use the target maximum alignment.
 	// FieldAlignments preserves explicit alignment on named members. These
 	// declarations require compiled C adapters, never a Go memory view.
 	Aligned         uint64

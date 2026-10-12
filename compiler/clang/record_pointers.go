@@ -11,10 +11,16 @@ import (
 )
 
 // FieldDecl only carries a type spelling in Clang's JSON AST. Ask for compiler
-// type nodes rather than interpreting C function declarator strings.
+// type nodes rather than interpreting C function declarator strings. The same
+// probes evaluate member alignment for type-based _Alignas declarations.
 var errRecordFieldTypes = errors.New("clang: record fields require compiler type probes")
 
 type recordField struct{ record, field string }
+
+type recordFieldProbe struct {
+	Type      astNode
+	Alignment uint64
+}
 
 func recordFieldProbes(data []byte) (string, map[string]recordField, error) {
 	var root astNode
@@ -42,6 +48,7 @@ func recordFieldProbes(data []byte) (string, map[string]recordField, error) {
 			probe := fmt.Sprintf("dylib_field_probe_%d", len(keys))
 			keys[probe] = recordField{name, child.Name}
 			fmt.Fprintf(&source, "typedef __typeof__(((%s *)0)->%s) %s;\n", name, child.Name, probe)
+			fmt.Fprintf(&source, "enum { %s_alignment = __alignof__(((%s *)0)->%s) };\n", probe, name, child.Name)
 			if source.Len() > maxHeaderSize {
 				return "", nil, fmt.Errorf("clang: record field probes exceed source limit")
 			}
@@ -50,27 +57,51 @@ func recordFieldProbes(data []byte) (string, map[string]recordField, error) {
 	return source.String(), keys, nil
 }
 
-func decodeFieldTypes(data []byte, keys map[string]recordField) (map[recordField]astNode, error) {
+func decodeFieldProbes(data []byte, keys map[string]recordField) (map[recordField]recordFieldProbe, error) {
 	var root astNode
 	if err := json.Unmarshal(data, &root); err != nil {
 		return nil, err
 	}
-	fields := make(map[recordField]astNode)
+	fields := make(map[recordField]recordFieldProbe)
 	for _, node := range root.Inner {
 		if key, ok := keys[node.Name]; ok && node.Kind == "TypedefDecl" {
-			fields[key] = node
+			probe := fields[key]
+			probe.Type = node
+			fields[key] = probe
+		}
+		if node.Kind != "EnumDecl" {
+			continue
+		}
+		for _, value := range node.Inner {
+			name, hasAlignment := strings.CutSuffix(value.Name, "_alignment")
+			key, ok := keys[name]
+			if !hasAlignment || !ok || value.Kind != "EnumConstantDecl" {
+				continue
+			}
+			count, ok := constantValue(value)
+			if !ok || count <= 0 || !validAlignment(uint64(count)) {
+				return nil, fmt.Errorf("clang: invalid compiler field alignment %s", value.Name)
+			}
+			probe := fields[key]
+			probe.Alignment = uint64(count)
+			fields[key] = probe
 		}
 	}
 	if len(fields) != len(keys) {
 		return nil, fmt.Errorf("clang: missing compiler record field types")
+	}
+	for _, probe := range fields {
+		if probe.Type.Kind != "TypedefDecl" || probe.Alignment == 0 {
+			return nil, fmt.Errorf("clang: incomplete compiler record field probe")
+		}
 	}
 	return fields, nil
 }
 
 func (r *typeResolver) describeField(name string, field astNode, depth int) (abi.TypeDesc, error) {
 	key := recordField{name, field.Name}
-	if node, ok := r.fieldTypes[key]; ok {
-		effective, err := r.effectiveType(node)
+	if probe, ok := r.fieldProbes[key]; ok {
+		effective, err := r.effectiveType(probe.Type)
 		if err != nil {
 			return abi.TypeDesc{}, err
 		}
@@ -103,7 +134,7 @@ func (r *typeResolver) describeField(name string, field astNode, depth int) (abi
 		}
 	}
 	description, err := r.describe(field.Type.QualType, false, depth)
-	if err != nil && r.fieldTypes == nil {
+	if err != nil && r.fieldProbes == nil {
 		return abi.TypeDesc{}, errRecordFieldTypes
 	}
 	return description, err

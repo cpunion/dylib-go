@@ -46,7 +46,7 @@ Run
 | Explicit `__attribute__((packed))` non-bitfield members | `CgoSource` for Go/llgo; retain natural alignment of other members and combine packing with explicit member alignment; includes fixed arrays, nested records and native addresses |
 | Named integral/Boolean bitfields, including explicit packed records | `CgoSource` for Go/llgo; compiler byte masks and layout are validated before binding; public fields remain ordinary scalars |
 | Unnamed/zero-width bitfields | `CgoSource` preserves storage boundaries without adding public Go value fields; leading/trailing padding and packed combinations are supported |
-| Explicit numeric record/member alignment | `CgoSource` preserves GNU `aligned(N)`, field `_Alignas(N)` and MS `__declspec(align(N))`; packed/bitfield combinations and nested arrays are supported |
+| Compiler-evaluated record/member alignment | `CgoSource` preserves GNU `aligned(N)` and omitted `aligned`, field `_Alignas(N)`/`_Alignas(type)` and MS `__declspec(align(N))`; packed/bitfield combinations and nested arrays are supported |
 | Fixed array members | Scalars, pointers, records and nested arrays; positive evaluated lengths |
 | Function parameters/results pointing to a complete ordinary struct | Typed single-struct pointees; `abi.AddressOf` supplies a temporary copy, with mutation/return identity checks |
 | Function pointers at parameter/result boundaries | Typedefs, anonymous pointers and decayed function parameters; retain their exact prototype/convention independently of the outer pointer |
@@ -245,7 +245,12 @@ source, target guards and session retirement.
 `Record.Aligned` retains a numeric record alignment; zero means no explicit
 request. `Record.FieldAlignments` records the logical position and alignment of
 each named member, including array and bitfield members. Clang evaluates constant
-alignment expressions. Multiple declarations use the greatest requested value.
+alignment expressions. Omitted GNU `aligned` arguments use a compiler probe
+for the target maximum alignment. Type-based `_Alignas(type)` on named ordinary
+members uses a compiler probe of the member expression, including typedef,
+record and array types. Its effective alignment is saved as a numeric request,
+so generated bindings do not need the original alignment type. Multiple
+declarations use the greatest value.
 The adapter accepts powers of two up to 65536 bytes, subject to the same maximum
 record size. `_Alignas(0)` has no effect.
 
@@ -286,12 +291,15 @@ stronger alignment. Generated pointer methods borrow native addresses; they do
 not reinterpret Go structs. Function pointers with these values also require a
 matching compiled adapter; dynamic callbacks do not supply it.
 
-Alignment on typedefs, unnamed bitfields, omitted-argument GNU `aligned` and
-type-based `_Alignas(type)` requests remain unsupported. Other packing policies
+Alignment on typedefs and unnamed bitfields remains unsupported. Attributes
+whose requested alignment cannot be confirmed in the native layout are rejected;
+this includes MS bitfields that share an allocation unit while the compiler
+ignores a member alignment request. Other packing policies
 are not inferred. The [aligned example](../examples/alignedrecords/call.go)
 executes object/archive/library calls at `-O0` and `-O2` on the eight Go and six
 llgo native targets, including large nested arrays, floating aggregates,
-native storage alignment, factories, variadic calls and deliberate alignment
+native storage alignment, type-based member requests, omitted GNU arguments,
+factories, variadic calls and deliberate alignment
 mismatch rejection before symbol resolution. Windows 386 also runs aligned
 stdcall/fastcall exports and native factories with mixed register/stack arguments.
 
