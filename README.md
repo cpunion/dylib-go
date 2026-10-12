@@ -241,7 +241,7 @@ func main() {
 
 ```
 
-Supported scalar types are signed/unsigned 8/16/32/64-bit integers, C `bool`, `f32/f64`, and pointers. Ordinary C structs support arguments, results, nesting, pointer fields, and fixed-length array members through `abi.TypeDesc`. Use `abi.StructValue` for fields, `abi.ArrayValue` for array elements, `abi.AddressOf` for temporary native copies, and `abi.Ptr` for caller-managed native addresses. Temporary mutations are copied back; native code must not retain those pointers. Layout and register classification come from libffi. Calls allow `void` results and allocate argument storage for the concrete signature length. Native ABI limits and available memory still bound call size. The dynamic backend does not support unions, packed structs, bitfields, C++ `this` adjustment, or Swift calling conventions. Explicit packed records can use the generated C bridges described below.
+Supported scalar types are signed/unsigned 8/16/32/64-bit integers, C `bool`, `f32/f64`, and pointers. Ordinary C structs support arguments, results, nesting, pointer fields, and fixed-length array members through `abi.TypeDesc`. Use `abi.StructValue` for fields, `abi.ArrayValue` for array elements, `abi.AddressOf` for temporary native copies, and `abi.Ptr` for caller-managed native addresses. Temporary mutations are copied back; native code must not retain those pointers. Layout and register classification come from libffi. Calls allow `void` results and allocate argument storage for the concrete signature length. Native ABI limits and available memory still bound call size. The dynamic backend does not support unions, packed structs, bitfields, C++ `this` adjustment, or Swift calling conventions. Explicit packed records and named bitfields can use the generated C bridges described below.
 
 Arrays use `TypeDesc{Type: abi.Array, Len: N, Elem: &element}` and may appear inside structs or behind pointers, including multidimensional arrays and arrays of structs or pointers. C array parameters decay to pointers; bare array arguments/results are rejected. The [array library example](examples/arrays/main.go) constructs an array member and calls a C function; `examples/run.sh go library` and `examples/run.sh llgo library` execute it in CI. See [array types and limits](docs/arrays.md).
 
@@ -419,7 +419,8 @@ variadic prefixes, C cdecl, and Windows 386 stdcall/fastcall. `ForHost` checks c
 against the actual backend before calls, including callback records.
 `LookupFunctionPointer` supplies signatures for `abi.NewCallback` or returned native
 addresses, including nested prototypes and multiple pointer layers. Explicitly
-packed records use generated C bridges; unions, bitfields and enums still need
+packed records and named integral/Boolean bitfields use generated C bridges; unions,
+unnamed bitfields and enums still need
 manual adapters. See [types, targets and limits](docs/clang.md).
 
 Records containing callbacks use opaque native address fields or fixed arrays
@@ -433,7 +434,7 @@ to keep entries alive until native code clears them.
 | Generator | Host compiler | Native calls | libffi required |
 | --- | --- | --- | --- |
 | `Header.GoSource` | Go / llgo | Dynamic `Session.Bind`, including supported records and variadic shapes | Yes |
-| `Header.CgoSource` | Go / llgo | Typed scalars, ordinary/explicitly packed record values, native addresses and concrete cdecl variadic shapes; fixed Windows 386 stdcall/fastcall | No |
+| `Header.CgoSource` | Go / llgo | Typed scalars, ordinary/explicitly packed records and named bitfields, native addresses and concrete cdecl variadic shapes; fixed Windows 386 stdcall/fastcall | No |
 | `Header.LLGoSource` | llgo | Typed cdecl scalars, ordinary records, concrete variadic shapes and fixed/variadic native function pointers | No |
 
 `Header.CgoSource(packageName, bindingType)` generates typed methods usable with
@@ -448,11 +449,15 @@ supported with Go on Windows 386. Ordinary record values support nested records,
 fixed arrays and native address fields. Fields are copied into independent C
 values; public Go structs need not share C padding or alignment. Constructors
 verify C sizes, alignments and offsets against Clang before resolving symbols.
-Explicit `__attribute__((packed))` records, including nested arrays, use ordinary
-transport records across Go/C and field copies inside C. Packed native values
+Explicit `__attribute__((packed))` records and named bitfields, including nested arrays, use ordinary
+transport records across Go/C and field copies inside C. These native values
 never cross that boundary directly. The [tested packed example](examples/packedrecords/call.go)
 also covers native factories, struct pointers and variadic record calls with Go
 and llgo. Dynamic libffi binding and direct `LLGoSource` reject these layouts.
+For bitfields, Clang emits constants whose byte masks are read with Go's object
+parsers; generated C bridges verify both masks and layout before binding. Public
+Go fields hold ordinary scalar values. The [tested bitfield example](examples/bitfieldrecords/call.go)
+covers signed/Boolean fields, cross-byte widths and packed combinations.
 Complete struct pointees use `unsafe.Pointer` native addresses with their C
 prototypes preserved. They do not accept pointers to public Go record storage;
 use producer-owned storage or a compatible `abi.NativeValue` lease. Other
@@ -573,7 +578,7 @@ Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cde
 
 | Language / interface | Calling convention / ABI | Current support | Verified coverage / limits |
 | --- | --- | --- | --- |
-| C | Host default C ABI | Supported subset | Eight Go targets; six llgo targets. Scalars, pointers, ordinary structs, struct pointers and concrete variadic shapes; explicit packed records through compiled C bridges |
+| C | Host default C ABI | Supported subset | Eight Go targets; six llgo targets. Scalars, pointers, ordinary structs, struct pointers and concrete variadic shapes; explicit packed records and named bitfields through compiled C bridges |
 | C with x86 conventions | Windows 386 stdcall / fastcall | Supported subset | Explicit `Convention` or generated `CgoSource`; fixed calls and native function pointers, exact decorated symbols; tested with C fixtures |
 | C callbacks into Go / llgo | Fixed host C ABI; Windows 386 stdcall / fastcall | Supported subset | Scalars, pointers, ordinary struct values, captures, explicit leases, and C-created threads; no variadic callbacks |
 | C with other conventions | vectorcall and other non-default ABIs | Not implemented | Use a compiled adapter matching the convention |

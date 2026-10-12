@@ -21,6 +21,9 @@ type Record struct {
 	// Packed requests the C compiler's packed attribute. Description remains a
 	// logical field model; only compiled C adapters may pass this record by value.
 	Packed bool
+	// Bitfields retains the width and native byte mask of each named bitfield.
+	// Layout.Offsets stores its first byte. Description remains logical fields.
+	Bitfields []Bitfield
 	// FunctionPointers describes pointer fields and fixed arrays of entries.
 	// Position is the field index; array shape remains in Description. All
 	// elements share the prototype and have caller-managed address lifetimes.
@@ -89,6 +92,7 @@ func (h *Header) LookupRecord(name string) (Record, error) {
 				record.Description = record.Description.Clone()
 				record.Layout.Offsets = append([]uint64(nil), record.Layout.Offsets...)
 				record.FunctionPointers = cloneFunctionPointers(record.FunctionPointers)
+				record.Bitfields = cloneBitfields(record.Bitfields)
 				return record, nil
 			}
 		}
@@ -136,6 +140,9 @@ func (h *Header) validateDescriptions() error {
 			return err
 		}
 		if err := record.Description.Validate(); err != nil {
+			return err
+		}
+		if err := validateBitfields(record, false); err != nil {
 			return err
 		}
 		for _, pointer := range record.FunctionPointers {
@@ -217,12 +224,16 @@ func validateSignature(s abi.Signature, budget *int) error {
 }
 
 func validRecordLayout(record Record) error {
+	if err := validateBitfields(record, true); err != nil {
+		return err
+	}
 	l := record.Layout
 	if l.Size == 0 || l.Size > 65536 || l.Alignment == 0 || l.Alignment > l.Size || l.Alignment&(l.Alignment-1) != 0 || l.Size%l.Alignment != 0 || len(l.Offsets) != len(record.Description.Fields) {
 		return fmt.Errorf("clang: invalid compiler layout for %s", record.Name)
 	}
 	for i, offset := range l.Offsets {
-		if offset >= l.Size || i == 0 && offset != 0 || i > 0 && offset <= l.Offsets[i-1] {
+		sharedBits := i > 0 && record.bitfieldAt(i) != nil && record.bitfieldAt(i-1) != nil
+		if offset >= l.Size || i == 0 && offset != 0 || i > 0 && (offset < l.Offsets[i-1] || offset == l.Offsets[i-1] && !sharedBits) {
 			return fmt.Errorf("clang: invalid compiler offsets for %s", record.Name)
 		}
 	}
@@ -279,8 +290,8 @@ func (h *Header) validateHostRecords(signature abi.Signature) error {
 				if err := validRecordLayout(record); err != nil {
 					return err
 				}
-				if record.Packed {
-					return fmt.Errorf("clang: packed record %s requires a compiled C adapter", record.Name)
+				if record.Packed || len(record.Bitfields) != 0 {
+					return fmt.Errorf("clang: packed/bitfield record %s requires a compiled C adapter", record.Name)
 				}
 				if !found {
 					var err error
@@ -315,6 +326,9 @@ func (h *Header) recordProbes() string {
 	for i, record := range h.Records {
 		fmt.Fprintf(&source, "dylib_record_%d_size=sizeof(%s),\ndylib_record_%d_align=_Alignof(%s),\n", i, record.Name, i, record.Name)
 		for j, field := range record.Description.Fields {
+			if record.bitfieldAt(j) != nil {
+				continue
+			}
 			fmt.Fprintf(&source, "dylib_record_%d_offset_%d=__builtin_offsetof(%s,%s),\n", i, j, record.Name, field.Name)
 		}
 	}
@@ -363,6 +377,10 @@ func (h *Header) decodeRecordLayouts(data []byte) error {
 			return err
 		}
 		for j := range h.Records[i].Description.Fields {
+			if h.Records[i].bitfieldAt(j) != nil {
+				layout.Offsets = append(layout.Offsets, 0)
+				continue
+			}
 			offset, err := get(fmt.Sprintf("dylib_record_%d_offset_%d", i, j))
 			if err != nil {
 				return err
@@ -370,8 +388,10 @@ func (h *Header) decodeRecordLayouts(data []byte) error {
 			layout.Offsets = append(layout.Offsets, offset)
 		}
 		h.Records[i].Layout = layout
-		if err := validRecordLayout(h.Records[i]); err != nil {
-			return err
+		if len(h.Records[i].Bitfields) == 0 {
+			if err := validRecordLayout(h.Records[i]); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

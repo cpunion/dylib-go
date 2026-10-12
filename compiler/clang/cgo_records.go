@@ -128,11 +128,22 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			if err != nil {
 				return fmt.Errorf("clang: %s.%s: %w", record.Name, field.Name, err)
 			}
+			if bit := record.bitfieldAt(j); bit != nil {
+				declaration += fmt.Sprintf(":%d", bit.Width)
+			}
 			fmt.Fprintf(output, "%s;\n", declaration)
 		}
-		fmt.Fprintf(output, "} %s;\nstatic uint64_t %s_layout(int32_t index) {\nswitch(index) {\ncase 0:return sizeof(%s);\ncase 1:return _Alignof(%s);\n", name, name, name, name)
+		fmt.Fprintf(output, "} %s;\n", name)
+		if len(record.Bitfields) != 0 {
+			t.writeBitfieldMasks(output, i)
+		}
+		fmt.Fprintf(output, "static uint64_t %s_layout(int32_t index) {\nswitch(index) {\ncase 0:return sizeof(%s);\ncase 1:return _Alignof(%s);\n", name, name, name)
 		for j := range record.Description.Fields {
-			fmt.Fprintf(output, "case %d:return offsetof(%s,f%d);\n", j+2, name, j)
+			if record.bitfieldAt(j) != nil {
+				fmt.Fprintf(output, "case %d:return %s_mask(%d,UINT64_MAX);\n", j+2, name, j)
+			} else {
+				fmt.Fprintf(output, "case %d:return offsetof(%s,f%d);\n", j+2, name, j)
+			}
 		}
 		fmt.Fprint(output, "default:return UINT64_MAX;\n}\n}\n")
 		if t.needsTransport(i) {
@@ -156,6 +167,11 @@ func (t *cgoTypes) writeCLayoutChecks(output *bytes.Buffer) {
 		fmt.Fprintf(output, "if uint64(C.%s_layout(0)) != %d || uint64(C.%s_layout(1)) != %d", name, layout.Size, name, layout.Alignment)
 		for j, offset := range layout.Offsets {
 			fmt.Fprintf(output, " || uint64(C.%s_layout(%d)) != %d", name, j+2, offset)
+		}
+		for _, field := range record.Bitfields {
+			for j, mask := range field.Mask {
+				fmt.Fprintf(output, " || uint64(C.%s_mask(%d,%d)) != %d", name, field.Position, layout.Offsets[field.Position]+uint64(j), mask)
+			}
 		}
 		fmt.Fprintf(output, " { return nil,fmt.Errorf(%q) }\n", "clang: compiler/cgo layout mismatch for "+record.Name)
 	}

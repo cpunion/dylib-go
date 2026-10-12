@@ -57,6 +57,17 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 			if record.Packed {
 				fmt.Fprint(&output, ",Packed:true")
 			}
+			if len(record.Bitfields) != 0 {
+				fmt.Fprint(&output, ",Bitfields:[]clang.Bitfield{")
+				for _, field := range record.Bitfields {
+					fmt.Fprintf(&output, "{Position:%d,Width:%d,Mask:[]byte{", field.Position, field.Width)
+					for _, b := range field.Mask {
+						fmt.Fprintf(&output, "%d,", b)
+					}
+					fmt.Fprint(&output, "}},")
+				}
+				fmt.Fprint(&output, "}")
+			}
 			if len(record.FunctionPointers) != 0 {
 				fmt.Fprint(&output, ",FunctionPointers:")
 				writeFunctionPointers(&output, record.FunctionPointers)

@@ -127,7 +127,8 @@ const maxFunctions = 256
 // ordinary and explicitly packed records, array members, pointers and
 // function-pointer prototypes. Record layouts are compiler evaluated; ForHost
 // checks the native backend before calls. Packed records require CgoSource for
-// Go or llgo. Unions, bitfields, aligned records, enums, inline/static
+// Go or llgo. Named integral/Boolean bitfields use compiler byte-mask probes and
+// also require CgoSource. Unions, unnamed bitfields, aligned records, enums, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes
 // must stay stable during parsing; they are read by Clang at their original paths.
 func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
@@ -212,6 +213,9 @@ func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 			return nil, err
 		}
 		if err := header.decodeRecordLayouts(data); err != nil {
+			return nil, err
+		}
+		if err := header.probeBitfields(ctx, compiler, path, flags); err != nil {
 			return nil, err
 		}
 	}
