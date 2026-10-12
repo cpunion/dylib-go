@@ -190,11 +190,23 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 	defer delete(r.building, id)
 	d := abi.TypeDesc{Type: abi.Struct}
 	packed := false
+	aligned := uint64(0)
+	var fieldAlignments []FieldAlignment
 	var bitfields []Bitfield
 	var padding []BitfieldPadding
 	for _, child := range node.Inner {
 		if child.Kind == "PackedAttr" {
 			packed = true
+			continue
+		}
+		if child.Kind == "AlignedAttr" {
+			value, err := explicitAlignment(child)
+			if err != nil {
+				return abi.TypeDesc{}, fmt.Errorf("%s: %w", name, err)
+			}
+			if value > aligned {
+				aligned = value
+			}
 			continue
 		}
 		if strings.HasSuffix(child.Kind, "Attr") {
@@ -207,7 +219,18 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		if !unnamed && !cIdentifier(child.Name) {
 			return abi.TypeDesc{}, fmt.Errorf("unnamed record fields are unsupported")
 		}
+		fieldAligned := uint64(0)
 		for _, attr := range child.Inner {
+			if attr.Kind == "AlignedAttr" && !unnamed {
+				value, err := explicitAlignment(attr)
+				if err != nil {
+					return abi.TypeDesc{}, fmt.Errorf("%s.%s: %w", name, child.Name, err)
+				}
+				if value > fieldAligned {
+					fieldAligned = value
+				}
+				continue
+			}
 			if strings.HasSuffix(attr.Kind, "Attr") {
 				return abi.TypeDesc{}, fmt.Errorf("unsupported field attribute %s", attr.Kind)
 			}
@@ -231,6 +254,9 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 			}
 		}
 		if !unnamed {
+			if fieldAligned != 0 {
+				fieldAlignments = append(fieldAlignments, FieldAlignment{Position: len(d.Fields), Aligned: fieldAligned})
+			}
 			d.Fields = append(d.Fields, abi.Field{Name: child.Name, Type: field})
 		}
 		if len(d.Fields)+len(padding) > 32 {
@@ -245,6 +271,6 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		return abi.TypeDesc{}, fmt.Errorf("at most %d records are supported", maxRecords)
 	}
 	r.resolved[id] = d
-	r.records = append(r.records, Record{Name: name, Description: d, Packed: packed, Bitfields: bitfields, Padding: padding})
+	r.records = append(r.records, Record{Name: name, Description: d, Packed: packed, Aligned: aligned, FieldAlignments: fieldAlignments, Bitfields: bitfields, Padding: padding})
 	return d, nil
 }

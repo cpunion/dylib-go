@@ -43,6 +43,7 @@ func (t *cgoTypes) writePackedPadding(output *bytes.Buffer, index int) error {
 		if bit := r.bitfieldAt(j); bit != nil {
 			declaration += fmt.Sprintf(":%d", bit.Width)
 		}
+		declaration += r.cFieldAlignment(j)
 		fmt.Fprintf(&body, "%s;\n", declaration)
 	}
 	fmt.Fprintf(output, "typedef struct __attribute__((packed,aligned(%d))) {\n%s} %s;\n#pragma pack(pop)\n", r.Layout.Alignment, body.String(), name)

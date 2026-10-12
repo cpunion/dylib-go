@@ -129,7 +129,8 @@ const maxFunctions = 256
 // checks the native backend before calls. Packed records require CgoSource for
 // Go or llgo. Named integral/Boolean bitfields use compiler byte-mask probes;
 // unnamed/zero-width fields retain their declaration positions. These also
-// require CgoSource. Unions, aligned records, enums, inline/static
+// require CgoSource. Explicit numeric record/field alignment is preserved by
+// CgoSource. Unions, other attributed records/fields/typedefs, enums, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes
 // must stay stable during parsing; they are read by Clang at their original paths.
 func Parse(ctx context.Context, path string, opts Options) (*Header, error) {

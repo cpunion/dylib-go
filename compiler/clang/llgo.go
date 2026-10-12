@@ -30,7 +30,7 @@ func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 	}
 	for _, record := range h.Records {
 		if record.requiresCAdapter() {
-			return nil, fmt.Errorf("clang: packed/bitfield record %s requires CgoSource for Go or llgo", record.Name)
+			return nil, fmt.Errorf("clang: record %s requires CgoSource for Go or llgo", record.Name)
 		}
 	}
 	metadata := "_" + bindingType + "Declarations"

@@ -21,6 +21,11 @@ type Record struct {
 	// Packed requests the C compiler's packed attribute. Description remains a
 	// logical field model; only compiled C adapters may pass this record by value.
 	Packed bool
+	// Aligned preserves an explicit record alignment in bytes; zero is absent.
+	// FieldAlignments preserves explicit alignment on named members. These
+	// declarations require compiled C adapters, never a Go memory view.
+	Aligned         uint64
+	FieldAlignments []FieldAlignment
 	// Bitfields retains the width and native byte mask of each named bitfield.
 	// Layout.Offsets stores its first byte. Description remains logical fields.
 	Bitfields []Bitfield
@@ -96,6 +101,7 @@ func (h *Header) LookupRecord(name string) (Record, error) {
 				record.FunctionPointers = cloneFunctionPointers(record.FunctionPointers)
 				record.Bitfields = cloneBitfields(record.Bitfields)
 				record.Padding = append([]BitfieldPadding(nil), record.Padding...)
+				record.FieldAlignments = append([]FieldAlignment(nil), record.FieldAlignments...)
 				return record, nil
 			}
 		}
@@ -146,6 +152,9 @@ func (h *Header) validateDescriptions() error {
 			return err
 		}
 		if err := validateBitfields(record, false); err != nil {
+			return err
+		}
+		if err := validateAlignments(record, false); err != nil {
 			return err
 		}
 		for _, pointer := range record.FunctionPointers {
@@ -230,6 +239,9 @@ func validRecordLayout(record Record) error {
 	if err := validateBitfields(record, true); err != nil {
 		return err
 	}
+	if err := validateAlignments(record, true); err != nil {
+		return err
+	}
 	l := record.Layout
 	if l.Size == 0 || l.Size > 65536 || l.Alignment == 0 || l.Alignment > l.Size || l.Alignment&(l.Alignment-1) != 0 || l.Size%l.Alignment != 0 || len(l.Offsets) != len(record.Description.Fields) {
 		return fmt.Errorf("clang: invalid compiler layout for %s", record.Name)
@@ -295,7 +307,7 @@ func (h *Header) validateHostRecords(signature abi.Signature) error {
 					return err
 				}
 				if record.requiresCAdapter() {
-					return fmt.Errorf("clang: packed/bitfield record %s requires a compiled C adapter", record.Name)
+					return fmt.Errorf("clang: record %s requires a compiled C adapter", record.Name)
 				}
 				if !found {
 					var err error

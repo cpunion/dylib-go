@@ -57,6 +57,16 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 			if record.Packed {
 				fmt.Fprint(&output, ",Packed:true")
 			}
+			if record.Aligned != 0 {
+				fmt.Fprintf(&output, ",Aligned:%d", record.Aligned)
+			}
+			if len(record.FieldAlignments) != 0 {
+				fmt.Fprint(&output, ",FieldAlignments:[]clang.FieldAlignment{")
+				for _, field := range record.FieldAlignments {
+					fmt.Fprintf(&output, "{Position:%d,Aligned:%d},", field.Position, field.Aligned)
+				}
+				fmt.Fprint(&output, "}")
+			}
 			if len(record.Bitfields) != 0 {
 				fmt.Fprint(&output, ",Bitfields:[]clang.Bitfield{")
 				for _, field := range record.Bitfields {

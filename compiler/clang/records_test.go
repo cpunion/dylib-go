@@ -107,7 +107,7 @@ func TestUnsupportedRecords(t *testing.T) {
 		"struct S {int values[];}; struct S f(struct S);",
 		"struct S {int values[0];}; struct S f(struct S);",
 		"struct S {}; struct S f(struct S);",
-		"struct S {int value __attribute__((aligned(16)));}; struct S f(struct S);",
+		"struct S {int value __attribute__((packed));}; struct S f(struct S);",
 		"typedef int I __attribute__((aligned(16))); struct S {I value;}; struct S f(struct S);",
 		"typedef struct {int value;} S __attribute__((aligned(16))); S f(S);",
 		"struct S {union {int a;float b;};}; struct S f(struct S);",
