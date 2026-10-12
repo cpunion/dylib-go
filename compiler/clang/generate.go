@@ -63,6 +63,9 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 			if record.IndirectArgument {
 				fmt.Fprint(&output, ",IndirectArgument:true")
 			}
+			if record.IndirectResult {
+				fmt.Fprint(&output, ",IndirectResult:true")
+			}
 			if len(record.FieldAlignments) != 0 {
 				fmt.Fprint(&output, ",FieldAlignments:[]clang.FieldAlignment{")
 				for _, field := range record.FieldAlignments {

@@ -169,6 +169,9 @@ Required variable(Required,...);`)
 			if r.IndirectArgument != want {
 				t.Fatal("required alignment lowering:", triple, r)
 			}
+			if r.IndirectResult != (want && r.Name == "Nested") {
+				t.Fatal("aligned register/hidden result lowering:", triple, r)
+			}
 		}
 		h.Functions[5].Signature.Args = append(h.Functions[5].Signature.Args, abi.Struct)
 		h.Functions[5].Signature.ArgTypes = append(h.Functions[5].Signature.ArgTypes, h.Records[1].Description)

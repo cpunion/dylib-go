@@ -50,3 +50,6 @@ AlignedStdFn stdcall_factory(void) { return echo_stdcall; }
 AlignedFastFn fastcall_factory(void) { return echo_fastcall; }
 Aligned apply_stdcall(AlignedStdFn fn, Aligned p, int delta) { return fn(p, delta); }
 Aligned apply_fastcall(AlignedFastFn fn, Aligned p, int delta, Aligned q, int extra) { return fn(p, delta, q, extra); }
+Aligned ALIGNED_FASTCALL fastcall_empty(void) { Aligned p = {-128, 20.5, 22, 0}; return p; }
+Aligned ALIGNED_FASTCALL fastcall_one(double first, int delta, double last) { Aligned p = {-128, first + last, delta, 0}; return p; }
+Aligned ALIGNED_FASTCALL fastcall_mixed(double first, unsigned long long wide, Aligned p, int delta, double last) { p.value += first + last; p.tail += delta + (int)(wide & 15); return p; }

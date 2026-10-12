@@ -29,6 +29,8 @@ type Record struct {
 	// IndirectArgument is compiler-observed MSVC i386 argument lowering for an
 	// aligned record. Generated bridges reconcile this with a MinGW host.
 	IndirectArgument bool
+	// IndirectResult records the hidden result pointer for the same aligned ABI.
+	IndirectResult bool
 	// Bitfields retains the width and native byte mask of each named bitfield.
 	// Layout.Offsets stores its first byte. Description remains logical fields.
 	Bitfields []Bitfield
@@ -160,8 +162,11 @@ func (h *Header) validateDescriptions() error {
 		if err := validateAlignments(record, false); err != nil {
 			return err
 		}
-		if record.IndirectArgument && (h.Target.OS != "windows" || h.Target.Arch != "386" || !strings.Contains(h.Target.Triple, "msvc")) {
-			return fmt.Errorf("clang: indirect record arguments require an MSVC i386 target")
+		if (record.IndirectArgument || record.IndirectResult) && (h.Target.OS != "windows" || h.Target.Arch != "386" || !strings.Contains(h.Target.Triple, "msvc")) {
+			return fmt.Errorf("clang: indirect aligned records require an MSVC i386 target")
+		}
+		if record.IndirectResult && !record.IndirectArgument {
+			return fmt.Errorf("clang: indirect aligned results require aligned argument metadata")
 		}
 		for _, pointer := range record.FunctionPointers {
 			if pointer.Position < 0 {

@@ -82,3 +82,6 @@ AlignedStdFn stdcall_factory(void);
 AlignedFastFn fastcall_factory(void);
 Aligned apply_stdcall(AlignedStdFn, Aligned, int);
 Aligned apply_fastcall(AlignedFastFn, Aligned, int, Aligned, int);
+Aligned ALIGNED_FASTCALL fastcall_empty(void);
+Aligned ALIGNED_FASTCALL fastcall_one(double, int, double);
+Aligned ALIGNED_FASTCALL fastcall_mixed(double, unsigned long long, Aligned, int, double);

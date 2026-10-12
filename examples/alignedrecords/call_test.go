@@ -38,7 +38,7 @@ func TestAlignedCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_aligned", "echo_fields", "echo_packed", "echo_bits", "echo_envelope", "aligned_factory", "apply_aligned", "aligned_pointer", "mutate_aligned", "sum_aligned", "aligned_variable", "echo_floats", "echo_field_bits", "echo_packed_fields", "aligned_address", "echo_packed_field_bits", "echo_stdcall", "echo_fastcall", "stdcall_factory", "fastcall_factory", "apply_stdcall", "apply_fastcall"}
+	names := []string{"echo_aligned", "echo_fields", "echo_packed", "echo_bits", "echo_envelope", "aligned_factory", "apply_aligned", "aligned_pointer", "mutate_aligned", "sum_aligned", "aligned_variable", "echo_floats", "echo_field_bits", "echo_packed_fields", "aligned_address", "echo_packed_field_bits", "echo_stdcall", "echo_fastcall", "stdcall_factory", "fastcall_factory", "apply_stdcall", "apply_fastcall", "fastcall_empty", "fastcall_one", "fastcall_mixed"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -196,6 +196,14 @@ func checkCalls(t *testing.T, path string) {
 		}
 		got, err = b.Apply_fastcall(fast, p, -8, p, 10)
 		check("aligned fastcall function pointer", got, conventionWant, err)
+		got, err = b.Fastcall_empty()
+		check("fastcall hidden result without arguments", got, BindingsRecord0{Tag: -128, Value: 20.5, Tail: 22}, err)
+		got, err = b.Fastcall_one(20.5, -8, 1.5)
+		check("fastcall one register and floating stack arguments", got, BindingsRecord0{Tag: -128, Value: 22, Tail: -8}, err)
+		got, err = b.Fastcall_mixed(1.5, uint64(1)<<63, p, -8, 20)
+		mixedWant := p
+		mixedWant.Value, mixedWant.Tail = 42, 12
+		check("fastcall registers after wide stack arguments", got, mixedWant, err)
 		fields := BindingsRecord1{Tag: -128, Values: [2]float64{20.5, 19.5}, Count: 20}
 		wantFields := BindingsRecord1{Tag: -127, Values: [2]float64{22, 22}, Count: 22}
 		gotFields, err := b.Echo_fields(fields)

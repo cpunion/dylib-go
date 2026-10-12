@@ -651,6 +651,18 @@ typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call21_fun
 static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call21(uintptr_t address,void * p0,dylib_go_42696e64696e6773_record0_transport p1,int32_t p2,dylib_go_42696e64696e6773_record0_transport p3,int32_t p4) {
 return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call21_function)address)((dylib_go_42696e64696e6773_call21_pointer1)p0,dylib_go_42696e64696e6773_record0_from_transport(p1),p2,dylib_go_42696e64696e6773_record0_from_transport(p3),p4));
 }
+typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call22_function)(void);
+static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call22(uintptr_t address) {
+return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call22_function)address)());
+}
+typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call23_function)(double,int32_t,double);
+static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call23(uintptr_t address,double p0,int32_t p1,double p2) {
+return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call23_function)address)(p0,p1,p2));
+}
+typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call24_function)(double,uint64_t,dylib_go_42696e64696e6773_record0,int32_t,double);
+static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call24(uintptr_t address,double p0,uint64_t p1,dylib_go_42696e64696e6773_record0_transport p2,int32_t p3,double p4) {
+return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call24_function)address)(p0,p1,dylib_go_42696e64696e6773_record0_from_transport(p2),p3,p4));
+}
 */
 import "C"
 
@@ -688,6 +700,9 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "fastcall_factory", Symbol: "fastcall_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct, abi.I32, abi.Struct, abi.I32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, abi.TypeDesc{Type: abi.I32}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, abi.TypeDesc{Type: abi.I32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
 		{Name: "apply_stdcall", Symbol: "apply_stdcall", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Struct, abi.I32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, abi.TypeDesc{Type: abi.I32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct, abi.I32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, abi.TypeDesc{Type: abi.I32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
 		{Name: "apply_fastcall", Symbol: "apply_fastcall", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Struct, abi.I32, abi.Struct, abi.I32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, abi.TypeDesc{Type: abi.I32}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, abi.TypeDesc{Type: abi.I32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct, abi.I32, abi.Struct, abi.I32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, abi.TypeDesc{Type: abi.I32}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, abi.TypeDesc{Type: abi.I32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
+		{Name: "fastcall_empty", Symbol: "fastcall_empty", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
+		{Name: "fastcall_one", Symbol: "fastcall_one", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.F64, abi.I32, abi.F64}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
+		{Name: "fastcall_mixed", Symbol: "fastcall_mixed", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.F64, abi.U64, abi.Struct, abi.I32, abi.F64}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.U64}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, abi.TypeDesc{Type: abi.I32}, abi.TypeDesc{Type: abi.F64}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
 	},
 	Records: []clang.Record{
 		{Name: "Aligned", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "value", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "tail", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 32, Alignment: 32, Offsets: []uint64{0, 4, 12, 16}}, Aligned: 32},
@@ -972,6 +987,9 @@ type Bindings struct {
 	symbol19 *dylib.Symbol
 	symbol20 *dylib.Symbol
 	symbol21 *dylib.Symbol
+	symbol22 *dylib.Symbol
+	symbol23 *dylib.Symbol
+	symbol24 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -1120,6 +1138,21 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol21 = symbol21
+	symbol22, err := session.Resolve("fastcall_empty")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol22 = symbol22
+	symbol23, err := session.Resolve("fastcall_one")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol23 = symbol23
+	symbol24, err := session.Resolve("fastcall_mixed")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol24 = symbol24
 	return b, nil
 }
 
@@ -1360,6 +1393,39 @@ func (b *Bindings) Apply_fastcall(p0 unsafe.Pointer, p1 BindingsRecord0, p2 int3
 	}
 	err = b.symbol21.WithAddress(func(address uintptr) error {
 		result = _BindingsRecord0FromC(C.dylib_go_42696e64696e6773_call21(C.uintptr_t(address), p0, _BindingsRecord0ToC(p1), C.int32_t(p2), _BindingsRecord0ToC(p3), C.int32_t(p4)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Fastcall_empty() (result BindingsRecord0, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol22.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord0FromC(C.dylib_go_42696e64696e6773_call22(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Fastcall_one(p0 float64, p1 int32, p2 float64) (result BindingsRecord0, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol23.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord0FromC(C.dylib_go_42696e64696e6773_call23(C.uintptr_t(address), C.double(p0), C.int32_t(p1), C.double(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Fastcall_mixed(p0 float64, p1 uint64, p2 BindingsRecord0, p3 int32, p4 float64) (result BindingsRecord0, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol24.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord0FromC(C.dylib_go_42696e64696e6773_call24(C.uintptr_t(address), C.double(p0), C.uint64_t(p1), _BindingsRecord0ToC(p2), C.int32_t(p3), C.double(p4)))
 		return nil
 	})
 	return result, err
