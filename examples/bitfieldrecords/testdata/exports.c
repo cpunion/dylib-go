@@ -1,5 +1,10 @@
 #include "exports.h"
 #include <stdarg.h>
+// MSVC objects emit this CRT floating-point marker. Keep it in the fixture so
+// the same producer object can also be linked with a MinGW driver.
+#if defined(_MSC_VER)
+int _fltused = 0x9875;
+#endif
 static int context;
 static Bits stored = {7,-8,1,1099511627775ULL,20.5,0};
 Bits echo_bits(Bits p) {
