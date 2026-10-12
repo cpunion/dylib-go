@@ -461,7 +461,8 @@ parsers; generated C bridges verify both masks and layout before binding. Public
 Go fields hold ordinary scalar values. The [tested bitfield example](examples/bitfieldrecords/call.go)
 covers signed/Boolean fields, cross-byte widths, unnamed/zero-width boundaries,
 leading padding, floating fields and packed combinations.
-Explicit numeric record/member alignment also uses C transport records. The
+Compiler-evaluated record/member alignment also uses C transport records,
+including omitted GNU `aligned` arguments and `_Alignas(type)` members. The
 [tested aligned example](examples/alignedrecords/call.go) covers packed/bitfield
 combinations, nested arrays, floating aggregates, native storage alignment,
 factories and variadic calls. Go records carry logical fields; pointers to these

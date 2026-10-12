@@ -19,7 +19,7 @@ type typeResolver struct {
 	resolved        map[string]abi.TypeDesc
 	building        map[string]bool
 	records         []Record
-	fieldTypes      map[recordField]astNode
+	fieldProbes     map[recordField]recordFieldProbe
 	fieldPointers   map[recordField]astNode
 }
 
@@ -206,7 +206,7 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 			continue
 		}
 		if child.Kind == "AlignedAttr" {
-			value, err := explicitAlignment(child)
+			value, err := r.recordAlignment(child)
 			if err != nil {
 				return abi.TypeDesc{}, fmt.Errorf("%s: %w", name, err)
 			}
@@ -233,7 +233,7 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 				continue
 			}
 			if attr.Kind == "AlignedAttr" && !unnamed {
-				value, err := explicitAlignment(attr)
+				value, err := r.memberAlignment(name, child, attr)
 				if err != nil {
 					return abi.TypeDesc{}, fmt.Errorf("%s.%s: %w", name, child.Name, err)
 				}

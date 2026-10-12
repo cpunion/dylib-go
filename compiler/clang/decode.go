@@ -20,7 +20,8 @@ const sizeProbe = `enum {
  dylib_probe_double = sizeof(double),
  dylib_probe_bool = sizeof(_Bool),
  dylib_probe_pointer = sizeof(void *),
- dylib_probe_char_unsigned = ((char)-1 > 0)
+ dylib_probe_char_unsigned = ((char)-1 > 0),
+ dylib_probe_max_alignment = __alignof__(struct __attribute__((aligned)) { char value; })
 };
 `
 
@@ -46,7 +47,7 @@ type astNode struct {
 	Inner                                                         []astNode
 }
 
-func decodeDeclarations(data []byte, triple string, names []string, fieldTypes map[recordField]astNode) (*Header, error) {
+func decodeDeclarations(data []byte, triple string, names []string, fieldProbes map[recordField]recordFieldProbe) (*Header, error) {
 	var root astNode
 	if err := json.Unmarshal(data, &root); err != nil {
 		return nil, fmt.Errorf("clang: invalid AST JSON: %w", err)
@@ -71,7 +72,7 @@ func decodeDeclarations(data []byte, triple string, names []string, fieldTypes m
 			}
 		}
 	}
-	for _, name := range []string{"char", "short", "int", "long", "longlong", "float", "double", "bool", "pointer", "char_unsigned"} {
+	for _, name := range []string{"char", "short", "int", "long", "longlong", "float", "double", "bool", "pointer", "char_unsigned", "max_alignment"} {
 		if _, ok := sizes[name]; !ok {
 			return nil, fmt.Errorf("clang: missing size probe %s", name)
 		}
@@ -89,7 +90,7 @@ func decodeDeclarations(data []byte, triple string, names []string, fieldTypes m
 	}
 	found := make(map[string]Declaration)
 	resolver := newTypeResolver(root, aliases, sizes)
-	resolver.fieldTypes = fieldTypes
+	resolver.fieldProbes = fieldProbes
 	prototypes := make(map[string]astNode)
 	for _, node := range root.Inner {
 		if node.Kind == "TypedefDecl" && strings.HasPrefix(node.Name, "dylib_function_probe_") {

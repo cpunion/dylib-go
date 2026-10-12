@@ -2,6 +2,8 @@ package clang
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -122,13 +124,11 @@ func TestInvalidAlignmentMetadata(t *testing.T) {
 		t.Fatal("record alignment larger than native layout accepted")
 	}
 	for _, declaration := range []string{
-		`typedef struct __attribute__((aligned)) { int value; } S;`,
-		`typedef struct { int value __attribute__((aligned)); } S;`,
-		`typedef struct { _Alignas(double) double value; } S;`,
 		`typedef struct { unsigned :2 __attribute__((aligned(8))); int value; } S;`,
+		`typedef struct { unsigned :2 __attribute__((aligned)); int value; } S;`,
 	} {
 		if _, err := Parse(context.Background(), headerFile(t, declaration+` S echo(S);`), Options{Compiler: compilerTool(t), Functions: []string{"echo"}}); err == nil {
-			t.Fatal("unsupported implicit/unnamed alignment accepted:", declaration)
+			t.Fatal("unsupported unnamed alignment accepted:", declaration)
 		}
 	}
 }
@@ -234,6 +234,78 @@ func TestIndirectRecordIRProbe(t *testing.T) {
 	for _, ir := range []string{"", "declare void @probe(ptr)", "define void @probe(ptr noundef %0"} {
 		if _, err := indirectRecordArgument(ir, "probe"); err == nil {
 			t.Fatal("missing/malformed argument probe accepted:", ir)
+		}
+	}
+}
+
+func TestCompilerEvaluatedAlignmentRequests(t *testing.T) {
+	for _, target := range targets {
+		t.Run(target.triple, func(t *testing.T) {
+			compiler := compilerTool(t)
+			parse := func(source string) *Header {
+				t.Helper()
+				h, err := Parse(context.Background(), headerFile(t, source+" S echo(S);"), Options{Compiler: compiler, Target: target.triple, Functions: []string{"echo"}})
+				if err != nil {
+					t.Fatal(source, err)
+				}
+				return h
+			}
+			doubleAlignment := 8
+			if target.os == "linux" && target.arch == "386" {
+				doubleAlignment = 4
+			}
+			for _, pair := range [][2]string{
+				{`typedef struct __attribute__((aligned)) { char tag; double value; } S;`, `typedef struct __attribute__((aligned(16))) { char tag; double value; } S;`},
+				{`typedef struct __attribute__((packed,aligned)) { char tag; double value; } S;`, `typedef struct __attribute__((packed,aligned(16))) { char tag; double value; } S;`},
+				{`typedef struct { char tag; double values[2] __attribute__((aligned)); } S;`, `typedef struct { char tag; double values[2] __attribute__((aligned(16))); } S;`},
+				{`typedef struct { unsigned low:3; int barrier; signed high:7 __attribute__((aligned)); char tail; } S;`, `typedef struct { unsigned low:3; int barrier; signed high:7 __attribute__((aligned(16))); char tail; } S;`},
+				{`typedef struct { char tag; _Alignas(double) int value; } S;`, fmt.Sprintf(`typedef struct { char tag; _Alignas(%d) int value; } S;`, doubleAlignment)},
+				{`typedef struct __attribute__((aligned(32))) { char token; } Alignment; typedef struct { char tag; _Alignas(Alignment) double values[2]; } S;`, `typedef struct { char tag; _Alignas(32) double values[2]; } S;`},
+				{`typedef struct { char tag; _Alignas(double) int value; _Alignas(double[2]) int count; } S;`, fmt.Sprintf(`typedef struct { char tag; _Alignas(%d) int value; _Alignas(%d) int count; } S;`, doubleAlignment, doubleAlignment)},
+			} {
+				actual, numeric := parse(pair[0]), parse(pair[1])
+				if !reflect.DeepEqual(actual.Records, numeric.Records) {
+					t.Fatalf("compiler-evaluated request differs from numeric request:\n%+v\n%+v", actual.Records, numeric.Records)
+				}
+				source, err := actual.CgoSource("bindings", "Bindings")
+				if err != nil {
+					t.Fatal(err)
+				}
+				text := string(source)
+				start := strings.Index(text, "/*") + 2
+				end := strings.Index(text[start:], "*/") + start
+				if _, err := runCompiler(context.Background(), compiler, []string{"--target=" + target.triple, "-ffreestanding", "-x", "c", "-std=c17", "-fsyntax-only", "-"}, text[start:end], maxDiagnostics); err != nil {
+					t.Fatal(err)
+				}
+				if _, err := actual.LLGoSource("bindings", "Bindings"); err == nil {
+					t.Fatal("attributed direct adapter accepted")
+				}
+			}
+		})
+	}
+}
+
+func TestMissingCompilerAlignmentProbes(t *testing.T) {
+	r := &typeResolver{}
+	if _, err := r.recordAlignment(astNode{Inner: []astNode{{}}}); err == nil {
+		t.Fatal("missing maximum alignment accepted")
+	}
+	field, attr := astNode{Name: "value"}, astNode{Kind: "AlignedAttr"}
+	if _, err := r.memberAlignment("S", field, attr); !errors.Is(err, errRecordFieldTypes) {
+		t.Fatal("missing member probe did not request compiler types:", err)
+	}
+	r.fieldProbes = map[recordField]recordFieldProbe{}
+	if _, err := r.memberAlignment("S", field, attr); err == nil {
+		t.Fatal("absent member alignment accepted")
+	}
+	keys := map[string]recordField{"dylib_field_probe_0": {"S", "value"}}
+	for _, input := range []string{
+		`{"inner":[{"kind":"TypedefDecl","name":"dylib_field_probe_0"}]}`,
+		`{"inner":[{"kind":"EnumDecl","inner":[{"kind":"EnumConstantDecl","name":"dylib_field_probe_0_alignment","inner":[{"kind":"ConstantExpr","value":"8"}]}]}]}`,
+		`{"inner":[{"kind":"TypedefDecl","name":"dylib_field_probe_0"},{"kind":"EnumDecl","inner":[{"kind":"EnumConstantDecl","name":"dylib_field_probe_0_alignment","inner":[{"kind":"ConstantExpr","value":"3"}]}]}]}`,
+	} {
+		if _, err := decodeFieldProbes([]byte(input), keys); err == nil {
+			t.Fatal("incomplete/invalid compiler field probe accepted")
 		}
 	}
 }

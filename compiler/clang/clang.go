@@ -129,9 +129,10 @@ const maxFunctions = 256
 // checks the native backend before calls. Packed records require CgoSource for
 // Go or llgo. Named integral/Boolean bitfields use compiler byte-mask probes;
 // unnamed/zero-width fields retain their declaration positions. These also
-// require CgoSource. Explicit numeric record/field alignment is preserved by
-// CgoSource, including explicit packing on ordinary named members. Enums use
-// compiler-confirmed compatible integer types; attributed
+// require CgoSource. Numeric/type-based member alignment and omitted GNU aligned
+// arguments are compiler evaluated and preserved by CgoSource, including explicit
+// packing on ordinary named members. Enums use compiler-confirmed compatible
+// integer types; attributed
 // enum alignment must match the native integer. Unions, other attributed
 // records/fields/typedefs, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes
@@ -204,7 +205,7 @@ func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 		if err != nil {
 			return nil, err
 		}
-		fields, fieldErr := decodeFieldTypes(data, keys)
+		fields, fieldErr := decodeFieldProbes(data, keys)
 		if fieldErr != nil {
 			return nil, fieldErr
 		}
