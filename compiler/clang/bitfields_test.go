@@ -3,6 +3,7 @@ package clang
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -52,12 +53,20 @@ func testBitfieldBridgeMSVCAndMinGW(t *testing.T, source string, flags []string,
 
 func testBitfieldBridgeTargets(t *testing.T, source string, flags, producers []string, functions ...string) {
 	t.Helper()
+	testCompilerBridgeTargets(t, compilerTool(t), source, flags, producers, functions...)
+}
+
+func testCompilerBridgeTargets(t *testing.T, compiler, source string, flags, producers []string, functions ...string) {
+	t.Helper()
 	path := headerFile(t, source)
-	compiler := compilerTool(t)
 	for _, producer := range producers {
 		t.Run(producer, func(t *testing.T) {
 			t.Parallel()
 			h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: producer, Flags: flags, Functions: functions})
+			if errors.Is(err, errTypedefABI) {
+				t.Log("compiler rejects legacy SysV typedef ABI:", err)
+				return
+			}
 			if err != nil {
 				t.Fatal(err)
 			}

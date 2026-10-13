@@ -215,9 +215,11 @@ offset. This matters on Windows: MSVC/MinGW may ignore lowered typedef alignment
 for scalar or pointer members while preserving it for arrays or enums. Windows
 C facades preserve the observed placement before the usual size/alignment/offset
 checks. GNU AMD64 facades use packed natural scalar members with the measured
-alignment: GCC otherwise classifies a lowered typedef using its alias alignment,
-while Clang checks the canonical scalar alignment. This preserves Clang memory
-and register calls as well as storage. Public Go fields and transport records
+alignment: this preserves canonical SysV memory/register classes across the C compilers.
+`Parse` probes the effective calling ABI, including the supplied flags. Clang 18
+has incompatible lowering for these aliases (including truncated floating
+records), so GNU AMD64 records require Clang 19-compatible lowering. Scalar
+boundary aliases and other targets do not require this probe. Public Go fields and transport records
 retain ordinary layout.
 
 The [typedef example](../examples/typedefalignment/call.go) executes small/large,

@@ -2,12 +2,27 @@ package clang
 
 import (
 	"context"
+	"errors"
+	"os"
+	"os/exec"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/cpunion/dylib-go/abi"
 )
+
+func typedefCompilerTool(t *testing.T) string {
+	t.Helper()
+	if compiler := os.Getenv("DYLIB_TYPEDEF_CLANG"); compiler != "" {
+		path, err := exec.LookPath(compiler)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	return compilerTool(t)
+}
 
 const scalarTypedefHeader = `
 typedef int Low __attribute__((aligned(1)));
@@ -43,11 +58,15 @@ PackedRecord echo_packed(PackedRecord); PragmaRecord echo_pragma(PragmaRecord);
 var scalarTypedefFunctions = []string{"echo_low", "echo_high", "echo_down", "echo_array", "echo_float", "echo_float_high", "echo_maximum", "echo_address", "echo_enum", "echo_packed", "echo_pragma"}
 
 func TestScalarTypedefAlignmentAcrossTargets(t *testing.T) {
-	compiler, path := compilerTool(t), headerFile(t, scalarTypedefHeader)
+	compiler, path := typedefCompilerTool(t), headerFile(t, scalarTypedefHeader)
 	for _, target := range targets {
 		t.Run(target.triple, func(t *testing.T) {
 			t.Parallel()
 			h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: target.triple, Functions: scalarTypedefFunctions})
+			if errors.Is(err, errTypedefABI) {
+				t.Log("compiler rejects legacy SysV typedef ABI:", err)
+				return
+			}
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -103,7 +122,7 @@ func TestScalarTypedefAlignmentBridgeLayouts(t *testing.T) {
 			producers = append(producers, strings.Replace(target.triple, "pc-windows-msvc", "w64-windows-gnu", 1))
 		}
 	}
-	testBitfieldBridgeTargets(t, scalarTypedefHeader, nil, producers, scalarTypedefFunctions...)
+	testCompilerBridgeTargets(t, typedefCompilerTool(t), scalarTypedefHeader, nil, producers, scalarTypedefFunctions...)
 }
 
 func TestScalarTypedefDefaultPackingLayouts(t *testing.T) {
@@ -111,12 +130,12 @@ func TestScalarTypedefDefaultPackingLayouts(t *testing.T) {
 	for _, target := range targets {
 		producers = append(producers, target.triple)
 	}
-	testBitfieldBridgeTargets(t, scalarTypedefHeader, []string{"-fpack-struct=1"}, producers, scalarTypedefFunctions...)
+	testCompilerBridgeTargets(t, typedefCompilerTool(t), scalarTypedefHeader, []string{"-fpack-struct=1"}, producers, scalarTypedefFunctions...)
 }
 
 func TestScalarTypedefBoundaryAlignment(t *testing.T) {
 	path := headerFile(t, scalarTypedefHeader+`High scalar(Down,FloatLow,Address); Entry factory(void); int apply(High (*)(Down));`)
-	h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Functions: []string{"scalar", "factory", "apply"}})
+	h, err := Parse(context.Background(), path, Options{Compiler: typedefCompilerTool(t), Functions: []string{"scalar", "factory", "apply"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,8 +194,41 @@ func TestScalarTypedefAlignmentValidation(t *testing.T) {
 		`typedef int I __attribute__((aligned(1))); struct S { I value:3; }; struct S f(struct S);`,
 		`typedef int I __attribute__((aligned(1),deprecated)); typedef I J; J f(J);`,
 	} {
-		if h, err := Parse(context.Background(), headerFile(t, source), Options{Compiler: compilerTool(t), Functions: []string{"f"}}); err == nil {
+		if h, err := Parse(context.Background(), headerFile(t, source), Options{Compiler: typedefCompilerTool(t), Functions: []string{"f"}}); err == nil {
 			t.Fatal("unsupported typedef form accepted", h)
 		}
+	}
+}
+
+func TestTypedefCallingABIQualification(t *testing.T) {
+	compiler := typedefCompilerTool(t)
+	h := &Header{Target: Target{Triple: "x86_64-unknown-linux-gnu", OS: "linux", Arch: "amd64", PointerSize: 8}, Records: []Record{{FieldTypeAlignments: []TypedefFieldAlignment{{Position: 0, Aligned: 1}}}}}
+	err := h.probeTypedefABI(context.Background(), compiler, []string{"--target=" + h.Target.Triple})
+	if err != nil && !errors.Is(err, errTypedefABI) {
+		t.Fatal(err)
+	}
+	// No qualified record is needed for scalar boundary aliases.
+	h.Records = nil
+	if err := h.probeTypedefABI(context.Background(), compiler, []string{"--target=" + h.Target.Triple}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestLegacyTypedefCompilerRejected(t *testing.T) {
+	compiler := compilerTool(t)
+	if path, err := exec.LookPath("clang-18"); err == nil {
+		compiler = path
+	}
+	version, err := runCompiler(context.Background(), compiler, []string{"--version"}, "", 4096)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(version), "clang version 18.") {
+		t.Skip("Clang 18 is unavailable")
+	}
+	path := headerFile(t, `typedef int Low __attribute__((aligned(1))); struct S{char tag;Low value;};struct S echo(struct S);`)
+	h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: "x86_64-unknown-linux-gnu", Functions: []string{"echo"}})
+	if !errors.Is(err, errTypedefABI) || h != nil {
+		t.Fatal("legacy ABI was published", h, err)
 	}
 }
