@@ -37,12 +37,12 @@ func TestOverAlignedBitfieldsCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_tiny", "echo_bits", "echo_padding", "echo_inner", "echo_envelope", "echo_floating", "echo_packed", "echo_padding_float", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "tiny_variable", "floating_variable", "apply_slot", "echo_tiny_tail", "tiny_tail_variable", "echo_triple", "triple_variable", "echo_single", "single_variable", "echo_bare", "echo_double", "echo_array", "echo_nested"}
+	names := []string{"echo_tiny", "echo_bits", "echo_padding", "echo_inner", "echo_envelope", "echo_floating", "echo_packed", "echo_padding_float", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "tiny_variable", "floating_variable", "apply_slot", "echo_tiny_tail", "tiny_tail_variable", "echo_triple", "triple_variable", "echo_single", "single_variable", "echo_bare", "echo_double", "echo_array", "echo_nested", "echo_gap_float", "gap_float_variable", "echo_gap_tail", "gap_tail_variable", "echo_gap_bits", "gap_bits_variable", "echo_gap_byte", "gap_byte_variable", "echo_gap_nested", "gap_nested_variable", "echo_gap_array", "gap_array_variable", "echo_gap_multiple", "gap_multiple_variable"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, index := range []int{13, 15, 18, 20, 22} {
+	for _, index := range []int{13, 15, 18, 20, 22, 28, 30, 32, 34, 36, 38, 40} {
 		h.Functions[index], err = h.Functions[index].WithTail(abi.I8, abi.F32)
 		if err != nil {
 			t.Fatal(err)
@@ -225,6 +225,41 @@ func checkCalls(t *testing.T, path string) {
 		check("single-float array result", arrayGot, BindingsRecord14{Array_values: [1]float32{22}}, err)
 		nestedGot, err := b.Echo_nested(BindingsRecord15{Nested: BindingsRecord12{Bare_left: 20.5}})
 		check("nested single-float result", nestedGot, BindingsRecord15{Nested: BindingsRecord12{Bare_left: 22}}, err)
+		interior := BindingsRecord16{Interior_left: 20.5, Interior_right: 19.5}
+		interiorGot, err := b.Echo_gap_float(interior)
+		check("interior floating gap", interiorGot, BindingsRecord16{Interior_left: 22, Interior_right: 22}, err)
+		interiorGot, err = b.Gap_float_variable(interior, -1, 1.5)
+		check("interior gap/variadic register positions", interiorGot, BindingsRecord16{Interior_left: 19.5, Interior_right: 21}, err)
+		gapTail := BindingsRecord17{Tail_left: 20.5, Tail_right: 19.5}
+		gapTailGot, err := b.Echo_gap_tail(gapTail)
+		check("interior and trailing floating gaps", gapTailGot, BindingsRecord17{Tail_left: 22, Tail_right: 22}, err)
+		gapTailGot, err = b.Gap_tail_variable(gapTail, -1, 1.5)
+		check("interior/trailing gaps with variadic promotions", gapTailGot, BindingsRecord17{Tail_left: 19.5, Tail_right: 21}, err)
+		gapBits := BindingsRecord18{Gap_low: 7, Gap_high: -15, Bits_right: 20.5}
+		gapBitsGot, err := b.Echo_gap_bits(gapBits)
+		check("named bitfields before interior gap", gapBitsGot, BindingsRecord18{Gap_low: 4, Gap_high: -16, Bits_right: 22}, err)
+		gapBitsGot, err = b.Gap_bits_variable(gapBits, -1, 1.5)
+		check("mixed integer/SSE variadic positions", gapBitsGot, BindingsRecord18{Gap_low: 6, Gap_high: -16, Bits_right: 22}, err)
+		gapByte := BindingsRecord19{Gap_tag: -127, Byte_right: 20.5}
+		gapByteGot, err := b.Echo_gap_byte(gapByte)
+		check("byte and float in one register", gapByteGot, BindingsRecord19{Gap_tag: -126, Byte_right: 22}, err)
+		gapByteGot, err = b.Gap_byte_variable(gapByte, -1, 1.5)
+		check("signed byte boundary/variadic tail", gapByteGot, BindingsRecord19{Gap_tag: -128, Byte_right: 22}, err)
+		gapNested := BindingsRecord20{Gap_nested: BindingsRecord12{Bare_left: 20.5}, Nested_right: 19.5}
+		gapNestedGot, err := b.Echo_gap_nested(gapNested)
+		check("nested value before interior gap", gapNestedGot, BindingsRecord20{Gap_nested: BindingsRecord12{Bare_left: 22}, Nested_right: 22}, err)
+		gapNestedGot, err = b.Gap_nested_variable(gapNested, -1, 1.5)
+		check("nested gap/variadic registers", gapNestedGot, BindingsRecord20{Gap_nested: BindingsRecord12{Bare_left: 19.5}, Nested_right: 21}, err)
+		gapArray := BindingsRecord21{Gap_array: [1]float32{20.5}, Array_right: 19.5}
+		gapArrayGot, err := b.Echo_gap_array(gapArray)
+		check("array before interior gap", gapArrayGot, BindingsRecord21{Gap_array: [1]float32{22}, Array_right: 22}, err)
+		gapArrayGot, err = b.Gap_array_variable(gapArray, -1, 1.5)
+		check("array gap/variadic registers", gapArrayGot, BindingsRecord21{Gap_array: [1]float32{19.5}, Array_right: 21}, err)
+		gapMultiple := BindingsRecord22{First_tag: -127, Next_code: -32767, Multi_right: 20.5}
+		gapMultipleGot, err := b.Echo_gap_multiple(gapMultiple)
+		check("multiple interior boundaries", gapMultipleGot, BindingsRecord22{First_tag: -126, Next_code: -32768, Multi_right: 22}, err)
+		gapMultipleGot, err = b.Gap_multiple_variable(gapMultiple, -1, 1.5)
+		check("nested implicit prefixes/variadic tail", gapMultipleGot, BindingsRecord22{First_tag: -128, Next_code: -32768, Multi_right: 22}, err)
 		null := value
 		null.Tag = 125
 		null.Truth = false

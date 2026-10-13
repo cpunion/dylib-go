@@ -335,9 +335,15 @@ MinGW normally uses x87. The C facade uses a private overlapping integer member
 to preserve MSVC's return registers and keeps the public value in an ordinary
 transport record. Native tests cover `float`, `double`, a single-element array
 and a nested record; compiler checks also cover explicit record/member packing.
-Small GNU AMD64 gaps that cannot use this implicit tail-padding facade are
-rejected before generation: an explicit padding field could change their
-register classification even when size, alignment and offsets match.
+Small naturally aligned GNU AMD64 records use anonymous aligned prefix records
+for interior zero-width gaps. Each prefix rounds up to the measured boundary;
+the outer pragma preserves the native record alignment and public field offsets.
+Multiple boundaries nest these prefixes, and a trailing gap can still use the
+lowered-alignment typedef facade. Neither form adds an integer padding value to
+the argument/result registers. Native calls cover floating fields, named
+bitfields, signed bytes, nested records, arrays and variadic register positions.
+Interior gaps mixed with original unnamed nonzero bitfields remain unqualified
+and are rejected before generation.
 
 The [over-aligned bitfield example](../examples/overalignedbits/call.go) executes
 small/large values, ignored shared requests, named/unnamed/zero-width boundaries,

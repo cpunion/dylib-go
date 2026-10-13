@@ -111,6 +111,36 @@ func gnuImplicitTailPadding(r Record) bool {
 	return found
 }
 
+// Small interior gaps also need implicit padding to preserve SysV registers.
+// Wrap the preceding fields in anonymous aligned records: their rounded size
+// supplies each gap, while the outer pragma keeps the original base alignment.
+func (t *cgoTypes) gnuPrefixPadding(r Record) map[int]bool {
+	if !t.gnuAMD64 || r.MaxFieldAlignment == 0 || r.Layout.Size > 16 || !t.sysVAlignedRecord(r, 0) {
+		return nil
+	}
+	for _, padding := range r.Padding {
+		if padding.Width != 0 {
+			// Original unnamed values can already affect GCC's register
+			// classification; this facade only qualifies zero-width gaps.
+			return nil
+		}
+	}
+	var result map[int]bool
+	for index, padding := range r.Padding {
+		if padding.Aligned <= r.MaxFieldAlignment || padding.Aligned <= r.Layout.Alignment || padding.Gap == 0 || padding.Before == 0 || padding.Before == len(r.Description.Fields) {
+			continue
+		}
+		if padding.Offset == 0 || padding.Offset >= r.Layout.Size || padding.Offset&(padding.Offset-1) != 0 {
+			continue
+		}
+		if result == nil {
+			result = make(map[int]bool)
+		}
+		result[index] = true
+	}
+	return result
+}
+
 // Unaligned ordinary fields already force SysV memory arguments. Changing body
 // alignment there would change the required argument/result storage alignment.
 func (t *cgoTypes) sysVAlignedRecord(r Record, base uint64) bool {
