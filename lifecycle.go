@@ -43,6 +43,12 @@ type cInitializer struct {
 
 func configureLifecycle(s *section, bits int) error {
 	width := uint64(bits / 8)
+	if s.initOffsets {
+		if bits != 64 || s.lifecycle != lifecycleInit || s.legacyLifecycle || s.exec || s.write || s.size%4 != 0 || s.original%4 != 0 {
+			return fmt.Errorf("%s: invalid Mach-O initializer offset array", s.name)
+		}
+		width = 4
+	}
 	if width != 4 && width != 8 || s.size%width != 0 || s.exec {
 		return fmt.Errorf("%s: invalid lifecycle pointer array", s.name)
 	}
@@ -183,7 +189,12 @@ func (im *image) prepareLifecycle() error {
 		if a.object.info.Format == "COFF" && a.section.name != b.section.name {
 			return a.section.name < b.section.name
 		}
-		return order[a.object] < order[b.object]
+		if order[a.object] != order[b.object] {
+			return order[a.object] < order[b.object]
+		}
+		// dyld visits pointer tables before offset tables in each image.
+		// Keep provider ordering between independently linked raw objects.
+		return !a.section.initOffsets && b.section.initOffsets
 	})
 	var fini []uintptr
 	coff := false
@@ -193,7 +204,11 @@ func (im *image) prepareLifecycle() error {
 			return err
 		}
 		coff = a.object.info.Format == "COFF"
-		for entry := uint64(0); entry < s.size; entry += im.pointerSize {
+		width := im.pointerSize
+		if s.initOffsets {
+			width = 4
+		}
+		for entry := uint64(0); entry < s.size; entry += width {
 			pos := entry
 			if s.legacyLifecycle {
 				// .ctors execute backward. .dtors are collected backward too,
@@ -203,12 +218,18 @@ func (im *image) prepareLifecycle() error {
 			}
 			data := im.mem[s.offset+pos:]
 			var address uint64
-			if im.pointerSize == 4 {
+			if width == 4 {
 				address = uint64(binary.LittleEndian.Uint32(data[:4]))
 			} else {
 				address = binary.LittleEndian.Uint64(data[:8])
 			}
-			if address == 0 { // COFF boundary sentinels and empty entries.
+			if s.initOffsets {
+				if address >= uint64(len(im.mem)) {
+					return fmt.Errorf("%s: %s+%#x: initializer offset is outside executable image sections", a.object.info.Name, s.name, pos)
+				}
+				address += uint64(im.base)
+			}
+			if !s.initOffsets && address == 0 { // Pointer sentinels; zero offsets are functions.
 				continue
 			}
 			if s.legacyLifecycle && (im.pointerSize == 4 && address == 0xffffffff || im.pointerSize == 8 && address == ^uint64(0)) {

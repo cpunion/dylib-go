@@ -783,6 +783,9 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	if e := im.rebaseMachODWARF(); e != nil {
 		return nil, e
 	}
+	if e := im.rebaseMachOInitializerOffsets(); e != nil {
+		return nil, e
+	}
 	if e := im.prepareLifecycle(); e != nil {
 		return nil, e
 	}
