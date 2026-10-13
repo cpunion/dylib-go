@@ -99,6 +99,13 @@ func testBitfieldBridgeTargets(t *testing.T, source string, flags, producers []s
 				if err != nil {
 					t.Fatal(err)
 				}
+				hasNamedBits := false
+				for _, record := range h.Records {
+					hasNamedBits = hasNamedBits || len(record.Bitfields) != 0
+				}
+				if !hasNamedBits {
+					continue // Layout-only probes need no emitted mask symbols.
+				}
 				symbols, err := readBitfieldSymbols(data, h.Target.OS)
 				if err != nil {
 					t.Fatal(err)

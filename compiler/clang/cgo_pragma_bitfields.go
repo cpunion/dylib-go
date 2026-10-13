@@ -55,7 +55,7 @@ func (t *cgoTypes) writePragmaBitfields(output *bytes.Buffer, index int) error {
 			fmt.Fprintf(output, "%s :%d;\n", bitfieldBaseType(p.Type), p.Width)
 		} else {
 			j := member.field
-			declaration, err := t.cField(r.Description.Fields[j].Type, fmt.Sprintf("f%d", j))
+			declaration, err := t.cNativeField(r, j)
 			if err != nil {
 				return fmt.Errorf("clang: %s: %w", r.Name, err)
 			}

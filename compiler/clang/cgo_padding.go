@@ -72,7 +72,6 @@ func (t *cgoTypes) writePackedPadding(output *bytes.Buffer, index int) error {
 		if j == len(r.Description.Fields) {
 			break
 		}
-		field := r.Description.Fields[j]
 		if alignment := r.fieldAlignment(j); alignment != 0 {
 			// MinGW's record packing pragma overrides member aligned(N).
 			// End the preceding allocation unit and reproduce the producer's
@@ -88,7 +87,7 @@ func (t *cgoTypes) writePackedPadding(output *bytes.Buffer, index int) error {
 			}
 			fmt.Fprint(&body, "unsigned char :0;\n")
 		}
-		declaration, err := t.cField(field.Type, fmt.Sprintf("f%d", j))
+		declaration, err := t.cNativeField(r, j)
 		if err != nil {
 			return err
 		}

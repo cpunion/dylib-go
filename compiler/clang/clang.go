@@ -137,6 +137,9 @@ const maxFunctions = 256
 // pragma-packed records and
 // bitfields use C bridges, including over-aligned pragma members, allocation
 // units, zero-width boundaries and nested values.
+// Scalar/enum/native-address typedef alignment preserves raised/lowered requests
+// and alias chains through C bridges, including fixed-array leaves. Aligned
+// record/whole-array typedefs and aligned typedef bitfields remain unsupported.
 // Unions, other attributed
 // records/fields/typedefs, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes
