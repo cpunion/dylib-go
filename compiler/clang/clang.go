@@ -133,13 +133,15 @@ const maxFunctions = 256
 // arguments are compiler evaluated and preserved by CgoSource, including explicit
 // packing on ordinary named members. Enums use compiler-confirmed compatible
 // integer types; attributed
-// enum alignment must match the native integer. Pragma-packed records and
+// enum alignment must match the native integer. Global default packing,
+// pragma-packed records and
 // bitfields use C bridges. Ordinary over-aligned pragma members/nested values
 // are supported; over-cap combinations involving bitfields remain rejected.
 // Unions, other attributed
 // records/fields/typedefs, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes
-// must stay stable during parsing; they are read by Clang at their original paths.
+// must stay stable during parsing, along with response/configuration files;
+// Clang reads them at their original paths.
 func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 	if ctx == nil {
 		return nil, fmt.Errorf("clang: nil context")
@@ -196,9 +198,18 @@ func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 	}
 	var fields map[recordField]recordFieldProbe
 	var packings map[string]uint64
+	var defaultPacking *uint64
 	var header *Header
 	for {
-		header, err = decodeDeclarations(data, string(triple), opts.Functions, fields, packings)
+		header, err = decodeDeclarations(data, string(triple), opts.Functions, fields, recordPackingPolicy{defaultCap: defaultPacking, pragmas: packings})
+		if errors.Is(err, errDefaultPacking) && defaultPacking == nil {
+			packing, probeErr := compilerDefaultPacking(ctx, compiler, path, flags)
+			if probeErr != nil {
+				return nil, probeErr
+			}
+			defaultPacking = &packing
+			continue
+		}
 		if errors.Is(err, errRecordPacking) && packings == nil {
 			probes, keys, probeErr := recordPackingProbes(data)
 			if probeErr != nil {

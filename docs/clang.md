@@ -43,6 +43,7 @@ Run
 | Object/opaque pointers | Native addresses; no automatic pointee allocation, copying or ownership |
 | Ordinary structs, including anonymous typedef records | Arguments/results; compiler-evaluated layout checked against the native backend |
 | Structs with `#pragma pack` | `CgoSource` for Go/llgo; caps 1/2/4/8/16, ordinary over-aligned members/nested values, named/unnamed/zero-width bitfields, nested arrays and native addresses/function-pointer fields; over-cap bitfield combinations remain unqualified |
+| Global Clang `-fpack-struct` defaults | `CgoSource` for Go/llgo; omitted argument or caps 1/2/4/8/16, compiler-effective options, local pragma override/pop, nested alignment/arrays and qualified bitfields; transports keep ordinary layout |
 | Explicit `__attribute__((packed))` structs | `CgoSource` for Go/llgo; logical fields are transported through ordinary records and converted inside C; dynamic and direct llgo bindings reject them |
 | Explicit `__attribute__((packed))` non-bitfield members | `CgoSource` for Go/llgo; retain natural alignment of other members and combine packing with explicit member alignment; includes fixed arrays, nested records and native addresses |
 | Named integral/Boolean bitfields, including explicit packed records | `CgoSource` for Go/llgo; compiler byte masks and layout are validated before binding; public fields remain ordinary scalars |
@@ -79,8 +80,9 @@ each used record. `LookupRecord(name)` clones that metadata for constructing val
 with `abi.StructValue`/`abi.ArrayValue`. Clang declaration IDs associate anonymous
 records with their typedef names. A second compiler invocation evaluates
 `sizeof`, `_Alignof` and `__builtin_offsetof` with the same header/target/flags.
-Generated source retains all layout checks. Compiler packing flags may produce
-inspectable metadata, but `ForHost` rejects a backend layout mismatch.
+Generated source retains all layout checks. Compiler default packing is retained
+in `Record.MaxFieldAlignment` and requires a compiled C adapter; `ForHost` rejects
+it before a dynamic call.
 
 Pointers within record members remain opaque addresses, including recursive
 record links. Incomplete record pointers also remain opaque. Complete struct
@@ -243,8 +245,8 @@ storage for their pointers; `abi.NewNativeValue` cannot allocate packed storage
 from the logical description. Native function pointers using packed values need
 a matching compiled adapter; `abi.NewCallback` does not supply this ABI.
 
-Global packing flags, `#pragma pack`, field packing attributes and
-unions are not inferred by this adapter. When two records have identical
+Unions and unqualified packing/alignment forms are not inferred by this adapter.
+When two records have identical
 logical fields but different native layouts, typed generation rejects the
 ambiguity rather than selecting a layout from metadata order. Generate separate
 bindings for those declarations.
@@ -305,8 +307,7 @@ alignment and offset checks remain mandatory before resolving symbols.
 
 Over-cap alignment in records with their own named/unnamed/zero-width bitfields,
 or nested over-cap bitfield combinations, remains unqualified and is rejected.
-Global compiler packing flags and typedef alignment/packing are not covered by
-this pragma adapter. The
+Typedef alignment/packing remains unqualified. The
 [packed example](../examples/packedrecords/call.go) executes object/archive/library
 calls at `-O0`/`-O2`, including nested packing levels, restored natural outer
 layout, numeric/omitted/type-based member alignment, packed combinations, nested
@@ -316,6 +317,37 @@ The [bitfield example](../examples/bitfieldrecords/call.go) adds small signed
 returns, active/consecutive/trailing boundaries, packed/aligned unnamed fields,
 floating aggregates, nested arrays, native pointer mutation/factories and
 variadic bitfield prefixes/results at both optimization levels.
+
+### Compiler default packing
+
+Pass the producer's global packing settings in `Options.Flags`, including Clang
+[`-fpack-struct`](https://clang.llvm.org/docs/ClangCommandLineReference.html#cmdoption-clang-fpack-struct-arg).
+The omitted argument selects one byte; numeric caps 1/2/4/8/16 are qualified.
+Clang does not attach this language-option default to the record AST. For used
+records, the parser inspects the driver's `-###` frontend command with the same
+target and options, then retains the cap before validating record declarations.
+This includes response files, frontend option forwarding and compiler defaults;
+flag text inside a macro value is never interpreted as a compiler option.
+Missing/ambiguous frontend commands and unsupported caps are rejected.
+Driver output uses the existing bounded process/cancellation machinery.
+
+Local pragma caps override the global default and `pack(pop)` restores it.
+MSVC ignores pragma caps greater than the pointer width, retaining any global
+default instead: `pack(8)` with a global cap of two still packs at two on Windows
+i386. GNU targets honor that local cap. Compiler-observed size, alignment,
+offsets, bit masks and i386 argument lowering remain authoritative.
+
+`CgoSource` applies packing to native declarations individually. Do not pass the
+global packing flag when compiling generated transports: those records and C
+headers retain their ordinary host layout. Existing over-cap bitfield and typedef
+attribute limits still apply. Dynamic/direct llgo adapters reject these records;
+use the compiled C bridge with Go or llgo.
+
+The [global packing example](../examples/globalpacking/call.go) executes raw
+objects, archives and OS libraries at `-O0`/`-O2`, covering signed/Boolean/native
+address fields, named/zero-width bitfields, nested arrays and aligned floating
+values, pragma override/pop, native factories/function-pointer fields,
+pointer mutation/nulls and variadic prefixes/results.
 
 ### Explicit C alignment
 

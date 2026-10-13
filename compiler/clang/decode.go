@@ -47,7 +47,7 @@ type astNode struct {
 	Inner                                                         []astNode
 }
 
-func decodeDeclarations(data []byte, triple string, names []string, fieldProbes map[recordField]recordFieldProbe, packings ...map[string]uint64) (*Header, error) {
+func decodeDeclarations(data []byte, triple string, names []string, fieldProbes map[recordField]recordFieldProbe, packings ...recordPackingPolicy) (*Header, error) {
 	var root astNode
 	if err := json.Unmarshal(data, &root); err != nil {
 		return nil, fmt.Errorf("clang: invalid AST JSON: %w", err)
@@ -90,9 +90,11 @@ func decodeDeclarations(data []byte, triple string, names []string, fieldProbes 
 	}
 	found := make(map[string]Declaration)
 	resolver := newTypeResolver(root, aliases, sizes)
+	resolver.target = target
 	resolver.fieldProbes = fieldProbes
 	if len(packings) != 0 {
-		resolver.packings = packings[0]
+		resolver.packings = packings[0].pragmas
+		resolver.defaultPacking = packings[0].defaultCap
 	}
 	prototypes := make(map[string]astNode)
 	for _, node := range root.Inner {

@@ -21,7 +21,8 @@ type Record struct {
 	// Packed requests the C compiler's packed attribute. Description remains a
 	// logical field model; only compiled C adapters may pass this record by value.
 	Packed bool
-	// MaxFieldAlignment retains a pragma pack member-alignment cap in bytes.
+	// MaxFieldAlignment retains a pragma/default-compiler member-alignment cap
+	// in bytes; the independently measured native layout remains authoritative.
 	// Zero is absent; only compiled C adapters preserve this native layout.
 	MaxFieldAlignment uint64
 	// MemberAlignments retains compiler-observed storage alignment for each
