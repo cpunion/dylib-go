@@ -72,3 +72,18 @@ func (t *cgoTypes) writePragmaBitfields(output *bytes.Buffer, index int) error {
 	fmt.Fprintf(output, "} %s;\n", t.cRecordName(index))
 	return nil
 }
+
+// GNU zero-width alignment bypasses the packing cap in both compilers, but GCC
+// also raises the record alignment. Unnamed padding preserves Clang's observed
+// boundary without adding value fields to the SysV argument classification.
+func writeGNUPragmaBoundary(output *bytes.Buffer, gap uint64) {
+	fmt.Fprint(output, "unsigned char :0;\n")
+	for gap >= 8 {
+		fmt.Fprint(output, "unsigned long long :64 __attribute__((packed));\n")
+		gap -= 8
+	}
+	for ; gap != 0; gap-- {
+		fmt.Fprint(output, "unsigned char :8;\n")
+	}
+	fmt.Fprint(output, "unsigned char :0;\n")
+}

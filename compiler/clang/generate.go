@@ -114,6 +114,9 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 					if field.StorageAlignment != 0 {
 						fmt.Fprintf(&output, ",StorageAlignment:%d", field.StorageAlignment)
 					}
+					if field.Gap != 0 {
+						fmt.Fprintf(&output, ",Gap:%d", field.Gap)
+					}
 					fmt.Fprint(&output, "},")
 				}
 				fmt.Fprint(&output, "}")

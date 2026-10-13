@@ -14,6 +14,7 @@ type cgoTypes struct {
 	*directTypes
 	cPrefix    string
 	msLayout   bool
+	gnuPacking bool
 	transports map[int]bool
 }
 
@@ -158,6 +159,16 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		}
 		fmt.Fprint(output, "typedef struct ")
 		fmt.Fprint(output, record.cAttributes())
+		if t.gnuPacking && record.MaxFieldAlignment != 0 {
+			for _, padding := range record.Padding {
+				if padding.Width == 0 && padding.Aligned > record.MaxFieldAlignment {
+					// Zero widths contribute to record alignment differently
+					// across GNU targets. Preserve the producer's observation.
+					fmt.Fprintf(output, "__attribute__((aligned(%d))) ", record.Layout.Alignment)
+					break
+				}
+			}
+		}
 		fmt.Fprint(output, "{\n")
 		var packedBoundaries []int
 		unitStarts := bitfieldUnitStarts(record, members)
@@ -175,6 +186,14 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 			if member.padding >= 0 {
 				p := record.Padding[member.padding]
+				if t.gnuPacking && record.MaxFieldAlignment != 0 && p.Aligned > record.MaxFieldAlignment {
+					if p.Width == 0 {
+						writeGNUPragmaBoundary(output, p.Gap)
+						continue
+					}
+					// Clang ignores an over-cap nonzero request entirely.
+					p.Aligned = 0
+				}
 				boundary := false
 				// MinGW zero-width fields can bypass a pragma's alignment cap.
 				// Replace only active boundaries; leading/consecutive requests
@@ -215,7 +234,11 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 				if bit := record.bitfieldAt(j); bit != nil {
 					declaration += fmt.Sprintf(":%d", bit.Width)
 				}
-				declaration += record.cFieldAttributes(j)
+				alignment := record.fieldAlignment(j)
+				if t.gnuPacking && record.bitfieldAt(j) != nil && record.MaxFieldAlignment != 0 && alignment > record.MaxFieldAlignment {
+					alignment = 0
+				}
+				declaration += fieldCAttributes(record.fieldPacked(j), alignment)
 				fmt.Fprintf(output, "%s;\n", declaration)
 			}
 			for _, unit := range packedUnits {

@@ -4,7 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -84,6 +88,151 @@ func TestPragmaBitfieldOverAlignmentBridgeMSVCAndMinGW(t *testing.T) {
 	testPackedBitfieldBridgeMSVCAndMinGW(t, source, names...)
 }
 
+func TestPragmaBitfieldOverAlignmentGNUBridge(t *testing.T) {
+	source, names := pragmaOverAlignedBitfields()
+	var producers []string
+	for _, target := range targets {
+		if target.os != "windows" {
+			producers = append(producers, target.triple)
+		}
+	}
+	testBitfieldBridgeTargets(t, source, nil, producers, names...)
+}
+
+func TestPragmaBitfieldOverAlignmentGNUCallABI(t *testing.T) {
+	source, names := pragmaOverAlignedBitfields()
+	path, compiler := headerFile(t, source), compilerTool(t)
+	for _, target := range targets {
+		if target.os == "windows" {
+			continue
+		}
+		t.Run(target.triple, func(t *testing.T) {
+			t.Parallel()
+			h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: target.triple, Functions: names})
+			if err != nil {
+				t.Fatal(err)
+			}
+			generated, err := h.CgoSource("bindings", "Bindings")
+			if err != nil {
+				t.Fatal(err)
+			}
+			text := string(generated)
+			start := strings.Index(text, "/*") + 2
+			end := strings.Index(text[start:], "*/") + start
+			var original, bridge strings.Builder
+			fmt.Fprintf(&original, "#include %q\n", filepath.ToSlash(path))
+			bridge.WriteString(text[start:end])
+			for i, record := range h.Records {
+				fmt.Fprintf(&original, "%s call_%d(%s value){return value;}\n", record.Name, i, record.Name)
+				name := fmt.Sprintf("dylib_go_%x_record%d", "Bindings", i)
+				fmt.Fprintf(&bridge, "%s call_%d(%s value){return value;}\n", name, i, name)
+			}
+			args := []string{"--target=" + target.triple, "-x", "c", "-std=c17", "-O0", "-S", "-emit-llvm", "-o", "-", "-"}
+			nativeIR, err := runCompiler(context.Background(), compiler, args, original.String(), maxASTSize)
+			if err != nil {
+				t.Fatal(err)
+			}
+			bridgeIR, err := runCompiler(context.Background(), compiler, args, bridge.String(), maxASTSize)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// LLVM record names are local to each source; retain physical
+			// result/argument types, attributes and alignments for comparison.
+			normalize := regexp.MustCompile(`%struct\.[a-zA-Z0-9_.]+`)
+			entry := func(ir, name string) string {
+				for _, line := range strings.Split(ir, "\n") {
+					if strings.HasPrefix(line, "define ") && strings.Contains(line, "@"+name+"(") {
+						line, _, _ = strings.Cut(strings.TrimSuffix(line, " {"), " #")
+						return normalize.ReplaceAllString(line, "%record")
+					}
+				}
+				return ""
+			}
+			for i, record := range h.Records {
+				name := fmt.Sprintf("call_%d", i)
+				want, got := entry(string(nativeIR), name), entry(string(bridgeIR), name)
+				if want == "" || got != want {
+					t.Fatalf("%s ABI: got %s; want %s", record.Name, got, want)
+				}
+			}
+		})
+	}
+}
+
+func TestPragmaBitfieldOverAlignmentGCCBridge(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("MS layout has separate MinGW bridge coverage")
+	}
+	candidates := []string{"gcc"}
+	if fc := os.Getenv("DYLIB_FC"); strings.Contains(filepath.Base(fc), "gfortran") {
+		candidates = append(candidates, filepath.Join(filepath.Dir(fc), strings.Replace(filepath.Base(fc), "gfortran", "gcc", 1)))
+	}
+	candidates = append(candidates, "gcc-16", "gcc-15", "gcc-14")
+	var gcc string
+	for _, candidate := range candidates {
+		path, err := exec.LookPath(candidate)
+		if err != nil {
+			continue
+		}
+		version, err := exec.Command(path, "--version").CombinedOutput()
+		if err == nil && bytes.Contains(version, []byte("Free Software Foundation")) {
+			gcc = path
+			break
+		}
+	}
+	if gcc == "" {
+		t.Skip("GNU GCC is unavailable")
+	}
+	source, names := pragmaOverAlignedBitfields()
+	h, err := Parse(context.Background(), headerFile(t, source), Options{Compiler: compilerTool(t), Functions: names})
+	if err != nil {
+		t.Fatal(err)
+	}
+	generated, err := h.CgoSource("bindings", "Bindings")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(generated)
+	start := strings.Index(text, "/*") + 2
+	end := strings.Index(text[start:], "*/") + start
+	var probe strings.Builder
+	probe.WriteString(text[start:end])
+	for i, record := range h.Records {
+		name := fmt.Sprintf("dylib_go_%x_record%d", "Bindings", i)
+		fmt.Fprintf(&probe, "\n_Static_assert(sizeof(%s)==%d,\"size %s\");\n_Static_assert(_Alignof(%s)==%d,\"alignment %s\");\n", name, record.Layout.Size, record.Name, name, record.Layout.Alignment, record.Name)
+		for j, offset := range record.Layout.Offsets {
+			if record.bitfieldAt(j) == nil {
+				fmt.Fprintf(&probe, "_Static_assert(offsetof(%s,f%d)==%d,\"offset %s\");\n", name, j, offset, record.Name)
+			}
+		}
+		for _, field := range record.Bitfields {
+			fmt.Fprintf(&probe, "const %s dylib_bitfield_%d_%d = {.f%d=%s};\n", name, i, field.Position, field.Position, bitfieldValue(record.Description.Fields[field.Position].Type.Type, field.Width))
+		}
+	}
+	object := filepath.Join(t.TempDir(), "gcc-bridge.o")
+	if _, err := runCompiler(context.Background(), gcc, []string{"-ffreestanding", "-x", "c", "-std=c17", "-c", "-o", object, "-"}, probe.String(), maxDiagnostics); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(object)
+	if err != nil {
+		t.Fatal(err)
+	}
+	symbols, err := readBitfieldSymbols(data, runtime.GOOS)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, record := range h.Records {
+		for _, field := range record.Bitfields {
+			value, err := symbols.value(fmt.Sprintf("dylib_bitfield_%d_%d", i, field.Position), record.Layout.Size)
+			want := make([]byte, record.Layout.Size)
+			copy(want[record.Layout.Offsets[field.Position]:], field.Mask)
+			if err != nil || !bytes.Equal(value, want) {
+				t.Fatal(record.Name, field.Position, value, want, err)
+			}
+		}
+	}
+}
+
 func TestPragmaBitfieldStorageMetadataValidation(t *testing.T) {
 	source, names := pragmaOverAlignedBitfields()
 	h, err := Parse(context.Background(), headerFile(t, source), Options{Compiler: compilerTool(t), Target: "x86_64-pc-windows-msvc", Functions: names})
@@ -127,6 +276,21 @@ func TestPragmaBitfieldStorageMetadataValidation(t *testing.T) {
 		var output bytes.Buffer
 		if err := mapper.writePragmaBitfields(&output, 0); err == nil {
 			t.Fatal("invalid unnamed storage metadata accepted", r.Padding)
+		}
+	}
+	gnu, err := Parse(context.Background(), headerFile(t, source), Options{Compiler: compilerTool(t), Target: "x86_64-linux-gnu", Functions: names})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, mutation := range []func(*Record){
+		func(r *Record) { r.Padding[2].Gap = r.Padding[2].Offset + 1 },
+		func(r *Record) { r.Padding[1].Gap = 1 },
+		func(r *Record) { r.Padding[2].Aligned = r.MaxFieldAlignment },
+	} {
+		r, _ := gnu.LookupRecord("Anonymous2")
+		mutation(&r)
+		if err := validRecordLayout(r); err == nil {
+			t.Fatal("invalid GNU boundary gap accepted", r.Padding)
 		}
 	}
 }

@@ -99,7 +99,7 @@ func testBitfieldBridgeTargets(t *testing.T, source string, flags, producers []s
 				if err != nil {
 					t.Fatal(err)
 				}
-				symbols, err := readBitfieldSymbols(data, "windows")
+				symbols, err := readBitfieldSymbols(data, h.Target.OS)
 				if err != nil {
 					t.Fatal(err)
 				}

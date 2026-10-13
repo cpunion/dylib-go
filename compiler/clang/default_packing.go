@@ -96,3 +96,7 @@ func driverArguments(line string) ([]string, error) {
 func (t Target) msLayout() bool {
 	return t.OS == "windows" && strings.Contains(t.Triple, "msvc")
 }
+
+func (t Target) gnuPacking() bool {
+	return t.OS == "linux" || t.OS == "darwin"
+}

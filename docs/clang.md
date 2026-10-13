@@ -320,6 +320,14 @@ type without their ineffective request. Leading padding-only units use an empty
 C initializer. Original MSVC/GNU producers keep their source declarations.
 Regenerate older pragma bitfield bindings to retain this additional metadata.
 
+For Linux/macOS GNU layouts, GCC can retain requests that Clang ignores and
+raise record alignment for zero widths. Generated bridges drop ignored nonzero
+requests. `BitfieldPadding.Gap` retains the compiler-observed bytes before an
+over-cap zero boundary; unnamed padding recreates those bytes without adding
+value fields to the SysV call classification. Record alignment remains the
+producer's measured value. Cross-target layout/mask and LLVM call-shape checks,
+plus independent GCC bridge tests and native CI calls, qualify this facade.
+
 The [over-aligned bitfield example](../examples/overalignedbits/call.go) executes
 small/large values, ignored shared requests, named/unnamed/zero-width boundaries,
 packed combinations, floating aggregates, multidimensional nested arrays,

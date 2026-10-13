@@ -500,6 +500,13 @@ func (h *Header) decodeRecordLayouts(data []byte) error {
 				if err != nil {
 					return err
 				}
+				if h.Target.gnuPacking() && r.MaxFieldAlignment != 0 && p.Aligned > r.MaxFieldAlignment {
+					before, err := get(fmt.Sprintf("dylib_record_%d_paddingbefore_%d", i, j))
+					if err != nil || before > p.Offset {
+						return fmt.Errorf("clang: invalid pragma boundary gap for %s", r.Name)
+					}
+					p.Gap = p.Offset - before
+				}
 			}
 		}
 		if len(h.Records[i].Bitfields) == 0 {

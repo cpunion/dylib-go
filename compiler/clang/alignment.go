@@ -112,11 +112,15 @@ func (r Record) cAttributes() string {
 }
 
 func (r Record) cFieldAttributes(position int) string {
+	return fieldCAttributes(r.fieldPacked(position), r.fieldAlignment(position))
+}
+
+func fieldCAttributes(packed bool, alignment uint64) string {
 	packing := ""
-	if r.fieldPacked(position) {
+	if packed {
 		packing = " __attribute__((packed))"
 	}
-	if alignment := r.fieldAlignment(position); alignment != 0 {
+	if alignment != 0 {
 		return packing + fmt.Sprintf(" __attribute__((aligned(%d)))", alignment)
 	}
 	return packing

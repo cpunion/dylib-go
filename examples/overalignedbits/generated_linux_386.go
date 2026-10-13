@@ -9,8 +9,8 @@ package overalignedbits
 #include <stddef.h>
 #pragma pack(push,2)
 typedef struct {
-uint32_t f0:3 __attribute__((aligned(8)));
-int32_t f1:5 __attribute__((aligned(32)));
+uint32_t f0:3;
+int32_t f1:5;
 } dylib_go_42696e64696e6773_record0;
 #pragma pack(pop)
 static uint64_t dylib_go_42696e64696e6773_record0_mask(int32_t field,uint64_t byte) {
@@ -54,13 +54,23 @@ result.f1 = value.f1;
 return result;
 }
 #pragma pack(push,2)
-typedef struct {
+typedef struct __attribute__((aligned(2))) {
 int8_t f0;
-uint32_t f1:3 __attribute__((aligned(16)));
-int32_t f2:5 __attribute__((aligned(32)));
-uint64_t :0 __attribute__((aligned(32)));
-_Bool f3:1 __attribute__((aligned(16)));
-uint64_t f4:40 __attribute__((packed)) __attribute__((aligned(32)));
+uint32_t f1:3;
+int32_t f2:5;
+unsigned char :0;
+unsigned long long :64 __attribute__((packed));
+unsigned long long :64 __attribute__((packed));
+unsigned long long :64 __attribute__((packed));
+unsigned char :8;
+unsigned char :8;
+unsigned char :8;
+unsigned char :8;
+unsigned char :8;
+unsigned char :8;
+unsigned char :0;
+_Bool f3:1;
+uint64_t f4:40 __attribute__((packed));
 double f5 __attribute__((aligned(16)));
 int32_t f6;
 void * f7;
@@ -133,12 +143,29 @@ result.f7 = value.f7;
 return result;
 }
 #pragma pack(push,2)
-typedef struct {
-uint64_t :0 __attribute__((aligned(32)));
-uint32_t :3 __attribute__((aligned(16)));
+typedef struct __attribute__((aligned(2))) {
+unsigned char :0;
+unsigned char :0;
+uint32_t :3;
 int32_t f0:5;
-uint64_t :0 __attribute__((aligned(32)));
-uint32_t :0 __attribute__((aligned(64)));
+unsigned char :0;
+unsigned long long :64 __attribute__((packed));
+unsigned long long :64 __attribute__((packed));
+unsigned long long :64 __attribute__((packed));
+unsigned char :8;
+unsigned char :8;
+unsigned char :8;
+unsigned char :8;
+unsigned char :8;
+unsigned char :8;
+unsigned char :8;
+unsigned char :0;
+unsigned char :0;
+unsigned long long :64 __attribute__((packed));
+unsigned long long :64 __attribute__((packed));
+unsigned long long :64 __attribute__((packed));
+unsigned long long :64 __attribute__((packed));
+unsigned char :0;
 float f1[2] __attribute__((aligned(16)));
 void * f2;
 } dylib_go_42696e64696e6773_record2;
@@ -300,11 +327,14 @@ result.f4 = value.f4;
 return result;
 }
 #pragma pack(push,2)
-typedef struct {
-uint64_t :0 __attribute__((aligned(32)));
+typedef struct __attribute__((aligned(2))) {
+unsigned char :0;
+unsigned char :0;
 float f0;
 float f1;
-uint32_t :0 __attribute__((aligned(16)));
+unsigned char :0;
+unsigned long long :64 __attribute__((packed));
+unsigned char :0;
 } dylib_go_42696e64696e6773_record5;
 #pragma pack(pop)
 static uint64_t dylib_go_42696e64696e6773_record5_layout(int32_t index) {
@@ -333,11 +363,21 @@ result.f1 = value.f1;
 return result;
 }
 #pragma pack(push,2)
-typedef struct __attribute__((packed,aligned(32))) {
+typedef struct __attribute__((packed,aligned(32))) __attribute__((aligned(32))) {
 int8_t f0;
-uint32_t :3 __attribute__((aligned(16)));
+uint32_t :3;
 int32_t f1:5;
-uint64_t :0 __attribute__((aligned(32)));
+unsigned char :0;
+unsigned long long :64 __attribute__((packed));
+unsigned long long :64 __attribute__((packed));
+unsigned long long :64 __attribute__((packed));
+unsigned char :8;
+unsigned char :8;
+unsigned char :8;
+unsigned char :8;
+unsigned char :8;
+unsigned char :8;
+unsigned char :0;
 double f2 __attribute__((packed)) __attribute__((aligned(16)));
 } dylib_go_42696e64696e6773_record6;
 #pragma pack(pop)
@@ -386,7 +426,7 @@ return result;
 }
 #pragma pack(push,2)
 typedef struct {
-uint32_t :3 __attribute__((aligned(16)));
+uint32_t :3;
 float f0;
 float f1;
 } dylib_go_42696e64696e6773_record7;
@@ -571,12 +611,12 @@ var _BindingsDeclarations = clang.Header{
 	},
 	Records: []clang.Record{
 		{Name: "Tiny", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 2, Alignment: 2, Offsets: []uint64{0, 0}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{0, 0}, FieldAlignments: []clang.FieldAlignment{{Position: 0, Aligned: 8}, {Position: 1, Aligned: 32}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}}},
-		{Name: "Bits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 54, Alignment: 2, Offsets: []uint64{0, 1, 1, 32, 32, 38, 46, 50}}, PackedFields: []int{4}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 0, 0, 0, 0, 2, 2, 2}, FieldAlignments: []clang.FieldAlignment{{Position: 1, Aligned: 16}, {Position: 2, Aligned: 32}, {Position: 3, Aligned: 16}, {Position: 4, Aligned: 32}, {Position: 5, Aligned: 16}}, Bitfields: []clang.Bitfield{{Position: 1, Width: 3, Mask: []byte{7}}, {Position: 2, Width: 5, Mask: []byte{248}}, {Position: 3, Width: 1, Mask: []byte{1}}, {Position: 4, Width: 40, Mask: []byte{254, 255, 255, 255, 255, 1}}}, Padding: []clang.BitfieldPadding{{Before: 3, Type: abi.Type(4), Width: 0, Offset: 32, Aligned: 32}}},
-		{Name: "Padding", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pad_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F32}}}, {Name: "pad_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 76, Alignment: 2, Offsets: []uint64{0, 64, 72}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{0, 2, 2}, FieldAlignments: []clang.FieldAlignment{{Position: 1, Aligned: 16}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(4), Width: 0, Offset: 0, Aligned: 32}, {Before: 0, Type: abi.Type(2), Width: 3, Offset: 0, Aligned: 16}, {Before: 1, Type: abi.Type(4), Width: 0, Offset: 32, Aligned: 32}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 64, Aligned: 64}}},
+		{Name: "Bits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 54, Alignment: 2, Offsets: []uint64{0, 1, 1, 32, 32, 38, 46, 50}}, PackedFields: []int{4}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 0, 0, 0, 0, 2, 2, 2}, FieldAlignments: []clang.FieldAlignment{{Position: 1, Aligned: 16}, {Position: 2, Aligned: 32}, {Position: 3, Aligned: 16}, {Position: 4, Aligned: 32}, {Position: 5, Aligned: 16}}, Bitfields: []clang.Bitfield{{Position: 1, Width: 3, Mask: []byte{7}}, {Position: 2, Width: 5, Mask: []byte{248}}, {Position: 3, Width: 1, Mask: []byte{1}}, {Position: 4, Width: 40, Mask: []byte{254, 255, 255, 255, 255, 1}}}, Padding: []clang.BitfieldPadding{{Before: 3, Type: abi.Type(4), Width: 0, Offset: 32, Aligned: 32, Gap: 30}}},
+		{Name: "Padding", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pad_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F32}}}, {Name: "pad_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 76, Alignment: 2, Offsets: []uint64{0, 64, 72}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{0, 2, 2}, FieldAlignments: []clang.FieldAlignment{{Position: 1, Aligned: 16}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(4), Width: 0, Offset: 0, Aligned: 32}, {Before: 0, Type: abi.Type(2), Width: 3, Offset: 0, Aligned: 16}, {Before: 1, Type: abi.Type(4), Width: 0, Offset: 32, Aligned: 32, Gap: 31}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 64, Aligned: 64, Gap: 32}}},
 		{Name: "Inner", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "inner_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "inner_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F32}}}}}, Layout: abi.Layout{Size: 32, Alignment: 32, Offsets: []uint64{0, 4}}, Aligned: 32, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}}},
 		{Name: "Envelope", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "envelope_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}, {Name: "pads", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pad_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F32}}}, {Name: "pad_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}, {Name: "inners", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "inner_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "inner_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F32}}}}}}}, {Name: "envelope_count", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 406, Alignment: 2, Offsets: []uint64{0, 2, 218, 370, 402}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2, 2, 2, 2}},
-		{Name: "Floating", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 16, Alignment: 2, Offsets: []uint64{0, 4}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 2}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(4), Width: 0, Offset: 0, Aligned: 32}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 16, Aligned: 16}}},
-		{Name: "Packed", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 64, Alignment: 32, Offsets: []uint64{0, 1, 32}}, Packed: true, PackedFields: []int{2}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 0, 16}, Aligned: 32, FieldAlignments: []clang.FieldAlignment{{Position: 2, Aligned: 16}}, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 1, Aligned: 16}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 32, Aligned: 32}}},
+		{Name: "Floating", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 16, Alignment: 2, Offsets: []uint64{0, 4}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 2}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(4), Width: 0, Offset: 0, Aligned: 32}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 16, Aligned: 16, Gap: 8}}},
+		{Name: "Packed", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 64, Alignment: 32, Offsets: []uint64{0, 1, 32}}, Packed: true, PackedFields: []int{2}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 0, 16}, Aligned: 32, FieldAlignments: []clang.FieldAlignment{{Position: 2, Aligned: 16}}, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 1, Aligned: 16}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 32, Aligned: 32, Gap: 30}}},
 		{Name: "PaddingFloat", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "gap_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 10, Alignment: 2, Offsets: []uint64{2, 6}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 2}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 3, Offset: 0, Aligned: 16}}},
 		{Name: "Slot", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "slot_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "entry", Type: abi.TypeDesc{Type: abi.Pointer}}, {Name: "slot_flags", Type: abi.TypeDesc{Type: abi.U32}}}}, Layout: abi.Layout{Size: 8, Alignment: 2, Offsets: []uint64{0, 2, 6}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2, 0}, FieldAlignments: []clang.FieldAlignment{{Position: 1, Aligned: 16}}, Bitfields: []clang.Bitfield{{Position: 2, Width: 3, Mask: []byte{7}}}, FunctionPointers: []clang.FunctionPointer{{Position: 1, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "truth", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "real", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "count", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
 	},

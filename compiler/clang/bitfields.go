@@ -32,17 +32,14 @@ type BitfieldPadding struct {
 	// StorageAlignment observes an MS pragma-packed allocation-unit start or
 	// active zero-width boundary. Shared/ignored declarations retain zero.
 	StorageAlignment uint64
+	// Gap is the compiler-observed byte gap before an over-cap GNU pragma
+	// zero-width boundary. C bridges use unnamed padding without raising
+	// the record alignment, which GCC would otherwise do for that request.
+	Gap uint64
 }
 
 func (p BitfieldPadding) cAttributes() string {
-	packing := ""
-	if p.Packed {
-		packing = " __attribute__((packed))"
-	}
-	if p.Aligned != 0 {
-		return packing + fmt.Sprintf(" __attribute__((aligned(%d)))", p.Aligned)
-	}
-	return packing
+	return fieldCAttributes(p.Packed, p.Aligned)
 }
 
 func (r Record) hasBitfields() bool {
@@ -111,6 +108,9 @@ func validateBitfields(r Record, complete bool) error {
 		}
 		if complete && f.StorageAlignment != 0 && (f.StorageAlignment > r.Layout.Alignment || (f.Width == 0 || f.Aligned != 0) && f.Offset%f.StorageAlignment != 0) {
 			return fmt.Errorf("clang: incompatible unnamed storage alignment in %s", r.Name)
+		}
+		if f.Gap > 65536 || f.Gap != 0 && (f.Width != 0 || r.MaxFieldAlignment == 0 || f.Aligned <= r.MaxFieldAlignment || complete && f.Gap > f.Offset) {
+			return fmt.Errorf("clang: invalid pragma boundary gap in %s", r.Name)
 		}
 		before = f.Before
 	}
