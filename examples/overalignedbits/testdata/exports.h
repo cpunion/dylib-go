@@ -60,3 +60,13 @@ FloatingTriple echo_triple(FloatingTriple);
 FloatingTriple triple_variable(FloatingTriple,...);
 FloatingSingle echo_single(FloatingSingle);
 FloatingSingle single_variable(FloatingSingle,...);
+typedef struct { float bare_left; } FloatingBare;
+#pragma pack(push,2)
+typedef struct { double double_left; unsigned :0 __attribute__((aligned(8))); } FloatingDouble;
+typedef struct { float array_values[1]; unsigned :0 __attribute__((aligned(8))); } FloatingArray;
+typedef struct { FloatingBare nested; } FloatingNested;
+#pragma pack(pop)
+FloatingBare echo_bare(FloatingBare);
+FloatingDouble echo_double(FloatingDouble);
+FloatingArray echo_array(FloatingArray);
+FloatingNested echo_nested(FloatingNested);

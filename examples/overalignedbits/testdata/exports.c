@@ -26,3 +26,7 @@ FloatingTriple echo_triple(FloatingTriple t) { t.triple_left+=1.5f; t.triple_mid
 FloatingTriple triple_variable(FloatingTriple t,...) { __builtin_va_list a; __builtin_va_start(a,t); t.triple_left+=__builtin_va_arg(a,int); t.triple_middle+=__builtin_va_arg(a,double); __builtin_va_end(a); return t; }
 FloatingSingle echo_single(FloatingSingle s) { s.single_left+=1.5f; return s; }
 FloatingSingle single_variable(FloatingSingle s,...) { __builtin_va_list a; __builtin_va_start(a,s); s.single_left+=__builtin_va_arg(a,int); s.single_left+=__builtin_va_arg(a,double); __builtin_va_end(a); return s; }
+FloatingBare echo_bare(FloatingBare b) { b.bare_left+=1.5f; return b; }
+FloatingDouble echo_double(FloatingDouble d) { d.double_left+=1.5; return d; }
+FloatingArray echo_array(FloatingArray a) { a.array_values[0]+=1.5f; return a; }
+FloatingNested echo_nested(FloatingNested n) { n.nested.bare_left+=1.5f; return n; }

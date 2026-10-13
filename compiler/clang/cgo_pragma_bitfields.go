@@ -62,7 +62,7 @@ func (t *cgoTypes) writePragmaBitfields(output *bytes.Buffer, index int) error {
 			if bit := r.bitfieldAt(j); bit != nil {
 				fmt.Fprintf(output, "%s:%d;\n", declaration, bit.Width)
 			} else {
-				fmt.Fprintf(output, "%s%s;\n", declaration, storageFieldAttributes(r.Description.Fields[j].Type, r.MemberAlignments[j]))
+				t.writeNativeField(output, r, j, declaration, storageFieldAttributes(r.Description.Fields[j].Type, r.MemberAlignments[j]))
 			}
 		}
 		for _, unit := range units {

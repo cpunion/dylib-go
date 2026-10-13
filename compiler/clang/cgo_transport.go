@@ -18,7 +18,7 @@ func (t *cgoTypes) needsTransport(index int) bool {
 		t.transports = make(map[int]bool)
 	}
 	record := t.records[index]
-	needed := record.requiresCAdapter()
+	needed := record.requiresCAdapter() || t.msFloatReturn(record)
 	for _, field := range record.Description.Fields {
 		d := field.Type
 		for d.Type == abi.Array {

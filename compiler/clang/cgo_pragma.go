@@ -22,7 +22,7 @@ func (t *cgoTypes) writePragmaRecord(output *bytes.Buffer, index int) error {
 		if err != nil {
 			return fmt.Errorf("clang: %s.%s: %w", r.Name, field.Name, err)
 		}
-		fmt.Fprintf(output, "%s%s;\n", declaration, storageFieldAttributes(field.Type, r.MemberAlignments[i]))
+		t.writeNativeField(output, r, i, declaration, storageFieldAttributes(field.Type, r.MemberAlignments[i]))
 	}
 	fmt.Fprintf(output, "} %s;\n", t.cRecordName(index))
 	return nil

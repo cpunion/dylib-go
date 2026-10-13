@@ -37,7 +37,7 @@ func TestOverAlignedBitfieldsCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_tiny", "echo_bits", "echo_padding", "echo_inner", "echo_envelope", "echo_floating", "echo_packed", "echo_padding_float", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "tiny_variable", "floating_variable", "apply_slot", "echo_tiny_tail", "tiny_tail_variable", "echo_triple", "triple_variable", "echo_single", "single_variable"}
+	names := []string{"echo_tiny", "echo_bits", "echo_padding", "echo_inner", "echo_envelope", "echo_floating", "echo_packed", "echo_padding_float", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "tiny_variable", "floating_variable", "apply_slot", "echo_tiny_tail", "tiny_tail_variable", "echo_triple", "triple_variable", "echo_single", "single_variable", "echo_bare", "echo_double", "echo_array", "echo_nested"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -217,6 +217,14 @@ func checkCalls(t *testing.T, path string) {
 		check("single-float tail padding", singleGot, BindingsRecord11{Single_left: 22}, err)
 		singleGot, err = b.Single_variable(single, -1, 1.5)
 		check("single-float variadic prefix/result", singleGot, BindingsRecord11{Single_left: 21}, err)
+		bareGot, err := b.Echo_bare(BindingsRecord12{Bare_left: 20.5})
+		check("ordinary single-float result", bareGot, BindingsRecord12{Bare_left: 22}, err)
+		doubleGot, err := b.Echo_double(BindingsRecord13{Double_left: 20.5})
+		check("single-double result", doubleGot, BindingsRecord13{Double_left: 22}, err)
+		arrayGot, err := b.Echo_array(BindingsRecord14{Array_values: [1]float32{20.5}})
+		check("single-float array result", arrayGot, BindingsRecord14{Array_values: [1]float32{22}}, err)
+		nestedGot, err := b.Echo_nested(BindingsRecord15{Nested: BindingsRecord12{Bare_left: 20.5}})
+		check("nested single-float result", nestedGot, BindingsRecord15{Nested: BindingsRecord12{Bare_left: 22}}, err)
 		null := value
 		null.Tag = 125
 		null.Truth = false

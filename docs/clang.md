@@ -330,6 +330,11 @@ On GNU AMD64, small trailing gaps use implicit body padding and a lowered
 typedef alignment: GCC would otherwise count unnamed padding in argument/result
 registers. Native tests check integer and one/two/three-float records, including
 register positions and promotions in variadic calls.
+Windows MSVC i386 single-float aggregates return in integer registers, while
+MinGW normally uses x87. The C facade uses a private overlapping integer member
+to preserve MSVC's return registers and keeps the public value in an ordinary
+transport record. Native tests cover `float`, `double`, a single-element array
+and a nested record; compiler checks also cover explicit record/member packing.
 Small GNU AMD64 gaps that cannot use this implicit tail-padding facade are
 rejected before generation: an explicit padding field could change their
 register classification even when size, alignment and offsets match.

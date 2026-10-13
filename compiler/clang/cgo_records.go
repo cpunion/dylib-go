@@ -14,6 +14,7 @@ type cgoTypes struct {
 	*directTypes
 	cPrefix    string
 	msLayout   bool
+	ms386      bool
 	gnuPacking bool
 	gnuAMD64   bool
 	transports map[int]bool
@@ -259,8 +260,7 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 				if t.gnuPacking && record.bitfieldAt(j) != nil && record.MaxFieldAlignment != 0 && alignment > record.MaxFieldAlignment {
 					alignment = 0
 				}
-				declaration += fieldCAttributes(record.fieldPacked(j), alignment)
-				fmt.Fprintf(output, "%s;\n", declaration)
+				t.writeNativeField(output, record, j, declaration, fieldCAttributes(record.fieldPacked(j), alignment))
 			}
 			for _, unit := range packedUnits {
 				if unit.last == position {
