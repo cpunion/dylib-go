@@ -118,12 +118,6 @@ func TestInvalidPackingMetadata(t *testing.T) {
 			t.Fatal("invalid packing cap accepted", cap)
 		}
 	}
-	if err := validatePacking(Record{MaxFieldAlignment: 2, Padding: []BitfieldPadding{{Type: abi.U32, Width: 0, Aligned: 16}}}); err == nil {
-		t.Fatal("unqualified over-aligned unnamed member accepted")
-	}
-	if err := validatePacking(Record{MaxFieldAlignment: 2, Bitfields: []Bitfield{{Width: 3}}, FieldAlignments: []FieldAlignment{{Aligned: 16}}}); err == nil {
-		t.Fatal("unqualified over-aligned pragma bitfield accepted")
-	}
 	if _, _, err := recordPackingProbes([]byte("broken")); err == nil {
 		t.Fatal("invalid JSON accepted")
 	}
@@ -133,14 +127,6 @@ func TestInvalidPackingMetadata(t *testing.T) {
 }
 
 func TestPackingABIQualification(t *testing.T) {
-	for _, source := range []string{
-		"#pragma pack(push,2)\ntypedef struct { unsigned bits:3 __attribute__((aligned(16))); } S;\n#pragma pack(pop)\nS echo(S);",
-		"typedef struct { unsigned :3 __attribute__((aligned(16))); unsigned value:5; } Bits;\n#pragma pack(push,2)\ntypedef struct { char tag; Bits items[2]; } S;\n#pragma pack(pop)\nS echo(S);",
-	} {
-		if _, err := Parse(context.Background(), headerFile(t, source), Options{Compiler: compilerTool(t), Functions: []string{"echo"}}); err == nil {
-			t.Fatal("unqualified packing combination accepted:", source)
-		}
-	}
 	description := abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "value", Type: abi.TypeDesc{Type: abi.I32}}}}
 	records := []Record{
 		{Name: "Pack4", Description: description, MaxFieldAlignment: 4, Layout: abi.Layout{Size: 4, Alignment: 4, Offsets: []uint64{0}}},

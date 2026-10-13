@@ -18,7 +18,7 @@ func (t *cgoTypes) needsTransport(index int) bool {
 		t.transports = make(map[int]bool)
 	}
 	record := t.records[index]
-	needed := record.requiresCAdapter()
+	needed := record.requiresCAdapter() || t.msFloatReturn(record)
 	for _, field := range record.Description.Fields {
 		d := field.Type
 		for d.Type == abi.Array {
@@ -67,7 +67,7 @@ func (t *cgoTypes) writeTransport(output *bytes.Buffer, index int) error {
 			from, to = native, transport
 		}
 		initializer := "{0}"
-		if toNative && t.msLayout && !record.Packed && len(record.Padding) != 0 && record.Padding[0].Before == 0 && record.Padding[0].Packed {
+		if toNative && t.msLayout && len(record.Padding) != 0 && record.Padding[0].Before == 0 && (record.MaxFieldAlignment != 0 || !record.Packed && record.Padding[0].Packed) {
 			// A leading wrapped unit may have only unnamed fields. {0} then
 			// supplies an excess initializer; GCC/Clang's empty initializer
 			// clears the aggregate without targeting an unnamed member.

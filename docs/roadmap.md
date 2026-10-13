@@ -78,13 +78,14 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Pragma-packed named/unnamed/zero-width bitfields with scoped compiler probes, MSVC/MinGW boundary adaptation, packed combinations, nested arrays and native Go/llgo calls.
 - [x] Ordinary pragma-packed over-aligned members/nested values through compiler-measured C bridges, numeric/omitted/type requests, arrays/floating aggregates/native pointer fields, factories and variadic calls.
 - [x] Compiler-effective global Clang packing caps with local pragma override/pop, response files/frontend forwarding, MSVC oversized pragma rules, native bitfields/arrays/alignment/pointers/factories and Go/llgo object/archive/library calls.
-- [ ] Over-cap pragma bitfield combinations and typedef packing/alignment forms.
+- [x] Over-cap pragma bitfield combinations with compiler-observed allocation alignment, ignored/shared requests, zero-width boundaries, nested arrays and native Go/llgo object/archive/library calls.
+- [ ] Typedef packing/alignment forms.
 - [x] Named integral/Boolean bitfields through compiler byte-mask probes and validated Go/llgo C bridges, including packed combinations, nested arrays, native factories and variadic calls.
 - [x] Unnamed/zero-width bitfields with compiler-qualified declaration positions, leading/trailing padding, packed combinations, nested arrays, floating fields and native pointer/factory/variadic calls.
 - [x] Explicit numeric record/member alignment through validated C bridges, including packed/bitfield combinations, nested arrays, floating aggregates, native factories and variadic calls.
 - [x] Compiler-evaluated omitted GNU alignment and type-based `_Alignas` members, including record/typedef/array alignment types, nested records, packed fields, named bitfields and native Go/llgo calls.
 - [x] Compiler-qualified named/typedef enums with integer/Boolean transports, packed/short and fixed underlying types, record/array/callback fields, native factories and variadic prefixes through dynamic, cgo and direct llgo adapters.
-- [ ] Unions and remaining packing/alignment forms through validated compiler adapters where libffi cannot represent the ABI.
+- [ ] Unions and remaining packing/alignment forms through validated compiler adapters where libffi cannot represent the ABI, including small GNU AMD64 interior zero-width gaps.
 - [x] Dynamic argument counts for scalar/aggregate calls, variadic shapes, and callbacks; reproducible call/allocation benchmarks.
 - [x] Session-owned logical-signature CIF reuse, aggregate layout deduplication, and lazy typed pointee layout caches with rollback.
 - [x] Indexed signature lookup and canonical omitted/explicit scalar metadata, preserving logical type distinctions.

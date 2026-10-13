@@ -42,7 +42,7 @@ Run
 | Typedefs and ordinary qualifiers | Desugared/resolved, including integer and pointer aliases |
 | Object/opaque pointers | Native addresses; no automatic pointee allocation, copying or ownership |
 | Ordinary structs, including anonymous typedef records | Arguments/results; compiler-evaluated layout checked against the native backend |
-| Structs with `#pragma pack` | `CgoSource` for Go/llgo; caps 1/2/4/8/16, ordinary over-aligned members/nested values, named/unnamed/zero-width bitfields, nested arrays and native addresses/function-pointer fields; over-cap bitfield combinations remain unqualified |
+| Structs with `#pragma pack` | `CgoSource` for Go/llgo; caps 1/2/4/8/16, over-aligned ordinary members/bitfield units/zero-width boundaries, nested records/arrays and native addresses/function-pointer fields |
 | Global Clang `-fpack-struct` defaults | `CgoSource` for Go/llgo; omitted argument or caps 1/2/4/8/16, compiler-effective options, local pragma override/pop, nested alignment/arrays and qualified bitfields; transports keep ordinary layout |
 | Explicit `__attribute__((packed))` structs | `CgoSource` for Go/llgo; logical fields are transported through ordinary records and converted inside C; dynamic and direct llgo bindings reject them |
 | Explicit `__attribute__((packed))` non-bitfield members | `CgoSource` for Go/llgo; retain natural alignment of other members and combine packing with explicit member alignment; includes fixed arrays, nested records and native addresses |
@@ -305,8 +305,45 @@ fields preserves homogeneous aggregate classification. Existing MSVC i386
 compiler-observed indirect argument lowering still applies. Native size,
 alignment and offset checks remain mandatory before resolving symbols.
 
-Over-cap alignment in records with their own named/unnamed/zero-width bitfields,
-or nested over-cap bitfield combinations, remains unqualified and is rejected.
+Pragma bitfield records also retain measured storage alignment. Named MS fields
+use `MemberAlignments` at allocation-unit starts, and zero inside a shared unit.
+`BitfieldPadding.StorageAlignment` identifies active unnamed unit starts and
+zero-width boundaries; ignored/shared declarations use zero. Small compiler
+probes preserve packing and source requests while excluding unrelated root
+alignment. This avoids interpreting an ignored request as actual storage.
+
+The MinGW facade emits complete byte-aligned anonymous allocation units and
+applies measured alignment to the anonymous member, preserving unit size.
+Ordinary members keep their native types and measured alignment; active zero
+boundaries use zero-length native arrays, and ignored declarations retain their
+type without their ineffective request. Leading padding-only units use an empty
+C initializer. Original MSVC/GNU producers keep their source declarations.
+Regenerate older pragma bitfield bindings to retain this additional metadata.
+
+For Linux/macOS GNU layouts, GCC can retain requests that Clang ignores and
+raise record alignment for zero widths. Generated bridges drop ignored nonzero
+requests. `BitfieldPadding.Gap` retains the compiler-observed bytes before an
+over-cap zero boundary; unnamed padding recreates those bytes. Record alignment remains the
+producer's measured value. Cross-target layout/mask and LLVM call-shape checks,
+plus independent GCC bridge tests and native CI calls, qualify this facade.
+On GNU AMD64, small trailing gaps use implicit body padding and a lowered
+typedef alignment: GCC would otherwise count unnamed padding in argument/result
+registers. Native tests check integer and one/two/three-float records, including
+register positions and promotions in variadic calls.
+Windows MSVC i386 single-float aggregates return in integer registers, while
+MinGW normally uses x87. The C facade uses a private overlapping integer member
+to preserve MSVC's return registers and keeps the public value in an ordinary
+transport record. Native tests cover `float`, `double`, a single-element array
+and a nested record; compiler checks also cover explicit record/member packing.
+Small GNU AMD64 gaps that cannot use this implicit tail-padding facade are
+rejected before generation: an explicit padding field could change their
+register classification even when size, alignment and offsets match.
+
+The [over-aligned bitfield example](../examples/overalignedbits/call.go) executes
+small/large values, ignored shared requests, named/unnamed/zero-width boundaries,
+packed combinations, floating aggregates, multidimensional nested arrays,
+aligned native function-pointer fields, factories, pointer identity/mutation,
+nulls and concrete variadic prefixes/results at `-O0`/`-O2` with Go and llgo.
 Typedef alignment/packing remains unqualified. The
 [packed example](../examples/packedrecords/call.go) executes object/archive/library
 calls at `-O0`/`-O2`, including nested packing levels, restored natural outer
@@ -339,8 +376,8 @@ offsets, bit masks and i386 argument lowering remain authoritative.
 
 `CgoSource` applies packing to native declarations individually. Do not pass the
 global packing flag when compiling generated transports: those records and C
-headers retain their ordinary host layout. Existing over-cap bitfield and typedef
-attribute limits still apply. Dynamic/direct llgo adapters reject these records;
+headers retain their ordinary host layout. Typedef attribute limits still apply.
+Dynamic/direct llgo adapters reject these records;
 use the compiled C bridge with Go or llgo.
 
 The [global packing example](../examples/globalpacking/call.go) executes raw
@@ -409,8 +446,8 @@ boundaries with aligned allocation units or compiler-confirmed byte gaps.
 MinGW producers retain their original declarations and ABI.
 
 Alignment on typedefs remains unsupported. Named member requests whose alignment
-cannot be confirmed in the native layout are rejected, including ignored MS
-bitfield requests. Other packing policies are not inferred. The [aligned example](../examples/alignedrecords/call.go)
+cannot be confirmed in the native layout remain rejected outside the qualified
+pragma bitfield bridges. Other packing policies are not inferred. The [aligned example](../examples/alignedrecords/call.go)
 executes object/archive/library calls at `-O0` and `-O2` on the eight Go and six
 llgo native targets, including large nested arrays, floating aggregates,
 native storage alignment, type-based member requests, omitted GNU arguments,

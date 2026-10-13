@@ -24,6 +24,11 @@ func (h *Header) paddingProbes() (declarations, constants string) {
 		for j := 0; j <= len(r.Description.Fields); j++ {
 			for padding < len(r.Padding) && r.Padding[padding].Before == j {
 				p := r.Padding[padding]
+				if h.Target.gnuPacking() && r.MaxFieldAlignment != 0 && p.Width == 0 && p.Aligned > r.MaxFieldAlignment {
+					name := fmt.Sprintf("dylib_padding_before_%d_%d", i, padding)
+					fmt.Fprintf(&types, "typedef struct %s{\n%s unsigned char marker;\n} %s;\n", r.cAttributes(), body.String(), name)
+					fmt.Fprintf(&values, "dylib_record_%d_paddingbefore_%d=__builtin_offsetof(%s,marker),\n", i, padding, name)
+				}
 				fmt.Fprintf(&body, "%s :%d%s;\n", bitfieldBaseType(p.Type), p.Width, p.cAttributes())
 				if p.Width == 0 {
 					name := fmt.Sprintf("dylib_padding_%d_%d", i, padding)

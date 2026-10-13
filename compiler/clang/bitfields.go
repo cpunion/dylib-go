@@ -29,17 +29,17 @@ type BitfieldPadding struct {
 	// Offset is the compiler-confirmed boundary for a zero-width field, or the
 	// first byte of a nonzero-width field with an explicit alignment request.
 	Offset uint64
+	// StorageAlignment observes an MS pragma-packed allocation-unit start or
+	// active zero-width boundary. Shared/ignored declarations retain zero.
+	StorageAlignment uint64
+	// Gap is the compiler-observed byte gap before an over-cap GNU pragma
+	// zero-width boundary. C bridges use unnamed padding without raising
+	// the record alignment, which GCC would otherwise do for that request.
+	Gap uint64
 }
 
 func (p BitfieldPadding) cAttributes() string {
-	packing := ""
-	if p.Packed {
-		packing = " __attribute__((packed))"
-	}
-	if p.Aligned != 0 {
-		return packing + fmt.Sprintf(" __attribute__((aligned(%d)))", p.Aligned)
-	}
-	return packing
+	return fieldCAttributes(p.Packed, p.Aligned)
 }
 
 func (r Record) hasBitfields() bool {
@@ -100,11 +100,17 @@ func validateBitfields(r Record, complete bool) error {
 	before := 0
 	for _, f := range r.Padding {
 		bits := bitfieldTypeBits(f.Type)
-		if f.Before < before || f.Before > len(r.Description.Fields) || bits == 0 || f.Width < 0 || f.Width > bits || !validAlignment(f.Aligned) {
+		if f.Before < before || f.Before > len(r.Description.Fields) || bits == 0 || f.Width < 0 || f.Width > bits || !validAlignment(f.Aligned) || !validAlignment(f.StorageAlignment) || f.StorageAlignment != 0 && r.MaxFieldAlignment == 0 {
 			return fmt.Errorf("clang: invalid unnamed bitfield in %s", r.Name)
 		}
 		if f.Width != 0 && f.Aligned == 0 && f.Offset != 0 || complete && (f.Offset > r.Layout.Size || f.Width != 0 && f.Aligned != 0 && f.Offset == r.Layout.Size) {
 			return fmt.Errorf("clang: invalid unnamed bitfield boundary in %s", r.Name)
+		}
+		if complete && f.StorageAlignment != 0 && (f.StorageAlignment > r.Layout.Alignment || (f.Width == 0 || f.Aligned != 0) && f.Offset%f.StorageAlignment != 0) {
+			return fmt.Errorf("clang: incompatible unnamed storage alignment in %s", r.Name)
+		}
+		if f.Gap > 65536 || f.Gap != 0 && (f.Width != 0 || r.MaxFieldAlignment == 0 || f.Aligned <= r.MaxFieldAlignment || complete && f.Gap > f.Offset) {
+			return fmt.Errorf("clang: invalid pragma boundary gap in %s", r.Name)
 		}
 		before = f.Before
 	}

@@ -4,12 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/cpunion/dylib-go/abi"
 )
 
 var errRecordPacking = errors.New("clang: record packing requires compiler probes")
@@ -21,69 +18,6 @@ func validPacking(value uint64) bool {
 func validatePacking(r Record) error {
 	if !validPacking(r.MaxFieldAlignment) {
 		return fmt.Errorf("clang: invalid packing for %s", r.Name)
-	}
-	if r.MaxFieldAlignment == 0 {
-		return nil
-	}
-	for _, field := range r.FieldAlignments {
-		if field.Aligned > r.MaxFieldAlignment && r.hasBitfields() {
-			return fmt.Errorf("clang: member alignment exceeding pragma packing is not qualified")
-		}
-	}
-	for _, padding := range r.Padding {
-		if padding.Aligned > r.MaxFieldAlignment {
-			return fmt.Errorf("clang: unnamed alignment exceeding pragma packing is not qualified")
-		}
-	}
-	return nil
-}
-
-func validatePackingChildren(r Record, records []Record) error {
-	if r.MaxFieldAlignment == 0 {
-		return nil
-	}
-	var check func(abi.TypeDesc) error
-	check = func(d abi.TypeDesc) error {
-		if d.Type == abi.Array {
-			return check(*d.Elem)
-		}
-		if d.Type != abi.Struct {
-			return nil
-		}
-		for _, child := range records {
-			if !reflect.DeepEqual(child.Description, d) {
-				continue
-			}
-			// Ordinary members use independently measured storage alignment.
-			// Over-cap bitfield combinations still need allocation-unit tests.
-			if !r.hasBitfields() && !child.hasBitfields() {
-				continue
-			}
-			if child.Aligned > r.MaxFieldAlignment {
-				return fmt.Errorf("clang: nested over-aligned records under pragma packing are not qualified")
-			}
-			for _, padding := range child.Padding {
-				if padding.Aligned > r.MaxFieldAlignment {
-					return fmt.Errorf("clang: nested unnamed alignment exceeding pragma packing is not qualified")
-				}
-			}
-			for _, field := range child.FieldAlignments {
-				if field.Aligned > r.MaxFieldAlignment {
-					return fmt.Errorf("clang: nested member alignment exceeding pragma packing is not qualified")
-				}
-			}
-		}
-		for _, field := range d.Fields {
-			if err := check(field.Type); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-	for _, field := range r.Description.Fields {
-		if err := check(field.Type); err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -102,14 +36,17 @@ func memberStorageAlignment(expression, base, offset uint64) (uint64, error) {
 }
 
 func validateMemberAlignments(r Record, complete bool) error {
-	ordinary := r.MaxFieldAlignment != 0 && !r.hasBitfields()
-	if len(r.MemberAlignments) == 0 && (!complete || !ordinary) {
+	packed := r.MaxFieldAlignment != 0
+	if len(r.MemberAlignments) == 0 && (!complete || !packed) {
 		return nil
 	}
-	if !ordinary || len(r.MemberAlignments) != len(r.Description.Fields) {
+	if !packed || len(r.MemberAlignments) != len(r.Description.Fields) {
 		return fmt.Errorf("clang: missing or invalid member alignments in %s", r.Name)
 	}
 	for i, alignment := range r.MemberAlignments {
+		if alignment == 0 && r.bitfieldAt(i) != nil {
+			continue
+		}
 		if alignment == 0 || !validAlignment(alignment) {
 			return fmt.Errorf("clang: invalid member alignment in %s", r.Name)
 		}
