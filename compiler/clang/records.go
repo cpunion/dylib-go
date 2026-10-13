@@ -26,8 +26,9 @@ type Record struct {
 	// Zero is absent; only compiled C adapters preserve this native layout.
 	MaxFieldAlignment uint64
 	// MemberAlignments retains compiler-observed storage alignment for each
-	// ordinary pragma-packed member, reconciled with the record base and offset.
-	// These values describe native storage, not explicit source requests.
+	// pragma-packed member. Ordinary values are reconciled with the record base
+	// and offset. MS bitfields retain alignment only at allocation-unit starts;
+	// other named bitfields use zero. These are observations, not source requests.
 	MemberAlignments []uint64
 	// PackedFields indexes explicitly packed named members, including bitfields.
 	// Public values remain ordinary Go fields and require a compiled C adapter.
@@ -181,9 +182,6 @@ func (h *Header) validateDescriptions() error {
 			return err
 		}
 		if err := validateMemberAlignments(record, false); err != nil {
-			return err
-		}
-		if err := validatePackingChildren(record, h.Records); err != nil {
 			return err
 		}
 		if err := validatePackedFields(record); err != nil {
@@ -382,10 +380,13 @@ func (h *Header) validateHostRecords(signature abi.Signature) error {
 
 func (h *Header) recordProbes() string {
 	declarations, boundaries := h.paddingProbes()
+	alignmentTypes, alignmentValues := h.bitfieldAlignmentProbes()
 	var source strings.Builder
 	source.WriteString(declarations)
+	source.WriteString(alignmentTypes)
 	fmt.Fprintln(&source, "enum {")
 	source.WriteString(boundaries)
+	source.WriteString(alignmentValues)
 	for i, record := range h.Records {
 		fmt.Fprintf(&source, "dylib_record_%d_size=sizeof(%s),\ndylib_record_%d_align=_Alignof(%s),\n", i, record.Name, i, record.Name)
 		for j, field := range record.Description.Fields {
@@ -393,7 +394,7 @@ func (h *Header) recordProbes() string {
 				continue
 			}
 			fmt.Fprintf(&source, "dylib_record_%d_offset_%d=__builtin_offsetof(%s,%s),\n", i, j, record.Name, field.Name)
-			if record.MaxFieldAlignment != 0 && !record.hasBitfields() {
+			if record.MaxFieldAlignment != 0 {
 				fmt.Fprintf(&source, "dylib_record_%d_memberalign_%d=__alignof__(((%s*)0)->%s),\n", i, j, record.Name, field.Name)
 			}
 		}
@@ -454,18 +455,42 @@ func (h *Header) decodeRecordLayouts(data []byte) error {
 			layout.Offsets = append(layout.Offsets, offset)
 		}
 		h.Records[i].Layout = layout
-		if h.Records[i].MaxFieldAlignment != 0 && !h.Records[i].hasBitfields() {
-			h.Records[i].MemberAlignments = nil
+		r := &h.Records[i]
+		members := recordMembers(*r)
+		starts := bitfieldUnitStarts(*r, members)
+		if r.MaxFieldAlignment != 0 {
+			namedStarts := make(map[int]bool)
+			for position := range starts {
+				member := members[position]
+				if member.field >= 0 {
+					namedStarts[member.field] = true
+				}
+			}
+			r.MemberAlignments = nil
 			for j, offset := range layout.Offsets {
+				if r.bitfieldAt(j) != nil && (!h.Target.msLayout() || !namedStarts[j]) {
+					r.MemberAlignments = append(r.MemberAlignments, 0)
+					continue
+				}
 				alignment, err := get(fmt.Sprintf("dylib_record_%d_memberalign_%d", i, j))
 				if err != nil {
 					return err
 				}
-				alignment, err = memberStorageAlignment(alignment, layout.Alignment, offset)
+				if r.bitfieldAt(j) == nil {
+					alignment, err = memberStorageAlignment(alignment, layout.Alignment, offset)
+				}
 				if err != nil {
 					return fmt.Errorf("clang: %s: %w", h.Records[i].Name, err)
 				}
 				h.Records[i].MemberAlignments = append(h.Records[i].MemberAlignments, alignment)
+			}
+		}
+		for position, member := range members {
+			if member.padding >= 0 && r.MaxFieldAlignment != 0 && h.Target.msLayout() && starts[position] {
+				r.Padding[member.padding].StorageAlignment, err = get(fmt.Sprintf("dylib_record_%d_paddingalign_%d", i, member.padding))
+				if err != nil {
+					return err
+				}
 			}
 		}
 		for j := range h.Records[i].Padding {

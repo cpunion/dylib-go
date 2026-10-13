@@ -948,6 +948,44 @@ result.f1 = value.f1;
 result.f2 = value.f2;
 return result;
 }
+#if defined(_WIN32) && !defined(_MSC_VER)
+typedef struct {
+int8_t f0 __attribute__((aligned(1)));
+#pragma pack(push,1)
+_Alignas(2) struct {
+unsigned int :3;
+uint32_t f1:5;
+};
+#pragma pack(pop)
+_Alignas(2) unsigned char boundary1[0];
+unsigned int :0;
+unsigned long long :0;
+#pragma pack(push,1)
+_Alignas(1) struct {
+int32_t f2:7;
+};
+#pragma pack(pop)
+_Alignas(1) unsigned char boundary3[0];
+unsigned int :0;
+#pragma pack(push,1)
+_Alignas(1) struct {
+_Bool f3:1;
+};
+#pragma pack(pop)
+#pragma pack(push,1)
+_Alignas(2) struct {
+uint64_t f4:40;
+};
+#pragma pack(pop)
+double f5[2] __attribute__((packed,aligned(2)));
+void * f6 __attribute__((packed,aligned(2)));
+#pragma pack(push,1)
+_Alignas(2) struct {
+unsigned int :5;
+};
+#pragma pack(pop)
+} dylib_go_42696e64696e6773_record15;
+#else
 #pragma pack(push,2)
 typedef struct {
 int8_t f0;
@@ -980,6 +1018,7 @@ void * f6;
 uint32_t :5;
 } dylib_go_42696e64696e6773_record15;
 #pragma pack(pop)
+#endif
 #if defined(_WIN32) && !defined(_MSC_VER)
 _Static_assert(offsetof(dylib_go_42696e64696e6773_record15,boundary1)==6,"incompatible zero-width boundary");
 _Static_assert(offsetof(dylib_go_42696e64696e6773_record15,boundary3)==10,"incompatible zero-width boundary");
@@ -1050,6 +1089,20 @@ result.f5[i0] = value.f5[i0];
 result.f6 = value.f6;
 return result;
 }
+#if defined(_WIN32) && !defined(_MSC_VER)
+typedef struct {
+#pragma pack(push,1)
+_Alignas(1) struct {
+uint32_t f0:3;
+int32_t f1:5;
+unsigned int :4;
+};
+#pragma pack(pop)
+_Alignas(1) unsigned char boundary1[0];
+unsigned long long :0;
+unsigned int :0;
+} dylib_go_42696e64696e6773_record16;
+#else
 #pragma pack(push,1)
 typedef struct {
 uint32_t f0:3;
@@ -1063,6 +1116,7 @@ unsigned long long :0;
 uint32_t :0;
 } dylib_go_42696e64696e6773_record16;
 #pragma pack(pop)
+#endif
 #if defined(_WIN32) && !defined(_MSC_VER)
 _Static_assert(offsetof(dylib_go_42696e64696e6773_record16,boundary1)==4,"incompatible zero-width boundary");
 #endif
@@ -1107,69 +1161,25 @@ result.f1 = value.f1;
 return result;
 }
 #if defined(_WIN32) && !defined(_MSC_VER)
+typedef struct __attribute__((packed)) {
+int8_t f0 __attribute__((aligned(1)));
 #pragma pack(push,1)
-typedef struct __attribute__((packed)) {
-int8_t f0;
-unsigned char :0;
- unsigned char marker;
-} dylib_go_42696e64696e6773_record17_unnamed0;
-_Static_assert(offsetof(dylib_go_42696e64696e6773_record17_unnamed0,marker)<=2 && 2-offsetof(dylib_go_42696e64696e6773_record17_unnamed0,marker)<2,"incompatible unnamed alignment");
-typedef struct __attribute__((packed)) {
-int8_t f0;
-unsigned char :0;
-unsigned char :(2-offsetof(dylib_go_42696e64696e6773_record17_unnamed0,marker)>0?8:0);
-unsigned char :0;
-unsigned int :3 __attribute__((aligned(2)));
+_Alignas(2) struct {
+unsigned int :3;
 uint32_t f1:5;
-unsigned char :0;
-} dylib_go_42696e64696e6773_record17_padding1;
-_Static_assert(sizeof(dylib_go_42696e64696e6773_record17_padding1)<=6 && 6-sizeof(dylib_go_42696e64696e6773_record17_padding1)<=7,"incompatible zero-width boundary");
-typedef struct __attribute__((packed)) {
-int8_t f0;
-unsigned char :0;
-unsigned char :(2-offsetof(dylib_go_42696e64696e6773_record17_unnamed0,marker)>0?8:0);
-unsigned char :0;
-unsigned int :3 __attribute__((aligned(2)));
-uint32_t f1:5;
-unsigned char :0;
-unsigned char :(6-sizeof(dylib_go_42696e64696e6773_record17_padding1)>0?8:0);
-unsigned char :(6-sizeof(dylib_go_42696e64696e6773_record17_padding1)>1?8:0);
-unsigned char :(6-sizeof(dylib_go_42696e64696e6773_record17_padding1)>2?8:0);
-unsigned char :(6-sizeof(dylib_go_42696e64696e6773_record17_padding1)>3?8:0);
-unsigned char :(6-sizeof(dylib_go_42696e64696e6773_record17_padding1)>4?8:0);
-unsigned char :(6-sizeof(dylib_go_42696e64696e6773_record17_padding1)>5?8:0);
-unsigned char :(6-sizeof(dylib_go_42696e64696e6773_record17_padding1)>6?8:0);
-int32_t f2:7;
-unsigned char :0;
-} dylib_go_42696e64696e6773_record17_padding2;
-_Static_assert(sizeof(dylib_go_42696e64696e6773_record17_padding2)<=10 && 10-sizeof(dylib_go_42696e64696e6773_record17_padding2)<=7,"incompatible zero-width boundary");
-typedef struct __attribute__((packed,aligned(2))) {
-int8_t f0;
-unsigned char :0;
-unsigned char :(2-offsetof(dylib_go_42696e64696e6773_record17_unnamed0,marker)>0?8:0);
-unsigned char :0;
-unsigned int :3 __attribute__((aligned(2)));
-uint32_t f1:5;
-unsigned char :0;
-unsigned char :(6-sizeof(dylib_go_42696e64696e6773_record17_padding1)>0?8:0);
-unsigned char :(6-sizeof(dylib_go_42696e64696e6773_record17_padding1)>1?8:0);
-unsigned char :(6-sizeof(dylib_go_42696e64696e6773_record17_padding1)>2?8:0);
-unsigned char :(6-sizeof(dylib_go_42696e64696e6773_record17_padding1)>3?8:0);
-unsigned char :(6-sizeof(dylib_go_42696e64696e6773_record17_padding1)>4?8:0);
-unsigned char :(6-sizeof(dylib_go_42696e64696e6773_record17_padding1)>5?8:0);
-unsigned char :(6-sizeof(dylib_go_42696e64696e6773_record17_padding1)>6?8:0);
-int32_t f2:7;
-unsigned char :0;
-unsigned char :(10-sizeof(dylib_go_42696e64696e6773_record17_padding2)>0?8:0);
-unsigned char :(10-sizeof(dylib_go_42696e64696e6773_record17_padding2)>1?8:0);
-unsigned char :(10-sizeof(dylib_go_42696e64696e6773_record17_padding2)>2?8:0);
-unsigned char :(10-sizeof(dylib_go_42696e64696e6773_record17_padding2)>3?8:0);
-unsigned char :(10-sizeof(dylib_go_42696e64696e6773_record17_padding2)>4?8:0);
-unsigned char :(10-sizeof(dylib_go_42696e64696e6773_record17_padding2)>5?8:0);
-unsigned char :(10-sizeof(dylib_go_42696e64696e6773_record17_padding2)>6?8:0);
-double f3;
-} dylib_go_42696e64696e6773_record17;
+};
 #pragma pack(pop)
+_Alignas(1) unsigned char boundary1[0];
+unsigned long long :0;
+#pragma pack(push,1)
+_Alignas(1) struct {
+int32_t f2:7;
+};
+#pragma pack(pop)
+_Alignas(1) unsigned char boundary2[0];
+unsigned int :0;
+double f3 __attribute__((packed,aligned(1)));
+} dylib_go_42696e64696e6773_record17;
 #else
 #pragma pack(push,2)
 typedef struct __attribute__((packed)) {
@@ -1231,6 +1241,13 @@ result.f2 = value.f2;
 result.f3 = value.f3;
 return result;
 }
+#if defined(_WIN32) && !defined(_MSC_VER)
+typedef struct {
+float f0 __attribute__((packed,aligned(2)));
+unsigned long long :0;
+float f1 __attribute__((packed,aligned(2)));
+} dylib_go_42696e64696e6773_record18;
+#else
 #pragma pack(push,2)
 typedef struct {
 float f0;
@@ -1238,6 +1255,7 @@ uint64_t :0;
 float f1;
 } dylib_go_42696e64696e6773_record18;
 #pragma pack(pop)
+#endif
 static uint64_t dylib_go_42696e64696e6773_record18_layout(int32_t index) {
 switch(index) {
 case 0:return sizeof(dylib_go_42696e64696e6773_record18);
@@ -1602,10 +1620,10 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "IgnoredFloatZero", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 8, Alignment: 4, Offsets: []uint64{0, 4}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 0, Offset: 4, Aligned: 16}}},
 		{Name: "AlignedUnit", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "aligned_marker", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "aligned_code", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "aligned_tail", Type: abi.TypeDesc{Type: abi.I8}}}}, Layout: abi.Layout{Size: 32, Alignment: 16, Offsets: []uint64{0, 16, 20}}, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 16, Aligned: 16}, {Before: 2, Type: abi.Type(2), Width: 5, Offset: 17, Aligned: 32}}},
 		{Name: "PackedAlignedUnit", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_marker", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_code", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I8}}}}, Layout: abi.Layout{Size: 32, Alignment: 16, Offsets: []uint64{0, 16, 20}}, Packed: true, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 16, Aligned: 16}, {Before: 2, Type: abi.Type(2), Width: 5, Offset: 17, Aligned: 32}}},
-		{Name: "PragmaBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 48, Alignment: 2, Offsets: []uint64{0, 2, 6, 10, 12, 20, 36}}, PackedFields: []int{1, 2}, MaxFieldAlignment: 2, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 7, Mask: []byte{127}}, {Position: 3, Width: 1, Mask: []byte{1}}, {Position: 4, Width: 40, Mask: []byte{255, 255, 255, 255, 255}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 2, Aligned: 2}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 6}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 6}, {Before: 3, Type: abi.Type(2), Width: 0, Offset: 10, Packed: true}, {Before: 7, Type: abi.Type(2), Width: 5, Offset: 0}}},
-		{Name: "PragmaTiny", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 4, Alignment: 1, Offsets: []uint64{0, 0}}, MaxFieldAlignment: 1, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 2, Type: abi.Type(2), Width: 4, Offset: 0}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 4}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 4}}},
-		{Name: "PragmaPacked", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 18, Alignment: 2, Offsets: []uint64{0, 2, 6, 10}}, Packed: true, MaxFieldAlignment: 2, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 7, Mask: []byte{127}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 2, Aligned: 2}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 6}, {Before: 3, Type: abi.Type(2), Width: 0, Offset: 10}}},
-		{Name: "PragmaFloat", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 8, Alignment: 2, Offsets: []uint64{0, 4}}, MaxFieldAlignment: 2, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(4), Width: 0, Offset: 4}}},
+		{Name: "PragmaBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 48, Alignment: 2, Offsets: []uint64{0, 2, 6, 10, 12, 20, 36}}, PackedFields: []int{1, 2}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 0, 1, 1, 2, 2, 2}, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 7, Mask: []byte{127}}, {Position: 3, Width: 1, Mask: []byte{1}}, {Position: 4, Width: 40, Mask: []byte{255, 255, 255, 255, 255}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 2, Aligned: 2, StorageAlignment: 2}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 6, StorageAlignment: 2}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 6}, {Before: 3, Type: abi.Type(2), Width: 0, Offset: 10, Packed: true, StorageAlignment: 1}, {Before: 7, Type: abi.Type(2), Width: 5, Offset: 0, StorageAlignment: 2}}},
+		{Name: "PragmaTiny", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 4, Alignment: 1, Offsets: []uint64{0, 0}}, MaxFieldAlignment: 1, MemberAlignments: []uint64{1, 0}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 2, Type: abi.Type(2), Width: 4, Offset: 0}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 4, StorageAlignment: 1}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 4}}},
+		{Name: "PragmaPacked", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 18, Alignment: 2, Offsets: []uint64{0, 2, 6, 10}}, Packed: true, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 0, 1, 1}, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 7, Mask: []byte{127}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 2, Aligned: 2, StorageAlignment: 2}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 6, StorageAlignment: 1}, {Before: 3, Type: abi.Type(2), Width: 0, Offset: 10, StorageAlignment: 1}}},
+		{Name: "PragmaFloat", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 8, Alignment: 2, Offsets: []uint64{0, 4}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(4), Width: 0, Offset: 4}}},
 		{Name: "PragmaBitsEnvelope", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "envelope_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "bits", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}, {Name: "packed", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}, {Name: "tiny", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}}, {Name: "floating", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F32}}}}}}}, Layout: abi.Layout{Size: 242, Alignment: 2, Offsets: []uint64{0, 2, 194, 230, 234}}, MaxFieldAlignment: 4, MemberAlignments: []uint64{1, 2, 2, 1, 2}},
 		{Name: "PragmaBitsSlot", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "slot_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 10, Alignment: 2, Offsets: []uint64{0, 2}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2}, FunctionPointers: []clang.FunctionPointer{{Position: 1, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
 	},

@@ -125,11 +125,17 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			packedUnits = packedBitfieldUnits(record, members)
 		}
 		packedBridge := t.msLayout && record.Packed && (len(record.Padding) != 0 || record.hasBitfields() && len(record.FieldAlignments) != 0)
-		pragmaBridge := t.msLayout && record.MaxFieldAlignment != 0 && !record.hasBitfields()
+		pragmaBridge := t.msLayout && record.MaxFieldAlignment != 0
 		if packedBridge || pragmaBridge {
 			fmt.Fprint(output, "#if defined(_WIN32) && !defined(_MSC_VER)\n")
 			if pragmaBridge {
-				if err := t.writePragmaRecord(output, i); err != nil {
+				var err error
+				if record.hasBitfields() {
+					err = t.writePragmaBitfields(output, i)
+				} else {
+					err = t.writePragmaRecord(output, i)
+				}
+				if err != nil {
 					return err
 				}
 			} else {

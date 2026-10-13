@@ -461,7 +461,9 @@ never cross that boundary directly. The [tested packed example](examples/packedr
 also covers ordinary `#pragma pack` records, nested packing levels, floating
 arrays, record/member alignment beyond the packing cap, nested aligned values,
 native factories/function-pointer fields, struct pointers and variadic record
-calls with Go and llgo. Over-cap bitfield combinations remain unqualified; see the
+calls with Go and llgo. The [over-aligned bitfield example](examples/overalignedbits/call.go)
+also covers allocation units, zero-width boundaries and nested records whose
+alignment exceeds the packing cap; see the
 [pragma packing scope](docs/clang.md#pragma-packing). Dynamic libffi binding and direct `LLGoSource` reject these layouts.
 For bitfields, Clang emits constants whose byte masks are read with Go's object
 parsers; generated C bridges verify both masks and layout before binding. Public
