@@ -70,3 +70,26 @@ FloatingBare echo_bare(FloatingBare);
 FloatingDouble echo_double(FloatingDouble);
 FloatingArray echo_array(FloatingArray);
 FloatingNested echo_nested(FloatingNested);
+#pragma pack(push,2)
+typedef struct { float interior_left; unsigned :0 __attribute__((aligned(8))); float interior_right; } GapFloat;
+typedef struct { float tail_left; unsigned :0 __attribute__((aligned(8))); float tail_right; unsigned :0 __attribute__((aligned(16))); } GapTail;
+typedef struct { unsigned gap_low:3; signed gap_high:5; unsigned :0 __attribute__((aligned(8))); float bits_right; } GapBits;
+typedef struct { signed char gap_tag; unsigned :0 __attribute__((aligned(4))); float byte_right; } GapByte;
+typedef struct { FloatingBare gap_nested; unsigned :0 __attribute__((aligned(8))); float nested_right; } GapNested;
+typedef struct { float gap_array[1]; unsigned :0 __attribute__((aligned(8))); float array_right; } GapArray;
+typedef struct { signed char first_tag; unsigned :0 __attribute__((aligned(4))); short next_code; unsigned :0 __attribute__((aligned(8))); float multi_right; } GapMultiple;
+#pragma pack(pop)
+GapFloat echo_gap_float(GapFloat);
+GapFloat gap_float_variable(GapFloat,...);
+GapTail echo_gap_tail(GapTail);
+GapTail gap_tail_variable(GapTail,...);
+GapBits echo_gap_bits(GapBits);
+GapBits gap_bits_variable(GapBits,...);
+GapByte echo_gap_byte(GapByte);
+GapByte gap_byte_variable(GapByte,...);
+GapNested echo_gap_nested(GapNested);
+GapNested gap_nested_variable(GapNested,...);
+GapArray echo_gap_array(GapArray);
+GapArray gap_array_variable(GapArray,...);
+GapMultiple echo_gap_multiple(GapMultiple);
+GapMultiple gap_multiple_variable(GapMultiple,...);

@@ -32,6 +32,15 @@ Inner echo_inner(Inner);
 		{"TrailingFloat", "", "float left; float right; float middle; unsigned long long :0 __attribute__((aligned(16)));"},
 		{"TrailingUnaligned", "", "char tag; double real; unsigned long long :0 __attribute__((aligned(16)));"},
 		{"TrailingSingleFloat", "", "float left; unsigned :0 __attribute__((aligned(8)));"},
+		{"InteriorFloat", "", "float left; unsigned :0 __attribute__((aligned(8))); float right;"},
+		{"InteriorTail", "", "float left; unsigned :0 __attribute__((aligned(8))); float right; unsigned :0 __attribute__((aligned(16)));"},
+		{"InteriorArray", "", "float items[1]; unsigned :0 __attribute__((aligned(8))); float right;"},
+		{"InteriorBits", "", "unsigned low:3; signed high:5; unsigned :0 __attribute__((aligned(8))); float right;"},
+		{"InteriorByte", "", "signed char tag; unsigned :0 __attribute__((aligned(4))); float right;"},
+		{"InteriorMultiple", "", "signed char tag; unsigned :0 __attribute__((aligned(4))); short high; unsigned :0 __attribute__((aligned(8))); float right;"},
+		{"InteriorConsecutive", "", "signed char tag; unsigned :0 __attribute__((aligned(4))); unsigned :0 __attribute__((aligned(8))); float right;"},
+		{"InteriorPacked", "__attribute__((packed))", "float left; unsigned :0 __attribute__((aligned(8))); float right;"},
+		{"InteriorAligned", "__attribute__((aligned(4)))", "float left; unsigned :0 __attribute__((aligned(8))); float right;"},
 	}
 	fields := regexp.MustCompile(`\b(tag|low|high|truth|wide|real|context|items|left|right)\b`)
 	for _, cap := range []int{1, 2, 4, 8, 16} {
@@ -255,14 +264,26 @@ Value echo(Value);
 				t.Fatal(err)
 			}
 			_, err = h.CgoSource("bindings", "Bindings")
-			if strings.HasPrefix(triple, "x86_64-") && !strings.Contains(triple, "windows") {
-				if err == nil || !strings.Contains(err.Error(), "implicit-padding C bridge") {
-					t.Fatal("unqualified GCC register classification accepted", err)
-				}
-			} else if err != nil {
+			if err != nil {
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+func TestPragmaBitfieldSmallGNUUnnamedGapRejected(t *testing.T) {
+	path := headerFile(t, `
+#pragma pack(push,2)
+typedef struct { unsigned :1; signed char tag; unsigned :0 __attribute__((aligned(4))); float right; } Value;
+#pragma pack(pop)
+Value echo(Value);
+`)
+	h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Target: "x86_64-linux-gnu", Functions: []string{"echo"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.CgoSource("bindings", "Bindings"); err == nil || !strings.Contains(err.Error(), "implicit-padding C bridge") {
+		t.Fatal("unqualified original unnamed value accepted", err)
 	}
 }
 

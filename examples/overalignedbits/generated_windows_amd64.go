@@ -901,6 +901,365 @@ dylib_go_42696e64696e6773_record15_transport result = {0};
 result.f0 = value.f0;
 return result;
 }
+#if defined(_WIN32) && !defined(_MSC_VER)
+typedef struct {
+float f0 __attribute__((packed,aligned(2)));
+unsigned int :0;
+float f1 __attribute__((packed,aligned(2)));
+} dylib_go_42696e64696e6773_record16;
+#else
+#pragma pack(push,2)
+typedef struct {
+float f0;
+#if defined(_WIN32) && !defined(_MSC_VER)
+uint32_t :0;
+#else
+uint32_t :0 __attribute__((aligned(8)));
+#endif
+float f1;
+} dylib_go_42696e64696e6773_record16;
+#pragma pack(pop)
+#endif
+static uint64_t dylib_go_42696e64696e6773_record16_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record16);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record16);
+case 2:return offsetof(dylib_go_42696e64696e6773_record16,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record16,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+float f0;
+float f1;
+} dylib_go_42696e64696e6773_record16_transport;
+static dylib_go_42696e64696e6773_record16 dylib_go_42696e64696e6773_record16_from_transport(dylib_go_42696e64696e6773_record16_transport value) {
+dylib_go_42696e64696e6773_record16 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record16_transport dylib_go_42696e64696e6773_record16_to_transport(dylib_go_42696e64696e6773_record16 value) {
+dylib_go_42696e64696e6773_record16_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+#if defined(_WIN32) && !defined(_MSC_VER)
+typedef struct {
+float f0 __attribute__((packed,aligned(2)));
+unsigned int :0;
+float f1 __attribute__((packed,aligned(2)));
+unsigned int :0;
+} dylib_go_42696e64696e6773_record17;
+#else
+#pragma pack(push,2)
+typedef struct {
+float f0;
+#if defined(_WIN32) && !defined(_MSC_VER)
+uint32_t :0;
+#else
+uint32_t :0 __attribute__((aligned(8)));
+#endif
+float f1;
+#if defined(_WIN32) && !defined(_MSC_VER)
+uint32_t :0;
+#else
+uint32_t :0 __attribute__((aligned(16)));
+#endif
+} dylib_go_42696e64696e6773_record17;
+#pragma pack(pop)
+#endif
+static uint64_t dylib_go_42696e64696e6773_record17_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record17);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record17);
+case 2:return offsetof(dylib_go_42696e64696e6773_record17,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record17,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+float f0;
+float f1;
+} dylib_go_42696e64696e6773_record17_transport;
+static dylib_go_42696e64696e6773_record17 dylib_go_42696e64696e6773_record17_from_transport(dylib_go_42696e64696e6773_record17_transport value) {
+dylib_go_42696e64696e6773_record17 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record17_transport dylib_go_42696e64696e6773_record17_to_transport(dylib_go_42696e64696e6773_record17 value) {
+dylib_go_42696e64696e6773_record17_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+#if defined(_WIN32) && !defined(_MSC_VER)
+typedef struct {
+#pragma pack(push,1)
+_Alignas(2) struct {
+uint32_t f0:3;
+int32_t f1:5;
+};
+#pragma pack(pop)
+_Alignas(8) unsigned char boundary0[0];
+unsigned int :0;
+float f2 __attribute__((packed,aligned(4)));
+} dylib_go_42696e64696e6773_record18;
+#else
+#pragma pack(push,2)
+typedef struct {
+uint32_t f0:3;
+int32_t f1:5;
+#if defined(_WIN32) && !defined(_MSC_VER)
+unsigned int boundary0[0] __attribute__((aligned(8)));
+#else
+unsigned int :0 __attribute__((aligned(8)));
+#endif
+float f2;
+} dylib_go_42696e64696e6773_record18;
+#pragma pack(pop)
+#endif
+#if defined(_WIN32) && !defined(_MSC_VER)
+_Static_assert(offsetof(dylib_go_42696e64696e6773_record18,boundary0)==8,"incompatible zero-width boundary");
+#endif
+static uint64_t dylib_go_42696e64696e6773_record18_mask(int32_t field,uint64_t byte) {
+volatile dylib_go_42696e64696e6773_record18 value;
+volatile unsigned char *data = (volatile unsigned char *)&value;
+for (uint64_t i=0;i<sizeof(value);++i) data[i]=0;
+switch(field) {
+case 0:value.f0=7ULL;break;
+case 1:value.f1=-1;break;
+default:return UINT64_MAX;
+}
+if (byte==UINT64_MAX) {
+for (uint64_t i=0;i<sizeof(value);++i) if (data[i]) return i;
+return UINT64_MAX;
+}
+return byte<sizeof(value)?data[byte]:UINT64_MAX;
+}
+static uint64_t dylib_go_42696e64696e6773_record18_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record18);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record18);
+case 2:return dylib_go_42696e64696e6773_record18_mask(0,UINT64_MAX);
+case 3:return dylib_go_42696e64696e6773_record18_mask(1,UINT64_MAX);
+case 4:return offsetof(dylib_go_42696e64696e6773_record18,f2);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+uint32_t f0;
+int32_t f1;
+float f2;
+} dylib_go_42696e64696e6773_record18_transport;
+static dylib_go_42696e64696e6773_record18 dylib_go_42696e64696e6773_record18_from_transport(dylib_go_42696e64696e6773_record18_transport value) {
+dylib_go_42696e64696e6773_record18 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+return result;
+}
+static dylib_go_42696e64696e6773_record18_transport dylib_go_42696e64696e6773_record18_to_transport(dylib_go_42696e64696e6773_record18 value) {
+dylib_go_42696e64696e6773_record18_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+return result;
+}
+#if defined(_WIN32) && !defined(_MSC_VER)
+typedef struct {
+int8_t f0 __attribute__((aligned(1)));
+unsigned int :0;
+float f1 __attribute__((packed,aligned(2)));
+} dylib_go_42696e64696e6773_record19;
+#else
+#pragma pack(push,2)
+typedef struct {
+int8_t f0;
+#if defined(_WIN32) && !defined(_MSC_VER)
+uint32_t :0;
+#else
+uint32_t :0 __attribute__((aligned(4)));
+#endif
+float f1;
+} dylib_go_42696e64696e6773_record19;
+#pragma pack(pop)
+#endif
+static uint64_t dylib_go_42696e64696e6773_record19_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record19);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record19);
+case 2:return offsetof(dylib_go_42696e64696e6773_record19,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record19,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+float f1;
+} dylib_go_42696e64696e6773_record19_transport;
+static dylib_go_42696e64696e6773_record19 dylib_go_42696e64696e6773_record19_from_transport(dylib_go_42696e64696e6773_record19_transport value) {
+dylib_go_42696e64696e6773_record19 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record19_transport dylib_go_42696e64696e6773_record19_to_transport(dylib_go_42696e64696e6773_record19 value) {
+dylib_go_42696e64696e6773_record19_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+#if defined(_WIN32) && !defined(_MSC_VER)
+typedef struct {
+dylib_go_42696e64696e6773_record12 f0 __attribute__((packed,aligned(2)));
+unsigned int :0;
+float f1 __attribute__((packed,aligned(2)));
+} dylib_go_42696e64696e6773_record20;
+#else
+#pragma pack(push,2)
+typedef struct {
+dylib_go_42696e64696e6773_record12 f0;
+#if defined(_WIN32) && !defined(_MSC_VER)
+uint32_t :0;
+#else
+uint32_t :0 __attribute__((aligned(8)));
+#endif
+float f1;
+} dylib_go_42696e64696e6773_record20;
+#pragma pack(pop)
+#endif
+static uint64_t dylib_go_42696e64696e6773_record20_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record20);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record20);
+case 2:return offsetof(dylib_go_42696e64696e6773_record20,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record20,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+dylib_go_42696e64696e6773_record12 f0;
+float f1;
+} dylib_go_42696e64696e6773_record20_transport;
+static dylib_go_42696e64696e6773_record20 dylib_go_42696e64696e6773_record20_from_transport(dylib_go_42696e64696e6773_record20_transport value) {
+dylib_go_42696e64696e6773_record20 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record20_transport dylib_go_42696e64696e6773_record20_to_transport(dylib_go_42696e64696e6773_record20 value) {
+dylib_go_42696e64696e6773_record20_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+#if defined(_WIN32) && !defined(_MSC_VER)
+typedef struct {
+float f0[1] __attribute__((packed,aligned(2)));
+unsigned int :0;
+float f1 __attribute__((packed,aligned(2)));
+} dylib_go_42696e64696e6773_record21;
+#else
+#pragma pack(push,2)
+typedef struct {
+float f0[1];
+#if defined(_WIN32) && !defined(_MSC_VER)
+uint32_t :0;
+#else
+uint32_t :0 __attribute__((aligned(8)));
+#endif
+float f1;
+} dylib_go_42696e64696e6773_record21;
+#pragma pack(pop)
+#endif
+static uint64_t dylib_go_42696e64696e6773_record21_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record21);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record21);
+case 2:return offsetof(dylib_go_42696e64696e6773_record21,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record21,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+float f0[1];
+float f1;
+} dylib_go_42696e64696e6773_record21_transport;
+static dylib_go_42696e64696e6773_record21 dylib_go_42696e64696e6773_record21_from_transport(dylib_go_42696e64696e6773_record21_transport value) {
+dylib_go_42696e64696e6773_record21 result = {0};
+for (uint32_t i0 = 0; i0 < 1; ++i0) {
+result.f0[i0] = value.f0[i0];
+}
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record21_transport dylib_go_42696e64696e6773_record21_to_transport(dylib_go_42696e64696e6773_record21 value) {
+dylib_go_42696e64696e6773_record21_transport result = {0};
+for (uint32_t i0 = 0; i0 < 1; ++i0) {
+result.f0[i0] = value.f0[i0];
+}
+result.f1 = value.f1;
+return result;
+}
+#if defined(_WIN32) && !defined(_MSC_VER)
+typedef struct {
+int8_t f0 __attribute__((aligned(1)));
+unsigned int :0;
+int16_t f1 __attribute__((packed,aligned(2)));
+unsigned int :0;
+float f2 __attribute__((packed,aligned(2)));
+} dylib_go_42696e64696e6773_record22;
+#else
+#pragma pack(push,2)
+typedef struct {
+int8_t f0;
+#if defined(_WIN32) && !defined(_MSC_VER)
+uint32_t :0;
+#else
+uint32_t :0 __attribute__((aligned(4)));
+#endif
+int16_t f1;
+#if defined(_WIN32) && !defined(_MSC_VER)
+uint32_t :0;
+#else
+uint32_t :0 __attribute__((aligned(8)));
+#endif
+float f2;
+} dylib_go_42696e64696e6773_record22;
+#pragma pack(pop)
+#endif
+static uint64_t dylib_go_42696e64696e6773_record22_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record22);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record22);
+case 2:return offsetof(dylib_go_42696e64696e6773_record22,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record22,f1);
+case 4:return offsetof(dylib_go_42696e64696e6773_record22,f2);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+int16_t f1;
+float f2;
+} dylib_go_42696e64696e6773_record22_transport;
+static dylib_go_42696e64696e6773_record22 dylib_go_42696e64696e6773_record22_from_transport(dylib_go_42696e64696e6773_record22_transport value) {
+dylib_go_42696e64696e6773_record22 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+return result;
+}
+static dylib_go_42696e64696e6773_record22_transport dylib_go_42696e64696e6773_record22_to_transport(dylib_go_42696e64696e6773_record22 value) {
+dylib_go_42696e64696e6773_record22_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+return result;
+}
 typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call0_function)(dylib_go_42696e64696e6773_record0);
 static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call0(uintptr_t address,dylib_go_42696e64696e6773_record0_transport p0) {
 return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call0_function)address)(dylib_go_42696e64696e6773_record0_from_transport(p0)));
@@ -1011,6 +1370,62 @@ typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call26_fu
 static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call26(uintptr_t address,dylib_go_42696e64696e6773_record15_transport p0) {
 return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call26_function)address)(dylib_go_42696e64696e6773_record15_from_transport(p0)));
 }
+typedef dylib_go_42696e64696e6773_record16 (*dylib_go_42696e64696e6773_call27_function)(dylib_go_42696e64696e6773_record16);
+static dylib_go_42696e64696e6773_record16_transport dylib_go_42696e64696e6773_call27(uintptr_t address,dylib_go_42696e64696e6773_record16_transport p0) {
+return dylib_go_42696e64696e6773_record16_to_transport(((dylib_go_42696e64696e6773_call27_function)address)(dylib_go_42696e64696e6773_record16_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record16 (*dylib_go_42696e64696e6773_call28_function)(dylib_go_42696e64696e6773_record16,...);
+static dylib_go_42696e64696e6773_record16_transport dylib_go_42696e64696e6773_call28(uintptr_t address,dylib_go_42696e64696e6773_record16_transport p0,int32_t p1,float p2) {
+return dylib_go_42696e64696e6773_record16_to_transport(((dylib_go_42696e64696e6773_call28_function)address)(dylib_go_42696e64696e6773_record16_from_transport(p0),(int8_t)p1,p2));
+}
+typedef dylib_go_42696e64696e6773_record17 (*dylib_go_42696e64696e6773_call29_function)(dylib_go_42696e64696e6773_record17);
+static dylib_go_42696e64696e6773_record17_transport dylib_go_42696e64696e6773_call29(uintptr_t address,dylib_go_42696e64696e6773_record17_transport p0) {
+return dylib_go_42696e64696e6773_record17_to_transport(((dylib_go_42696e64696e6773_call29_function)address)(dylib_go_42696e64696e6773_record17_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record17 (*dylib_go_42696e64696e6773_call30_function)(dylib_go_42696e64696e6773_record17,...);
+static dylib_go_42696e64696e6773_record17_transport dylib_go_42696e64696e6773_call30(uintptr_t address,dylib_go_42696e64696e6773_record17_transport p0,int32_t p1,float p2) {
+return dylib_go_42696e64696e6773_record17_to_transport(((dylib_go_42696e64696e6773_call30_function)address)(dylib_go_42696e64696e6773_record17_from_transport(p0),(int8_t)p1,p2));
+}
+typedef dylib_go_42696e64696e6773_record18 (*dylib_go_42696e64696e6773_call31_function)(dylib_go_42696e64696e6773_record18);
+static dylib_go_42696e64696e6773_record18_transport dylib_go_42696e64696e6773_call31(uintptr_t address,dylib_go_42696e64696e6773_record18_transport p0) {
+return dylib_go_42696e64696e6773_record18_to_transport(((dylib_go_42696e64696e6773_call31_function)address)(dylib_go_42696e64696e6773_record18_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record18 (*dylib_go_42696e64696e6773_call32_function)(dylib_go_42696e64696e6773_record18,...);
+static dylib_go_42696e64696e6773_record18_transport dylib_go_42696e64696e6773_call32(uintptr_t address,dylib_go_42696e64696e6773_record18_transport p0,int32_t p1,float p2) {
+return dylib_go_42696e64696e6773_record18_to_transport(((dylib_go_42696e64696e6773_call32_function)address)(dylib_go_42696e64696e6773_record18_from_transport(p0),(int8_t)p1,p2));
+}
+typedef dylib_go_42696e64696e6773_record19 (*dylib_go_42696e64696e6773_call33_function)(dylib_go_42696e64696e6773_record19);
+static dylib_go_42696e64696e6773_record19_transport dylib_go_42696e64696e6773_call33(uintptr_t address,dylib_go_42696e64696e6773_record19_transport p0) {
+return dylib_go_42696e64696e6773_record19_to_transport(((dylib_go_42696e64696e6773_call33_function)address)(dylib_go_42696e64696e6773_record19_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record19 (*dylib_go_42696e64696e6773_call34_function)(dylib_go_42696e64696e6773_record19,...);
+static dylib_go_42696e64696e6773_record19_transport dylib_go_42696e64696e6773_call34(uintptr_t address,dylib_go_42696e64696e6773_record19_transport p0,int32_t p1,float p2) {
+return dylib_go_42696e64696e6773_record19_to_transport(((dylib_go_42696e64696e6773_call34_function)address)(dylib_go_42696e64696e6773_record19_from_transport(p0),(int8_t)p1,p2));
+}
+typedef dylib_go_42696e64696e6773_record20 (*dylib_go_42696e64696e6773_call35_function)(dylib_go_42696e64696e6773_record20);
+static dylib_go_42696e64696e6773_record20_transport dylib_go_42696e64696e6773_call35(uintptr_t address,dylib_go_42696e64696e6773_record20_transport p0) {
+return dylib_go_42696e64696e6773_record20_to_transport(((dylib_go_42696e64696e6773_call35_function)address)(dylib_go_42696e64696e6773_record20_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record20 (*dylib_go_42696e64696e6773_call36_function)(dylib_go_42696e64696e6773_record20,...);
+static dylib_go_42696e64696e6773_record20_transport dylib_go_42696e64696e6773_call36(uintptr_t address,dylib_go_42696e64696e6773_record20_transport p0,int32_t p1,float p2) {
+return dylib_go_42696e64696e6773_record20_to_transport(((dylib_go_42696e64696e6773_call36_function)address)(dylib_go_42696e64696e6773_record20_from_transport(p0),(int8_t)p1,p2));
+}
+typedef dylib_go_42696e64696e6773_record21 (*dylib_go_42696e64696e6773_call37_function)(dylib_go_42696e64696e6773_record21);
+static dylib_go_42696e64696e6773_record21_transport dylib_go_42696e64696e6773_call37(uintptr_t address,dylib_go_42696e64696e6773_record21_transport p0) {
+return dylib_go_42696e64696e6773_record21_to_transport(((dylib_go_42696e64696e6773_call37_function)address)(dylib_go_42696e64696e6773_record21_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record21 (*dylib_go_42696e64696e6773_call38_function)(dylib_go_42696e64696e6773_record21,...);
+static dylib_go_42696e64696e6773_record21_transport dylib_go_42696e64696e6773_call38(uintptr_t address,dylib_go_42696e64696e6773_record21_transport p0,int32_t p1,float p2) {
+return dylib_go_42696e64696e6773_record21_to_transport(((dylib_go_42696e64696e6773_call38_function)address)(dylib_go_42696e64696e6773_record21_from_transport(p0),(int8_t)p1,p2));
+}
+typedef dylib_go_42696e64696e6773_record22 (*dylib_go_42696e64696e6773_call39_function)(dylib_go_42696e64696e6773_record22);
+static dylib_go_42696e64696e6773_record22_transport dylib_go_42696e64696e6773_call39(uintptr_t address,dylib_go_42696e64696e6773_record22_transport p0) {
+return dylib_go_42696e64696e6773_record22_to_transport(((dylib_go_42696e64696e6773_call39_function)address)(dylib_go_42696e64696e6773_record22_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record22 (*dylib_go_42696e64696e6773_call40_function)(dylib_go_42696e64696e6773_record22,...);
+static dylib_go_42696e64696e6773_record22_transport dylib_go_42696e64696e6773_call40(uintptr_t address,dylib_go_42696e64696e6773_record22_transport p0,int32_t p1,float p2) {
+return dylib_go_42696e64696e6773_record22_to_transport(((dylib_go_42696e64696e6773_call40_function)address)(dylib_go_42696e64696e6773_record22_from_transport(p0),(int8_t)p1,p2));
+}
 */
 import "C"
 
@@ -1053,6 +1468,20 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "echo_double", Symbol: "echo_double", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "double_left", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "double_left", Type: abi.TypeDesc{Type: abi.F64}}}}}},
 		{Name: "echo_array", Symbol: "echo_array", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "array_values", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F32}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "array_values", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F32}}}}}}},
 		{Name: "echo_nested", Symbol: "echo_nested", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "nested", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bare_left", Type: abi.TypeDesc{Type: abi.F32}}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "nested", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bare_left", Type: abi.TypeDesc{Type: abi.F32}}}}}}}}},
+		{Name: "echo_gap_float", Symbol: "echo_gap_float", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "interior_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "interior_right", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "interior_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "interior_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "gap_float_variable", Symbol: "gap_float_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "interior_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "interior_right", Type: abi.TypeDesc{Type: abi.F32}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "interior_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "interior_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "echo_gap_tail", Symbol: "echo_gap_tail", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tail_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "tail_right", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tail_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "tail_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "gap_tail_variable", Symbol: "gap_tail_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tail_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "tail_right", Type: abi.TypeDesc{Type: abi.F32}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tail_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "tail_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "echo_gap_bits", Symbol: "echo_gap_bits", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "gap_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "bits_right", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "gap_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "bits_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "gap_bits_variable", Symbol: "gap_bits_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "gap_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "bits_right", Type: abi.TypeDesc{Type: abi.F32}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "gap_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "bits_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "echo_gap_byte", Symbol: "echo_gap_byte", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_right", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "gap_byte_variable", Symbol: "gap_byte_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_right", Type: abi.TypeDesc{Type: abi.F32}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "echo_gap_nested", Symbol: "echo_gap_nested", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_nested", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bare_left", Type: abi.TypeDesc{Type: abi.F32}}}}}, {Name: "nested_right", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_nested", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bare_left", Type: abi.TypeDesc{Type: abi.F32}}}}}, {Name: "nested_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "gap_nested_variable", Symbol: "gap_nested_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_nested", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bare_left", Type: abi.TypeDesc{Type: abi.F32}}}}}, {Name: "nested_right", Type: abi.TypeDesc{Type: abi.F32}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_nested", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bare_left", Type: abi.TypeDesc{Type: abi.F32}}}}}, {Name: "nested_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "echo_gap_array", Symbol: "echo_gap_array", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_array", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F32}}}, {Name: "array_right", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_array", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F32}}}, {Name: "array_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "gap_array_variable", Symbol: "gap_array_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_array", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F32}}}, {Name: "array_right", Type: abi.TypeDesc{Type: abi.F32}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_array", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F32}}}, {Name: "array_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "echo_gap_multiple", Symbol: "echo_gap_multiple", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "next_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_right", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "next_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "gap_multiple_variable", Symbol: "gap_multiple_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "next_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_right", Type: abi.TypeDesc{Type: abi.F32}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "next_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
 	},
 	Records: []clang.Record{
 		{Name: "Tiny", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 8, Alignment: 8, Offsets: []uint64{0, 0}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{8, 0}, FieldAlignments: []clang.FieldAlignment{{Position: 0, Aligned: 8}, {Position: 1, Aligned: 32}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}}},
@@ -1071,6 +1500,13 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "FloatingDouble", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "double_left", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 8, Alignment: 2, Offsets: []uint64{0}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 0, Offset: 8, Aligned: 8}}},
 		{Name: "FloatingArray", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "array_values", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F32}}}}}, Layout: abi.Layout{Size: 4, Alignment: 2, Offsets: []uint64{0}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 0, Offset: 4, Aligned: 8}}},
 		{Name: "FloatingNested", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "nested", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bare_left", Type: abi.TypeDesc{Type: abi.F32}}}}}}}, Layout: abi.Layout{Size: 4, Alignment: 2, Offsets: []uint64{0}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2}},
+		{Name: "GapFloat", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "interior_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "interior_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 8, Alignment: 2, Offsets: []uint64{0, 4}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 0, Offset: 4, Aligned: 8}}},
+		{Name: "GapTail", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tail_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "tail_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 8, Alignment: 2, Offsets: []uint64{0, 4}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 0, Offset: 4, Aligned: 8}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 8, Aligned: 16}}},
+		{Name: "GapBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "gap_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "bits_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 16, Alignment: 8, Offsets: []uint64{0, 0, 8}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 0, 4}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 2, Type: abi.Type(2), Width: 0, Offset: 8, Aligned: 8, StorageAlignment: 8}}},
+		{Name: "GapByte", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 6, Alignment: 2, Offsets: []uint64{0, 2}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 0, Offset: 1, Aligned: 4}}},
+		{Name: "GapNested", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_nested", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bare_left", Type: abi.TypeDesc{Type: abi.F32}}}}}, {Name: "nested_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 8, Alignment: 2, Offsets: []uint64{0, 4}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 0, Offset: 4, Aligned: 8}}},
+		{Name: "GapArray", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_array", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F32}}}, {Name: "array_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 8, Alignment: 2, Offsets: []uint64{0, 4}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 0, Offset: 4, Aligned: 8}}},
+		{Name: "GapMultiple", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "next_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 8, Alignment: 2, Offsets: []uint64{0, 2, 4}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 0, Offset: 1, Aligned: 4}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 4, Aligned: 8}}},
 	},
 }
 
@@ -1208,6 +1644,64 @@ type BindingsRecord14 struct {
 //llgo:type C
 type BindingsRecord15 struct {
 	Nested BindingsRecord12
+}
+
+// BindingsRecord16 describes GapFloat; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord16 struct {
+	Interior_left  float32
+	Interior_right float32
+}
+
+// BindingsRecord17 describes GapTail; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord17 struct {
+	Tail_left  float32
+	Tail_right float32
+}
+
+// BindingsRecord18 describes GapBits; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord18 struct {
+	Gap_low    uint32
+	Gap_high   int32
+	Bits_right float32
+}
+
+// BindingsRecord19 describes GapByte; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord19 struct {
+	Gap_tag    int8
+	Byte_right float32
+}
+
+// BindingsRecord20 describes GapNested; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord20 struct {
+	Gap_nested   BindingsRecord12
+	Nested_right float32
+}
+
+// BindingsRecord21 describes GapArray; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord21 struct {
+	Gap_array   [1]float32
+	Array_right float32
+}
+
+// BindingsRecord22 describes GapMultiple; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord22 struct {
+	First_tag   int8
+	Next_code   int16
+	Multi_right float32
 }
 
 func _BindingsRecord0ToC(value BindingsRecord0) (result C.dylib_go_42696e64696e6773_record0_transport) {
@@ -1446,6 +1940,98 @@ func _BindingsRecord15FromC(value C.dylib_go_42696e64696e6773_record15_transport
 	return result
 }
 
+func _BindingsRecord16ToC(value BindingsRecord16) (result C.dylib_go_42696e64696e6773_record16_transport) {
+	result.f0 = C.float(value.Interior_left)
+	result.f1 = C.float(value.Interior_right)
+	return result
+}
+
+func _BindingsRecord16FromC(value C.dylib_go_42696e64696e6773_record16_transport) (result BindingsRecord16) {
+	result.Interior_left = float32(value.f0)
+	result.Interior_right = float32(value.f1)
+	return result
+}
+
+func _BindingsRecord17ToC(value BindingsRecord17) (result C.dylib_go_42696e64696e6773_record17_transport) {
+	result.f0 = C.float(value.Tail_left)
+	result.f1 = C.float(value.Tail_right)
+	return result
+}
+
+func _BindingsRecord17FromC(value C.dylib_go_42696e64696e6773_record17_transport) (result BindingsRecord17) {
+	result.Tail_left = float32(value.f0)
+	result.Tail_right = float32(value.f1)
+	return result
+}
+
+func _BindingsRecord18ToC(value BindingsRecord18) (result C.dylib_go_42696e64696e6773_record18_transport) {
+	result.f0 = C.uint32_t(value.Gap_low)
+	result.f1 = C.int32_t(value.Gap_high)
+	result.f2 = C.float(value.Bits_right)
+	return result
+}
+
+func _BindingsRecord18FromC(value C.dylib_go_42696e64696e6773_record18_transport) (result BindingsRecord18) {
+	result.Gap_low = uint32(value.f0)
+	result.Gap_high = int32(value.f1)
+	result.Bits_right = float32(value.f2)
+	return result
+}
+
+func _BindingsRecord19ToC(value BindingsRecord19) (result C.dylib_go_42696e64696e6773_record19_transport) {
+	result.f0 = C.int8_t(value.Gap_tag)
+	result.f1 = C.float(value.Byte_right)
+	return result
+}
+
+func _BindingsRecord19FromC(value C.dylib_go_42696e64696e6773_record19_transport) (result BindingsRecord19) {
+	result.Gap_tag = int8(value.f0)
+	result.Byte_right = float32(value.f1)
+	return result
+}
+
+func _BindingsRecord20ToC(value BindingsRecord20) (result C.dylib_go_42696e64696e6773_record20_transport) {
+	result.f0 = _BindingsRecord12ToC(value.Gap_nested)
+	result.f1 = C.float(value.Nested_right)
+	return result
+}
+
+func _BindingsRecord20FromC(value C.dylib_go_42696e64696e6773_record20_transport) (result BindingsRecord20) {
+	result.Gap_nested = _BindingsRecord12FromC(value.f0)
+	result.Nested_right = float32(value.f1)
+	return result
+}
+
+func _BindingsRecord21ToC(value BindingsRecord21) (result C.dylib_go_42696e64696e6773_record21_transport) {
+	for i0 := range 1 {
+		result.f0[i0] = C.float(value.Gap_array[i0])
+	}
+	result.f1 = C.float(value.Array_right)
+	return result
+}
+
+func _BindingsRecord21FromC(value C.dylib_go_42696e64696e6773_record21_transport) (result BindingsRecord21) {
+	for i0 := range 1 {
+		result.Gap_array[i0] = float32(value.f0[i0])
+	}
+	result.Array_right = float32(value.f1)
+	return result
+}
+
+func _BindingsRecord22ToC(value BindingsRecord22) (result C.dylib_go_42696e64696e6773_record22_transport) {
+	result.f0 = C.int8_t(value.First_tag)
+	result.f1 = C.int16_t(value.Next_code)
+	result.f2 = C.float(value.Multi_right)
+	return result
+}
+
+func _BindingsRecord22FromC(value C.dylib_go_42696e64696e6773_record22_transport) (result BindingsRecord22) {
+	result.First_tag = int8(value.f0)
+	result.Next_code = int16(value.f1)
+	result.Multi_right = float32(value.f2)
+	return result
+}
+
 // Bindings retains symbol handles; its caller owns the Session.
 type Bindings struct {
 	symbol0  *dylib.Symbol
@@ -1475,6 +2061,20 @@ type Bindings struct {
 	symbol24 *dylib.Symbol
 	symbol25 *dylib.Symbol
 	symbol26 *dylib.Symbol
+	symbol27 *dylib.Symbol
+	symbol28 *dylib.Symbol
+	symbol29 *dylib.Symbol
+	symbol30 *dylib.Symbol
+	symbol31 *dylib.Symbol
+	symbol32 *dylib.Symbol
+	symbol33 *dylib.Symbol
+	symbol34 *dylib.Symbol
+	symbol35 *dylib.Symbol
+	symbol36 *dylib.Symbol
+	symbol37 *dylib.Symbol
+	symbol38 *dylib.Symbol
+	symbol39 *dylib.Symbol
+	symbol40 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -1533,6 +2133,27 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 	}
 	if uint64(C.dylib_go_42696e64696e6773_record15_layout(0)) != 4 || uint64(C.dylib_go_42696e64696e6773_record15_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record15_layout(2)) != 0 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for FloatingNested")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record16_layout(0)) != 8 || uint64(C.dylib_go_42696e64696e6773_record16_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record16_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record16_layout(3)) != 4 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for GapFloat")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record17_layout(0)) != 8 || uint64(C.dylib_go_42696e64696e6773_record17_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record17_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record17_layout(3)) != 4 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for GapTail")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record18_layout(0)) != 16 || uint64(C.dylib_go_42696e64696e6773_record18_layout(1)) != 8 || uint64(C.dylib_go_42696e64696e6773_record18_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record18_layout(3)) != 0 || uint64(C.dylib_go_42696e64696e6773_record18_layout(4)) != 8 || uint64(C.dylib_go_42696e64696e6773_record18_mask(0, 0)) != 7 || uint64(C.dylib_go_42696e64696e6773_record18_mask(1, 0)) != 248 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for GapBits")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record19_layout(0)) != 6 || uint64(C.dylib_go_42696e64696e6773_record19_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record19_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record19_layout(3)) != 2 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for GapByte")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record20_layout(0)) != 8 || uint64(C.dylib_go_42696e64696e6773_record20_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record20_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record20_layout(3)) != 4 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for GapNested")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record21_layout(0)) != 8 || uint64(C.dylib_go_42696e64696e6773_record21_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record21_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record21_layout(3)) != 4 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for GapArray")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record22_layout(0)) != 8 || uint64(C.dylib_go_42696e64696e6773_record22_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record22_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record22_layout(3)) != 2 || uint64(C.dylib_go_42696e64696e6773_record22_layout(4)) != 4 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for GapMultiple")
 	}
 	symbol0, err := session.Resolve("echo_tiny")
 	if err != nil {
@@ -1669,6 +2290,76 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol26 = symbol26
+	symbol27, err := session.Resolve("echo_gap_float")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol27 = symbol27
+	symbol28, err := session.Resolve("gap_float_variable")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol28 = symbol28
+	symbol29, err := session.Resolve("echo_gap_tail")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol29 = symbol29
+	symbol30, err := session.Resolve("gap_tail_variable")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol30 = symbol30
+	symbol31, err := session.Resolve("echo_gap_bits")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol31 = symbol31
+	symbol32, err := session.Resolve("gap_bits_variable")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol32 = symbol32
+	symbol33, err := session.Resolve("echo_gap_byte")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol33 = symbol33
+	symbol34, err := session.Resolve("gap_byte_variable")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol34 = symbol34
+	symbol35, err := session.Resolve("echo_gap_nested")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol35 = symbol35
+	symbol36, err := session.Resolve("gap_nested_variable")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol36 = symbol36
+	symbol37, err := session.Resolve("echo_gap_array")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol37 = symbol37
+	symbol38, err := session.Resolve("gap_array_variable")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol38 = symbol38
+	symbol39, err := session.Resolve("echo_gap_multiple")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol39 = symbol39
+	symbol40, err := session.Resolve("gap_multiple_variable")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol40 = symbol40
 	return b, nil
 }
 
@@ -1964,6 +2655,160 @@ func (b *Bindings) Echo_nested(p0 BindingsRecord15) (result BindingsRecord15, er
 	}
 	err = b.symbol26.WithAddress(func(address uintptr) error {
 		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call26(C.uintptr_t(address), _BindingsRecord15ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_gap_float(p0 BindingsRecord16) (result BindingsRecord16, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol27.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord16FromC(C.dylib_go_42696e64696e6773_call27(C.uintptr_t(address), _BindingsRecord16ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Gap_float_variable(p0 BindingsRecord16, p1 int8, p2 float32) (result BindingsRecord16, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol28.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord16FromC(C.dylib_go_42696e64696e6773_call28(C.uintptr_t(address), _BindingsRecord16ToC(p0), C.int32_t(p1), C.float(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_gap_tail(p0 BindingsRecord17) (result BindingsRecord17, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol29.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord17FromC(C.dylib_go_42696e64696e6773_call29(C.uintptr_t(address), _BindingsRecord17ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Gap_tail_variable(p0 BindingsRecord17, p1 int8, p2 float32) (result BindingsRecord17, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol30.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord17FromC(C.dylib_go_42696e64696e6773_call30(C.uintptr_t(address), _BindingsRecord17ToC(p0), C.int32_t(p1), C.float(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_gap_bits(p0 BindingsRecord18) (result BindingsRecord18, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol31.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord18FromC(C.dylib_go_42696e64696e6773_call31(C.uintptr_t(address), _BindingsRecord18ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Gap_bits_variable(p0 BindingsRecord18, p1 int8, p2 float32) (result BindingsRecord18, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol32.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord18FromC(C.dylib_go_42696e64696e6773_call32(C.uintptr_t(address), _BindingsRecord18ToC(p0), C.int32_t(p1), C.float(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_gap_byte(p0 BindingsRecord19) (result BindingsRecord19, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol33.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord19FromC(C.dylib_go_42696e64696e6773_call33(C.uintptr_t(address), _BindingsRecord19ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Gap_byte_variable(p0 BindingsRecord19, p1 int8, p2 float32) (result BindingsRecord19, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol34.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord19FromC(C.dylib_go_42696e64696e6773_call34(C.uintptr_t(address), _BindingsRecord19ToC(p0), C.int32_t(p1), C.float(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_gap_nested(p0 BindingsRecord20) (result BindingsRecord20, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol35.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord20FromC(C.dylib_go_42696e64696e6773_call35(C.uintptr_t(address), _BindingsRecord20ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Gap_nested_variable(p0 BindingsRecord20, p1 int8, p2 float32) (result BindingsRecord20, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol36.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord20FromC(C.dylib_go_42696e64696e6773_call36(C.uintptr_t(address), _BindingsRecord20ToC(p0), C.int32_t(p1), C.float(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_gap_array(p0 BindingsRecord21) (result BindingsRecord21, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol37.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord21FromC(C.dylib_go_42696e64696e6773_call37(C.uintptr_t(address), _BindingsRecord21ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Gap_array_variable(p0 BindingsRecord21, p1 int8, p2 float32) (result BindingsRecord21, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol38.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord21FromC(C.dylib_go_42696e64696e6773_call38(C.uintptr_t(address), _BindingsRecord21ToC(p0), C.int32_t(p1), C.float(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_gap_multiple(p0 BindingsRecord22) (result BindingsRecord22, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol39.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord22FromC(C.dylib_go_42696e64696e6773_call39(C.uintptr_t(address), _BindingsRecord22ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Gap_multiple_variable(p0 BindingsRecord22, p1 int8, p2 float32) (result BindingsRecord22, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol40.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord22FromC(C.dylib_go_42696e64696e6773_call40(C.uintptr_t(address), _BindingsRecord22ToC(p0), C.int32_t(p1), C.float(p2)))
 		return nil
 	})
 	return result, err

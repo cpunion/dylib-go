@@ -30,3 +30,17 @@ FloatingBare echo_bare(FloatingBare b) { b.bare_left+=1.5f; return b; }
 FloatingDouble echo_double(FloatingDouble d) { d.double_left+=1.5; return d; }
 FloatingArray echo_array(FloatingArray a) { a.array_values[0]+=1.5f; return a; }
 FloatingNested echo_nested(FloatingNested n) { n.nested.bare_left+=1.5f; return n; }
+GapFloat echo_gap_float(GapFloat v) { v.interior_left+=1.5f; v.interior_right+=2.5f; return v; }
+GapFloat gap_float_variable(GapFloat v,...) { __builtin_va_list a; __builtin_va_start(a,v); v.interior_left+=__builtin_va_arg(a,int); v.interior_right+=__builtin_va_arg(a,double); __builtin_va_end(a); return v; }
+GapTail echo_gap_tail(GapTail v) { v.tail_left+=1.5f; v.tail_right+=2.5f; return v; }
+GapTail gap_tail_variable(GapTail v,...) { __builtin_va_list a; __builtin_va_start(a,v); v.tail_left+=__builtin_va_arg(a,int); v.tail_right+=__builtin_va_arg(a,double); __builtin_va_end(a); return v; }
+GapBits echo_gap_bits(GapBits v) { v.gap_low^=3; v.gap_high--; v.bits_right+=1.5f; return v; }
+GapBits gap_bits_variable(GapBits v,...) { __builtin_va_list a; __builtin_va_start(a,v); v.gap_high+=__builtin_va_arg(a,int); double d=__builtin_va_arg(a,double); v.gap_low^=(unsigned)d; v.bits_right+=d; __builtin_va_end(a); return v; }
+GapByte echo_gap_byte(GapByte v) { v.gap_tag++; v.byte_right+=1.5f; return v; }
+GapByte gap_byte_variable(GapByte v,...) { __builtin_va_list a; __builtin_va_start(a,v); v.gap_tag+=__builtin_va_arg(a,int); v.byte_right+=__builtin_va_arg(a,double); __builtin_va_end(a); return v; }
+GapNested echo_gap_nested(GapNested v) { v.gap_nested.bare_left+=1.5f; v.nested_right+=2.5f; return v; }
+GapNested gap_nested_variable(GapNested v,...) { __builtin_va_list a; __builtin_va_start(a,v); v.gap_nested.bare_left+=__builtin_va_arg(a,int); v.nested_right+=__builtin_va_arg(a,double); __builtin_va_end(a); return v; }
+GapArray echo_gap_array(GapArray v) { v.gap_array[0]+=1.5f; v.array_right+=2.5f; return v; }
+GapArray gap_array_variable(GapArray v,...) { __builtin_va_list a; __builtin_va_start(a,v); v.gap_array[0]+=__builtin_va_arg(a,int); v.array_right+=__builtin_va_arg(a,double); __builtin_va_end(a); return v; }
+GapMultiple echo_gap_multiple(GapMultiple v) { v.first_tag++; v.next_code--; v.multi_right+=1.5f; return v; }
+GapMultiple gap_multiple_variable(GapMultiple v,...) { __builtin_va_list a; __builtin_va_start(a,v); v.first_tag+=__builtin_va_arg(a,int); v.next_code--; v.multi_right+=__builtin_va_arg(a,double); __builtin_va_end(a); return v; }
