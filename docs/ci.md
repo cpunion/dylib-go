@@ -8,6 +8,8 @@ Go and llgo use independent workflows and separately compiled test processes:
 
 Workflows run on pushes to main, pull requests, and manual dispatch. Pure Go jobs set `CGO_ENABLED=0` and run parser, error, and execution-refusal tests in a process compiled for the target architecture.
 
+The llgo suites allow 20 minutes per test package within each 60-minute job. The cross-target Clang matrix exceeds Go testing's default 10-minute package budget on macOS Intel; the timeout remains bounded and all probes still run.
+
 | Target | Go execution | Pure Go inspection | llgo execution |
 | --- | --- | --- | --- |
 | Linux amd64 / arm64 | Native runners | Native runners | Native objects and libraries |
