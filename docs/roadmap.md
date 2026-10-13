@@ -57,6 +57,7 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] ELF AArch64 GOT-relative MOVW/data, 15-bit GOT/GOT-page loads, GOTPCREL32 and PLT32, owned reserved bases, and native GCC small-PIC calls.
 - [x] ELF amd64 GOT32/GOTOFF64/GOTPC32/GOT64/GOTPCREL64/GOTPC64/GOTPLT64/PLTOFF64, native GCC/Clang large-PIC calls, and shared owned-base rules with i386 GOTPC execution.
 - [x] ELF i386 GOT32/GOT32X baseless memory addresses and GNU LEA offsets, with native Clang/GNU assembler calls and system-linked executable comparisons.
+- [x] ELF amd64/i386 8/16-bit absolute and PC-relative data fields, signed REL addends, checked widths and native Linux object/archive calls.
 - [ ] Remaining relocations on existing targets; Mach-O custom stubs and general coalescing.
 - [x] Legacy ELF `.ctors/.dtors` pointer tables, priorities, sentinels, and mixed modern-array execution.
 - [x] COFF integer-returning CRT initializers, permanent failure state, and owned exit-registration cleanup.
