@@ -12,13 +12,14 @@ import (
 // the cgo boundary, so their padding/alignment need not match Go storage.
 type cgoTypes struct {
 	*directTypes
-	cPrefix    string
-	windows    bool
-	msLayout   bool
-	ms386      bool
-	gnuPacking bool
-	gnuAMD64   bool
-	transports map[int]bool
+	cPrefix     string
+	windows     bool
+	msLayout    bool
+	ms386       bool
+	gnuPacking  bool
+	gnuAMD64    bool
+	pointerSize int
+	transports  map[int]bool
 }
 
 func (t *cgoTypes) recordIndex(description abi.TypeDesc) (int, error) {
@@ -86,34 +87,64 @@ func (t *cgoTypes) cNativeField(record Record, index int) (string, error) {
 	if record.fieldTypeAlignment(index) == 0 || t.gnuAMD64 {
 		return t.cField(description, name)
 	}
-	var suffix strings.Builder
-	for description.Type == abi.Array {
-		fmt.Fprintf(&suffix, "[%d]", description.Len)
-		description = *description.Elem
+	arrayDepth := 0
+	for _, field := range record.FieldTypeAlignments {
+		if field.Position == index {
+			arrayDepth = field.ArrayDepth
+		}
 	}
-	return t.cFieldAlias(record, index) + " " + name + suffix.String(), nil
+	dimensions, _ := arrayDimensions(description)
+	var suffix strings.Builder
+	for _, length := range dimensions[:len(dimensions)-arrayDepth] {
+		fmt.Fprintf(&suffix, "[%d]", length)
+	}
+	return t.cFieldAlias(record, index, arrayDepth) + " " + name + suffix.String(), nil
 }
 
-func (t *cgoTypes) cFieldAlias(record Record, index int) string {
-	// The record index disambiguates fields with the same logical scalar type.
+func (t *cgoTypes) cFieldAlias(record Record, index, arrayDepth int) string {
+	// The record index disambiguates members with the same logical type.
 	i, _ := t.recordIndex(record.Description)
-	return fmt.Sprintf("%s_field%d", t.cRecordName(i), index)
+	name := fmt.Sprintf("%s_field%d", t.cRecordName(i), index)
+	if arrayDepth != 0 {
+		name += fmt.Sprintf("_array%d", arrayDepth)
+	}
+	return name
+}
+
+func arrayDimensions(d abi.TypeDesc) ([]int, abi.TypeDesc) {
+	var dimensions []int
+	for d.Type == abi.Array {
+		dimensions = append(dimensions, d.Len)
+		d = *d.Elem
+	}
+	return dimensions, d
 }
 
 func (t *cgoTypes) writeFieldAliases(output *bytes.Buffer, record Record) error {
 	if t.gnuAMD64 {
 		return nil
 	}
+	position, depth := -1, 0
+	var dimensions []int
+	var kind string
 	for _, field := range record.FieldTypeAlignments {
-		d := record.Description.Fields[field.Position].Type
-		for d.Type == abi.Array {
-			d = *d.Elem
+		if field.Position != position {
+			var d abi.TypeDesc
+			dimensions, d = arrayDimensions(record.Description.Fields[field.Position].Type)
+			var err error
+			kind, err = t.cType(d)
+			if err != nil {
+				return err
+			}
+			position, depth = field.Position, 0
 		}
-		kind, err := t.cType(d)
-		if err != nil {
-			return err
+		alias := t.cFieldAlias(record, position, field.ArrayDepth)
+		fmt.Fprintf(output, "typedef %s %s", kind, alias)
+		for layer := field.ArrayDepth - 1; layer >= depth; layer-- {
+			fmt.Fprintf(output, "[%d]", dimensions[len(dimensions)-1-layer])
 		}
-		fmt.Fprintf(output, "typedef %s %s __attribute__((aligned(%d)));\n", kind, t.cFieldAlias(record, field.Position), field.Aligned)
+		fmt.Fprintf(output, " __attribute__((aligned(%d)));\n", field.Aligned)
+		kind, depth = alias, field.ArrayDepth
 	}
 	return nil
 }
@@ -145,6 +176,9 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		}
 		seen[i] = true
 		record := t.records[i]
+		if err := t.validateArrayTypedefStrides(record); err != nil {
+			return err
+		}
 		for _, field := range record.Description.Fields {
 			description := field.Type
 			for description.Type == abi.Array {

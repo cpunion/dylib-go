@@ -36,3 +36,40 @@ typedef HighRecord (*HighEntry)(HighRecord);
 HighEntry high_factory(void); HighRecord forward_high(HighEntry,HighRecord);
 
 HighRecord *high_pointer(HighRecord); HighRecord read_high(HighRecord *);
+
+/* Alignment belongs to the whole array, independently of its element type. */
+typedef int PairLow[2] __attribute__((aligned(1)));
+typedef int PairHigh[2] __attribute__((aligned(16)));
+typedef PairHigh PairDown __attribute__((aligned(2)));
+typedef int PairMaximum[2] __attribute__((aligned));
+typedef Low Row[2] __attribute__((aligned(8)));
+typedef Row Matrix[2] __attribute__((aligned(1)));
+typedef Matrix MatrixChain;
+typedef LowRecord RecordPair[2] __attribute__((aligned(1)));
+typedef void *AddressPair[2] __attribute__((aligned(1)));
+typedef int (*EntryPair[2])(int) __attribute__((aligned(1)));
+typedef double FloatSingle[1] __attribute__((aligned(1)));
+typedef struct { signed char whole_low_tag; PairLow whole_low_items; } WholeLowRecord;
+typedef struct { signed char whole_high_tag; PairHigh whole_high_items; } WholeHighRecord;
+typedef struct { signed char whole_down_tag; PairDown whole_down_items; } WholeDownRecord;
+typedef struct { signed char layered_tag; MatrixChain layered_items[3]; } LayeredRecord;
+typedef struct { signed char record_array_tag; RecordPair record_array_items; } RecordArrayRecord;
+typedef struct { signed char address_array_tag; AddressPair address_array_values; EntryPair address_array_entries; } AddressArrayRecord;
+typedef struct { signed char whole_float_tag; FloatSingle whole_float_items; } WholeFloatRecord;
+typedef struct { signed char whole_max_tag; PairMaximum whole_max_items; } WholeMaximumRecord;
+typedef struct __attribute__((packed)) { signed char whole_packed_tag; PairHigh whole_packed_items __attribute__((aligned(8))); Matrix whole_packed_matrix; } WholePackedRecord;
+#pragma pack(push,2)
+typedef struct { signed char whole_pragma_tag; PairHigh whole_pragma_items; FloatSingle whole_pragma_float; } WholePragmaRecord;
+#pragma pack(pop)
+WholeLowRecord echo_whole_low(WholeLowRecord); WholeHighRecord echo_whole_high(WholeHighRecord);
+WholeDownRecord echo_whole_down(WholeDownRecord); LayeredRecord echo_layered(LayeredRecord);
+RecordArrayRecord echo_record_array(RecordArrayRecord); AddressArrayRecord echo_address_array(AddressArrayRecord);
+WholeFloatRecord echo_whole_float(WholeFloatRecord); WholeMaximumRecord echo_whole_maximum(WholeMaximumRecord);
+WholePackedRecord echo_whole_packed(WholePackedRecord); WholePragmaRecord echo_whole_pragma(WholePragmaRecord);
+int whole_variadic(WholeLowRecord,...);
+typedef WholeHighRecord (*WholeEntry)(WholeHighRecord);
+WholeEntry whole_factory(void); WholeHighRecord whole_forward(WholeEntry,WholeHighRecord);
+WholeHighRecord *whole_pointer(WholeHighRecord); WholeHighRecord *whole_mutate(WholeHighRecord *);
+WholeHighRecord whole_read(WholeHighRecord *);
+AddressArrayRecord make_address_array(void); int apply_address_array(AddressArrayRecord);
+int decay_pair(PairLow);

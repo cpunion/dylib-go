@@ -190,7 +190,6 @@ func TestScalarTypedefAlignmentValidation(t *testing.T) {
 	}
 	for _, source := range []string{
 		`typedef struct {int value;} S __attribute__((aligned(16))); S f(S);`,
-		`typedef int A[2] __attribute__((aligned(1))); struct S { A value; }; struct S f(struct S);`,
 		`typedef int I __attribute__((aligned(1))); struct S { I value:3; }; struct S f(struct S);`,
 		`typedef int I __attribute__((aligned(1),deprecated)); typedef I J; J f(J);`,
 	} {

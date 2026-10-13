@@ -484,8 +484,10 @@ attributed types require producer-owned native storage. Aligned scalar, enum and
 native-pointer typedefs preserve raised/lowered alignment through C bridges,
 including array leaves and Windows compiler storage differences. GNU AMD64
 records require compiler-probed Clang 19-compatible lowering; see the
-[tested typedef example](examples/typedefalignment/call.go). Aligned record/array
-typedefs and aligned typedef bitfields remain unsupported.
+[tested typedef example](examples/typedefalignment/call.go). Whole-array typedef
+alignment also preserves each alias layer, including nested scalar, record and
+native-address arrays, with packing/member alignment handled separately.
+Aligned record typedefs and aligned typedef bitfields remain unsupported.
 Complete struct pointees use `unsafe.Pointer` native addresses with their C
 prototypes preserved. They do not accept pointers to public Go record storage;
 use producer-owned storage or a compatible `abi.NativeValue` lease. Other

@@ -272,15 +272,18 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		if err != nil {
 			return abi.TypeDesc{}, fmt.Errorf("%s.%s: %w", name, child.Name, err)
 		}
-		typeAlignment, err := r.typedefAlignment(child.Type.QualType, depth+1)
+		typeAlignments, err := r.typedefAlignments(child.Type.QualType, depth+1)
 		if err != nil {
 			return abi.TypeDesc{}, fmt.Errorf("%s.%s: %w", name, child.Name, err)
 		}
-		if typeAlignment != 0 {
+		if len(typeAlignments) != 0 {
 			if child.IsBitfield {
 				return abi.TypeDesc{}, fmt.Errorf("%s.%s: aligned typedef bitfields are unsupported", name, child.Name)
 			}
-			fieldTypeAlignments = append(fieldTypeAlignments, TypedefFieldAlignment{Position: len(d.Fields), Aligned: typeAlignment})
+			for _, alignment := range typeAlignments {
+				alignment.Position = len(d.Fields)
+				fieldTypeAlignments = append(fieldTypeAlignments, alignment)
+			}
 		}
 		if child.IsBitfield {
 			width, ok := constantValue(child)

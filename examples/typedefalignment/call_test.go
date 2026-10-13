@@ -38,12 +38,12 @@ func TestAlignedTypedefCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_low", "echo_high", "echo_down", "echo_array", "echo_float", "echo_float_high", "echo_maximum", "echo_address", "echo_enum", "echo_packed", "echo_pragma", "scalar", "low_variadic", "high_variadic", "make_address", "apply_address", "mutate_high", "high_factory", "forward_high", "high_pointer", "read_high"}
+	names := []string{"echo_low", "echo_high", "echo_down", "echo_array", "echo_float", "echo_float_high", "echo_maximum", "echo_address", "echo_enum", "echo_packed", "echo_pragma", "scalar", "low_variadic", "high_variadic", "make_address", "apply_address", "mutate_high", "high_factory", "forward_high", "high_pointer", "read_high", "echo_whole_low", "echo_whole_high", "echo_whole_down", "echo_layered", "echo_record_array", "echo_address_array", "echo_whole_float", "echo_whole_maximum", "echo_whole_packed", "echo_whole_pragma", "whole_variadic", "whole_factory", "whole_forward", "whole_pointer", "whole_mutate", "whole_read", "make_address_array", "apply_address_array", "decay_pair"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, index := range []int{12, 13} {
+	for _, index := range []int{12, 13, 31} {
 		h.Functions[index], err = h.Functions[index].WithTail(abi.I8, abi.F32)
 		if err != nil {
 			t.Fatal(err)
@@ -202,4 +202,60 @@ func checkCalls(t *testing.T, path string) {
 	high.High_value++
 	high.High_real += 2
 	check(mutated, high, err)
+
+	wholeLow := BindingsRecord11{Whole_low_tag: -7, Whole_low_items: [2]int32{-2147483647, 2147483647}}
+	got11, err := b.Echo_whole_low(wholeLow)
+	check(got11, wholeLow, err)
+	wholeHigh := BindingsRecord12{Whole_high_tag: 3, Whole_high_items: [2]int32{20, 22}}
+	got12, err := b.Echo_whole_high(wholeHigh)
+	check(got12, wholeHigh, err)
+	wholeDown := BindingsRecord13{Whole_down_tag: -9, Whole_down_items: [2]int32{42, -123}}
+	got13, err := b.Echo_whole_down(wholeDown)
+	check(got13, wholeDown, err)
+	layered := BindingsRecord14{Layered_tag: -11, Layered_items: [3][2][2]int32{{{20, 22}, {-3, 4}}, {{5, -6}, {7, 8}}, {{9, 10}, {-2147483647, 2147483647}}}}
+	got14, err := b.Echo_layered(layered)
+	check(got14, layered, err)
+	recordArray := BindingsRecord15{Record_array_tag: 5, Record_array_items: [2]BindingsRecord0{low, {Low_tag: 7, Low_value: 42}}}
+	got15, err := b.Echo_record_array(recordArray)
+	check(got15, recordArray, err)
+	addressArray, err := b.Make_address_array()
+	if err != nil || addressArray.Address_array_values[0] == nil || addressArray.Address_array_entries[1] == nil {
+		t.Fatal(addressArray, err)
+	}
+	got16, err := b.Echo_address_array(addressArray)
+	check(got16, addressArray, err)
+	applied, err = b.Apply_address_array(addressArray)
+	check(applied, int32(42), err)
+	decayed, err := b.Decay_pair(addressArray.Address_array_values[0])
+	check(decayed, int32(42), err)
+	wholeFloat := BindingsRecord17{Whole_float_tag: -13, Whole_float_items: [1]float64{-123.75}}
+	got17, err := b.Echo_whole_float(wholeFloat)
+	check(got17, wholeFloat, err)
+	wholeMaximum := BindingsRecord18{Whole_max_tag: 7, Whole_max_items: [2]int32{22, -123}}
+	got18, err := b.Echo_whole_maximum(wholeMaximum)
+	check(got18, wholeMaximum, err)
+	wholePacked := BindingsRecord19{Whole_packed_tag: -8, Whole_packed_items: [2]int32{42, -123}, Whole_packed_matrix: [2][2]int32{{20, 22}, {3, 4}}}
+	got19, err := b.Echo_whole_packed(wholePacked)
+	check(got19, wholePacked, err)
+	wholePragma := BindingsRecord20{Whole_pragma_tag: 7, Whole_pragma_items: [2]int32{-123, 42}, Whole_pragma_float: [1]float64{22.5}}
+	got20, err := b.Echo_whole_pragma(wholePragma)
+	check(got20, wholePragma, err)
+	variable, err = b.Whole_variadic(BindingsRecord11{Whole_low_tag: 1, Whole_low_items: [2]int32{20, 10}}, 5, 6)
+	check(variable, int32(42), err)
+	wholeEntry, err := b.Whole_factory()
+	if err != nil || wholeEntry == nil {
+		t.Fatal(wholeEntry, err)
+	}
+	got12, err = b.Whole_forward(wholeEntry, wholeHigh)
+	check(got12, wholeHigh, err)
+	wholePointer, err := b.Whole_pointer(wholeHigh)
+	if err != nil || wholePointer == nil {
+		t.Fatal(wholePointer, err)
+	}
+	returned, err = b.Whole_mutate(wholePointer)
+	check(returned, wholePointer, err)
+	got12, err = b.Whole_read(wholePointer)
+	wholeHigh.Whole_high_items[0]++
+	wholeHigh.Whole_high_items[1] += 2
+	check(got12, wholeHigh, err)
 }
