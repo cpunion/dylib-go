@@ -234,10 +234,19 @@ func testGeneratedDirectDeclarations(t *testing.T, enumTypes bool) {
 	})
 	localPair, err := b.Apply_small(localRecord, small)
 	check("local Go record entry", localPair, BindingsRecord3{A: 21, B: 21}, err)
-	// A separately generated packed binding must fail before symbol resolution.
+	// Compiler packing is rejected before generating a direct llgo adapter.
 	packed, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: header.Target.Triple, Flags: append(append([]string(nil), enumFlags...), "-fpack-struct=1"), Functions: []string{"echo_pair"}})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if _, err := packed.LLGoSource("main", "PackedBindings"); err == nil {
+		t.Fatal("compiler packing accepted without a C adapter")
+	}
+	// Retain the old layout guard regression using a legacy metadata snapshot
+	// that omits its packing cap. Its ordinary Go type has incompatible storage.
+	for i := range packed.Records {
+		packed.Records[i].MaxFieldAlignment = 0
+		packed.Records[i].MemberAlignments = nil
 	}
 	packedSource, err := packed.LLGoSource("main", "PackedBindings")
 	if err != nil {

@@ -94,6 +94,12 @@ func TestGeneratedCgoRecords(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// This negative fixture represents legacy metadata missing its packing cap.
+	// Correctly retained global packing is executed by examples/globalpacking.
+	for i := range packed.Records {
+		packed.Records[i].MaxFieldAlignment = 0
+		packed.Records[i].MemberAlignments = nil
+	}
 	checkFresh(packed, "PackedBindings", "packed")
 	for _, optimization := range []string{"-O0", "-O2"} {
 		t.Run(optimization, func(t *testing.T) {
@@ -254,7 +260,7 @@ func TestCgoRecordValidation(t *testing.T) {
 	empty := dylib.New(dylib.Options{})
 	defer empty.Close()
 	if _, err := NewPackedBindings(empty); err == nil || !strings.Contains(err.Error(), "compiler/cgo layout mismatch") {
-		t.Fatal("packed C layout must fail before symbol resolution:", err)
+		t.Fatal("incomplete packing metadata must fail before symbol resolution:", err)
 	}
 	saved := _BindingsDeclarations.Target
 	defer func() { _BindingsDeclarations.Target = saved }()

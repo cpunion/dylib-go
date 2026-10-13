@@ -9,6 +9,8 @@ import (
 )
 
 type typeResolver struct {
+	target          Target
+	defaultPacking  *uint64
 	aliases         map[string]string
 	enums           map[string]*enumType
 	aliasAttributes map[string]string
@@ -189,6 +191,9 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 	if node.TagUsed != "struct" || !node.CompleteDefinition || name == "" {
 		return abi.TypeDesc{}, fmt.Errorf("unsupported C type: incomplete, union or inaccessible record")
 	}
+	if r.defaultPacking == nil {
+		return abi.TypeDesc{}, errDefaultPacking
+	}
 	if len(r.records) >= maxRecords {
 		return abi.TypeDesc{}, fmt.Errorf("at most %d records are supported", maxRecords)
 	}
@@ -196,7 +201,7 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 	defer delete(r.building, id)
 	d := abi.TypeDesc{Type: abi.Struct}
 	packed := false
-	packing := uint64(0)
+	packing := *r.defaultPacking
 	aligned := uint64(0)
 	var fieldAlignments []FieldAlignment
 	var packedFields []int
@@ -204,9 +209,14 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 	var padding []BitfieldPadding
 	for _, child := range node.Inner {
 		if child.Kind == "MaxFieldAlignmentAttr" {
-			packing = r.packings[name]
-			if packing == 0 {
+			pragma := r.packings[name]
+			if pragma == 0 {
 				return abi.TypeDesc{}, errRecordPacking
+			}
+			// MSVC ignores oversized pragmas and retains the global default.
+			// Preserve existing request metadata when no global default exists.
+			if packing == 0 || !r.target.msLayout() || pragma <= uint64(r.target.PointerSize) {
+				packing = pragma
 			}
 			continue
 		}

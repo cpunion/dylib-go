@@ -423,7 +423,10 @@ addresses, including nested prototypes and multiple pointer layers. Explicitly
 packed/aligned records and ordinary members, plus integral/Boolean bitfields, use generated C bridges, including
 unnamed and zero-width allocation boundaries. Named and typedef enums use
 compiler-confirmed integer or Boolean types, including packed/short enums and
-fixed underlying types accepted by Clang. Unions still need manual adapters.
+fixed underlying types accepted by Clang. Clang global `-fpack-struct` defaults
+and local pragma overrides use compiled C bridges; the
+[tested packing example](examples/globalpacking/call.go) covers values, bitfields,
+native pointers, factories and variadic calls. Unions still need manual adapters.
 See [types, targets and limits](docs/clang.md).
 
 Records containing callbacks use opaque native address fields or fixed arrays

@@ -117,6 +117,9 @@ func TestOutputBudgetsAndActiveCancellation(t *testing.T) {
 	if _, err := runCompiler(context.Background(), executable, nil, "", 128); err == nil || !strings.Contains(err.Error(), "[diagnostics truncated]") || len(err.Error()) > maxDiagnostics+4096 {
 		t.Fatal("diagnostic budget:", err)
 	}
+	if _, err := runCompilerStream(context.Background(), executable, nil, "", 128, true); err == nil || !strings.Contains(err.Error(), "exceeds 128 bytes") {
+		t.Fatal("driver output budget:", err)
+	}
 	t.Setenv("DYLIB_CLANG_HELPER", "wait")
 	marker := filepath.Join(t.TempDir(), "compiler-started")
 	t.Setenv("DYLIB_CLANG_MARKER", marker)

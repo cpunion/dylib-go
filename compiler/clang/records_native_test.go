@@ -123,7 +123,7 @@ func TestNativeRejectsCompilerPackingMismatch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := h.ForHost("f"); err == nil || !strings.Contains(err.Error(), "layout mismatch") {
+	if _, err := h.ForHost("f"); err == nil || !strings.Contains(err.Error(), "requires a compiled C adapter") {
 		t.Fatal("compiler packing bypassed backend validation:", err)
 	}
 }

@@ -92,7 +92,9 @@ jobs:
           clang --version
           pkg-config --modversion libffi
       - name: Execute C/C++, archives, shared libraries and selected language interfaces
-        run: go test -count=1 -v -tags libffi ./...
+        # Preserve the full cross-target compiler matrix on macOS Intel,
+        # where subprocess probes can exceed testing's default 10m budget.
+        run: go test -count=1 -timeout=20m -v -tags libffi ./...
       - name: Execute README cgo, dynamic call and callback examples
         run: bash examples/run.sh go library
       - name: Execute dynamic CLI signatures, values, objects and libraries
@@ -108,7 +110,7 @@ jobs:
         if: matrix.arch != '386'
         env:
           DYLIB_TEST_LANGUAGES: ''
-        run: go test -count=1 -race -tags libffi ./...
+        run: go test -count=1 -timeout=20m -race -tags libffi ./...
       - run: go vet -tags libffi ./...
 
   inspection:
