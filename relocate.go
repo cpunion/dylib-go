@@ -51,6 +51,9 @@ func (im *image) relocate(o *object, r relocation) error {
 		if o.info.Arch == "arm64" && (r.typ == 259 || r.typ == 262) {
 			w = 2
 		}
+		if width, _ := elfX86Narrow(o, r.typ); width != 0 {
+			w = width
+		}
 	case "COFF":
 		if r.typ == 0 {
 			return nil
@@ -202,6 +205,9 @@ func (im *image) relocCOFFSection(o *object, r relocation, b []byte) error {
 }
 
 func (im *image) relocELF(o *object, r relocation, b []byte, s, p uintptr) error {
+	if width, relative := elfX86Narrow(o, r.typ); width != 0 {
+		return relocateELFX86Narrow(o, r, b, s, p, relative)
+	}
 	if o.info.Arch == "386" {
 		return im.relocELF386(o, r, b, s, p)
 	}

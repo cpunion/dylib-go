@@ -1,5 +1,21 @@
 # ELF relocations
 
+## x86 short data fields
+
+| Target | Relocations | Value / accepted range |
+| --- | --- | --- |
+| amd64 | `R_X86_64_8`, `R_X86_64_16` | `S+A`; signed or unsigned 8/16-bit values |
+| amd64 | `R_X86_64_PC8`, `R_X86_64_PC16` | `S+A-P`; signed 8/16 bits |
+| 386 | `R_386_8`, `R_386_16` | `S+A`; signed or unsigned 8/16-bit values |
+| 386 | `R_386_PC8` | `S+A-P`; signed 8 bits |
+| 386 | `R_386_PC16` | `S+A-P`; signed 17 bits, retaining the low 16 bits for wrapping instruction pointers |
+
+REL sign-extends the addend from the actual one/two-byte field; RELA replaces that field using its explicit addend. i386 address arithmetic wraps at 32 bits before the narrow range check. Every write must fit inside its input section and leaves neighboring bytes intact; overflow changes no field and prevents image publication. An absolute symbol or `Define` may supply a small numeric value. Ordinary mapped host addresses generally cannot fit an absolute short field.
+
+Range checks follow [LLVM's amd64 implementation](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/lld/ELF/Arch/X86_64.cpp) and [i386 implementation](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/lld/ELF/Arch/X86.cpp). GNU ld can permit additional bitfield truncations outside these ranges. These extensions do not add 16-bit execution or short-branch expansion; unsupported displacements remain errors.
+
+Pure Go tests inspect real Clang `.reloc` output for both targets and verify positive/negative REL/RELA addends, boundary values, one/two-byte writes at section ends and unchanged bytes after overflow. Native Linux amd64 Go/llgo and Linux Go 386 jobs execute C consumers of all four families through objects and archives, compare them with a system-linked executable, and reject high absolute providers before publication.
+
 ## i386 GOT instruction forms
 
 `R_386_GOT32` and `R_386_GOT32X` use an owned four-byte slot containing the resolved symbol address. Both relocation codes retain the original instruction; the loader does not perform GOT32X relaxation.
