@@ -323,10 +323,16 @@ Regenerate older pragma bitfield bindings to retain this additional metadata.
 For Linux/macOS GNU layouts, GCC can retain requests that Clang ignores and
 raise record alignment for zero widths. Generated bridges drop ignored nonzero
 requests. `BitfieldPadding.Gap` retains the compiler-observed bytes before an
-over-cap zero boundary; unnamed padding recreates those bytes without adding
-value fields to the SysV call classification. Record alignment remains the
+over-cap zero boundary; unnamed padding recreates those bytes. Record alignment remains the
 producer's measured value. Cross-target layout/mask and LLVM call-shape checks,
 plus independent GCC bridge tests and native CI calls, qualify this facade.
+On GNU AMD64, small trailing gaps use implicit body padding and a lowered
+typedef alignment: GCC would otherwise count unnamed padding in argument/result
+registers. Native tests check integer and one/two/three-float records, including
+register positions and promotions in variadic calls.
+Small GNU AMD64 gaps that cannot use this implicit tail-padding facade are
+rejected before generation: an explicit padding field could change their
+register classification even when size, alignment and offsets match.
 
 The [over-aligned bitfield example](../examples/overalignedbits/call.go) executes
 small/large values, ignored shared requests, named/unnamed/zero-width boundaries,

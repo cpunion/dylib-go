@@ -3,6 +3,8 @@ package clang
 import (
 	"bytes"
 	"fmt"
+
+	"github.com/cpunion/dylib-go/abi"
 )
 
 // A MinGW outer packing pragma would suppress MSVC's required member/unit
@@ -75,7 +77,8 @@ func (t *cgoTypes) writePragmaBitfields(output *bytes.Buffer, index int) error {
 
 // GNU zero-width alignment bypasses the packing cap in both compilers, but GCC
 // also raises the record alignment. Unnamed padding preserves Clang's observed
-// boundary without adding value fields to the SysV argument classification.
+// boundary. Small SysV register arguments need a separate implicit-padding
+// facade because GCC classifies these nonzero declarations as integer values.
 func writeGNUPragmaBoundary(output *bytes.Buffer, gap uint64) {
 	fmt.Fprint(output, "unsigned char :0;\n")
 	for gap >= 8 {
@@ -86,4 +89,78 @@ func writeGNUPragmaBoundary(output *bytes.Buffer, gap uint64) {
 		fmt.Fprint(output, "unsigned char :8;\n")
 	}
 	fmt.Fprint(output, "unsigned char :0;\n")
+}
+
+// A trailing gap must remain padding in the SysV ABI.
+// GCC classifies unnamed nonzero bitfields as integer values. Round the body
+// with alignment instead, then lower its typedef alignment to the native value.
+// This changes size without introducing an extra argument/result register.
+func gnuImplicitTailPadding(r Record) bool {
+	if r.MaxFieldAlignment == 0 || r.Layout.Size > 16 || r.Layout.Size&(r.Layout.Size-1) != 0 {
+		return false
+	}
+	found := false
+	for _, p := range r.Padding {
+		if p.Before == len(r.Description.Fields) {
+			if p.Width != 0 {
+				return false
+			}
+			found = found || p.Aligned > r.MaxFieldAlignment && p.Gap != 0 && p.Offset == r.Layout.Size
+		}
+	}
+	return found
+}
+
+// Unaligned ordinary fields already force SysV memory arguments. Changing body
+// alignment there would change the required argument/result storage alignment.
+func (t *cgoTypes) sysVAlignedRecord(r Record, base uint64) bool {
+	for i, field := range r.Description.Fields {
+		if r.bitfieldAt(i) == nil && !t.sysVAlignedType(field.Type, base+r.Layout.Offsets[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func (t *cgoTypes) sysVAlignedType(d abi.TypeDesc, offset uint64) bool {
+	if d.Type == abi.Struct {
+		i, err := t.recordIndex(d)
+		return err == nil && t.sysVAlignedRecord(t.records[i], offset)
+	}
+	if d.Type == abi.Array {
+		// This helper only qualifies records of at most sixteen bytes.
+		if d.Len > 16 {
+			return false
+		}
+		size := t.sysVTypeSize(*d.Elem)
+		for i := 0; i < d.Len; i++ {
+			if !t.sysVAlignedType(*d.Elem, offset+uint64(i)*size) {
+				return false
+			}
+		}
+		return size != 0
+	}
+	size := t.sysVTypeSize(d)
+	return size != 0 && offset%size == 0
+}
+
+func (t *cgoTypes) sysVTypeSize(d abi.TypeDesc) uint64 {
+	switch d.Type {
+	case abi.Bool, abi.I8, abi.U8:
+		return 1
+	case abi.I16, abi.U16:
+		return 2
+	case abi.I32, abi.U32, abi.F32:
+		return 4
+	case abi.I64, abi.U64, abi.F64, abi.Pointer:
+		return 8
+	case abi.Array:
+		return uint64(d.Len) * t.sysVTypeSize(*d.Elem)
+	case abi.Struct:
+		i, err := t.recordIndex(d)
+		if err == nil {
+			return t.records[i].Layout.Size
+		}
+	}
+	return 0
 }

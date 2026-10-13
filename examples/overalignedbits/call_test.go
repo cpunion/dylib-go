@@ -37,12 +37,12 @@ func TestOverAlignedBitfieldsCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_tiny", "echo_bits", "echo_padding", "echo_inner", "echo_envelope", "echo_floating", "echo_packed", "echo_padding_float", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "tiny_variable", "floating_variable", "apply_slot"}
+	names := []string{"echo_tiny", "echo_bits", "echo_padding", "echo_inner", "echo_envelope", "echo_floating", "echo_packed", "echo_padding_float", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "tiny_variable", "floating_variable", "apply_slot", "echo_tiny_tail", "tiny_tail_variable", "echo_triple", "triple_variable", "echo_single", "single_variable"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, index := range []int{13, 15} {
+	for _, index := range []int{13, 15, 18, 20, 22} {
 		h.Functions[index], err = h.Functions[index].WithTail(abi.I8, abi.F32)
 		if err != nil {
 			t.Fatal(err)
@@ -202,6 +202,21 @@ func checkCalls(t *testing.T, path string) {
 		check("small variadic aligned bitfield", tinyGot, BindingsRecord0{Tiny_low: 7, Tiny_high: -16}, err)
 		floats, err = b.Floating_variable(BindingsRecord5{Left: 20.5, Right: 19.5}, -1, 1.5)
 		check("floating variadic prefix/result", floats, BindingsRecord5{Left: 19.5, Right: 21}, err)
+		tail := BindingsRecord9{Tail_low: 7, Tail_high: -15}
+		tailGot, err := b.Echo_tiny_tail(tail)
+		check("integer record with implicit tail padding", tailGot, BindingsRecord9{Tail_low: 4, Tail_high: -16}, err)
+		tailGot, err = b.Tiny_tail_variable(tail, -1, 1.5)
+		check("integer tail padding/variadic register positions", tailGot, BindingsRecord9{Tail_low: 6, Tail_high: -16}, err)
+		triple := BindingsRecord10{Triple_left: 20.5, Triple_middle: 19.5, Triple_right: 18.5}
+		tripleGot, err := b.Echo_triple(triple)
+		check("partially occupied final eightbyte", tripleGot, BindingsRecord10{Triple_left: 22, Triple_middle: 22, Triple_right: 22}, err)
+		tripleGot, err = b.Triple_variable(triple, -1, 1.5)
+		check("three-float tail padding/variadic registers", tripleGot, BindingsRecord10{Triple_left: 19.5, Triple_middle: 21, Triple_right: 18.5}, err)
+		single := BindingsRecord11{Single_left: 20.5}
+		singleGot, err := b.Echo_single(single)
+		check("single-float tail padding", singleGot, BindingsRecord11{Single_left: 22}, err)
+		singleGot, err = b.Single_variable(single, -1, 1.5)
+		check("single-float variadic prefix/result", singleGot, BindingsRecord11{Single_left: 21}, err)
 		null := value
 		null.Tag = 125
 		null.Truth = false

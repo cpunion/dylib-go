@@ -28,6 +28,10 @@ Inner echo_inner(Inner);
 		{"Nested", "", "char tag; Inner items[2]; unsigned low:3; double real;"},
 		{"Float", "", "unsigned long long :0 __attribute__((aligned(32))); float left; float right; unsigned long long :0 __attribute__((aligned(16)));"},
 		{"PaddingFloat", "", "unsigned :3 __attribute__((aligned(16))); float left; float right;"},
+		{"TrailingTiny", "", "unsigned low:3 __attribute__((aligned(8))); signed high:5 __attribute__((aligned(32))); unsigned long long :0 __attribute__((aligned(16)));"},
+		{"TrailingFloat", "", "float left; float right; float middle; unsigned long long :0 __attribute__((aligned(16)));"},
+		{"TrailingUnaligned", "", "char tag; double real; unsigned long long :0 __attribute__((aligned(16)));"},
+		{"TrailingSingleFloat", "", "float left; unsigned :0 __attribute__((aligned(8)));"},
 	}
 	fields := regexp.MustCompile(`\b(tag|low|high|truth|wide|real|context|items|left|right)\b`)
 	for _, cap := range []int{1, 2, 4, 8, 16} {
@@ -127,7 +131,7 @@ func TestPragmaBitfieldOverAlignmentGNUCallABI(t *testing.T) {
 				name := fmt.Sprintf("dylib_go_%x_record%d", "Bindings", i)
 				fmt.Fprintf(&bridge, "%s call_%d(%s value){return value;}\n", name, i, name)
 			}
-			args := []string{"--target=" + target.triple, "-x", "c", "-std=c17", "-O0", "-S", "-emit-llvm", "-o", "-", "-"}
+			args := []string{"--target=" + target.triple, "-ffreestanding", "-x", "c", "-std=c17", "-O0", "-S", "-emit-llvm", "-o", "-", "-"}
 			nativeIR, err := runCompiler(context.Background(), compiler, args, original.String(), maxASTSize)
 			if err != nil {
 				t.Fatal(err)
@@ -210,7 +214,11 @@ func TestPragmaBitfieldOverAlignmentGCCBridge(t *testing.T) {
 		}
 	}
 	object := filepath.Join(t.TempDir(), "gcc-bridge.o")
-	if _, err := runCompiler(context.Background(), gcc, []string{"-ffreestanding", "-x", "c", "-std=c17", "-c", "-o", object, "-"}, probe.String(), maxDiagnostics); err != nil {
+	args := []string{"-ffreestanding", "-x", "c", "-std=c17", "-c", "-o", object, "-"}
+	if h.Target.Arch == "386" {
+		args = append(args, "-m32")
+	}
+	if _, err := runCompiler(context.Background(), gcc, args, probe.String(), maxDiagnostics); err != nil {
 		t.Fatal(err)
 	}
 	data, err := os.ReadFile(object)
@@ -230,6 +238,31 @@ func TestPragmaBitfieldOverAlignmentGCCBridge(t *testing.T) {
 				t.Fatal(record.Name, field.Position, value, want, err)
 			}
 		}
+	}
+}
+
+func TestPragmaBitfieldSmallGNUInteriorGap(t *testing.T) {
+	path := headerFile(t, `
+#pragma pack(push,2)
+typedef struct { float left; unsigned :0 __attribute__((aligned(8))); float right; } Value;
+#pragma pack(pop)
+Value echo(Value);
+`)
+	for _, triple := range []string{"x86_64-linux-gnu", "x86_64-apple-macosx11", "aarch64-linux-gnu", "x86_64-pc-windows-msvc"} {
+		t.Run(triple, func(t *testing.T) {
+			h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Target: triple, Functions: []string{"echo"}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = h.CgoSource("bindings", "Bindings")
+			if strings.HasPrefix(triple, "x86_64-") && !strings.Contains(triple, "windows") {
+				if err == nil || !strings.Contains(err.Error(), "implicit-padding C bridge") {
+					t.Fatal("unqualified GCC register classification accepted", err)
+				}
+			} else if err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 

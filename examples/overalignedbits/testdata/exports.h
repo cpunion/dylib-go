@@ -49,3 +49,14 @@ Floating floating_variable(Floating,...);
 typedef struct { signed char slot_tag; BitsFn entry __attribute__((aligned(16))); unsigned slot_flags:3; } Slot;
 #pragma pack(pop)
 Bits apply_slot(Slot,Bits);
+#pragma pack(push,2)
+typedef struct { unsigned tail_low:3 __attribute__((aligned(8))); signed tail_high:5 __attribute__((aligned(32))); unsigned long long :0 __attribute__((aligned(16))); } TinyTail;
+typedef struct { float triple_left,triple_middle,triple_right; unsigned long long :0 __attribute__((aligned(16))); } FloatingTriple;
+typedef struct { float single_left; unsigned :0 __attribute__((aligned(8))); } FloatingSingle;
+#pragma pack(pop)
+TinyTail echo_tiny_tail(TinyTail);
+TinyTail tiny_tail_variable(TinyTail,...);
+FloatingTriple echo_triple(FloatingTriple);
+FloatingTriple triple_variable(FloatingTriple,...);
+FloatingSingle echo_single(FloatingSingle);
+FloatingSingle single_variable(FloatingSingle,...);

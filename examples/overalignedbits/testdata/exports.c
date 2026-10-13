@@ -20,3 +20,9 @@ Bits bits_variable(Bits b,...) { __builtin_va_list a; __builtin_va_start(a,b); b
 Tiny tiny_variable(Tiny t,...) { __builtin_va_list a; __builtin_va_start(a,t); t.tiny_high+=__builtin_va_arg(a,int); __builtin_va_end(a); return t; }
 Floating floating_variable(Floating f,...) { __builtin_va_list a; __builtin_va_start(a,f); f.left+=__builtin_va_arg(a,int); f.right+=__builtin_va_arg(a,double); __builtin_va_end(a); return f; }
 Bits apply_slot(Slot s,Bits b) { if(s.entry) b=s.entry(b); b.tag+=s.slot_tag; b.count+=s.slot_flags; return b; }
+TinyTail echo_tiny_tail(TinyTail t) { t.tail_low^=3; t.tail_high--; return t; }
+TinyTail tiny_tail_variable(TinyTail t,...) { __builtin_va_list a; __builtin_va_start(a,t); t.tail_high+=__builtin_va_arg(a,int); t.tail_low^=(unsigned)__builtin_va_arg(a,double); __builtin_va_end(a); return t; }
+FloatingTriple echo_triple(FloatingTriple t) { t.triple_left+=1.5f; t.triple_middle+=2.5f; t.triple_right+=3.5f; return t; }
+FloatingTriple triple_variable(FloatingTriple t,...) { __builtin_va_list a; __builtin_va_start(a,t); t.triple_left+=__builtin_va_arg(a,int); t.triple_middle+=__builtin_va_arg(a,double); __builtin_va_end(a); return t; }
+FloatingSingle echo_single(FloatingSingle s) { s.single_left+=1.5f; return s; }
+FloatingSingle single_variable(FloatingSingle s,...) { __builtin_va_list a; __builtin_va_start(a,s); s.single_left+=__builtin_va_arg(a,int); s.single_left+=__builtin_va_arg(a,double); __builtin_va_end(a); return s; }

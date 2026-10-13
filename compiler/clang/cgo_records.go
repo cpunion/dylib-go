@@ -15,6 +15,7 @@ type cgoTypes struct {
 	cPrefix    string
 	msLayout   bool
 	gnuPacking bool
+	gnuAMD64   bool
 	transports map[int]bool
 }
 
@@ -120,6 +121,18 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 		}
 		name := t.cRecordName(i)
+		tailPadding := t.gnuAMD64 && gnuImplicitTailPadding(record) && t.sysVAlignedRecord(record, 0)
+		if t.gnuAMD64 && record.MaxFieldAlignment != 0 && record.Layout.Size <= 16 && t.sysVAlignedRecord(record, 0) {
+			for _, padding := range record.Padding {
+				if padding.Width == 0 && padding.Aligned > record.MaxFieldAlignment && padding.Aligned > record.Layout.Alignment && padding.Gap != 0 && (!tailPadding || padding.Before != len(record.Description.Fields)) {
+					return fmt.Errorf("clang: GNU AMD64 small zero-width gaps in %s require an implicit-padding C bridge", record.Name)
+				}
+			}
+		}
+		bodyName := name
+		if tailPadding {
+			bodyName += "_body"
+		}
 		members := recordMembers(record)
 		var packedUnits []bitfieldUnit
 		if t.msLayout {
@@ -158,17 +171,21 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			fmt.Fprint(output, "#if defined(_WIN32)\n#pragma pack(push,1)\n#endif\n")
 		}
 		fmt.Fprint(output, "typedef struct ")
-		fmt.Fprint(output, record.cAttributes())
+		declarationRecord := record
 		if t.gnuPacking && record.MaxFieldAlignment != 0 {
 			for _, padding := range record.Padding {
-				if padding.Width == 0 && padding.Aligned > record.MaxFieldAlignment {
+				if padding.Width == 0 && padding.Aligned > record.MaxFieldAlignment && padding.Aligned > record.Layout.Alignment {
 					// Zero widths contribute to record alignment differently
 					// across GNU targets. Preserve the producer's observation.
-					fmt.Fprintf(output, "__attribute__((aligned(%d))) ", record.Layout.Alignment)
+					declarationRecord.Aligned = record.Layout.Alignment
 					break
 				}
 			}
 		}
+		if tailPadding {
+			declarationRecord.Aligned = record.Layout.Size
+		}
+		fmt.Fprint(output, declarationRecord.cAttributes())
 		fmt.Fprint(output, "{\n")
 		var packedBoundaries []int
 		unitStarts := bitfieldUnitStarts(record, members)
@@ -186,9 +203,13 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 			if member.padding >= 0 {
 				p := record.Padding[member.padding]
-				if t.gnuPacking && record.MaxFieldAlignment != 0 && p.Aligned > record.MaxFieldAlignment {
+				if t.gnuPacking && record.MaxFieldAlignment != 0 && p.Aligned > record.MaxFieldAlignment && (p.Width != 0 || p.Aligned > record.Layout.Alignment) {
 					if p.Width == 0 {
-						writeGNUPragmaBoundary(output, p.Gap)
+						gap := p.Gap
+						if tailPadding && p.Before == len(record.Description.Fields) {
+							gap = 0
+						}
+						writeGNUPragmaBoundary(output, gap)
 						continue
 					}
 					// Clang ignores an over-cap nonzero request entirely.
@@ -247,7 +268,10 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 				}
 			}
 		}
-		fmt.Fprintf(output, "} %s;\n", name)
+		fmt.Fprintf(output, "} %s;\n", bodyName)
+		if tailPadding {
+			fmt.Fprintf(output, "typedef %s %s __attribute__((aligned(%d)));\n", bodyName, name, record.Layout.Alignment)
+		}
 		if record.MaxFieldAlignment != 0 {
 			fmt.Fprint(output, "#pragma pack(pop)\n")
 		}
