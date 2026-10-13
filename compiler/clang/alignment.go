@@ -75,7 +75,13 @@ func validateAlignments(r Record, complete bool) error {
 			return fmt.Errorf("clang: invalid or duplicate field alignment in %s", r.Name)
 		}
 		seen[field.Position] = true
-		if complete && (len(r.Layout.Offsets) != len(r.Description.Fields) || r.Layout.Alignment < field.Aligned || r.Layout.Offsets[field.Position]%field.Aligned != 0) {
+		alignment := field.Aligned
+		// GNU packing can cap a source request; MSVC can preserve it. The
+		// separately probed storage alignments validate the actual placement.
+		if r.MaxFieldAlignment != 0 && !r.hasBitfields() && alignment > r.MaxFieldAlignment {
+			alignment = r.MaxFieldAlignment
+		}
+		if complete && (len(r.Layout.Offsets) != len(r.Description.Fields) || r.Layout.Alignment < alignment || r.Layout.Offsets[field.Position]%alignment != 0) {
 			return fmt.Errorf("clang: compiler field alignment mismatch in %s", r.Name)
 		}
 	}

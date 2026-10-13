@@ -69,3 +69,54 @@ Pragma pragma_variable(Pragma,...);
 typedef struct { signed char slot_tag; PragmaFn entry; } PragmaSlot;
 #pragma pack(pop)
 Pragma apply_pragma_slot(PragmaSlot,Pragma);
+
+#pragma pack(push,2)
+typedef struct {
+    signed char over_tag;
+    int over_count __attribute__((aligned(16)));
+    double over_samples[2];
+    _Bool over_truth;
+    void *over_context;
+} PragmaOver;
+typedef struct __attribute__((packed)) { signed char packed_tag; int packed_count __attribute__((aligned(16))); double packed_real; } PragmaOverPacked;
+typedef struct { signed char max_tag; int max_count __attribute__((aligned)); double max_real; } PragmaOverMax;
+typedef struct { signed char type_tag; _Alignas(PragmaAligned) int type_count; double type_real; } PragmaOverType;
+typedef struct { signed char array_tag; double array_values[2] __attribute__((aligned(32))); int array_count; } PragmaOverArray;
+#pragma pack(push,4)
+typedef struct {
+    signed char nested_tag;
+    PragmaOver nested_items[2][2];
+    PragmaOverPacked nested_packed[2];
+    PragmaOverMax nested_max[2];
+    PragmaOverType nested_type[2];
+    PragmaOverArray nested_array[2];
+    PragmaAligned nested_aligned[2];
+    int nested_count;
+} PragmaOverEnvelope;
+#pragma pack(pop)
+typedef struct __attribute__((aligned(32))) { float over_left; float over_right; } PragmaOverFloat;
+#pragma pack(pop)
+typedef struct { PragmaOverEnvelope over_payload; double over_tail; } PragmaOverOuter;
+PragmaOver echo_over(PragmaOver);
+PragmaOverPacked echo_over_packed(PragmaOverPacked);
+PragmaOverMax echo_over_max(PragmaOverMax);
+PragmaOverType echo_over_type(PragmaOverType);
+PragmaOverArray echo_over_array(PragmaOverArray);
+PragmaOverEnvelope echo_over_envelope(PragmaOverEnvelope);
+PragmaOverFloat echo_over_float(PragmaOverFloat);
+PragmaOverOuter echo_over_outer(PragmaOverOuter);
+typedef PragmaOver (*PragmaOverFn)(PragmaOver);
+PragmaOverFn over_factory(void);
+PragmaOver apply_over(PragmaOverFn,PragmaOver);
+PragmaOver *over_pointer(void);
+PragmaOver *mutate_over(PragmaOver *);
+double sum_over(PragmaOver *);
+PragmaOver over_variable(PragmaOver,...);
+#pragma pack(push,2)
+typedef struct { signed char over_slot_tag; PragmaOverFn over_entry __attribute__((aligned(16))); } PragmaOverSlot;
+#pragma pack(pop)
+PragmaOver apply_over_slot(PragmaOverSlot,PragmaOver);
+#pragma pack(push,4)
+typedef struct { PragmaOverFloat over_floats[1]; float over_float_tail; } PragmaOverFloatNested;
+#pragma pack(pop)
+PragmaOverFloatNested echo_over_float_nested(PragmaOverFloatNested);

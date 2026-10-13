@@ -121,8 +121,8 @@ func TestInvalidPackingMetadata(t *testing.T) {
 	if err := validatePacking(Record{MaxFieldAlignment: 2, Padding: []BitfieldPadding{{Type: abi.U32, Width: 0, Aligned: 16}}}); err == nil {
 		t.Fatal("unqualified over-aligned unnamed member accepted")
 	}
-	if err := validatePacking(Record{MaxFieldAlignment: 2, FieldAlignments: []FieldAlignment{{Aligned: 16}}}); err == nil {
-		t.Fatal("unqualified over-aligned pragma member accepted")
+	if err := validatePacking(Record{MaxFieldAlignment: 2, Bitfields: []Bitfield{{Width: 3}}, FieldAlignments: []FieldAlignment{{Aligned: 16}}}); err == nil {
+		t.Fatal("unqualified over-aligned pragma bitfield accepted")
 	}
 	if _, _, err := recordPackingProbes([]byte("broken")); err == nil {
 		t.Fatal("invalid JSON accepted")
@@ -135,8 +135,6 @@ func TestInvalidPackingMetadata(t *testing.T) {
 func TestPackingABIQualification(t *testing.T) {
 	for _, source := range []string{
 		"#pragma pack(push,2)\ntypedef struct { unsigned bits:3 __attribute__((aligned(16))); } S;\n#pragma pack(pop)\nS echo(S);",
-		"#pragma pack(push,2)\ntypedef struct { char tag; int value __attribute__((aligned(16))); } S;\n#pragma pack(pop)\nS echo(S);",
-		"typedef struct __attribute__((aligned(32))) { int value; } Aligned;\n#pragma pack(push,2)\ntypedef struct { char tag; Aligned items[2]; } S;\n#pragma pack(pop)\nS echo(S);",
 		"typedef struct { unsigned :3 __attribute__((aligned(16))); unsigned value:5; } Bits;\n#pragma pack(push,2)\ntypedef struct { char tag; Bits items[2]; } S;\n#pragma pack(pop)\nS echo(S);",
 	} {
 		if _, err := Parse(context.Background(), headerFile(t, source), Options{Compiler: compilerTool(t), Functions: []string{"echo"}}); err == nil {
