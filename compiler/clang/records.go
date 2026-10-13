@@ -39,9 +39,9 @@ type Record struct {
 	// declarations require compiled C adapters, never a Go memory view.
 	Aligned         uint64
 	FieldAlignments []FieldAlignment
-	// FieldTypeAlignments preserves scalar/native-address typedef alignment on
-	// named fields (or array leaves), separately from member attributes. Typedefs
-	// may lower alignment and never change the scalar size. C bridges preserve
+	// FieldTypeAlignments preserves scalar/native-address and fixed-array typedef
+	// alignment on named fields, separately from member attributes. Typedefs may
+	// lower alignment and never change size. C bridges preserve
 	// native storage and compiler calling classes through C-only facades.
 	FieldTypeAlignments []TypedefFieldAlignment
 	// IndirectArgument is compiler-observed MSVC i386 argument lowering for an

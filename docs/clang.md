@@ -41,6 +41,7 @@ Run
 | Named and typedef enums | Compiler-confirmed compatible signed/unsigned 8/16/32/64-bit integers or `_Bool`; packed/short enums and Clang fixed-underlying-type extensions are included |
 | Typedefs and ordinary qualifiers | Desugared/resolved, including integer and pointer aliases |
 | Scalar/enum/native-pointer typedef `aligned(N)` or omitted `aligned` | Scalar calls retain their ordinary ABI; record fields and scalar/native-address array leaves use compiler-validated C bridges, preserving raised/lowered alignment and alias chains |
+| Fixed-array typedef `aligned(N)` or omitted `aligned` | `CgoSource` preserves each array alias layer independently, including scalar/enum/record/native-address elements, nested aliases, lowered/raised alignment and packing combinations |
 | Object/opaque pointers | Native addresses; no automatic pointee allocation, copying or ownership |
 | Ordinary structs, including anonymous typedef records | Arguments/results; compiler-evaluated layout checked against the native backend |
 | Structs with `#pragma pack` | `CgoSource` for Go/llgo; caps 1/2/4/8/16, over-aligned ordinary members/bitfield units/zero-width boundaries, nested records/arrays and native addresses/function-pointer fields |
@@ -199,7 +200,7 @@ requires libffi; generated pointer methods themselves do not. Other typed
 pointees and typed pointer fields in manually assembled record metadata remain
 unsupported; record fields use opaque addresses.
 
-### Aligned scalar and pointer typedefs
+### Aligned scalar, pointer and array typedefs
 
 `typedef int Low __attribute__((aligned(1)))` keeps the integer size while
 lowering its alignment. A member `aligned(1)` cannot reproduce this change.
@@ -208,8 +209,23 @@ or omitted alignment, inherited aliases and later alignment overrides. Fixed
 scalar/native-address arrays keep the alias at their leaves. Record packing,
 pragma caps and explicit member alignment remain separate metadata.
 
+Whole-array aliases are also supported: `typedef int Pair[2]
+__attribute__((aligned(1)))` lowers the array's alignment without changing its
+size or its integer elements. Nested aliases retain independent requests at
+each layer, including scalar, enum, complete-record and native-address elements.
+For example, an aligned scalar can form an aligned row, which can then form a
+matrix with a lower alignment. Aliases wrapping that matrix preserve all three
+requests. Clang rejects invalid scalar strides; `CgoSource` also rejects an
+aligned array alias nested in another array if its size is not a multiple of
+the requested alignment. Clang accepts that form while GCC rejects it.
+
 `Record.FieldTypeAlignments` contains the requested alias alignment and measured
-member storage alignment. Probes compare expression alignment with alignment in
+member storage alignment. `ArrayDepth` is zero at the scalar/native-address
+leaf, one at the innermost fixed array, and increases towards the outermost
+array. Entries are ordered by member position and then depth; the storage
+alignment applies to the whole member and agrees across its entries. A zero
+depth preserves compatibility with earlier scalar typedef metadata.
+Probes compare expression alignment with alignment in
 a standalone member wrapper, then reconcile it with the actual record base and
 offset. This matters on Windows: MSVC/MinGW may ignore lowered typedef alignment
 for scalar or pointer members while preserving it for arrays or enums. Windows
@@ -228,11 +244,14 @@ numeric/omitted alignment, native pointer/entry fields, factories, pointer
 mutation and concrete variadic calls. Go and llgo CI execute object, archive and
 OS-library inputs at `-O0` and `-O2`, without requiring libffi. The compiler tests
 also check all eight target layouts and MSVC-producer/MinGW-bridge compatibility.
+Whole-array cases additionally cover three-dimensional mixed-alignment aliases,
+record/native-address/entry arrays, lowered floating arrays, array parameter
+decay to scalar pointers, variadic prefixes and provider-owned pointer mutation.
 
 Scalar or pointer typedef alignment alone does not change the scalar calling
 interface, so those boundary signatures also support `Session.Bind` and direct
 llgo adapters. Attributed record values still require C bridges. Aligned
-record/whole-array typedefs and aligned typedef bitfields remain rejected; they
+record typedefs and aligned typedef bitfields remain rejected; they
 need additional type identity and compiler ABI qualification. Unsupported
 attributes in an alias chain are rejected before generation. See GCC's
 [typedef alignment rules](https://gcc.gnu.org/onlinedocs/gcc-15.2.0/gcc/Common-Type-Attributes.html).
@@ -389,7 +408,7 @@ small/large values, ignored shared requests, named/unnamed/zero-width boundaries
 packed combinations, floating aggregates, multidimensional nested arrays,
 aligned native function-pointer fields, factories, pointer identity/mutation,
 nulls and concrete variadic prefixes/results at `-O0`/`-O2` with Go and llgo.
-Record/array typedef alignment and aligned typedef bitfields remain unqualified. The
+Record typedef alignment and aligned typedef bitfields remain unqualified. The
 [packed example](../examples/packedrecords/call.go) executes object/archive/library
 calls at `-O0`/`-O2`, including nested packing levels, restored natural outer
 layout, numeric/omitted/type-based member alignment, packed combinations, nested

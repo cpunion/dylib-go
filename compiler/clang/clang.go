@@ -139,9 +139,10 @@ const maxFunctions = 256
 // bitfields use C bridges, including over-aligned pragma members, allocation
 // units, zero-width boundaries and nested values.
 // Scalar/enum/native-address typedef alignment preserves raised/lowered requests
-// and alias chains through C bridges, including fixed-array leaves. GNU AMD64
+// and alias chains through C bridges, including fixed-array leaves. Whole-array
+// aliases preserve independent alignment at each nested array layer. GNU AMD64
 // records require compiler-probed Clang 19-compatible SysV lowering. Aligned
-// record/whole-array typedefs and aligned typedef bitfields remain unsupported.
+// record typedefs and aligned typedef bitfields remain unsupported.
 // Unions, other attributed
 // records/fields/typedefs, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes

@@ -1,7 +1,7 @@
 //go:build cgo
 
-// Package typedefalignment demonstrates C bridges for aligned scalar and native
-// pointer typedefs. Public records are ordinary Go values.
+// Package typedefalignment demonstrates C bridges for aligned scalar, native
+// pointer and fixed-array typedefs. Public records are ordinary Go values.
 package typedefalignment
 
 import (

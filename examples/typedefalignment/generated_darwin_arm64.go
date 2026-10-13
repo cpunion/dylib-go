@@ -371,6 +371,394 @@ result.f1 = value.f1;
 result.f2 = value.f2;
 return result;
 }
+typedef int32_t dylib_go_42696e64696e6773_record11_field1_array1[2] __attribute__((aligned(1)));
+typedef struct {
+int8_t f0;
+dylib_go_42696e64696e6773_record11_field1_array1 f1;
+} dylib_go_42696e64696e6773_record11;
+static uint64_t dylib_go_42696e64696e6773_record11_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record11);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record11);
+case 2:return offsetof(dylib_go_42696e64696e6773_record11,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record11,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+int32_t f1[2];
+} dylib_go_42696e64696e6773_record11_transport;
+static dylib_go_42696e64696e6773_record11 dylib_go_42696e64696e6773_record11_from_transport(dylib_go_42696e64696e6773_record11_transport value) {
+dylib_go_42696e64696e6773_record11 result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+return result;
+}
+static dylib_go_42696e64696e6773_record11_transport dylib_go_42696e64696e6773_record11_to_transport(dylib_go_42696e64696e6773_record11 value) {
+dylib_go_42696e64696e6773_record11_transport result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+return result;
+}
+typedef int32_t dylib_go_42696e64696e6773_record12_field1_array1[2] __attribute__((aligned(16)));
+typedef struct {
+int8_t f0;
+dylib_go_42696e64696e6773_record12_field1_array1 f1;
+} dylib_go_42696e64696e6773_record12;
+static uint64_t dylib_go_42696e64696e6773_record12_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record12);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record12);
+case 2:return offsetof(dylib_go_42696e64696e6773_record12,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record12,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+int32_t f1[2];
+} dylib_go_42696e64696e6773_record12_transport;
+static dylib_go_42696e64696e6773_record12 dylib_go_42696e64696e6773_record12_from_transport(dylib_go_42696e64696e6773_record12_transport value) {
+dylib_go_42696e64696e6773_record12 result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+return result;
+}
+static dylib_go_42696e64696e6773_record12_transport dylib_go_42696e64696e6773_record12_to_transport(dylib_go_42696e64696e6773_record12 value) {
+dylib_go_42696e64696e6773_record12_transport result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+return result;
+}
+typedef int32_t dylib_go_42696e64696e6773_record13_field1_array1[2] __attribute__((aligned(2)));
+typedef struct {
+int8_t f0;
+dylib_go_42696e64696e6773_record13_field1_array1 f1;
+} dylib_go_42696e64696e6773_record13;
+static uint64_t dylib_go_42696e64696e6773_record13_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record13);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record13);
+case 2:return offsetof(dylib_go_42696e64696e6773_record13,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record13,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+int32_t f1[2];
+} dylib_go_42696e64696e6773_record13_transport;
+static dylib_go_42696e64696e6773_record13 dylib_go_42696e64696e6773_record13_from_transport(dylib_go_42696e64696e6773_record13_transport value) {
+dylib_go_42696e64696e6773_record13 result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+return result;
+}
+static dylib_go_42696e64696e6773_record13_transport dylib_go_42696e64696e6773_record13_to_transport(dylib_go_42696e64696e6773_record13 value) {
+dylib_go_42696e64696e6773_record13_transport result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+return result;
+}
+typedef int32_t dylib_go_42696e64696e6773_record14_field1 __attribute__((aligned(1)));
+typedef dylib_go_42696e64696e6773_record14_field1 dylib_go_42696e64696e6773_record14_field1_array1[2] __attribute__((aligned(8)));
+typedef dylib_go_42696e64696e6773_record14_field1_array1 dylib_go_42696e64696e6773_record14_field1_array2[2] __attribute__((aligned(1)));
+typedef struct {
+int8_t f0;
+dylib_go_42696e64696e6773_record14_field1_array2 f1[3];
+} dylib_go_42696e64696e6773_record14;
+static uint64_t dylib_go_42696e64696e6773_record14_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record14);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record14);
+case 2:return offsetof(dylib_go_42696e64696e6773_record14,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record14,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+int32_t f1[3][2][2];
+} dylib_go_42696e64696e6773_record14_transport;
+static dylib_go_42696e64696e6773_record14 dylib_go_42696e64696e6773_record14_from_transport(dylib_go_42696e64696e6773_record14_transport value) {
+dylib_go_42696e64696e6773_record14 result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 3; ++i0) {
+for (uint32_t i1 = 0; i1 < 2; ++i1) {
+for (uint32_t i2 = 0; i2 < 2; ++i2) {
+result.f1[i0][i1][i2] = value.f1[i0][i1][i2];
+}
+}
+}
+return result;
+}
+static dylib_go_42696e64696e6773_record14_transport dylib_go_42696e64696e6773_record14_to_transport(dylib_go_42696e64696e6773_record14 value) {
+dylib_go_42696e64696e6773_record14_transport result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 3; ++i0) {
+for (uint32_t i1 = 0; i1 < 2; ++i1) {
+for (uint32_t i2 = 0; i2 < 2; ++i2) {
+result.f1[i0][i1][i2] = value.f1[i0][i1][i2];
+}
+}
+}
+return result;
+}
+typedef dylib_go_42696e64696e6773_record0 dylib_go_42696e64696e6773_record15_field1_array1[2] __attribute__((aligned(1)));
+typedef struct {
+int8_t f0;
+dylib_go_42696e64696e6773_record15_field1_array1 f1;
+} dylib_go_42696e64696e6773_record15;
+static uint64_t dylib_go_42696e64696e6773_record15_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record15);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record15);
+case 2:return offsetof(dylib_go_42696e64696e6773_record15,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record15,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+dylib_go_42696e64696e6773_record0_transport f1[2];
+} dylib_go_42696e64696e6773_record15_transport;
+static dylib_go_42696e64696e6773_record15 dylib_go_42696e64696e6773_record15_from_transport(dylib_go_42696e64696e6773_record15_transport value) {
+dylib_go_42696e64696e6773_record15 result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = dylib_go_42696e64696e6773_record0_from_transport(value.f1[i0]);
+}
+return result;
+}
+static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_record15_to_transport(dylib_go_42696e64696e6773_record15 value) {
+dylib_go_42696e64696e6773_record15_transport result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = dylib_go_42696e64696e6773_record0_to_transport(value.f1[i0]);
+}
+return result;
+}
+typedef void * dylib_go_42696e64696e6773_record16_field1_array1[2] __attribute__((aligned(1)));
+typedef void * dylib_go_42696e64696e6773_record16_field2_array1[2] __attribute__((aligned(1)));
+typedef struct {
+int8_t f0;
+dylib_go_42696e64696e6773_record16_field1_array1 f1;
+dylib_go_42696e64696e6773_record16_field2_array1 f2;
+} dylib_go_42696e64696e6773_record16;
+static uint64_t dylib_go_42696e64696e6773_record16_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record16);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record16);
+case 2:return offsetof(dylib_go_42696e64696e6773_record16,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record16,f1);
+case 4:return offsetof(dylib_go_42696e64696e6773_record16,f2);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+void * f1[2];
+void * f2[2];
+} dylib_go_42696e64696e6773_record16_transport;
+static dylib_go_42696e64696e6773_record16 dylib_go_42696e64696e6773_record16_from_transport(dylib_go_42696e64696e6773_record16_transport value) {
+dylib_go_42696e64696e6773_record16 result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f2[i0] = value.f2[i0];
+}
+return result;
+}
+static dylib_go_42696e64696e6773_record16_transport dylib_go_42696e64696e6773_record16_to_transport(dylib_go_42696e64696e6773_record16 value) {
+dylib_go_42696e64696e6773_record16_transport result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f2[i0] = value.f2[i0];
+}
+return result;
+}
+typedef double dylib_go_42696e64696e6773_record17_field1_array1[1] __attribute__((aligned(1)));
+typedef struct {
+int8_t f0;
+dylib_go_42696e64696e6773_record17_field1_array1 f1;
+} dylib_go_42696e64696e6773_record17;
+static uint64_t dylib_go_42696e64696e6773_record17_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record17);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record17);
+case 2:return offsetof(dylib_go_42696e64696e6773_record17,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record17,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+double f1[1];
+} dylib_go_42696e64696e6773_record17_transport;
+static dylib_go_42696e64696e6773_record17 dylib_go_42696e64696e6773_record17_from_transport(dylib_go_42696e64696e6773_record17_transport value) {
+dylib_go_42696e64696e6773_record17 result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 1; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+return result;
+}
+static dylib_go_42696e64696e6773_record17_transport dylib_go_42696e64696e6773_record17_to_transport(dylib_go_42696e64696e6773_record17 value) {
+dylib_go_42696e64696e6773_record17_transport result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 1; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+return result;
+}
+typedef int32_t dylib_go_42696e64696e6773_record18_field1_array1[2] __attribute__((aligned(16)));
+typedef struct {
+int8_t f0;
+dylib_go_42696e64696e6773_record18_field1_array1 f1;
+} dylib_go_42696e64696e6773_record18;
+static uint64_t dylib_go_42696e64696e6773_record18_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record18);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record18);
+case 2:return offsetof(dylib_go_42696e64696e6773_record18,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record18,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+int32_t f1[2];
+} dylib_go_42696e64696e6773_record18_transport;
+static dylib_go_42696e64696e6773_record18 dylib_go_42696e64696e6773_record18_from_transport(dylib_go_42696e64696e6773_record18_transport value) {
+dylib_go_42696e64696e6773_record18 result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+return result;
+}
+static dylib_go_42696e64696e6773_record18_transport dylib_go_42696e64696e6773_record18_to_transport(dylib_go_42696e64696e6773_record18 value) {
+dylib_go_42696e64696e6773_record18_transport result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+return result;
+}
+typedef int32_t dylib_go_42696e64696e6773_record19_field1_array1[2] __attribute__((aligned(16)));
+typedef int32_t dylib_go_42696e64696e6773_record19_field2 __attribute__((aligned(1)));
+typedef dylib_go_42696e64696e6773_record19_field2 dylib_go_42696e64696e6773_record19_field2_array1[2] __attribute__((aligned(8)));
+typedef dylib_go_42696e64696e6773_record19_field2_array1 dylib_go_42696e64696e6773_record19_field2_array2[2] __attribute__((aligned(1)));
+typedef struct __attribute__((packed)) {
+int8_t f0;
+dylib_go_42696e64696e6773_record19_field1_array1 f1 __attribute__((aligned(8)));
+dylib_go_42696e64696e6773_record19_field2_array2 f2;
+} dylib_go_42696e64696e6773_record19;
+static uint64_t dylib_go_42696e64696e6773_record19_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record19);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record19);
+case 2:return offsetof(dylib_go_42696e64696e6773_record19,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record19,f1);
+case 4:return offsetof(dylib_go_42696e64696e6773_record19,f2);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+int32_t f1[2];
+int32_t f2[2][2];
+} dylib_go_42696e64696e6773_record19_transport;
+static dylib_go_42696e64696e6773_record19 dylib_go_42696e64696e6773_record19_from_transport(dylib_go_42696e64696e6773_record19_transport value) {
+dylib_go_42696e64696e6773_record19 result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+for (uint32_t i1 = 0; i1 < 2; ++i1) {
+result.f2[i0][i1] = value.f2[i0][i1];
+}
+}
+return result;
+}
+static dylib_go_42696e64696e6773_record19_transport dylib_go_42696e64696e6773_record19_to_transport(dylib_go_42696e64696e6773_record19 value) {
+dylib_go_42696e64696e6773_record19_transport result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+for (uint32_t i1 = 0; i1 < 2; ++i1) {
+result.f2[i0][i1] = value.f2[i0][i1];
+}
+}
+return result;
+}
+typedef int32_t dylib_go_42696e64696e6773_record20_field1_array1[2] __attribute__((aligned(16)));
+typedef double dylib_go_42696e64696e6773_record20_field2_array1[1] __attribute__((aligned(1)));
+#pragma pack(push,2)
+typedef struct {
+int8_t f0;
+dylib_go_42696e64696e6773_record20_field1_array1 f1;
+dylib_go_42696e64696e6773_record20_field2_array1 f2;
+} dylib_go_42696e64696e6773_record20;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record20_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record20);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record20);
+case 2:return offsetof(dylib_go_42696e64696e6773_record20,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record20,f1);
+case 4:return offsetof(dylib_go_42696e64696e6773_record20,f2);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+int32_t f1[2];
+double f2[1];
+} dylib_go_42696e64696e6773_record20_transport;
+static dylib_go_42696e64696e6773_record20 dylib_go_42696e64696e6773_record20_from_transport(dylib_go_42696e64696e6773_record20_transport value) {
+dylib_go_42696e64696e6773_record20 result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+for (uint32_t i0 = 0; i0 < 1; ++i0) {
+result.f2[i0] = value.f2[i0];
+}
+return result;
+}
+static dylib_go_42696e64696e6773_record20_transport dylib_go_42696e64696e6773_record20_to_transport(dylib_go_42696e64696e6773_record20 value) {
+dylib_go_42696e64696e6773_record20_transport result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = value.f1[i0];
+}
+for (uint32_t i0 = 0; i0 < 1; ++i0) {
+result.f2[i0] = value.f2[i0];
+}
+return result;
+}
 typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call0_function)(dylib_go_42696e64696e6773_record0);
 static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call0(uintptr_t address,dylib_go_42696e64696e6773_record0_transport p0) {
 return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call0_function)address)(dylib_go_42696e64696e6773_record0_from_transport(p0)));
@@ -457,6 +845,84 @@ typedef dylib_go_42696e64696e6773_record1 (*dylib_go_42696e64696e6773_call20_fun
 static dylib_go_42696e64696e6773_record1_transport dylib_go_42696e64696e6773_call20(uintptr_t address,void * p0) {
 return dylib_go_42696e64696e6773_record1_to_transport(((dylib_go_42696e64696e6773_call20_function)address)((dylib_go_42696e64696e6773_record1 *)p0));
 }
+typedef dylib_go_42696e64696e6773_record11 (*dylib_go_42696e64696e6773_call21_function)(dylib_go_42696e64696e6773_record11);
+static dylib_go_42696e64696e6773_record11_transport dylib_go_42696e64696e6773_call21(uintptr_t address,dylib_go_42696e64696e6773_record11_transport p0) {
+return dylib_go_42696e64696e6773_record11_to_transport(((dylib_go_42696e64696e6773_call21_function)address)(dylib_go_42696e64696e6773_record11_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record12 (*dylib_go_42696e64696e6773_call22_function)(dylib_go_42696e64696e6773_record12);
+static dylib_go_42696e64696e6773_record12_transport dylib_go_42696e64696e6773_call22(uintptr_t address,dylib_go_42696e64696e6773_record12_transport p0) {
+return dylib_go_42696e64696e6773_record12_to_transport(((dylib_go_42696e64696e6773_call22_function)address)(dylib_go_42696e64696e6773_record12_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record13 (*dylib_go_42696e64696e6773_call23_function)(dylib_go_42696e64696e6773_record13);
+static dylib_go_42696e64696e6773_record13_transport dylib_go_42696e64696e6773_call23(uintptr_t address,dylib_go_42696e64696e6773_record13_transport p0) {
+return dylib_go_42696e64696e6773_record13_to_transport(((dylib_go_42696e64696e6773_call23_function)address)(dylib_go_42696e64696e6773_record13_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record14 (*dylib_go_42696e64696e6773_call24_function)(dylib_go_42696e64696e6773_record14);
+static dylib_go_42696e64696e6773_record14_transport dylib_go_42696e64696e6773_call24(uintptr_t address,dylib_go_42696e64696e6773_record14_transport p0) {
+return dylib_go_42696e64696e6773_record14_to_transport(((dylib_go_42696e64696e6773_call24_function)address)(dylib_go_42696e64696e6773_record14_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call25_function)(dylib_go_42696e64696e6773_record15);
+static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call25(uintptr_t address,dylib_go_42696e64696e6773_record15_transport p0) {
+return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call25_function)address)(dylib_go_42696e64696e6773_record15_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record16 (*dylib_go_42696e64696e6773_call26_function)(dylib_go_42696e64696e6773_record16);
+static dylib_go_42696e64696e6773_record16_transport dylib_go_42696e64696e6773_call26(uintptr_t address,dylib_go_42696e64696e6773_record16_transport p0) {
+return dylib_go_42696e64696e6773_record16_to_transport(((dylib_go_42696e64696e6773_call26_function)address)(dylib_go_42696e64696e6773_record16_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record17 (*dylib_go_42696e64696e6773_call27_function)(dylib_go_42696e64696e6773_record17);
+static dylib_go_42696e64696e6773_record17_transport dylib_go_42696e64696e6773_call27(uintptr_t address,dylib_go_42696e64696e6773_record17_transport p0) {
+return dylib_go_42696e64696e6773_record17_to_transport(((dylib_go_42696e64696e6773_call27_function)address)(dylib_go_42696e64696e6773_record17_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record18 (*dylib_go_42696e64696e6773_call28_function)(dylib_go_42696e64696e6773_record18);
+static dylib_go_42696e64696e6773_record18_transport dylib_go_42696e64696e6773_call28(uintptr_t address,dylib_go_42696e64696e6773_record18_transport p0) {
+return dylib_go_42696e64696e6773_record18_to_transport(((dylib_go_42696e64696e6773_call28_function)address)(dylib_go_42696e64696e6773_record18_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record19 (*dylib_go_42696e64696e6773_call29_function)(dylib_go_42696e64696e6773_record19);
+static dylib_go_42696e64696e6773_record19_transport dylib_go_42696e64696e6773_call29(uintptr_t address,dylib_go_42696e64696e6773_record19_transport p0) {
+return dylib_go_42696e64696e6773_record19_to_transport(((dylib_go_42696e64696e6773_call29_function)address)(dylib_go_42696e64696e6773_record19_from_transport(p0)));
+}
+typedef dylib_go_42696e64696e6773_record20 (*dylib_go_42696e64696e6773_call30_function)(dylib_go_42696e64696e6773_record20);
+static dylib_go_42696e64696e6773_record20_transport dylib_go_42696e64696e6773_call30(uintptr_t address,dylib_go_42696e64696e6773_record20_transport p0) {
+return dylib_go_42696e64696e6773_record20_to_transport(((dylib_go_42696e64696e6773_call30_function)address)(dylib_go_42696e64696e6773_record20_from_transport(p0)));
+}
+typedef int32_t (*dylib_go_42696e64696e6773_call31_function)(dylib_go_42696e64696e6773_record11,...);
+static int32_t dylib_go_42696e64696e6773_call31(uintptr_t address,dylib_go_42696e64696e6773_record11_transport p0,int32_t p1,float p2) {
+return ((dylib_go_42696e64696e6773_call31_function)address)(dylib_go_42696e64696e6773_record11_from_transport(p0),(int8_t)p1,p2);
+}
+typedef dylib_go_42696e64696e6773_record12 (*dylib_go_42696e64696e6773_call32_pointer0)(dylib_go_42696e64696e6773_record12);
+typedef dylib_go_42696e64696e6773_call32_pointer0 (*dylib_go_42696e64696e6773_call32_function)(void);
+static void * dylib_go_42696e64696e6773_call32(uintptr_t address) {
+return (void *)((dylib_go_42696e64696e6773_call32_function)address)();
+}
+typedef dylib_go_42696e64696e6773_record12 (*dylib_go_42696e64696e6773_call33_pointer1)(dylib_go_42696e64696e6773_record12);
+typedef dylib_go_42696e64696e6773_record12 (*dylib_go_42696e64696e6773_call33_function)(dylib_go_42696e64696e6773_call33_pointer1,dylib_go_42696e64696e6773_record12);
+static dylib_go_42696e64696e6773_record12_transport dylib_go_42696e64696e6773_call33(uintptr_t address,void * p0,dylib_go_42696e64696e6773_record12_transport p1) {
+return dylib_go_42696e64696e6773_record12_to_transport(((dylib_go_42696e64696e6773_call33_function)address)((dylib_go_42696e64696e6773_call33_pointer1)p0,dylib_go_42696e64696e6773_record12_from_transport(p1)));
+}
+typedef dylib_go_42696e64696e6773_record12 * (*dylib_go_42696e64696e6773_call34_function)(dylib_go_42696e64696e6773_record12);
+static void * dylib_go_42696e64696e6773_call34(uintptr_t address,dylib_go_42696e64696e6773_record12_transport p0) {
+return (void *)((dylib_go_42696e64696e6773_call34_function)address)(dylib_go_42696e64696e6773_record12_from_transport(p0));
+}
+typedef dylib_go_42696e64696e6773_record12 * (*dylib_go_42696e64696e6773_call35_function)(dylib_go_42696e64696e6773_record12 *);
+static void * dylib_go_42696e64696e6773_call35(uintptr_t address,void * p0) {
+return (void *)((dylib_go_42696e64696e6773_call35_function)address)((dylib_go_42696e64696e6773_record12 *)p0);
+}
+typedef dylib_go_42696e64696e6773_record12 (*dylib_go_42696e64696e6773_call36_function)(dylib_go_42696e64696e6773_record12 *);
+static dylib_go_42696e64696e6773_record12_transport dylib_go_42696e64696e6773_call36(uintptr_t address,void * p0) {
+return dylib_go_42696e64696e6773_record12_to_transport(((dylib_go_42696e64696e6773_call36_function)address)((dylib_go_42696e64696e6773_record12 *)p0));
+}
+typedef dylib_go_42696e64696e6773_record16 (*dylib_go_42696e64696e6773_call37_function)(void);
+static dylib_go_42696e64696e6773_record16_transport dylib_go_42696e64696e6773_call37(uintptr_t address) {
+return dylib_go_42696e64696e6773_record16_to_transport(((dylib_go_42696e64696e6773_call37_function)address)());
+}
+typedef int32_t (*dylib_go_42696e64696e6773_call38_function)(dylib_go_42696e64696e6773_record16);
+static int32_t dylib_go_42696e64696e6773_call38(uintptr_t address,dylib_go_42696e64696e6773_record16_transport p0) {
+return ((dylib_go_42696e64696e6773_call38_function)address)(dylib_go_42696e64696e6773_record16_from_transport(p0));
+}
+typedef int32_t (*dylib_go_42696e64696e6773_call39_function)(void *);
+static int32_t dylib_go_42696e64696e6773_call39(uintptr_t address,void * p0) {
+return ((dylib_go_42696e64696e6773_call39_function)address)(p0);
+}
 */
 import "C"
 
@@ -493,6 +959,25 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "forward_high", Symbol: "forward_high", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}},
 		{Name: "high_pointer", Symbol: "high_pointer", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}},
 		{Name: "read_high", Symbol: "read_high", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
+		{Name: "echo_whole_low", Symbol: "echo_whole_low", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_low_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_low_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_low_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_low_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}},
+		{Name: "echo_whole_high", Symbol: "echo_whole_high", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}},
+		{Name: "echo_whole_down", Symbol: "echo_whole_down", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_down_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_down_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_down_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_down_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}},
+		{Name: "echo_layered", Symbol: "echo_layered", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "layered_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "layered_items", Type: abi.TypeDesc{Type: abi.Array, Len: 3, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "layered_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "layered_items", Type: abi.TypeDesc{Type: abi.Array, Len: 3, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}}},
+		{Name: "echo_record_array", Symbol: "echo_record_array", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "record_array_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "record_array_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "low_value", Type: abi.TypeDesc{Type: abi.I32}}}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "record_array_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "record_array_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "low_value", Type: abi.TypeDesc{Type: abi.I32}}}}}}}}}},
+		{Name: "echo_address_array", Symbol: "echo_address_array", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_array_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "address_array_values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}, {Name: "address_array_entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_array_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "address_array_values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}, {Name: "address_array_entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}},
+		{Name: "echo_whole_float", Symbol: "echo_whole_float", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_float_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_float_items", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F64}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_float_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_float_items", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F64}}}}}}},
+		{Name: "echo_whole_maximum", Symbol: "echo_whole_maximum", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_max_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_max_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_max_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_max_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}},
+		{Name: "echo_whole_packed", Symbol: "echo_whole_packed", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_packed_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}, {Name: "whole_packed_matrix", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_packed_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}, {Name: "whole_packed_matrix", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}},
+		{Name: "echo_whole_pragma", Symbol: "echo_whole_pragma", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_pragma_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}, {Name: "whole_pragma_float", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F64}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_pragma_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}, {Name: "whole_pragma_float", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F64}}}}}}},
+		{Name: "whole_variadic", Symbol: "whole_variadic", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_low_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_low_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}}},
+		{Name: "whole_factory", Symbol: "whole_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}}},
+		{Name: "whole_forward", Symbol: "whole_forward", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}}},
+		{Name: "whole_pointer", Symbol: "whole_pointer", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}},
+		{Name: "whole_mutate", Symbol: "whole_mutate", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}},
+		{Name: "whole_read", Symbol: "whole_read", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}},
+		{Name: "make_address_array", Symbol: "make_address_array", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_array_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "address_array_values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}, {Name: "address_array_entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}},
+		{Name: "apply_address_array", Symbol: "apply_address_array", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_array_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "address_array_values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}, {Name: "address_array_entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}}}},
+		{Name: "decay_pair", Symbol: "decay_pair", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}}},
 	},
 	Records: []clang.Record{
 		{Name: "LowRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "low_value", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 5, Alignment: 1, Offsets: []uint64{0, 1}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 1}}},
@@ -506,6 +991,16 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "EnumRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "enum_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "enum_value", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 5, Alignment: 1, Offsets: []uint64{0, 1}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 1}}},
 		{Name: "PackedRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 16, Alignment: 8, Offsets: []uint64{0, 8, 12}}, Packed: true, FieldAlignments: []clang.FieldAlignment{{Position: 1, Aligned: 8}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 16, StorageAlignment: 8}, {Position: 2, Aligned: 1, StorageAlignment: 1}}},
 		{Name: "PragmaRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 14, Alignment: 2, Offsets: []uint64{0, 2, 6}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2, 1}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 16, StorageAlignment: 2}, {Position: 2, Aligned: 1, StorageAlignment: 1}}},
+		{Name: "WholeLowRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_low_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_low_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}, Layout: abi.Layout{Size: 9, Alignment: 1, Offsets: []uint64{0, 1}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, ArrayDepth: 1, Aligned: 1, StorageAlignment: 1}}},
+		{Name: "WholeHighRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_high_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}, Layout: abi.Layout{Size: 32, Alignment: 16, Offsets: []uint64{0, 16}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, ArrayDepth: 1, Aligned: 16, StorageAlignment: 16}}},
+		{Name: "WholeDownRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_down_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_down_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}, Layout: abi.Layout{Size: 10, Alignment: 2, Offsets: []uint64{0, 2}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, ArrayDepth: 1, Aligned: 2, StorageAlignment: 2}}},
+		{Name: "LayeredRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "layered_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "layered_items", Type: abi.TypeDesc{Type: abi.Array, Len: 3, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}, Layout: abi.Layout{Size: 49, Alignment: 1, Offsets: []uint64{0, 1}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 1}, {Position: 1, ArrayDepth: 1, Aligned: 8, StorageAlignment: 1}, {Position: 1, ArrayDepth: 2, Aligned: 1, StorageAlignment: 1}}},
+		{Name: "RecordArrayRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "record_array_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "record_array_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "low_value", Type: abi.TypeDesc{Type: abi.I32}}}}}}}}, Layout: abi.Layout{Size: 11, Alignment: 1, Offsets: []uint64{0, 1}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, ArrayDepth: 1, Aligned: 1, StorageAlignment: 1}}},
+		{Name: "AddressArrayRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_array_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "address_array_values", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}, {Name: "address_array_entries", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Pointer}}}}}, Layout: abi.Layout{Size: 33, Alignment: 1, Offsets: []uint64{0, 1, 17}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, ArrayDepth: 1, Aligned: 1, StorageAlignment: 1}, {Position: 2, ArrayDepth: 1, Aligned: 1, StorageAlignment: 1}}, FunctionPointers: []clang.FunctionPointer{{Position: 2, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32}}}}},
+		{Name: "WholeFloatRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_float_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_float_items", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F64}}}}}, Layout: abi.Layout{Size: 9, Alignment: 1, Offsets: []uint64{0, 1}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, ArrayDepth: 1, Aligned: 1, StorageAlignment: 1}}},
+		{Name: "WholeMaximumRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_max_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_max_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}, Layout: abi.Layout{Size: 32, Alignment: 16, Offsets: []uint64{0, 16}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, ArrayDepth: 1, Aligned: 16, StorageAlignment: 16}}},
+		{Name: "WholePackedRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_packed_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}, {Name: "whole_packed_matrix", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}, Layout: abi.Layout{Size: 32, Alignment: 8, Offsets: []uint64{0, 8, 16}}, Packed: true, FieldAlignments: []clang.FieldAlignment{{Position: 1, Aligned: 8}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, ArrayDepth: 1, Aligned: 16, StorageAlignment: 8}, {Position: 2, Aligned: 1, StorageAlignment: 1}, {Position: 2, ArrayDepth: 1, Aligned: 8, StorageAlignment: 1}, {Position: 2, ArrayDepth: 2, Aligned: 1, StorageAlignment: 1}}},
+		{Name: "WholePragmaRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "whole_pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "whole_pragma_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}, {Name: "whole_pragma_float", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F64}}}}}, Layout: abi.Layout{Size: 18, Alignment: 2, Offsets: []uint64{0, 2, 10}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2, 1}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, ArrayDepth: 1, Aligned: 16, StorageAlignment: 2}, {Position: 2, ArrayDepth: 1, Aligned: 1, StorageAlignment: 1}}},
 	},
 }
 
@@ -599,6 +1094,89 @@ type BindingsRecord10 struct {
 	Pragma_tag   int8
 	Pragma_value int32
 	Pragma_real  float64
+}
+
+// BindingsRecord11 describes WholeLowRecord; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord11 struct {
+	Whole_low_tag   int8
+	Whole_low_items [2]int32
+}
+
+// BindingsRecord12 describes WholeHighRecord; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord12 struct {
+	Whole_high_tag   int8
+	Whole_high_items [2]int32
+}
+
+// BindingsRecord13 describes WholeDownRecord; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord13 struct {
+	Whole_down_tag   int8
+	Whole_down_items [2]int32
+}
+
+// BindingsRecord14 describes LayeredRecord; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord14 struct {
+	Layered_tag   int8
+	Layered_items [3][2][2]int32
+}
+
+// BindingsRecord15 describes RecordArrayRecord; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord15 struct {
+	Record_array_tag   int8
+	Record_array_items [2]BindingsRecord0
+}
+
+// BindingsRecord16 describes AddressArrayRecord; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord16 struct {
+	Address_array_tag     int8
+	Address_array_values  [2]unsafe.Pointer
+	Address_array_entries [2]unsafe.Pointer
+}
+
+// BindingsRecord17 describes WholeFloatRecord; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord17 struct {
+	Whole_float_tag   int8
+	Whole_float_items [1]float64
+}
+
+// BindingsRecord18 describes WholeMaximumRecord; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord18 struct {
+	Whole_max_tag   int8
+	Whole_max_items [2]int32
+}
+
+// BindingsRecord19 describes WholePackedRecord; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord19 struct {
+	Whole_packed_tag    int8
+	Whole_packed_items  [2]int32
+	Whole_packed_matrix [2][2]int32
+}
+
+// BindingsRecord20 describes WholePragmaRecord; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord20 struct {
+	Whole_pragma_tag   int8
+	Whole_pragma_items [2]int32
+	Whole_pragma_float [1]float64
 }
 
 func _BindingsRecord0ToC(value BindingsRecord0) (result C.dylib_go_42696e64696e6773_record0_transport) {
@@ -749,6 +1327,196 @@ func _BindingsRecord10FromC(value C.dylib_go_42696e64696e6773_record10_transport
 	return result
 }
 
+func _BindingsRecord11ToC(value BindingsRecord11) (result C.dylib_go_42696e64696e6773_record11_transport) {
+	result.f0 = C.int8_t(value.Whole_low_tag)
+	for i0 := range 2 {
+		result.f1[i0] = C.int32_t(value.Whole_low_items[i0])
+	}
+	return result
+}
+
+func _BindingsRecord11FromC(value C.dylib_go_42696e64696e6773_record11_transport) (result BindingsRecord11) {
+	result.Whole_low_tag = int8(value.f0)
+	for i0 := range 2 {
+		result.Whole_low_items[i0] = int32(value.f1[i0])
+	}
+	return result
+}
+
+func _BindingsRecord12ToC(value BindingsRecord12) (result C.dylib_go_42696e64696e6773_record12_transport) {
+	result.f0 = C.int8_t(value.Whole_high_tag)
+	for i0 := range 2 {
+		result.f1[i0] = C.int32_t(value.Whole_high_items[i0])
+	}
+	return result
+}
+
+func _BindingsRecord12FromC(value C.dylib_go_42696e64696e6773_record12_transport) (result BindingsRecord12) {
+	result.Whole_high_tag = int8(value.f0)
+	for i0 := range 2 {
+		result.Whole_high_items[i0] = int32(value.f1[i0])
+	}
+	return result
+}
+
+func _BindingsRecord13ToC(value BindingsRecord13) (result C.dylib_go_42696e64696e6773_record13_transport) {
+	result.f0 = C.int8_t(value.Whole_down_tag)
+	for i0 := range 2 {
+		result.f1[i0] = C.int32_t(value.Whole_down_items[i0])
+	}
+	return result
+}
+
+func _BindingsRecord13FromC(value C.dylib_go_42696e64696e6773_record13_transport) (result BindingsRecord13) {
+	result.Whole_down_tag = int8(value.f0)
+	for i0 := range 2 {
+		result.Whole_down_items[i0] = int32(value.f1[i0])
+	}
+	return result
+}
+
+func _BindingsRecord14ToC(value BindingsRecord14) (result C.dylib_go_42696e64696e6773_record14_transport) {
+	result.f0 = C.int8_t(value.Layered_tag)
+	for i0 := range 3 {
+		for i1 := range 2 {
+			for i2 := range 2 {
+				result.f1[i0][i1][i2] = C.int32_t(value.Layered_items[i0][i1][i2])
+			}
+		}
+	}
+	return result
+}
+
+func _BindingsRecord14FromC(value C.dylib_go_42696e64696e6773_record14_transport) (result BindingsRecord14) {
+	result.Layered_tag = int8(value.f0)
+	for i0 := range 3 {
+		for i1 := range 2 {
+			for i2 := range 2 {
+				result.Layered_items[i0][i1][i2] = int32(value.f1[i0][i1][i2])
+			}
+		}
+	}
+	return result
+}
+
+func _BindingsRecord15ToC(value BindingsRecord15) (result C.dylib_go_42696e64696e6773_record15_transport) {
+	result.f0 = C.int8_t(value.Record_array_tag)
+	for i0 := range 2 {
+		result.f1[i0] = _BindingsRecord0ToC(value.Record_array_items[i0])
+	}
+	return result
+}
+
+func _BindingsRecord15FromC(value C.dylib_go_42696e64696e6773_record15_transport) (result BindingsRecord15) {
+	result.Record_array_tag = int8(value.f0)
+	for i0 := range 2 {
+		result.Record_array_items[i0] = _BindingsRecord0FromC(value.f1[i0])
+	}
+	return result
+}
+
+func _BindingsRecord16ToC(value BindingsRecord16) (result C.dylib_go_42696e64696e6773_record16_transport) {
+	result.f0 = C.int8_t(value.Address_array_tag)
+	for i0 := range 2 {
+		result.f1[i0] = value.Address_array_values[i0]
+	}
+	for i0 := range 2 {
+		result.f2[i0] = value.Address_array_entries[i0]
+	}
+	return result
+}
+
+func _BindingsRecord16FromC(value C.dylib_go_42696e64696e6773_record16_transport) (result BindingsRecord16) {
+	result.Address_array_tag = int8(value.f0)
+	for i0 := range 2 {
+		result.Address_array_values[i0] = value.f1[i0]
+	}
+	for i0 := range 2 {
+		result.Address_array_entries[i0] = value.f2[i0]
+	}
+	return result
+}
+
+func _BindingsRecord17ToC(value BindingsRecord17) (result C.dylib_go_42696e64696e6773_record17_transport) {
+	result.f0 = C.int8_t(value.Whole_float_tag)
+	for i0 := range 1 {
+		result.f1[i0] = C.double(value.Whole_float_items[i0])
+	}
+	return result
+}
+
+func _BindingsRecord17FromC(value C.dylib_go_42696e64696e6773_record17_transport) (result BindingsRecord17) {
+	result.Whole_float_tag = int8(value.f0)
+	for i0 := range 1 {
+		result.Whole_float_items[i0] = float64(value.f1[i0])
+	}
+	return result
+}
+
+func _BindingsRecord18ToC(value BindingsRecord18) (result C.dylib_go_42696e64696e6773_record18_transport) {
+	result.f0 = C.int8_t(value.Whole_max_tag)
+	for i0 := range 2 {
+		result.f1[i0] = C.int32_t(value.Whole_max_items[i0])
+	}
+	return result
+}
+
+func _BindingsRecord18FromC(value C.dylib_go_42696e64696e6773_record18_transport) (result BindingsRecord18) {
+	result.Whole_max_tag = int8(value.f0)
+	for i0 := range 2 {
+		result.Whole_max_items[i0] = int32(value.f1[i0])
+	}
+	return result
+}
+
+func _BindingsRecord19ToC(value BindingsRecord19) (result C.dylib_go_42696e64696e6773_record19_transport) {
+	result.f0 = C.int8_t(value.Whole_packed_tag)
+	for i0 := range 2 {
+		result.f1[i0] = C.int32_t(value.Whole_packed_items[i0])
+	}
+	for i0 := range 2 {
+		for i1 := range 2 {
+			result.f2[i0][i1] = C.int32_t(value.Whole_packed_matrix[i0][i1])
+		}
+	}
+	return result
+}
+
+func _BindingsRecord19FromC(value C.dylib_go_42696e64696e6773_record19_transport) (result BindingsRecord19) {
+	result.Whole_packed_tag = int8(value.f0)
+	for i0 := range 2 {
+		result.Whole_packed_items[i0] = int32(value.f1[i0])
+	}
+	for i0 := range 2 {
+		for i1 := range 2 {
+			result.Whole_packed_matrix[i0][i1] = int32(value.f2[i0][i1])
+		}
+	}
+	return result
+}
+
+func _BindingsRecord20ToC(value BindingsRecord20) (result C.dylib_go_42696e64696e6773_record20_transport) {
+	result.f0 = C.int8_t(value.Whole_pragma_tag)
+	for i0 := range 2 {
+		result.f1[i0] = C.int32_t(value.Whole_pragma_items[i0])
+	}
+	for i0 := range 1 {
+		result.f2[i0] = C.double(value.Whole_pragma_float[i0])
+	}
+	return result
+}
+
+func _BindingsRecord20FromC(value C.dylib_go_42696e64696e6773_record20_transport) (result BindingsRecord20) {
+	result.Whole_pragma_tag = int8(value.f0)
+	for i0 := range 2 {
+		result.Whole_pragma_items[i0] = int32(value.f1[i0])
+	}
+	for i0 := range 1 {
+		result.Whole_pragma_float[i0] = float64(value.f2[i0])
+	}
+	return result
+}
+
 // Bindings retains symbol handles; its caller owns the Session.
 type Bindings struct {
 	symbol0  *dylib.Symbol
@@ -772,6 +1540,25 @@ type Bindings struct {
 	symbol18 *dylib.Symbol
 	symbol19 *dylib.Symbol
 	symbol20 *dylib.Symbol
+	symbol21 *dylib.Symbol
+	symbol22 *dylib.Symbol
+	symbol23 *dylib.Symbol
+	symbol24 *dylib.Symbol
+	symbol25 *dylib.Symbol
+	symbol26 *dylib.Symbol
+	symbol27 *dylib.Symbol
+	symbol28 *dylib.Symbol
+	symbol29 *dylib.Symbol
+	symbol30 *dylib.Symbol
+	symbol31 *dylib.Symbol
+	symbol32 *dylib.Symbol
+	symbol33 *dylib.Symbol
+	symbol34 *dylib.Symbol
+	symbol35 *dylib.Symbol
+	symbol36 *dylib.Symbol
+	symbol37 *dylib.Symbol
+	symbol38 *dylib.Symbol
+	symbol39 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -815,6 +1602,36 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 	}
 	if uint64(C.dylib_go_42696e64696e6773_record10_layout(0)) != 14 || uint64(C.dylib_go_42696e64696e6773_record10_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record10_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record10_layout(3)) != 2 || uint64(C.dylib_go_42696e64696e6773_record10_layout(4)) != 6 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PragmaRecord")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record11_layout(0)) != 9 || uint64(C.dylib_go_42696e64696e6773_record11_layout(1)) != 1 || uint64(C.dylib_go_42696e64696e6773_record11_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record11_layout(3)) != 1 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for WholeLowRecord")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record12_layout(0)) != 32 || uint64(C.dylib_go_42696e64696e6773_record12_layout(1)) != 16 || uint64(C.dylib_go_42696e64696e6773_record12_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record12_layout(3)) != 16 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for WholeHighRecord")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record13_layout(0)) != 10 || uint64(C.dylib_go_42696e64696e6773_record13_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record13_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record13_layout(3)) != 2 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for WholeDownRecord")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record14_layout(0)) != 49 || uint64(C.dylib_go_42696e64696e6773_record14_layout(1)) != 1 || uint64(C.dylib_go_42696e64696e6773_record14_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record14_layout(3)) != 1 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for LayeredRecord")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record15_layout(0)) != 11 || uint64(C.dylib_go_42696e64696e6773_record15_layout(1)) != 1 || uint64(C.dylib_go_42696e64696e6773_record15_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record15_layout(3)) != 1 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for RecordArrayRecord")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record16_layout(0)) != 33 || uint64(C.dylib_go_42696e64696e6773_record16_layout(1)) != 1 || uint64(C.dylib_go_42696e64696e6773_record16_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record16_layout(3)) != 1 || uint64(C.dylib_go_42696e64696e6773_record16_layout(4)) != 17 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for AddressArrayRecord")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record17_layout(0)) != 9 || uint64(C.dylib_go_42696e64696e6773_record17_layout(1)) != 1 || uint64(C.dylib_go_42696e64696e6773_record17_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record17_layout(3)) != 1 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for WholeFloatRecord")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record18_layout(0)) != 32 || uint64(C.dylib_go_42696e64696e6773_record18_layout(1)) != 16 || uint64(C.dylib_go_42696e64696e6773_record18_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record18_layout(3)) != 16 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for WholeMaximumRecord")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record19_layout(0)) != 32 || uint64(C.dylib_go_42696e64696e6773_record19_layout(1)) != 8 || uint64(C.dylib_go_42696e64696e6773_record19_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record19_layout(3)) != 8 || uint64(C.dylib_go_42696e64696e6773_record19_layout(4)) != 16 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for WholePackedRecord")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record20_layout(0)) != 18 || uint64(C.dylib_go_42696e64696e6773_record20_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record20_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record20_layout(3)) != 2 || uint64(C.dylib_go_42696e64696e6773_record20_layout(4)) != 10 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for WholePragmaRecord")
 	}
 	symbol0, err := session.Resolve("echo_low")
 	if err != nil {
@@ -921,6 +1738,101 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol20 = symbol20
+	symbol21, err := session.Resolve("echo_whole_low")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol21 = symbol21
+	symbol22, err := session.Resolve("echo_whole_high")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol22 = symbol22
+	symbol23, err := session.Resolve("echo_whole_down")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol23 = symbol23
+	symbol24, err := session.Resolve("echo_layered")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol24 = symbol24
+	symbol25, err := session.Resolve("echo_record_array")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol25 = symbol25
+	symbol26, err := session.Resolve("echo_address_array")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol26 = symbol26
+	symbol27, err := session.Resolve("echo_whole_float")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol27 = symbol27
+	symbol28, err := session.Resolve("echo_whole_maximum")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol28 = symbol28
+	symbol29, err := session.Resolve("echo_whole_packed")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol29 = symbol29
+	symbol30, err := session.Resolve("echo_whole_pragma")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol30 = symbol30
+	symbol31, err := session.Resolve("whole_variadic")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol31 = symbol31
+	symbol32, err := session.Resolve("whole_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol32 = symbol32
+	symbol33, err := session.Resolve("whole_forward")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol33 = symbol33
+	symbol34, err := session.Resolve("whole_pointer")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol34 = symbol34
+	symbol35, err := session.Resolve("whole_mutate")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol35 = symbol35
+	symbol36, err := session.Resolve("whole_read")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol36 = symbol36
+	symbol37, err := session.Resolve("make_address_array")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol37 = symbol37
+	symbol38, err := session.Resolve("apply_address_array")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol38 = symbol38
+	symbol39, err := session.Resolve("decay_pair")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol39 = symbol39
 	return b, nil
 }
 
@@ -1150,6 +2062,215 @@ func (b *Bindings) Read_high(p0 unsafe.Pointer) (result BindingsRecord1, err err
 	}
 	err = b.symbol20.WithAddress(func(address uintptr) error {
 		result = _BindingsRecord1FromC(C.dylib_go_42696e64696e6773_call20(C.uintptr_t(address), p0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_whole_low(p0 BindingsRecord11) (result BindingsRecord11, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol21.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord11FromC(C.dylib_go_42696e64696e6773_call21(C.uintptr_t(address), _BindingsRecord11ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_whole_high(p0 BindingsRecord12) (result BindingsRecord12, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol22.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord12FromC(C.dylib_go_42696e64696e6773_call22(C.uintptr_t(address), _BindingsRecord12ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_whole_down(p0 BindingsRecord13) (result BindingsRecord13, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol23.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord13FromC(C.dylib_go_42696e64696e6773_call23(C.uintptr_t(address), _BindingsRecord13ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_layered(p0 BindingsRecord14) (result BindingsRecord14, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol24.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord14FromC(C.dylib_go_42696e64696e6773_call24(C.uintptr_t(address), _BindingsRecord14ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_record_array(p0 BindingsRecord15) (result BindingsRecord15, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol25.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call25(C.uintptr_t(address), _BindingsRecord15ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_address_array(p0 BindingsRecord16) (result BindingsRecord16, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol26.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord16FromC(C.dylib_go_42696e64696e6773_call26(C.uintptr_t(address), _BindingsRecord16ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_whole_float(p0 BindingsRecord17) (result BindingsRecord17, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol27.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord17FromC(C.dylib_go_42696e64696e6773_call27(C.uintptr_t(address), _BindingsRecord17ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_whole_maximum(p0 BindingsRecord18) (result BindingsRecord18, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol28.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord18FromC(C.dylib_go_42696e64696e6773_call28(C.uintptr_t(address), _BindingsRecord18ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_whole_packed(p0 BindingsRecord19) (result BindingsRecord19, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol29.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord19FromC(C.dylib_go_42696e64696e6773_call29(C.uintptr_t(address), _BindingsRecord19ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_whole_pragma(p0 BindingsRecord20) (result BindingsRecord20, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol30.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord20FromC(C.dylib_go_42696e64696e6773_call30(C.uintptr_t(address), _BindingsRecord20ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Whole_variadic(p0 BindingsRecord11, p1 int8, p2 float32) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol31.WithAddress(func(address uintptr) error {
+		result = int32(C.dylib_go_42696e64696e6773_call31(C.uintptr_t(address), _BindingsRecord11ToC(p0), C.int32_t(p1), C.float(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Whole_factory() (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol32.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call32(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Whole_forward(p0 unsafe.Pointer, p1 BindingsRecord12) (result BindingsRecord12, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol33.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord12FromC(C.dylib_go_42696e64696e6773_call33(C.uintptr_t(address), p0, _BindingsRecord12ToC(p1)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Whole_pointer(p0 BindingsRecord12) (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol34.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call34(C.uintptr_t(address), _BindingsRecord12ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Whole_mutate(p0 unsafe.Pointer) (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol35.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call35(C.uintptr_t(address), p0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Whole_read(p0 unsafe.Pointer) (result BindingsRecord12, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol36.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord12FromC(C.dylib_go_42696e64696e6773_call36(C.uintptr_t(address), p0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Make_address_array() (result BindingsRecord16, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol37.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord16FromC(C.dylib_go_42696e64696e6773_call37(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Apply_address_array(p0 BindingsRecord16) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol38.WithAddress(func(address uintptr) error {
+		result = int32(C.dylib_go_42696e64696e6773_call38(C.uintptr_t(address), _BindingsRecord16ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Decay_pair(p0 unsafe.Pointer) (result int32, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol39.WithAddress(func(address uintptr) error {
+		result = int32(C.dylib_go_42696e64696e6773_call39(C.uintptr_t(address), p0))
 		return nil
 	})
 	return result, err
