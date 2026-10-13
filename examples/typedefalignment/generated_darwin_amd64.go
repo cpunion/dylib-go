@@ -7,10 +7,9 @@ package typedefalignment
 /*
 #include <stdint.h>
 #include <stddef.h>
-typedef int32_t dylib_go_42696e64696e6773_record0_field1 __attribute__((aligned(1)));
 typedef struct {
 int8_t f0;
-dylib_go_42696e64696e6773_record0_field1 f1;
+int32_t f1 __attribute__((packed,aligned(1)));
 } dylib_go_42696e64696e6773_record0;
 static uint64_t dylib_go_42696e64696e6773_record0_layout(int32_t index) {
 switch(index) {
@@ -37,10 +36,9 @@ result.f0 = value.f0;
 result.f1 = value.f1;
 return result;
 }
-typedef int32_t dylib_go_42696e64696e6773_record1_field1 __attribute__((aligned(16)));
 typedef struct {
 int8_t f0;
-dylib_go_42696e64696e6773_record1_field1 f1;
+int32_t f1 __attribute__((packed,aligned(16)));
 double f2;
 } dylib_go_42696e64696e6773_record1;
 static uint64_t dylib_go_42696e64696e6773_record1_layout(int32_t index) {
@@ -72,10 +70,9 @@ result.f1 = value.f1;
 result.f2 = value.f2;
 return result;
 }
-typedef int32_t dylib_go_42696e64696e6773_record2_field1 __attribute__((aligned(2)));
 typedef struct {
 int8_t f0;
-dylib_go_42696e64696e6773_record2_field1 f1;
+int32_t f1 __attribute__((packed,aligned(2)));
 } dylib_go_42696e64696e6773_record2;
 static uint64_t dylib_go_42696e64696e6773_record2_layout(int32_t index) {
 switch(index) {
@@ -102,10 +99,9 @@ result.f0 = value.f0;
 result.f1 = value.f1;
 return result;
 }
-typedef int32_t dylib_go_42696e64696e6773_record3_field1 __attribute__((aligned(1)));
 typedef struct {
 int8_t f0;
-dylib_go_42696e64696e6773_record3_field1 f1[2][2];
+int32_t f1[2][2] __attribute__((packed,aligned(1)));
 } dylib_go_42696e64696e6773_record3;
 static uint64_t dylib_go_42696e64696e6773_record3_layout(int32_t index) {
 switch(index) {
@@ -140,10 +136,9 @@ result.f1[i0][i1] = value.f1[i0][i1];
 }
 return result;
 }
-typedef double dylib_go_42696e64696e6773_record4_field1 __attribute__((aligned(1)));
 typedef struct {
 int8_t f0;
-dylib_go_42696e64696e6773_record4_field1 f1;
+double f1 __attribute__((packed,aligned(1)));
 } dylib_go_42696e64696e6773_record4;
 static uint64_t dylib_go_42696e64696e6773_record4_layout(int32_t index) {
 switch(index) {
@@ -170,11 +165,9 @@ result.f0 = value.f0;
 result.f1 = value.f1;
 return result;
 }
-typedef double dylib_go_42696e64696e6773_record5_field0 __attribute__((aligned(16)));
-typedef double dylib_go_42696e64696e6773_record5_field1 __attribute__((aligned(16)));
 typedef struct {
-dylib_go_42696e64696e6773_record5_field0 f0;
-dylib_go_42696e64696e6773_record5_field1 f1;
+double f0 __attribute__((packed,aligned(16)));
+double f1 __attribute__((packed,aligned(16)));
 } dylib_go_42696e64696e6773_record5;
 static uint64_t dylib_go_42696e64696e6773_record5_layout(int32_t index) {
 switch(index) {
@@ -201,10 +194,9 @@ result.f0 = value.f0;
 result.f1 = value.f1;
 return result;
 }
-typedef int32_t dylib_go_42696e64696e6773_record6_field1 __attribute__((aligned(16)));
 typedef struct {
 int8_t f0;
-dylib_go_42696e64696e6773_record6_field1 f1;
+int32_t f1 __attribute__((packed,aligned(16)));
 } dylib_go_42696e64696e6773_record6;
 static uint64_t dylib_go_42696e64696e6773_record6_layout(int32_t index) {
 switch(index) {
@@ -231,12 +223,10 @@ result.f0 = value.f0;
 result.f1 = value.f1;
 return result;
 }
-typedef void * dylib_go_42696e64696e6773_record7_field1 __attribute__((aligned(1)));
-typedef void * dylib_go_42696e64696e6773_record7_field2 __attribute__((aligned(1)));
 typedef struct {
 int8_t f0;
-dylib_go_42696e64696e6773_record7_field1 f1;
-dylib_go_42696e64696e6773_record7_field2 f2;
+void * f1 __attribute__((packed,aligned(1)));
+void * f2 __attribute__((packed,aligned(1)));
 } dylib_go_42696e64696e6773_record7;
 static uint64_t dylib_go_42696e64696e6773_record7_layout(int32_t index) {
 switch(index) {
@@ -267,10 +257,9 @@ result.f1 = value.f1;
 result.f2 = value.f2;
 return result;
 }
-typedef int32_t dylib_go_42696e64696e6773_record8_field1 __attribute__((aligned(1)));
 typedef struct {
 int8_t f0;
-dylib_go_42696e64696e6773_record8_field1 f1;
+int32_t f1 __attribute__((packed,aligned(1)));
 } dylib_go_42696e64696e6773_record8;
 static uint64_t dylib_go_42696e64696e6773_record8_layout(int32_t index) {
 switch(index) {
@@ -297,12 +286,10 @@ result.f0 = value.f0;
 result.f1 = value.f1;
 return result;
 }
-typedef int32_t dylib_go_42696e64696e6773_record9_field1 __attribute__((aligned(16)));
-typedef int32_t dylib_go_42696e64696e6773_record9_field2 __attribute__((aligned(1)));
 typedef struct __attribute__((packed)) {
 int8_t f0;
-dylib_go_42696e64696e6773_record9_field1 f1 __attribute__((aligned(8)));
-dylib_go_42696e64696e6773_record9_field2 f2;
+int32_t f1 __attribute__((packed,aligned(8)));
+int32_t f2 __attribute__((packed,aligned(1)));
 } dylib_go_42696e64696e6773_record9;
 static uint64_t dylib_go_42696e64696e6773_record9_layout(int32_t index) {
 switch(index) {
@@ -333,13 +320,11 @@ result.f1 = value.f1;
 result.f2 = value.f2;
 return result;
 }
-typedef int32_t dylib_go_42696e64696e6773_record10_field1 __attribute__((aligned(16)));
-typedef double dylib_go_42696e64696e6773_record10_field2 __attribute__((aligned(1)));
 #pragma pack(push,2)
 typedef struct {
 int8_t f0;
-dylib_go_42696e64696e6773_record10_field1 f1;
-dylib_go_42696e64696e6773_record10_field2 f2;
+int32_t f1 __attribute__((packed,aligned(2)));
+double f2 __attribute__((packed,aligned(1)));
 } dylib_go_42696e64696e6773_record10;
 #pragma pack(pop)
 static uint64_t dylib_go_42696e64696e6773_record10_layout(int32_t index) {

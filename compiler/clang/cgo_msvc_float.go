@@ -11,7 +11,10 @@ import (
 // uses x87. A private overlapping integer member disables MinGW's single-float
 // shortcut without changing the logical field, offsets, size or alignment.
 func (t *cgoTypes) writeNativeField(output *bytes.Buffer, r Record, index int, declaration, attributes string) {
-	if t.windows && r.fieldTypeAlignment(index) != 0 {
+	// GCC uses lowered typedef alignment in SysV classification; Clang tests
+	// the canonical scalar alignment. Packed natural fields preserve Clang
+	// memory/register classes without changing measured storage placement.
+	if (t.windows || t.gnuAMD64) && r.fieldTypeAlignment(index) != 0 {
 		for _, field := range r.FieldTypeAlignments {
 			if field.Position == index {
 				attributes = storageFieldAttributes(r.Description.Fields[index].Type, field.StorageAlignment)

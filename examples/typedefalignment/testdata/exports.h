@@ -10,18 +10,18 @@ typedef void *Address __attribute__((aligned(1)));
 typedef int (*Entry)(int) __attribute__((aligned(1)));
 enum Choice { choice_min=-1, choice_max=42 };
 typedef enum Choice ChoiceLow __attribute__((aligned(1)));
-typedef struct { char low_tag; const Chain low_value; } LowRecord;
-typedef struct { char high_tag; High high_value; double high_real; } HighRecord;
-typedef struct { char down_tag; Down down_value; } DownRecord;
-typedef struct { char array_tag; Low array_items[2][2]; } ArrayRecord;
-typedef struct { char float_tag; FloatLow float_real; } FloatRecord;
+typedef struct { signed char low_tag; const Chain low_value; } LowRecord;
+typedef struct { signed char high_tag; High high_value; double high_real; } HighRecord;
+typedef struct { signed char down_tag; Down down_value; } DownRecord;
+typedef struct { signed char array_tag; Low array_items[2][2]; } ArrayRecord;
+typedef struct { signed char float_tag; FloatLow float_real; } FloatRecord;
 typedef struct { FloatHigh float_left; FloatHigh float_right; } FloatHighRecord;
-typedef struct { char max_tag; Maximum max_value; } MaximumRecord;
-typedef struct { char address_tag; Address address_value; Entry address_entry; } AddressRecord;
-typedef struct { char enum_tag; ChoiceLow enum_value; } EnumRecord;
-typedef struct __attribute__((packed)) { char packed_tag; High packed_value __attribute__((aligned(8))); Low packed_tail; } PackedRecord;
+typedef struct { signed char max_tag; Maximum max_value; } MaximumRecord;
+typedef struct { signed char address_tag; Address address_value; Entry address_entry; } AddressRecord;
+typedef struct { signed char enum_tag; ChoiceLow enum_value; } EnumRecord;
+typedef struct __attribute__((packed)) { signed char packed_tag; High packed_value __attribute__((aligned(8))); Low packed_tail; } PackedRecord;
 #pragma pack(push,2)
-typedef struct { char pragma_tag; High pragma_value; FloatLow pragma_real; } PragmaRecord;
+typedef struct { signed char pragma_tag; High pragma_value; FloatLow pragma_real; } PragmaRecord;
 #pragma pack(pop)
 LowRecord echo_low(LowRecord); HighRecord echo_high(HighRecord); DownRecord echo_down(DownRecord);
 ArrayRecord echo_array(ArrayRecord); FloatRecord echo_float(FloatRecord); FloatHighRecord echo_float_high(FloatHighRecord);

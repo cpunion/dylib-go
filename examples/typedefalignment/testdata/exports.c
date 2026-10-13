@@ -1,4 +1,7 @@
 #include "exports.h"
+#if defined(_MSC_VER)
+int _fltused = 0x9875;
+#endif
 #define ECHO(T,N) T N(T value){ return value; }
 ECHO(LowRecord,echo_low) ECHO(HighRecord,echo_high) ECHO(DownRecord,echo_down)
 ECHO(ArrayRecord,echo_array) ECHO(FloatRecord,echo_float) ECHO(FloatHighRecord,echo_float_high)

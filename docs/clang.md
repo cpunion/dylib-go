@@ -203,7 +203,7 @@ unsupported; record fields use opaque addresses.
 
 `typedef int Low __attribute__((aligned(1)))` keeps the integer size while
 lowering its alignment. A member `aligned(1)` cannot reproduce this change.
-`CgoSource` recreates scalar, enum and native-address aliases, including numeric
+`CgoSource` preserves scalar, enum and native-address aliases, including numeric
 or omitted alignment, inherited aliases and later alignment overrides. Fixed
 scalar/native-address arrays keep the alias at their leaves. Record packing,
 pragma caps and explicit member alignment remain separate metadata.
@@ -214,7 +214,11 @@ a standalone member wrapper, then reconcile it with the actual record base and
 offset. This matters on Windows: MSVC/MinGW may ignore lowered typedef alignment
 for scalar or pointer members while preserving it for arrays or enums. Windows
 C facades preserve the observed placement before the usual size/alignment/offset
-checks. Public Go fields and transport records retain ordinary layout.
+checks. GNU AMD64 facades use packed natural scalar members with the measured
+alignment: GCC otherwise classifies a lowered typedef using its alias alignment,
+while Clang checks the canonical scalar alignment. This preserves Clang memory
+and register calls as well as storage. Public Go fields and transport records
+retain ordinary layout.
 
 The [typedef example](../examples/typedefalignment/call.go) executes small/large,
 floating, enum and multidimensional-array records, packed/pragma combinations,

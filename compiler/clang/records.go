@@ -41,8 +41,8 @@ type Record struct {
 	FieldAlignments []FieldAlignment
 	// FieldTypeAlignments preserves scalar/native-address typedef alignment on
 	// named fields (or array leaves), separately from member attributes. Typedefs
-	// may lower alignment and never change the scalar size. C bridges recreate
-	// the alias rather than applying a member aligned attribute.
+	// may lower alignment and never change the scalar size. C bridges preserve
+	// native storage and compiler calling classes through C-only facades.
 	FieldTypeAlignments []TypedefFieldAlignment
 	// IndirectArgument is compiler-observed MSVC i386 argument lowering for an
 	// aligned record. Generated bridges reconcile this with a MinGW host.

@@ -9,7 +9,7 @@ package typedefalignment
 #include <stddef.h>
 typedef int32_t dylib_go_42696e64696e6773_record0_field1 __attribute__((aligned(1)));
 typedef struct {
-uint8_t f0;
+int8_t f0;
 dylib_go_42696e64696e6773_record0_field1 f1;
 } dylib_go_42696e64696e6773_record0;
 static uint64_t dylib_go_42696e64696e6773_record0_layout(int32_t index) {
@@ -22,7 +22,7 @@ default:return UINT64_MAX;
 }
 }
 typedef struct {
-uint8_t f0;
+int8_t f0;
 int32_t f1;
 } dylib_go_42696e64696e6773_record0_transport;
 static dylib_go_42696e64696e6773_record0 dylib_go_42696e64696e6773_record0_from_transport(dylib_go_42696e64696e6773_record0_transport value) {
@@ -39,7 +39,7 @@ return result;
 }
 typedef int32_t dylib_go_42696e64696e6773_record1_field1 __attribute__((aligned(16)));
 typedef struct {
-uint8_t f0;
+int8_t f0;
 dylib_go_42696e64696e6773_record1_field1 f1;
 double f2;
 } dylib_go_42696e64696e6773_record1;
@@ -54,7 +54,7 @@ default:return UINT64_MAX;
 }
 }
 typedef struct {
-uint8_t f0;
+int8_t f0;
 int32_t f1;
 double f2;
 } dylib_go_42696e64696e6773_record1_transport;
@@ -74,7 +74,7 @@ return result;
 }
 typedef int32_t dylib_go_42696e64696e6773_record2_field1 __attribute__((aligned(2)));
 typedef struct {
-uint8_t f0;
+int8_t f0;
 dylib_go_42696e64696e6773_record2_field1 f1;
 } dylib_go_42696e64696e6773_record2;
 static uint64_t dylib_go_42696e64696e6773_record2_layout(int32_t index) {
@@ -87,7 +87,7 @@ default:return UINT64_MAX;
 }
 }
 typedef struct {
-uint8_t f0;
+int8_t f0;
 int32_t f1;
 } dylib_go_42696e64696e6773_record2_transport;
 static dylib_go_42696e64696e6773_record2 dylib_go_42696e64696e6773_record2_from_transport(dylib_go_42696e64696e6773_record2_transport value) {
@@ -104,7 +104,7 @@ return result;
 }
 typedef int32_t dylib_go_42696e64696e6773_record3_field1 __attribute__((aligned(1)));
 typedef struct {
-uint8_t f0;
+int8_t f0;
 dylib_go_42696e64696e6773_record3_field1 f1[2][2];
 } dylib_go_42696e64696e6773_record3;
 static uint64_t dylib_go_42696e64696e6773_record3_layout(int32_t index) {
@@ -117,7 +117,7 @@ default:return UINT64_MAX;
 }
 }
 typedef struct {
-uint8_t f0;
+int8_t f0;
 int32_t f1[2][2];
 } dylib_go_42696e64696e6773_record3_transport;
 static dylib_go_42696e64696e6773_record3 dylib_go_42696e64696e6773_record3_from_transport(dylib_go_42696e64696e6773_record3_transport value) {
@@ -142,7 +142,7 @@ return result;
 }
 typedef double dylib_go_42696e64696e6773_record4_field1 __attribute__((aligned(1)));
 typedef struct {
-uint8_t f0;
+int8_t f0;
 dylib_go_42696e64696e6773_record4_field1 f1;
 } dylib_go_42696e64696e6773_record4;
 static uint64_t dylib_go_42696e64696e6773_record4_layout(int32_t index) {
@@ -155,7 +155,7 @@ default:return UINT64_MAX;
 }
 }
 typedef struct {
-uint8_t f0;
+int8_t f0;
 double f1;
 } dylib_go_42696e64696e6773_record4_transport;
 static dylib_go_42696e64696e6773_record4 dylib_go_42696e64696e6773_record4_from_transport(dylib_go_42696e64696e6773_record4_transport value) {
@@ -203,7 +203,7 @@ return result;
 }
 typedef int32_t dylib_go_42696e64696e6773_record6_field1 __attribute__((aligned(16)));
 typedef struct {
-uint8_t f0;
+int8_t f0;
 dylib_go_42696e64696e6773_record6_field1 f1;
 } dylib_go_42696e64696e6773_record6;
 static uint64_t dylib_go_42696e64696e6773_record6_layout(int32_t index) {
@@ -216,7 +216,7 @@ default:return UINT64_MAX;
 }
 }
 typedef struct {
-uint8_t f0;
+int8_t f0;
 int32_t f1;
 } dylib_go_42696e64696e6773_record6_transport;
 static dylib_go_42696e64696e6773_record6 dylib_go_42696e64696e6773_record6_from_transport(dylib_go_42696e64696e6773_record6_transport value) {
@@ -234,7 +234,7 @@ return result;
 typedef void * dylib_go_42696e64696e6773_record7_field1 __attribute__((aligned(1)));
 typedef void * dylib_go_42696e64696e6773_record7_field2 __attribute__((aligned(1)));
 typedef struct {
-uint8_t f0;
+int8_t f0;
 dylib_go_42696e64696e6773_record7_field1 f1;
 dylib_go_42696e64696e6773_record7_field2 f2;
 } dylib_go_42696e64696e6773_record7;
@@ -249,7 +249,7 @@ default:return UINT64_MAX;
 }
 }
 typedef struct {
-uint8_t f0;
+int8_t f0;
 void * f1;
 void * f2;
 } dylib_go_42696e64696e6773_record7_transport;
@@ -269,7 +269,7 @@ return result;
 }
 typedef int32_t dylib_go_42696e64696e6773_record8_field1 __attribute__((aligned(1)));
 typedef struct {
-uint8_t f0;
+int8_t f0;
 dylib_go_42696e64696e6773_record8_field1 f1;
 } dylib_go_42696e64696e6773_record8;
 static uint64_t dylib_go_42696e64696e6773_record8_layout(int32_t index) {
@@ -282,7 +282,7 @@ default:return UINT64_MAX;
 }
 }
 typedef struct {
-uint8_t f0;
+int8_t f0;
 int32_t f1;
 } dylib_go_42696e64696e6773_record8_transport;
 static dylib_go_42696e64696e6773_record8 dylib_go_42696e64696e6773_record8_from_transport(dylib_go_42696e64696e6773_record8_transport value) {
@@ -300,7 +300,7 @@ return result;
 typedef int32_t dylib_go_42696e64696e6773_record9_field1 __attribute__((aligned(16)));
 typedef int32_t dylib_go_42696e64696e6773_record9_field2 __attribute__((aligned(1)));
 typedef struct __attribute__((packed)) {
-uint8_t f0;
+int8_t f0;
 dylib_go_42696e64696e6773_record9_field1 f1 __attribute__((aligned(8)));
 dylib_go_42696e64696e6773_record9_field2 f2;
 } dylib_go_42696e64696e6773_record9;
@@ -315,7 +315,7 @@ default:return UINT64_MAX;
 }
 }
 typedef struct {
-uint8_t f0;
+int8_t f0;
 int32_t f1;
 int32_t f2;
 } dylib_go_42696e64696e6773_record9_transport;
@@ -337,7 +337,7 @@ typedef int32_t dylib_go_42696e64696e6773_record10_field1 __attribute__((aligned
 typedef double dylib_go_42696e64696e6773_record10_field2 __attribute__((aligned(1)));
 #pragma pack(push,2)
 typedef struct {
-uint8_t f0;
+int8_t f0;
 dylib_go_42696e64696e6773_record10_field1 f1;
 dylib_go_42696e64696e6773_record10_field2 f2;
 } dylib_go_42696e64696e6773_record10;
@@ -353,7 +353,7 @@ default:return UINT64_MAX;
 }
 }
 typedef struct {
-uint8_t f0;
+int8_t f0;
 int32_t f1;
 double f2;
 } dylib_go_42696e64696e6773_record10_transport;
@@ -472,40 +472,40 @@ import (
 var _BindingsDeclarations = clang.Header{
 	Target: clang.Target{Triple: "aarch64-unknown-linux-gnu", OS: "linux", Arch: "arm64", PointerSize: 8},
 	Functions: []clang.Declaration{
-		{Name: "echo_low", Symbol: "echo_low", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "low_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "low_value", Type: abi.TypeDesc{Type: abi.I32}}}}}},
-		{Name: "echo_high", Symbol: "echo_high", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
-		{Name: "echo_down", Symbol: "echo_down", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "down_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "down_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "down_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "down_value", Type: abi.TypeDesc{Type: abi.I32}}}}}},
-		{Name: "echo_array", Symbol: "echo_array", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "array_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "array_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "array_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "array_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}},
-		{Name: "echo_float", Symbol: "echo_float", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "float_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "float_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
+		{Name: "echo_low", Symbol: "echo_low", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "low_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "low_value", Type: abi.TypeDesc{Type: abi.I32}}}}}},
+		{Name: "echo_high", Symbol: "echo_high", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
+		{Name: "echo_down", Symbol: "echo_down", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "down_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "down_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "down_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "down_value", Type: abi.TypeDesc{Type: abi.I32}}}}}},
+		{Name: "echo_array", Symbol: "echo_array", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "array_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "array_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "array_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "array_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}}},
+		{Name: "echo_float", Symbol: "echo_float", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "float_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "float_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
 		{Name: "echo_float_high", Symbol: "echo_float_high", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F64}}}}}},
-		{Name: "echo_maximum", Symbol: "echo_maximum", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "max_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "max_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "max_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "max_value", Type: abi.TypeDesc{Type: abi.I32}}}}}},
-		{Name: "echo_address", Symbol: "echo_address", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "address_value", Type: abi.TypeDesc{Type: abi.Pointer}}, {Name: "address_entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "address_value", Type: abi.TypeDesc{Type: abi.Pointer}}, {Name: "address_entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
-		{Name: "echo_enum", Symbol: "echo_enum", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "enum_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "enum_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "enum_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "enum_value", Type: abi.TypeDesc{Type: abi.I32}}}}}},
-		{Name: "echo_packed", Symbol: "echo_packed", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "packed_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "packed_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I32}}}}}},
-		{Name: "echo_pragma", Symbol: "echo_pragma", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "pragma_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "pragma_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
+		{Name: "echo_maximum", Symbol: "echo_maximum", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "max_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "max_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "max_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "max_value", Type: abi.TypeDesc{Type: abi.I32}}}}}},
+		{Name: "echo_address", Symbol: "echo_address", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "address_value", Type: abi.TypeDesc{Type: abi.Pointer}}, {Name: "address_entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "address_value", Type: abi.TypeDesc{Type: abi.Pointer}}, {Name: "address_entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
+		{Name: "echo_enum", Symbol: "echo_enum", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "enum_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "enum_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "enum_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "enum_value", Type: abi.TypeDesc{Type: abi.I32}}}}}},
+		{Name: "echo_packed", Symbol: "echo_packed", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I32}}}}}},
+		{Name: "echo_pragma", Symbol: "echo_pragma", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
 		{Name: "scalar", Symbol: "scalar", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32, abi.F64, abi.Pointer}}},
-		{Name: "low_variadic", Symbol: "low_variadic", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "low_value", Type: abi.TypeDesc{Type: abi.I32}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}}},
-		{Name: "high_variadic", Symbol: "high_variadic", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}}},
-		{Name: "make_address", Symbol: "make_address", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "address_value", Type: abi.TypeDesc{Type: abi.Pointer}}, {Name: "address_entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
-		{Name: "apply_address", Symbol: "apply_address", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "address_value", Type: abi.TypeDesc{Type: abi.Pointer}}, {Name: "address_entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}},
-		{Name: "mutate_high", Symbol: "mutate_high", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}},
-		{Name: "high_factory", Symbol: "high_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}},
-		{Name: "forward_high", Symbol: "forward_high", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}},
-		{Name: "high_pointer", Symbol: "high_pointer", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}},
-		{Name: "read_high", Symbol: "read_high", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
+		{Name: "low_variadic", Symbol: "low_variadic", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "low_value", Type: abi.TypeDesc{Type: abi.I32}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}}},
+		{Name: "high_variadic", Symbol: "high_variadic", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}}},
+		{Name: "make_address", Symbol: "make_address", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "address_value", Type: abi.TypeDesc{Type: abi.Pointer}}, {Name: "address_entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}}},
+		{Name: "apply_address", Symbol: "apply_address", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "address_value", Type: abi.TypeDesc{Type: abi.Pointer}}, {Name: "address_entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}},
+		{Name: "mutate_high", Symbol: "mutate_high", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}},
+		{Name: "high_factory", Symbol: "high_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}},
+		{Name: "forward_high", Symbol: "forward_high", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}},
+		{Name: "high_pointer", Symbol: "high_pointer", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}},
+		{Name: "read_high", Symbol: "read_high", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
 	},
 	Records: []clang.Record{
-		{Name: "LowRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "low_value", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 5, Alignment: 1, Offsets: []uint64{0, 1}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 1}}},
-		{Name: "HighRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 32, Alignment: 16, Offsets: []uint64{0, 16, 24}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 16, StorageAlignment: 16}}},
-		{Name: "DownRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "down_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "down_value", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 6, Alignment: 2, Offsets: []uint64{0, 2}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 2, StorageAlignment: 2}}},
-		{Name: "ArrayRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "array_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "array_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}, Layout: abi.Layout{Size: 17, Alignment: 1, Offsets: []uint64{0, 1}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 1}}},
-		{Name: "FloatRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "float_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 9, Alignment: 1, Offsets: []uint64{0, 1}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 1}}},
+		{Name: "LowRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "low_value", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 5, Alignment: 1, Offsets: []uint64{0, 1}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 1}}},
+		{Name: "HighRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "high_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 32, Alignment: 16, Offsets: []uint64{0, 16, 24}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 16, StorageAlignment: 16}}},
+		{Name: "DownRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "down_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "down_value", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 6, Alignment: 2, Offsets: []uint64{0, 2}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 2, StorageAlignment: 2}}},
+		{Name: "ArrayRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "array_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "array_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.I32}}}}}}, Layout: abi.Layout{Size: 17, Alignment: 1, Offsets: []uint64{0, 1}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 1}}},
+		{Name: "FloatRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "float_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 9, Alignment: 1, Offsets: []uint64{0, 1}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 1}}},
 		{Name: "FloatHighRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 32, Alignment: 16, Offsets: []uint64{0, 16}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 0, Aligned: 16, StorageAlignment: 16}, {Position: 1, Aligned: 16, StorageAlignment: 16}}},
-		{Name: "MaximumRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "max_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "max_value", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 32, Alignment: 16, Offsets: []uint64{0, 16}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 16, StorageAlignment: 16}}},
-		{Name: "AddressRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "address_value", Type: abi.TypeDesc{Type: abi.Pointer}}, {Name: "address_entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 17, Alignment: 1, Offsets: []uint64{0, 1, 9}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 1}, {Position: 2, Aligned: 1, StorageAlignment: 1}}, FunctionPointers: []clang.FunctionPointer{{Position: 2, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32}}}}},
-		{Name: "EnumRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "enum_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "enum_value", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 5, Alignment: 1, Offsets: []uint64{0, 1}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 1}}},
-		{Name: "PackedRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "packed_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 16, Alignment: 8, Offsets: []uint64{0, 8, 12}}, Packed: true, FieldAlignments: []clang.FieldAlignment{{Position: 1, Aligned: 8}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 16, StorageAlignment: 8}, {Position: 2, Aligned: 1, StorageAlignment: 1}}},
-		{Name: "PragmaRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.U8}}, {Name: "pragma_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 14, Alignment: 2, Offsets: []uint64{0, 2, 6}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2, 1}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 16, StorageAlignment: 2}, {Position: 2, Aligned: 1, StorageAlignment: 1}}},
+		{Name: "MaximumRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "max_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "max_value", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 32, Alignment: 16, Offsets: []uint64{0, 16}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 16, StorageAlignment: 16}}},
+		{Name: "AddressRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "address_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "address_value", Type: abi.TypeDesc{Type: abi.Pointer}}, {Name: "address_entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 17, Alignment: 1, Offsets: []uint64{0, 1, 9}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 1}, {Position: 2, Aligned: 1, StorageAlignment: 1}}, FunctionPointers: []clang.FunctionPointer{{Position: 2, Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I32}}}}},
+		{Name: "EnumRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "enum_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "enum_value", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 5, Alignment: 1, Offsets: []uint64{0, 1}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 1}}},
+		{Name: "PackedRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 16, Alignment: 8, Offsets: []uint64{0, 8, 12}}, Packed: true, FieldAlignments: []clang.FieldAlignment{{Position: 1, Aligned: 8}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 16, StorageAlignment: 8}, {Position: 2, Aligned: 1, StorageAlignment: 1}}},
+		{Name: "PragmaRecord", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_value", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 14, Alignment: 2, Offsets: []uint64{0, 2, 6}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2, 1}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 16, StorageAlignment: 2}, {Position: 2, Aligned: 1, StorageAlignment: 1}}},
 	},
 }
 
@@ -513,7 +513,7 @@ var _BindingsDeclarations = clang.Header{
 //
 //llgo:type C
 type BindingsRecord0 struct {
-	Low_tag   uint8
+	Low_tag   int8
 	Low_value int32
 }
 
@@ -521,7 +521,7 @@ type BindingsRecord0 struct {
 //
 //llgo:type C
 type BindingsRecord1 struct {
-	High_tag   uint8
+	High_tag   int8
 	High_value int32
 	High_real  float64
 }
@@ -530,7 +530,7 @@ type BindingsRecord1 struct {
 //
 //llgo:type C
 type BindingsRecord2 struct {
-	Down_tag   uint8
+	Down_tag   int8
 	Down_value int32
 }
 
@@ -538,7 +538,7 @@ type BindingsRecord2 struct {
 //
 //llgo:type C
 type BindingsRecord3 struct {
-	Array_tag   uint8
+	Array_tag   int8
 	Array_items [2][2]int32
 }
 
@@ -546,7 +546,7 @@ type BindingsRecord3 struct {
 //
 //llgo:type C
 type BindingsRecord4 struct {
-	Float_tag  uint8
+	Float_tag  int8
 	Float_real float64
 }
 
@@ -562,7 +562,7 @@ type BindingsRecord5 struct {
 //
 //llgo:type C
 type BindingsRecord6 struct {
-	Max_tag   uint8
+	Max_tag   int8
 	Max_value int32
 }
 
@@ -570,7 +570,7 @@ type BindingsRecord6 struct {
 //
 //llgo:type C
 type BindingsRecord7 struct {
-	Address_tag   uint8
+	Address_tag   int8
 	Address_value unsafe.Pointer
 	Address_entry unsafe.Pointer
 }
@@ -579,7 +579,7 @@ type BindingsRecord7 struct {
 //
 //llgo:type C
 type BindingsRecord8 struct {
-	Enum_tag   uint8
+	Enum_tag   int8
 	Enum_value int32
 }
 
@@ -587,7 +587,7 @@ type BindingsRecord8 struct {
 //
 //llgo:type C
 type BindingsRecord9 struct {
-	Packed_tag   uint8
+	Packed_tag   int8
 	Packed_value int32
 	Packed_tail  int32
 }
@@ -596,51 +596,51 @@ type BindingsRecord9 struct {
 //
 //llgo:type C
 type BindingsRecord10 struct {
-	Pragma_tag   uint8
+	Pragma_tag   int8
 	Pragma_value int32
 	Pragma_real  float64
 }
 
 func _BindingsRecord0ToC(value BindingsRecord0) (result C.dylib_go_42696e64696e6773_record0_transport) {
-	result.f0 = C.uint8_t(value.Low_tag)
+	result.f0 = C.int8_t(value.Low_tag)
 	result.f1 = C.int32_t(value.Low_value)
 	return result
 }
 
 func _BindingsRecord0FromC(value C.dylib_go_42696e64696e6773_record0_transport) (result BindingsRecord0) {
-	result.Low_tag = uint8(value.f0)
+	result.Low_tag = int8(value.f0)
 	result.Low_value = int32(value.f1)
 	return result
 }
 
 func _BindingsRecord1ToC(value BindingsRecord1) (result C.dylib_go_42696e64696e6773_record1_transport) {
-	result.f0 = C.uint8_t(value.High_tag)
+	result.f0 = C.int8_t(value.High_tag)
 	result.f1 = C.int32_t(value.High_value)
 	result.f2 = C.double(value.High_real)
 	return result
 }
 
 func _BindingsRecord1FromC(value C.dylib_go_42696e64696e6773_record1_transport) (result BindingsRecord1) {
-	result.High_tag = uint8(value.f0)
+	result.High_tag = int8(value.f0)
 	result.High_value = int32(value.f1)
 	result.High_real = float64(value.f2)
 	return result
 }
 
 func _BindingsRecord2ToC(value BindingsRecord2) (result C.dylib_go_42696e64696e6773_record2_transport) {
-	result.f0 = C.uint8_t(value.Down_tag)
+	result.f0 = C.int8_t(value.Down_tag)
 	result.f1 = C.int32_t(value.Down_value)
 	return result
 }
 
 func _BindingsRecord2FromC(value C.dylib_go_42696e64696e6773_record2_transport) (result BindingsRecord2) {
-	result.Down_tag = uint8(value.f0)
+	result.Down_tag = int8(value.f0)
 	result.Down_value = int32(value.f1)
 	return result
 }
 
 func _BindingsRecord3ToC(value BindingsRecord3) (result C.dylib_go_42696e64696e6773_record3_transport) {
-	result.f0 = C.uint8_t(value.Array_tag)
+	result.f0 = C.int8_t(value.Array_tag)
 	for i0 := range 2 {
 		for i1 := range 2 {
 			result.f1[i0][i1] = C.int32_t(value.Array_items[i0][i1])
@@ -650,7 +650,7 @@ func _BindingsRecord3ToC(value BindingsRecord3) (result C.dylib_go_42696e64696e6
 }
 
 func _BindingsRecord3FromC(value C.dylib_go_42696e64696e6773_record3_transport) (result BindingsRecord3) {
-	result.Array_tag = uint8(value.f0)
+	result.Array_tag = int8(value.f0)
 	for i0 := range 2 {
 		for i1 := range 2 {
 			result.Array_items[i0][i1] = int32(value.f1[i0][i1])
@@ -660,13 +660,13 @@ func _BindingsRecord3FromC(value C.dylib_go_42696e64696e6773_record3_transport) 
 }
 
 func _BindingsRecord4ToC(value BindingsRecord4) (result C.dylib_go_42696e64696e6773_record4_transport) {
-	result.f0 = C.uint8_t(value.Float_tag)
+	result.f0 = C.int8_t(value.Float_tag)
 	result.f1 = C.double(value.Float_real)
 	return result
 }
 
 func _BindingsRecord4FromC(value C.dylib_go_42696e64696e6773_record4_transport) (result BindingsRecord4) {
-	result.Float_tag = uint8(value.f0)
+	result.Float_tag = int8(value.f0)
 	result.Float_real = float64(value.f1)
 	return result
 }
@@ -684,66 +684,66 @@ func _BindingsRecord5FromC(value C.dylib_go_42696e64696e6773_record5_transport) 
 }
 
 func _BindingsRecord6ToC(value BindingsRecord6) (result C.dylib_go_42696e64696e6773_record6_transport) {
-	result.f0 = C.uint8_t(value.Max_tag)
+	result.f0 = C.int8_t(value.Max_tag)
 	result.f1 = C.int32_t(value.Max_value)
 	return result
 }
 
 func _BindingsRecord6FromC(value C.dylib_go_42696e64696e6773_record6_transport) (result BindingsRecord6) {
-	result.Max_tag = uint8(value.f0)
+	result.Max_tag = int8(value.f0)
 	result.Max_value = int32(value.f1)
 	return result
 }
 
 func _BindingsRecord7ToC(value BindingsRecord7) (result C.dylib_go_42696e64696e6773_record7_transport) {
-	result.f0 = C.uint8_t(value.Address_tag)
+	result.f0 = C.int8_t(value.Address_tag)
 	result.f1 = value.Address_value
 	result.f2 = value.Address_entry
 	return result
 }
 
 func _BindingsRecord7FromC(value C.dylib_go_42696e64696e6773_record7_transport) (result BindingsRecord7) {
-	result.Address_tag = uint8(value.f0)
+	result.Address_tag = int8(value.f0)
 	result.Address_value = value.f1
 	result.Address_entry = value.f2
 	return result
 }
 
 func _BindingsRecord8ToC(value BindingsRecord8) (result C.dylib_go_42696e64696e6773_record8_transport) {
-	result.f0 = C.uint8_t(value.Enum_tag)
+	result.f0 = C.int8_t(value.Enum_tag)
 	result.f1 = C.int32_t(value.Enum_value)
 	return result
 }
 
 func _BindingsRecord8FromC(value C.dylib_go_42696e64696e6773_record8_transport) (result BindingsRecord8) {
-	result.Enum_tag = uint8(value.f0)
+	result.Enum_tag = int8(value.f0)
 	result.Enum_value = int32(value.f1)
 	return result
 }
 
 func _BindingsRecord9ToC(value BindingsRecord9) (result C.dylib_go_42696e64696e6773_record9_transport) {
-	result.f0 = C.uint8_t(value.Packed_tag)
+	result.f0 = C.int8_t(value.Packed_tag)
 	result.f1 = C.int32_t(value.Packed_value)
 	result.f2 = C.int32_t(value.Packed_tail)
 	return result
 }
 
 func _BindingsRecord9FromC(value C.dylib_go_42696e64696e6773_record9_transport) (result BindingsRecord9) {
-	result.Packed_tag = uint8(value.f0)
+	result.Packed_tag = int8(value.f0)
 	result.Packed_value = int32(value.f1)
 	result.Packed_tail = int32(value.f2)
 	return result
 }
 
 func _BindingsRecord10ToC(value BindingsRecord10) (result C.dylib_go_42696e64696e6773_record10_transport) {
-	result.f0 = C.uint8_t(value.Pragma_tag)
+	result.f0 = C.int8_t(value.Pragma_tag)
 	result.f1 = C.int32_t(value.Pragma_value)
 	result.f2 = C.double(value.Pragma_real)
 	return result
 }
 
 func _BindingsRecord10FromC(value C.dylib_go_42696e64696e6773_record10_transport) (result BindingsRecord10) {
-	result.Pragma_tag = uint8(value.f0)
+	result.Pragma_tag = int8(value.f0)
 	result.Pragma_value = int32(value.f1)
 	result.Pragma_real = float64(value.f2)
 	return result

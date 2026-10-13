@@ -83,7 +83,7 @@ func (t *cgoTypes) cField(description abi.TypeDesc, name string) (string, error)
 func (t *cgoTypes) cNativeField(record Record, index int) (string, error) {
 	description := record.Description.Fields[index].Type
 	name := fmt.Sprintf("f%d", index)
-	if record.fieldTypeAlignment(index) == 0 {
+	if record.fieldTypeAlignment(index) == 0 || t.gnuAMD64 {
 		return t.cField(description, name)
 	}
 	var suffix strings.Builder
@@ -101,6 +101,9 @@ func (t *cgoTypes) cFieldAlias(record Record, index int) string {
 }
 
 func (t *cgoTypes) writeFieldAliases(output *bytes.Buffer, record Record) error {
+	if t.gnuAMD64 {
+		return nil
+	}
 	for _, field := range record.FieldTypeAlignments {
 		d := record.Description.Fields[field.Position].Type
 		for d.Type == abi.Array {
