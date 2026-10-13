@@ -134,7 +134,8 @@ const maxFunctions = 256
 // packing on ordinary named members. Enums use compiler-confirmed compatible
 // integer types; attributed
 // enum alignment must match the native integer. Pragma-packed records and
-// bitfields use C bridges; over-aligned nested/member combinations are rejected.
+// bitfields use C bridges. Ordinary over-aligned pragma members/nested values
+// are supported; over-cap combinations involving bitfields remain rejected.
 // Unions, other attributed
 // records/fields/typedefs, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes
