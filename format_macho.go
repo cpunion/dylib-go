@@ -121,6 +121,9 @@ func parseMachO(name string, b []byte) (*file, error) {
 	if o.info.Kind != "object" {
 		return finish(o), nil
 	}
+	if text := f.Segment("__TEXT"); text != nil {
+		o.originalBase = text.Addr
+	}
 	o.sections = make([]*section, len(f.Sections)+1)
 	for i, s := range f.Sections {
 		if s.Flags&0x02000000 != 0 || s.Seg == "__DWARF" || s.Name == "__compact_unwind" {
@@ -129,9 +132,6 @@ func parseMachO(name string, b []byte) (*file, error) {
 		t := s.Flags & 0xff
 		if t >= 0x11 && t <= 0x15 {
 			o.unsupported("TLS section " + s.Name)
-		}
-		if t == 0x16 {
-			o.unsupported("automatic initialization/finalization: " + s.Name)
 		}
 		if t == 0xb && s.Name != "__eh_frame" {
 			o.unsupported("Mach-O coalesced section " + s.Name)
@@ -147,6 +147,11 @@ func parseMachO(name string, b []byte) (*file, error) {
 			v.lifecycle = lifecycleInit
 		} else if t == 10 {
 			v.lifecycle = lifecycleFini
+		} else if t == 0x16 { // S_INIT_FUNC_OFFSETS, synthesized by the linker.
+			v.lifecycle, v.initOffsets = lifecycleInit, true
+			if len(s.Relocs) != 0 {
+				return nil, fmt.Errorf("%s: initializer offsets must be linker-resolved", s.Name)
+			}
 		}
 		if v.lifecycle != 0 {
 			if err := configureLifecycle(v, o.info.Bits); err != nil {
