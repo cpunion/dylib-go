@@ -39,6 +39,11 @@ type Record struct {
 	// declarations require compiled C adapters, never a Go memory view.
 	Aligned         uint64
 	FieldAlignments []FieldAlignment
+	// FieldTypeAlignments preserves scalar/native-address typedef alignment on
+	// named fields (or array leaves), separately from member attributes. Typedefs
+	// may lower alignment and never change the scalar size. C bridges preserve
+	// native storage and compiler calling classes through C-only facades.
+	FieldTypeAlignments []TypedefFieldAlignment
 	// IndirectArgument is compiler-observed MSVC i386 argument lowering for an
 	// aligned record. Generated bridges reconcile this with a MinGW host.
 	IndirectArgument bool
@@ -121,6 +126,7 @@ func (h *Header) LookupRecord(name string) (Record, error) {
 				record.Bitfields = cloneBitfields(record.Bitfields)
 				record.Padding = append([]BitfieldPadding(nil), record.Padding...)
 				record.FieldAlignments = append([]FieldAlignment(nil), record.FieldAlignments...)
+				record.FieldTypeAlignments = append([]TypedefFieldAlignment(nil), record.FieldTypeAlignments...)
 				record.MemberAlignments = append([]uint64(nil), record.MemberAlignments...)
 				record.PackedFields = append([]int(nil), record.PackedFields...)
 				return record, nil
@@ -182,6 +188,9 @@ func (h *Header) validateDescriptions() error {
 			return err
 		}
 		if err := validateMemberAlignments(record, false); err != nil {
+			return err
+		}
+		if err := validateFieldTypeAlignments(record, false); err != nil {
 			return err
 		}
 		if err := validatePackedFields(record); err != nil {
@@ -269,6 +278,9 @@ func validateSignature(s abi.Signature, budget *int) error {
 }
 
 func validRecordLayout(record Record) error {
+	if err := validateFieldTypeAlignments(record, true); err != nil {
+		return err
+	}
 	if err := validatePacking(record); err != nil {
 		return err
 	}
@@ -394,8 +406,13 @@ func (h *Header) recordProbes() string {
 				continue
 			}
 			fmt.Fprintf(&source, "dylib_record_%d_offset_%d=__builtin_offsetof(%s,%s),\n", i, j, record.Name, field.Name)
-			if record.MaxFieldAlignment != 0 {
+			if record.MaxFieldAlignment != 0 || record.fieldTypeAlignment(j) != 0 {
 				fmt.Fprintf(&source, "dylib_record_%d_memberalign_%d=__alignof__(((%s*)0)->%s),\n", i, j, record.Name, field.Name)
+			}
+			// MSVC may ignore a lowered scalar alias even when expression
+			// alignment reports it. A standalone wrapper observes that rule.
+			if record.fieldTypeAlignment(j) != 0 {
+				fmt.Fprintf(&source, "dylib_record_%d_typestorage_%d=_Alignof(struct { __typeof__(((%s*)0)->%s) value; }),\n", i, j, record.Name, field.Name)
 			}
 		}
 	}
@@ -456,6 +473,24 @@ func (h *Header) decodeRecordLayouts(data []byte) error {
 		}
 		h.Records[i].Layout = layout
 		r := &h.Records[i]
+		for j := range r.FieldTypeAlignments {
+			field := &r.FieldTypeAlignments[j]
+			alignment, err := get(fmt.Sprintf("dylib_record_%d_memberalign_%d", i, field.Position))
+			if err != nil {
+				return err
+			}
+			natural, err := get(fmt.Sprintf("dylib_record_%d_typestorage_%d", i, field.Position))
+			if err != nil {
+				return err
+			}
+			if natural > alignment {
+				alignment = natural
+			}
+			field.StorageAlignment, err = memberStorageAlignment(alignment, layout.Alignment, layout.Offsets[field.Position])
+			if err != nil {
+				return fmt.Errorf("clang: %s: %w", r.Name, err)
+			}
+		}
 		members := recordMembers(*r)
 		starts := bitfieldUnitStarts(*r, members)
 		if r.MaxFieldAlignment != 0 {

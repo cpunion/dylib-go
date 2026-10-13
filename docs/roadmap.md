@@ -82,7 +82,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Compiler-effective global Clang packing caps with local pragma override/pop, response files/frontend forwarding, MSVC oversized pragma rules, native bitfields/arrays/alignment/pointers/factories and Go/llgo object/archive/library calls.
 - [x] Over-cap pragma bitfield combinations with compiler-observed allocation alignment, ignored/shared requests, zero-width boundaries, nested arrays and native Go/llgo object/archive/library calls.
 - [x] Small GNU AMD64 interior zero-width gaps through implicit anonymous-prefix padding, including multiple/trailing boundaries, named bitfields, nested records/arrays and fixed/variadic native calls.
-- [ ] Typedef packing/alignment forms.
+- [x] Numeric/omitted scalar, enum and native-address typedef alignment with raised/lowered requests, alias chains, scalar/native-address array leaves, compiler-observed Windows storage placement and native Go/llgo object/archive/library calls.
+- [ ] Record/whole-array typedef alignment and aligned typedef bitfields; remaining typedef packing forms.
 - [x] Named integral/Boolean bitfields through compiler byte-mask probes and validated Go/llgo C bridges, including packed combinations, nested arrays, native factories and variadic calls.
 - [x] Unnamed/zero-width bitfields with compiler-qualified declaration positions, leading/trailing padding, packed combinations, nested arrays, floating fields and native pointer/factory/variadic calls.
 - [x] Explicit numeric record/member alignment through validated C bridges, including packed/bitfield combinations, nested arrays, floating aggregates, native factories and variadic calls.

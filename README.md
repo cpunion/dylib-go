@@ -480,7 +480,12 @@ including omitted GNU `aligned` arguments and `_Alignas(type)` members. The
 [tested aligned example](examples/alignedrecords/call.go) covers packed/bitfield
 combinations, nested arrays, floating aggregates, native storage alignment,
 factories and variadic calls. Go records carry logical fields; pointers to these
-attributed types require producer-owned native storage.
+attributed types require producer-owned native storage. Aligned scalar, enum and
+native-pointer typedefs preserve raised/lowered alignment through C bridges,
+including array leaves and Windows compiler storage differences. GNU AMD64
+records require compiler-probed Clang 19-compatible lowering; see the
+[tested typedef example](examples/typedefalignment/call.go). Aligned record/array
+typedefs and aligned typedef bitfields remain unsupported.
 Complete struct pointees use `unsafe.Pointer` native addresses with their C
 prototypes preserved. They do not accept pointers to public Go record storage;
 use producer-owned storage or a compatible `abi.NativeValue` lease. Other

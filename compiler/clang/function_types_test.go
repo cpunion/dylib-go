@@ -102,7 +102,7 @@ func TestFunctionPointerConventionsAndValidation(t *testing.T) {
 	for _, source := range []string{
 		"int f(int (*callback)());",
 		"int f(int (__attribute__((vectorcall)) *callback)(int));",
-		"typedef int I __attribute__((aligned(16))); int f(I (*callback)(I));",
+		"typedef struct { int value; } I __attribute__((aligned(16))); int f(I (*callback)(I));",
 	} {
 		if _, err := Parse(context.Background(), headerFile(t, source), Options{Compiler: compiler, Target: "i686-pc-windows-msvc", Functions: []string{"f"}}); err == nil {
 			t.Fatal("unsupported function pointer accepted:", source)

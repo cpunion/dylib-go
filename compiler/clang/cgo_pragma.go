@@ -18,7 +18,7 @@ func (t *cgoTypes) writePragmaRecord(output *bytes.Buffer, index int) error {
 	}
 	fmt.Fprintf(output, "typedef struct %s{\n", r.cAttributes())
 	for i, field := range r.Description.Fields {
-		declaration, err := t.cField(field.Type, fmt.Sprintf("f%d", i))
+		declaration, err := t.cNativeField(r, i)
 		if err != nil {
 			return fmt.Errorf("clang: %s.%s: %w", r.Name, field.Name, err)
 		}

@@ -90,6 +90,13 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 				}
 				fmt.Fprint(&output, "}")
 			}
+			if len(record.FieldTypeAlignments) != 0 {
+				fmt.Fprint(&output, ",FieldTypeAlignments:[]clang.TypedefFieldAlignment{")
+				for _, field := range record.FieldTypeAlignments {
+					fmt.Fprintf(&output, "{Position:%d,Aligned:%d,StorageAlignment:%d},", field.Position, field.Aligned, field.StorageAlignment)
+				}
+				fmt.Fprint(&output, "}")
+			}
 			if len(record.Bitfields) != 0 {
 				fmt.Fprint(&output, ",Bitfields:[]clang.Bitfield{")
 				for _, field := range record.Bitfields {

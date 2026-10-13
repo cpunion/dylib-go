@@ -13,6 +13,7 @@ import (
 type cgoTypes struct {
 	*directTypes
 	cPrefix    string
+	windows    bool
 	msLayout   bool
 	ms386      bool
 	gnuPacking bool
@@ -79,6 +80,44 @@ func (t *cgoTypes) cField(description abi.TypeDesc, name string) (string, error)
 	return t.cFieldType(description, name, false)
 }
 
+func (t *cgoTypes) cNativeField(record Record, index int) (string, error) {
+	description := record.Description.Fields[index].Type
+	name := fmt.Sprintf("f%d", index)
+	if record.fieldTypeAlignment(index) == 0 || t.gnuAMD64 {
+		return t.cField(description, name)
+	}
+	var suffix strings.Builder
+	for description.Type == abi.Array {
+		fmt.Fprintf(&suffix, "[%d]", description.Len)
+		description = *description.Elem
+	}
+	return t.cFieldAlias(record, index) + " " + name + suffix.String(), nil
+}
+
+func (t *cgoTypes) cFieldAlias(record Record, index int) string {
+	// The record index disambiguates fields with the same logical scalar type.
+	i, _ := t.recordIndex(record.Description)
+	return fmt.Sprintf("%s_field%d", t.cRecordName(i), index)
+}
+
+func (t *cgoTypes) writeFieldAliases(output *bytes.Buffer, record Record) error {
+	if t.gnuAMD64 {
+		return nil
+	}
+	for _, field := range record.FieldTypeAlignments {
+		d := record.Description.Fields[field.Position].Type
+		for d.Type == abi.Array {
+			d = *d.Elem
+		}
+		kind, err := t.cType(d)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(output, "typedef %s %s __attribute__((aligned(%d)));\n", kind, t.cFieldAlias(record, field.Position), field.Aligned)
+	}
+	return nil
+}
+
 func (t *cgoTypes) cFieldType(description abi.TypeDesc, name string, transport bool) (string, error) {
 	var suffix strings.Builder
 	for description.Type == abi.Array {
@@ -122,6 +161,9 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 		}
 		name := t.cRecordName(i)
+		if err := t.writeFieldAliases(output, record); err != nil {
+			return err
+		}
 		tailPadding := t.gnuAMD64 && gnuImplicitTailPadding(record) && t.sysVAlignedRecord(record, 0)
 		prefixPadding := t.gnuPrefixPadding(record)
 		if t.gnuAMD64 && record.MaxFieldAlignment != 0 && record.Layout.Size <= 16 && t.sysVAlignedRecord(record, 0) {
@@ -261,7 +303,7 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			} else {
 				j := member.field
 				field := record.Description.Fields[j]
-				declaration, err := t.cField(field.Type, fmt.Sprintf("f%d", j))
+				declaration, err := t.cNativeField(record, j)
 				if err != nil {
 					return fmt.Errorf("clang: %s.%s: %w", record.Name, field.Name, err)
 				}

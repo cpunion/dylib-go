@@ -9,25 +9,25 @@ import (
 )
 
 type typeResolver struct {
-	target          Target
-	defaultPacking  *uint64
-	aliases         map[string]string
-	enums           map[string]*enumType
-	aliasAttributes map[string]string
-	sizes           map[string]int
-	nodes           map[string]astNode
-	names           map[string]string
-	spellings       map[string]string
-	resolved        map[string]abi.TypeDesc
-	building        map[string]bool
-	records         []Record
-	fieldProbes     map[recordField]recordFieldProbe
-	fieldPointers   map[recordField]astNode
-	packings        map[string]uint64
+	target         Target
+	defaultPacking *uint64
+	aliases        map[string]string
+	enums          map[string]*enumType
+	aliasNodes     map[string]astNode
+	sizes          map[string]int
+	nodes          map[string]astNode
+	names          map[string]string
+	spellings      map[string]string
+	resolved       map[string]abi.TypeDesc
+	building       map[string]bool
+	records        []Record
+	fieldProbes    map[recordField]recordFieldProbe
+	fieldPointers  map[recordField]astNode
+	packings       map[string]uint64
 }
 
 func newTypeResolver(root astNode, aliases map[string]string, sizes map[string]int) *typeResolver {
-	r := &typeResolver{aliases: aliases, aliasAttributes: make(map[string]string), sizes: sizes, nodes: make(map[string]astNode), names: make(map[string]string), spellings: make(map[string]string), resolved: make(map[string]abi.TypeDesc), building: make(map[string]bool)}
+	r := &typeResolver{aliases: aliases, aliasNodes: make(map[string]astNode), sizes: sizes, nodes: make(map[string]astNode), names: make(map[string]string), spellings: make(map[string]string), resolved: make(map[string]abi.TypeDesc), building: make(map[string]bool)}
 	r.enums = indexEnums(root)
 	var index func(astNode)
 	index = func(node astNode) {
@@ -50,12 +50,12 @@ func newTypeResolver(root astNode, aliases map[string]string, sizes map[string]i
 		if node.Kind != "TypedefDecl" {
 			continue
 		}
+		r.aliasNodes[node.Name] = node
+		hasAttributes := false
 		for _, child := range node.Inner {
-			if strings.HasSuffix(child.Kind, "Attr") {
-				r.aliasAttributes[node.Name] = child.Kind
-			}
+			hasAttributes = hasAttributes || strings.HasSuffix(child.Kind, "Attr")
 		}
-		if r.aliasAttributes[node.Name] != "" {
+		if hasAttributes {
 			continue
 		}
 		id := recordReference(node)
@@ -114,8 +114,8 @@ func (r *typeResolver) describe(spelling string, typedPointers bool, depth int) 
 		return abi.TypeDesc{}, fmt.Errorf("C type nesting exceeds 16 levels")
 	}
 	spelling = unqualified(spelling)
-	if attr := r.aliasAttributes[spelling]; attr != "" {
-		return abi.TypeDesc{}, fmt.Errorf("unsupported typedef attribute %s on %s", attr, spelling)
+	if _, err := r.typedefAlignment(spelling, depth); err != nil {
+		return abi.TypeDesc{}, err
 	}
 	if id := r.names[spelling]; id != "" {
 		return r.record(id, depth)
@@ -157,8 +157,8 @@ func (r *typeResolver) describe(spelling string, typedPointers bool, depth int) 
 	if typedPointers && strings.Count(spelling, "*") == 1 && strings.HasSuffix(spelling, " *") {
 		base := strings.TrimSpace(strings.TrimSuffix(spelling, " *"))
 		for i := 0; i < 16 && r.names[base] == ""; i++ {
-			if attr := r.aliasAttributes[base]; attr != "" {
-				return abi.TypeDesc{}, fmt.Errorf("unsupported typedef attribute %s on %s", attr, base)
+			if _, err := r.typedefAlignment(base, depth+1); err != nil {
+				return abi.TypeDesc{}, err
 			}
 			alias, ok := r.aliases[base]
 			if !ok {
@@ -204,6 +204,7 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 	packing := *r.defaultPacking
 	aligned := uint64(0)
 	var fieldAlignments []FieldAlignment
+	var fieldTypeAlignments []TypedefFieldAlignment
 	var packedFields []int
 	var bitfields []Bitfield
 	var padding []BitfieldPadding
@@ -271,6 +272,16 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		if err != nil {
 			return abi.TypeDesc{}, fmt.Errorf("%s.%s: %w", name, child.Name, err)
 		}
+		typeAlignment, err := r.typedefAlignment(child.Type.QualType, depth+1)
+		if err != nil {
+			return abi.TypeDesc{}, fmt.Errorf("%s.%s: %w", name, child.Name, err)
+		}
+		if typeAlignment != 0 {
+			if child.IsBitfield {
+				return abi.TypeDesc{}, fmt.Errorf("%s.%s: aligned typedef bitfields are unsupported", name, child.Name)
+			}
+			fieldTypeAlignments = append(fieldTypeAlignments, TypedefFieldAlignment{Position: len(d.Fields), Aligned: typeAlignment})
+		}
 		if child.IsBitfield {
 			width, ok := constantValue(child)
 			bits := bitfieldTypeBits(field.Type)
@@ -304,6 +315,6 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		return abi.TypeDesc{}, fmt.Errorf("at most %d records are supported", maxRecords)
 	}
 	r.resolved[id] = d
-	r.records = append(r.records, Record{Name: name, Description: d, Packed: packed, MaxFieldAlignment: packing, PackedFields: packedFields, Aligned: aligned, FieldAlignments: fieldAlignments, Bitfields: bitfields, Padding: padding})
+	r.records = append(r.records, Record{Name: name, Description: d, Packed: packed, MaxFieldAlignment: packing, PackedFields: packedFields, Aligned: aligned, FieldAlignments: fieldAlignments, FieldTypeAlignments: fieldTypeAlignments, Bitfields: bitfields, Padding: padding})
 	return d, nil
 }

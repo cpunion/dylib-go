@@ -92,9 +92,24 @@ func functionProbes(names []string) string {
 // Clang emits both the written and effective types for attributes and decayed
 // parameters. The final type child preserves the actual convention/adjustment.
 func (r *typeResolver) effectiveType(node astNode) (astNode, error) {
+	return resolveEffectiveType(node, func(node astNode) error {
+		_, err := r.typedefAlignment(node.Type.QualType, 0)
+		return err
+	})
+}
+
+// Attribute classification also needs the underlying compiler type. Share the
+// unwrapping rules without recursively validating the same typedef.
+func effectiveTypeNode(node astNode) (astNode, error) {
+	return resolveEffectiveType(node, nil)
+}
+
+func resolveEffectiveType(node astNode, validate func(astNode) error) (astNode, error) {
 	for depth := 0; depth <= 16; depth++ {
-		if attr := r.aliasAttributes[unqualified(node.Type.QualType)]; attr != "" {
-			return astNode{}, fmt.Errorf("unsupported typedef attribute %s", attr)
+		if validate != nil {
+			if err := validate(node); err != nil {
+				return astNode{}, err
+			}
 		}
 		switch node.Kind {
 		case "TypedefDecl", "TypedefType", "ParenType", "AttributedType", "MacroQualifiedType", "ElaboratedType", "TypeOfExprType", "QualType", "DecayedType", "AdjustedType":

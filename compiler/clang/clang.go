@@ -17,7 +17,8 @@ import (
 
 // Options selects a C compiler, target, preprocessing flags and explicit names.
 // Target defaults to the qualified native host target. Flags must match those
-// used to build the exports; use Target rather than a target override in Flags.
+// used to build the exports, and Compiler must follow the producer calling ABI;
+// use Target rather than a target override in Flags.
 type Options struct {
 	Compiler  string // Clang executable, default clang; never a shell command.
 	Target    string
@@ -137,6 +138,10 @@ const maxFunctions = 256
 // pragma-packed records and
 // bitfields use C bridges, including over-aligned pragma members, allocation
 // units, zero-width boundaries and nested values.
+// Scalar/enum/native-address typedef alignment preserves raised/lowered requests
+// and alias chains through C bridges, including fixed-array leaves. GNU AMD64
+// records require compiler-probed Clang 19-compatible SysV lowering. Aligned
+// record/whole-array typedefs and aligned typedef bitfields remain unsupported.
 // Unions, other attributed
 // records/fields/typedefs, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes
@@ -262,6 +267,9 @@ func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 			return nil, err
 		}
 		if err := header.probeBitfields(ctx, compiler, path, flags); err != nil {
+			return nil, err
+		}
+		if err := header.probeTypedefABI(ctx, compiler, flags); err != nil {
 			return nil, err
 		}
 		if err := header.probeRecordABI(ctx, compiler, path, flags); err != nil {
