@@ -26,7 +26,7 @@ func validatePacking(r Record) error {
 		return nil
 	}
 	for _, field := range r.FieldAlignments {
-		if field.Aligned > r.MaxFieldAlignment {
+		if field.Aligned > r.MaxFieldAlignment && r.hasBitfields() {
 			return fmt.Errorf("clang: member alignment exceeding pragma packing is not qualified")
 		}
 	}
@@ -54,6 +54,11 @@ func validatePackingChildren(r Record, records []Record) error {
 			if !reflect.DeepEqual(child.Description, d) {
 				continue
 			}
+			// Ordinary members use independently measured storage alignment.
+			// Over-cap bitfield combinations still need allocation-unit tests.
+			if !r.hasBitfields() && !child.hasBitfields() {
+				continue
+			}
 			if child.Aligned > r.MaxFieldAlignment {
 				return fmt.Errorf("clang: nested over-aligned records under pragma packing are not qualified")
 			}
@@ -78,6 +83,38 @@ func validatePackingChildren(r Record, records []Record) error {
 	for _, field := range r.Description.Fields {
 		if err := check(field.Type); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+// Clang can report an explicit expression alignment that pragma packing does
+// not preserve (notably a GNU packed record). Bound it by the record's actual
+// base alignment and member offset before using it for native storage.
+func memberStorageAlignment(expression, base, offset uint64) (uint64, error) {
+	if expression == 0 || base == 0 || !validAlignment(expression) || !validAlignment(base) {
+		return 0, fmt.Errorf("invalid compiler member alignment")
+	}
+	for expression > base || offset%expression != 0 {
+		expression /= 2
+	}
+	return expression, nil
+}
+
+func validateMemberAlignments(r Record, complete bool) error {
+	ordinary := r.MaxFieldAlignment != 0 && !r.hasBitfields()
+	if len(r.MemberAlignments) == 0 && (!complete || !ordinary) {
+		return nil
+	}
+	if !ordinary || len(r.MemberAlignments) != len(r.Description.Fields) {
+		return fmt.Errorf("clang: missing or invalid member alignments in %s", r.Name)
+	}
+	for i, alignment := range r.MemberAlignments {
+		if alignment == 0 || !validAlignment(alignment) {
+			return fmt.Errorf("clang: invalid member alignment in %s", r.Name)
+		}
+		if complete && (len(r.Layout.Offsets) != len(r.MemberAlignments) || alignment > r.Layout.Alignment || r.Layout.Offsets[i]%alignment != 0) {
+			return fmt.Errorf("clang: compiler member alignment mismatch in %s", r.Name)
 		}
 	}
 	return nil

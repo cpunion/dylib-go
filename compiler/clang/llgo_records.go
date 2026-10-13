@@ -31,7 +31,7 @@ func newDirectTypes(records []Record, prefix string) (*directTypes, error) {
 	t := &directTypes{records: records, prefix: prefix}
 	for i, record := range records {
 		for _, previous := range records[:i] {
-			if reflect.DeepEqual(previous.Description, record.Description) && (previous.Packed != record.Packed || previous.MaxFieldAlignment != record.MaxFieldAlignment || !reflect.DeepEqual(previous.PackedFields, record.PackedFields) || previous.Aligned != record.Aligned || previous.IndirectArgument != record.IndirectArgument || previous.IndirectResult != record.IndirectResult || !reflect.DeepEqual(previous.FieldAlignments, record.FieldAlignments) || !reflect.DeepEqual(previous.Bitfields, record.Bitfields) || !reflect.DeepEqual(previous.Padding, record.Padding) || !reflect.DeepEqual(previous.Layout, record.Layout)) {
+			if reflect.DeepEqual(previous.Description, record.Description) && (previous.Packed != record.Packed || previous.MaxFieldAlignment != record.MaxFieldAlignment || !reflect.DeepEqual(previous.MemberAlignments, record.MemberAlignments) || !reflect.DeepEqual(previous.PackedFields, record.PackedFields) || previous.Aligned != record.Aligned || previous.IndirectArgument != record.IndirectArgument || previous.IndirectResult != record.IndirectResult || !reflect.DeepEqual(previous.FieldAlignments, record.FieldAlignments) || !reflect.DeepEqual(previous.Bitfields, record.Bitfields) || !reflect.DeepEqual(previous.Padding, record.Padding) || !reflect.DeepEqual(previous.Layout, record.Layout)) {
 				return nil, fmt.Errorf("clang: ambiguous native layouts for %s and %s", previous.Name, record.Name)
 			}
 		}

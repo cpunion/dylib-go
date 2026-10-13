@@ -42,7 +42,7 @@ Run
 | Typedefs and ordinary qualifiers | Desugared/resolved, including integer and pointer aliases |
 | Object/opaque pointers | Native addresses; no automatic pointee allocation, copying or ownership |
 | Ordinary structs, including anonymous typedef records | Arguments/results; compiler-evaluated layout checked against the native backend |
-| Structs with `#pragma pack` | `CgoSource` for Go/llgo; caps 1/2/4/8/16, named/unnamed/zero-width bitfields, nested arrays, native addresses/function-pointer fields and record-level explicit alignment; over-aligned nested/member combinations remain unqualified |
+| Structs with `#pragma pack` | `CgoSource` for Go/llgo; caps 1/2/4/8/16, ordinary over-aligned members/nested values, named/unnamed/zero-width bitfields, nested arrays and native addresses/function-pointer fields; over-cap bitfield combinations remain unqualified |
 | Explicit `__attribute__((packed))` structs | `CgoSource` for Go/llgo; logical fields are transported through ordinary records and converted inside C; dynamic and direct llgo bindings reject them |
 | Explicit `__attribute__((packed))` non-bitfield members | `CgoSource` for Go/llgo; retain natural alignment of other members and combine packing with explicit member alignment; includes fixed arrays, nested records and native addresses |
 | Named integral/Boolean bitfields, including explicit packed records | `CgoSource` for Go/llgo; compiler byte masks and layout are validated before binding; public fields remain ordinary scalars |
@@ -271,7 +271,8 @@ within that invocation. Missing, duplicate, ambiguous or invalid probes fail
 parsing; source pragma tokens and layout guesses are not used.
 
 Generated C declarations use a scoped packing pragma, restored before emitting
-transport records. Public Go fields carry logical values. Native layout checks
+transport records. Ordinary MSVC records have a measured-member MinGW facade
+as described below. Public Go fields carry logical values. Native layout checks
 run before binding, and dynamic/direct llgo adapters reject these records.
 Arrays, nested ordinary/bitfield records, native struct addresses, function-pointer
 fields/factories and concrete variadic prefixes/results use the same C bridge.
@@ -286,14 +287,31 @@ zero-length native members while retaining ignored leading/consecutive fields.
 Record-wide and member-level packed attributes can be combined with pragma
 packing. These changes remain inside C and do not add public Go padding fields.
 
-Member, unnamed or nested explicit alignment greater than the packing cap
-remains unqualified: MSVC can override the cap while MinGW limits alignment. These
-combinations are rejected explicitly. Global compiler packing flags and typedef
-alignment/packing are not covered by this pragma adapter. The
+Ordinary members and nested ordinary values may have explicit alignment greater
+than the packing cap. MSVC can override that cap while GNU producers limit the
+request. `Record.MemberAlignments` retains each ordinary pragma member's measured
+storage alignment, queried alongside its size/offset layout. The expression
+alignment is bounded by the record's actual alignment and member offset: a GNU
+packed record can otherwise report a source request it does not preserve.
+These independently cloned/generated values are distinct from `FieldAlignments`.
+Regenerate older pragma bindings to include the measured member metadata.
+
+For an MSVC producer, the MinGW facade retains every native field type/array count
+and applies measured packed/aligned member attributes outside the outer pragma.
+The MSVC compiler retains the native pragma declaration. Avoiding synthetic byte
+fields preserves homogeneous aggregate classification. Existing MSVC i386
+compiler-observed indirect argument lowering still applies. Native size,
+alignment and offset checks remain mandatory before resolving symbols.
+
+Over-cap alignment in records with their own named/unnamed/zero-width bitfields,
+or nested over-cap bitfield combinations, remains unqualified and is rejected.
+Global compiler packing flags and typedef alignment/packing are not covered by
+this pragma adapter. The
 [packed example](../examples/packedrecords/call.go) executes object/archive/library
 calls at `-O0`/`-O2`, including nested packing levels, restored natural outer
-layout, floating arrays, Boolean/address fields, native factories/pointers,
-function-pointer fields and variadic calls with Go and llgo.
+layout, numeric/omitted/type-based member alignment, packed combinations, nested
+aligned arrays, floating aggregates, Boolean/address fields, native
+factories/pointers/function-pointer fields and variadic calls with Go and llgo.
 The [bitfield example](../examples/bitfieldrecords/call.go) adds small signed
 returns, active/consecutive/trailing boundaries, packed/aligned unnamed fields,
 floating aggregates, nested arrays, native pointer mutation/factories and

@@ -38,7 +38,7 @@ func TestPackedCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_packed", "echo_envelope", "packed_factory", "apply_packed", "packed_pointer", "mutate_packed", "sum_packed", "packed_variable", "echo_member", "echo_members", "echo_member_aligned", "member_factory", "apply_member", "member_pointer", "mutate_member", "sum_member", "member_variable", "echo_pragma", "echo_pragma_envelope", "echo_pragma_aligned", "echo_pragma_outer", "pragma_factory", "apply_pragma", "pragma_pointer", "mutate_pragma", "sum_pragma", "pragma_variable", "apply_pragma_slot"}
+	names := []string{"echo_packed", "echo_envelope", "packed_factory", "apply_packed", "packed_pointer", "mutate_packed", "sum_packed", "packed_variable", "echo_member", "echo_members", "echo_member_aligned", "member_factory", "apply_member", "member_pointer", "mutate_member", "sum_member", "member_variable", "echo_pragma", "echo_pragma_envelope", "echo_pragma_aligned", "echo_pragma_outer", "pragma_factory", "apply_pragma", "pragma_pointer", "mutate_pragma", "sum_pragma", "pragma_variable", "apply_pragma_slot", "echo_over", "echo_over_packed", "echo_over_max", "echo_over_type", "echo_over_array", "echo_over_envelope", "echo_over_float", "echo_over_outer", "over_factory", "apply_over", "over_pointer", "mutate_over", "sum_over", "over_variable", "apply_over_slot", "echo_over_float_nested"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -52,6 +52,10 @@ func TestPackedCalls(t *testing.T) {
 		t.Fatal(err)
 	}
 	h.Functions[26], err = h.Functions[26].WithTail(abi.I8, abi.F32)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.Functions[41], err = h.Functions[41].WithTail(abi.I8, abi.F32)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -237,6 +241,7 @@ func checkCalls(t *testing.T, path string) {
 		if got, err := b.Mutate_pragma(nil); err != nil || got != nil {
 			t.Fatal("null pragma pointer:", got, err)
 		}
+		checkOverAlignedCalls(t, b)
 		p.Tag, p.Tail, p.Truth, p.Context = 125, 20, false, nil
 		got, err = b.Echo_packed(p)
 		check("false/null fields", got, BindingsRecord0{Tag: 126, Value: 22, Tail: 19, Truth: true}, err)
