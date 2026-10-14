@@ -692,64 +692,64 @@ result.f3 = value.f3;
 return result;
 }
 typedef dylib_go_42696e64696e6773_record1 (*dylib_go_42696e64696e6773_call0_function)(dylib_go_42696e64696e6773_record1);
-static dylib_go_42696e64696e6773_record1_transport dylib_go_42696e64696e6773_call0(uintptr_t address,dylib_go_42696e64696e6773_record1_transport p0) {
-return dylib_go_42696e64696e6773_record1_to_transport(((dylib_go_42696e64696e6773_call0_function)address)(dylib_go_42696e64696e6773_record1_from_transport(p0)));
+static dylib_go_42696e64696e6773_record1_transport dylib_go_42696e64696e6773_call0(uintptr_t address,const dylib_go_42696e64696e6773_record1_transport *p0) {
+return dylib_go_42696e64696e6773_record1_to_transport(((dylib_go_42696e64696e6773_call0_function)address)(dylib_go_42696e64696e6773_record1_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record2 (*dylib_go_42696e64696e6773_call1_function)(dylib_go_42696e64696e6773_record2);
-static dylib_go_42696e64696e6773_record2_transport dylib_go_42696e64696e6773_call1(uintptr_t address,dylib_go_42696e64696e6773_record2_transport p0) {
-return dylib_go_42696e64696e6773_record2_to_transport(((dylib_go_42696e64696e6773_call1_function)address)(dylib_go_42696e64696e6773_record2_from_transport(p0)));
+static dylib_go_42696e64696e6773_record2_transport dylib_go_42696e64696e6773_call1(uintptr_t address,const dylib_go_42696e64696e6773_record2_transport *p0) {
+return dylib_go_42696e64696e6773_record2_to_transport(((dylib_go_42696e64696e6773_call1_function)address)(dylib_go_42696e64696e6773_record2_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record3 (*dylib_go_42696e64696e6773_call2_function)(dylib_go_42696e64696e6773_record3);
-static dylib_go_42696e64696e6773_record3_transport dylib_go_42696e64696e6773_call2(uintptr_t address,dylib_go_42696e64696e6773_record3_transport p0) {
-return dylib_go_42696e64696e6773_record3_to_transport(((dylib_go_42696e64696e6773_call2_function)address)(dylib_go_42696e64696e6773_record3_from_transport(p0)));
+static dylib_go_42696e64696e6773_record3_transport dylib_go_42696e64696e6773_call2(uintptr_t address,const dylib_go_42696e64696e6773_record3_transport *p0) {
+return dylib_go_42696e64696e6773_record3_to_transport(((dylib_go_42696e64696e6773_call2_function)address)(dylib_go_42696e64696e6773_record3_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record4 (*dylib_go_42696e64696e6773_call3_function)(dylib_go_42696e64696e6773_record4);
-static dylib_go_42696e64696e6773_record4_transport dylib_go_42696e64696e6773_call3(uintptr_t address,dylib_go_42696e64696e6773_record4_transport p0) {
-return dylib_go_42696e64696e6773_record4_to_transport(((dylib_go_42696e64696e6773_call3_function)address)(dylib_go_42696e64696e6773_record4_from_transport(p0)));
+static dylib_go_42696e64696e6773_record4_transport dylib_go_42696e64696e6773_call3(uintptr_t address,const dylib_go_42696e64696e6773_record4_transport *p0) {
+return dylib_go_42696e64696e6773_record4_to_transport(((dylib_go_42696e64696e6773_call3_function)address)(dylib_go_42696e64696e6773_record4_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record5 (*dylib_go_42696e64696e6773_call4_function)(dylib_go_42696e64696e6773_record5);
-static dylib_go_42696e64696e6773_record5_transport dylib_go_42696e64696e6773_call4(uintptr_t address,dylib_go_42696e64696e6773_record5_transport p0) {
-return dylib_go_42696e64696e6773_record5_to_transport(((dylib_go_42696e64696e6773_call4_function)address)(dylib_go_42696e64696e6773_record5_from_transport(p0)));
+static dylib_go_42696e64696e6773_record5_transport dylib_go_42696e64696e6773_call4(uintptr_t address,const dylib_go_42696e64696e6773_record5_transport *p0) {
+return dylib_go_42696e64696e6773_record5_to_transport(((dylib_go_42696e64696e6773_call4_function)address)(dylib_go_42696e64696e6773_record5_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record6 (*dylib_go_42696e64696e6773_call5_function)(dylib_go_42696e64696e6773_record6);
-static dylib_go_42696e64696e6773_record6_transport dylib_go_42696e64696e6773_call5(uintptr_t address,dylib_go_42696e64696e6773_record6_transport p0) {
-return dylib_go_42696e64696e6773_record6_to_transport(((dylib_go_42696e64696e6773_call5_function)address)(dylib_go_42696e64696e6773_record6_from_transport(p0)));
+static dylib_go_42696e64696e6773_record6_transport dylib_go_42696e64696e6773_call5(uintptr_t address,const dylib_go_42696e64696e6773_record6_transport *p0) {
+return dylib_go_42696e64696e6773_record6_to_transport(((dylib_go_42696e64696e6773_call5_function)address)(dylib_go_42696e64696e6773_record6_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record7 (*dylib_go_42696e64696e6773_call6_function)(dylib_go_42696e64696e6773_record7);
-static dylib_go_42696e64696e6773_record7_transport dylib_go_42696e64696e6773_call6(uintptr_t address,dylib_go_42696e64696e6773_record7_transport p0) {
-return dylib_go_42696e64696e6773_record7_to_transport(((dylib_go_42696e64696e6773_call6_function)address)(dylib_go_42696e64696e6773_record7_from_transport(p0)));
+static dylib_go_42696e64696e6773_record7_transport dylib_go_42696e64696e6773_call6(uintptr_t address,const dylib_go_42696e64696e6773_record7_transport *p0) {
+return dylib_go_42696e64696e6773_record7_to_transport(((dylib_go_42696e64696e6773_call6_function)address)(dylib_go_42696e64696e6773_record7_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record8 (*dylib_go_42696e64696e6773_call7_function)(dylib_go_42696e64696e6773_record8);
-static dylib_go_42696e64696e6773_record8_transport dylib_go_42696e64696e6773_call7(uintptr_t address,dylib_go_42696e64696e6773_record8_transport p0) {
-return dylib_go_42696e64696e6773_record8_to_transport(((dylib_go_42696e64696e6773_call7_function)address)(dylib_go_42696e64696e6773_record8_from_transport(p0)));
+static dylib_go_42696e64696e6773_record8_transport dylib_go_42696e64696e6773_call7(uintptr_t address,const dylib_go_42696e64696e6773_record8_transport *p0) {
+return dylib_go_42696e64696e6773_record8_to_transport(((dylib_go_42696e64696e6773_call7_function)address)(dylib_go_42696e64696e6773_record8_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record9 (*dylib_go_42696e64696e6773_call8_function)(dylib_go_42696e64696e6773_record9);
-static dylib_go_42696e64696e6773_record9_transport dylib_go_42696e64696e6773_call8(uintptr_t address,dylib_go_42696e64696e6773_record9_transport p0) {
-return dylib_go_42696e64696e6773_record9_to_transport(((dylib_go_42696e64696e6773_call8_function)address)(dylib_go_42696e64696e6773_record9_from_transport(p0)));
+static dylib_go_42696e64696e6773_record9_transport dylib_go_42696e64696e6773_call8(uintptr_t address,const dylib_go_42696e64696e6773_record9_transport *p0) {
+return dylib_go_42696e64696e6773_record9_to_transport(((dylib_go_42696e64696e6773_call8_function)address)(dylib_go_42696e64696e6773_record9_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record10 (*dylib_go_42696e64696e6773_call9_function)(dylib_go_42696e64696e6773_record10);
-static dylib_go_42696e64696e6773_record10_transport dylib_go_42696e64696e6773_call9(uintptr_t address,dylib_go_42696e64696e6773_record10_transport p0) {
-return dylib_go_42696e64696e6773_record10_to_transport(((dylib_go_42696e64696e6773_call9_function)address)(dylib_go_42696e64696e6773_record10_from_transport(p0)));
+static dylib_go_42696e64696e6773_record10_transport dylib_go_42696e64696e6773_call9(uintptr_t address,const dylib_go_42696e64696e6773_record10_transport *p0) {
+return dylib_go_42696e64696e6773_record10_to_transport(((dylib_go_42696e64696e6773_call9_function)address)(dylib_go_42696e64696e6773_record10_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record11 (*dylib_go_42696e64696e6773_call10_function)(dylib_go_42696e64696e6773_record11);
-static dylib_go_42696e64696e6773_record11_transport dylib_go_42696e64696e6773_call10(uintptr_t address,dylib_go_42696e64696e6773_record11_transport p0) {
-return dylib_go_42696e64696e6773_record11_to_transport(((dylib_go_42696e64696e6773_call10_function)address)(dylib_go_42696e64696e6773_record11_from_transport(p0)));
+static dylib_go_42696e64696e6773_record11_transport dylib_go_42696e64696e6773_call10(uintptr_t address,const dylib_go_42696e64696e6773_record11_transport *p0) {
+return dylib_go_42696e64696e6773_record11_to_transport(((dylib_go_42696e64696e6773_call10_function)address)(dylib_go_42696e64696e6773_record11_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record12 (*dylib_go_42696e64696e6773_call11_function)(dylib_go_42696e64696e6773_record12);
-static dylib_go_42696e64696e6773_record12_transport dylib_go_42696e64696e6773_call11(uintptr_t address,dylib_go_42696e64696e6773_record12_transport p0) {
-return dylib_go_42696e64696e6773_record12_to_transport(((dylib_go_42696e64696e6773_call11_function)address)(dylib_go_42696e64696e6773_record12_from_transport(p0)));
+static dylib_go_42696e64696e6773_record12_transport dylib_go_42696e64696e6773_call11(uintptr_t address,const dylib_go_42696e64696e6773_record12_transport *p0) {
+return dylib_go_42696e64696e6773_record12_to_transport(((dylib_go_42696e64696e6773_call11_function)address)(dylib_go_42696e64696e6773_record12_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record2 (*dylib_go_42696e64696e6773_call12_function)(int32_t,dylib_go_42696e64696e6773_record2);
-static dylib_go_42696e64696e6773_record2_transport dylib_go_42696e64696e6773_call12(uintptr_t address,int32_t p0,dylib_go_42696e64696e6773_record2_transport p1) {
-return dylib_go_42696e64696e6773_record2_to_transport(((dylib_go_42696e64696e6773_call12_function)address)(p0,dylib_go_42696e64696e6773_record2_from_transport(p1)));
+static dylib_go_42696e64696e6773_record2_transport dylib_go_42696e64696e6773_call12(uintptr_t address,int32_t p0,const dylib_go_42696e64696e6773_record2_transport *p1) {
+return dylib_go_42696e64696e6773_record2_to_transport(((dylib_go_42696e64696e6773_call12_function)address)(p0,dylib_go_42696e64696e6773_record2_from_transport(*p1)));
 }
 typedef double (*dylib_go_42696e64696e6773_call13_function)(double,double,double,double,double,double,double,double,dylib_go_42696e64696e6773_record3,double);
-static double dylib_go_42696e64696e6773_call13(uintptr_t address,double p0,double p1,double p2,double p3,double p4,double p5,double p6,double p7,dylib_go_42696e64696e6773_record3_transport p8,double p9) {
-return ((dylib_go_42696e64696e6773_call13_function)address)(p0,p1,p2,p3,p4,p5,p6,p7,dylib_go_42696e64696e6773_record3_from_transport(p8),p9);
+static double dylib_go_42696e64696e6773_call13(uintptr_t address,double p0,double p1,double p2,double p3,double p4,double p5,double p6,double p7,const dylib_go_42696e64696e6773_record3_transport *p8,double p9) {
+return ((dylib_go_42696e64696e6773_call13_function)address)(p0,p1,p2,p3,p4,p5,p6,p7,dylib_go_42696e64696e6773_record3_from_transport(*p8),p9);
 }
 typedef double (*dylib_go_42696e64696e6773_call14_function)(double,double,double,double,double,double,double,double,dylib_go_42696e64696e6773_record3,...);
-static double dylib_go_42696e64696e6773_call14(uintptr_t address,double p0,double p1,double p2,double p3,double p4,double p5,double p6,double p7,dylib_go_42696e64696e6773_record3_transport p8,int32_t p9,float p10) {
-return ((dylib_go_42696e64696e6773_call14_function)address)(p0,p1,p2,p3,p4,p5,p6,p7,dylib_go_42696e64696e6773_record3_from_transport(p8),(int8_t)p9,p10);
+static double dylib_go_42696e64696e6773_call14(uintptr_t address,double p0,double p1,double p2,double p3,double p4,double p5,double p6,double p7,const dylib_go_42696e64696e6773_record3_transport *p8,int32_t p9,float p10) {
+return ((dylib_go_42696e64696e6773_call14_function)address)(p0,p1,p2,p3,p4,p5,p6,p7,dylib_go_42696e64696e6773_record3_from_transport(*p8),(int8_t)p9,p10);
 }
 typedef dylib_go_42696e64696e6773_record2 (*dylib_go_42696e64696e6773_call15_pointer0)(dylib_go_42696e64696e6773_record2);
 typedef dylib_go_42696e64696e6773_call15_pointer0 (*dylib_go_42696e64696e6773_call15_function)(void);
@@ -758,12 +758,12 @@ return (void *)((dylib_go_42696e64696e6773_call15_function)address)();
 }
 typedef dylib_go_42696e64696e6773_record2 (*dylib_go_42696e64696e6773_call16_pointer1)(dylib_go_42696e64696e6773_record2);
 typedef dylib_go_42696e64696e6773_record2 (*dylib_go_42696e64696e6773_call16_function)(dylib_go_42696e64696e6773_call16_pointer1,dylib_go_42696e64696e6773_record2);
-static dylib_go_42696e64696e6773_record2_transport dylib_go_42696e64696e6773_call16(uintptr_t address,void * p0,dylib_go_42696e64696e6773_record2_transport p1) {
-return dylib_go_42696e64696e6773_record2_to_transport(((dylib_go_42696e64696e6773_call16_function)address)((dylib_go_42696e64696e6773_call16_pointer1)p0,dylib_go_42696e64696e6773_record2_from_transport(p1)));
+static dylib_go_42696e64696e6773_record2_transport dylib_go_42696e64696e6773_call16(uintptr_t address,void * p0,const dylib_go_42696e64696e6773_record2_transport *p1) {
+return dylib_go_42696e64696e6773_record2_to_transport(((dylib_go_42696e64696e6773_call16_function)address)((dylib_go_42696e64696e6773_call16_pointer1)p0,dylib_go_42696e64696e6773_record2_from_transport(*p1)));
 }
 typedef dylib_go_42696e64696e6773_record3 * (*dylib_go_42696e64696e6773_call17_function)(dylib_go_42696e64696e6773_record3);
-static void * dylib_go_42696e64696e6773_call17(uintptr_t address,dylib_go_42696e64696e6773_record3_transport p0) {
-return (void *)((dylib_go_42696e64696e6773_call17_function)address)(dylib_go_42696e64696e6773_record3_from_transport(p0));
+static void * dylib_go_42696e64696e6773_call17(uintptr_t address,const dylib_go_42696e64696e6773_record3_transport *p0) {
+return (void *)((dylib_go_42696e64696e6773_call17_function)address)(dylib_go_42696e64696e6773_record3_from_transport(*p0));
 }
 typedef dylib_go_42696e64696e6773_record3 (*dylib_go_42696e64696e6773_call18_function)(dylib_go_42696e64696e6773_record3 *);
 static dylib_go_42696e64696e6773_record3_transport dylib_go_42696e64696e6773_call18(uintptr_t address,void * p0) {
@@ -1284,7 +1284,8 @@ func (b *Bindings) Echo_parent(p0 BindingsRecord1) (result BindingsRecord1, err 
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol0.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord1FromC(C.dylib_go_42696e64696e6773_call0(C.uintptr_t(address), _BindingsRecord1ToC(p0)))
+		c0 := _BindingsRecord1ToC(p0)
+		result = _BindingsRecord1FromC(C.dylib_go_42696e64696e6773_call0(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -1295,7 +1296,8 @@ func (b *Bindings) Echo_float(p0 BindingsRecord2) (result BindingsRecord2, err e
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol1.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord2FromC(C.dylib_go_42696e64696e6773_call1(C.uintptr_t(address), _BindingsRecord2ToC(p0)))
+		c0 := _BindingsRecord2ToC(p0)
+		result = _BindingsRecord2FromC(C.dylib_go_42696e64696e6773_call1(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -1306,7 +1308,8 @@ func (b *Bindings) Echo_gap(p0 BindingsRecord3) (result BindingsRecord3, err err
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol2.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord3FromC(C.dylib_go_42696e64696e6773_call2(C.uintptr_t(address), _BindingsRecord3ToC(p0)))
+		c0 := _BindingsRecord3ToC(p0)
+		result = _BindingsRecord3FromC(C.dylib_go_42696e64696e6773_call2(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -1317,7 +1320,8 @@ func (b *Bindings) Echo_bits(p0 BindingsRecord4) (result BindingsRecord4, err er
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol3.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord4FromC(C.dylib_go_42696e64696e6773_call3(C.uintptr_t(address), _BindingsRecord4ToC(p0)))
+		c0 := _BindingsRecord4ToC(p0)
+		result = _BindingsRecord4FromC(C.dylib_go_42696e64696e6773_call3(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -1328,7 +1332,8 @@ func (b *Bindings) Echo_trailing(p0 BindingsRecord5) (result BindingsRecord5, er
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol4.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord5FromC(C.dylib_go_42696e64696e6773_call4(C.uintptr_t(address), _BindingsRecord5ToC(p0)))
+		c0 := _BindingsRecord5ToC(p0)
+		result = _BindingsRecord5FromC(C.dylib_go_42696e64696e6773_call4(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -1339,7 +1344,8 @@ func (b *Bindings) Echo_leading(p0 BindingsRecord6) (result BindingsRecord6, err
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol5.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord6FromC(C.dylib_go_42696e64696e6773_call5(C.uintptr_t(address), _BindingsRecord6ToC(p0)))
+		c0 := _BindingsRecord6ToC(p0)
+		result = _BindingsRecord6FromC(C.dylib_go_42696e64696e6773_call5(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -1350,7 +1356,8 @@ func (b *Bindings) Echo_consecutive(p0 BindingsRecord7) (result BindingsRecord7,
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol6.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord7FromC(C.dylib_go_42696e64696e6773_call6(C.uintptr_t(address), _BindingsRecord7ToC(p0)))
+		c0 := _BindingsRecord7ToC(p0)
+		result = _BindingsRecord7FromC(C.dylib_go_42696e64696e6773_call6(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -1361,7 +1368,8 @@ func (b *Bindings) Echo_nonpower(p0 BindingsRecord8) (result BindingsRecord8, er
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol7.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord8FromC(C.dylib_go_42696e64696e6773_call7(C.uintptr_t(address), _BindingsRecord8ToC(p0)))
+		c0 := _BindingsRecord8ToC(p0)
+		result = _BindingsRecord8FromC(C.dylib_go_42696e64696e6773_call7(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -1372,7 +1380,8 @@ func (b *Bindings) Echo_large(p0 BindingsRecord9) (result BindingsRecord9, err e
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol8.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord9FromC(C.dylib_go_42696e64696e6773_call8(C.uintptr_t(address), _BindingsRecord9ToC(p0)))
+		c0 := _BindingsRecord9ToC(p0)
+		result = _BindingsRecord9FromC(C.dylib_go_42696e64696e6773_call8(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -1383,7 +1392,8 @@ func (b *Bindings) Echo_mixed(p0 BindingsRecord10) (result BindingsRecord10, err
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol9.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord10FromC(C.dylib_go_42696e64696e6773_call9(C.uintptr_t(address), _BindingsRecord10ToC(p0)))
+		c0 := _BindingsRecord10ToC(p0)
+		result = _BindingsRecord10FromC(C.dylib_go_42696e64696e6773_call9(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -1394,7 +1404,8 @@ func (b *Bindings) Echo_packed(p0 BindingsRecord11) (result BindingsRecord11, er
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol10.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord11FromC(C.dylib_go_42696e64696e6773_call10(C.uintptr_t(address), _BindingsRecord11ToC(p0)))
+		c0 := _BindingsRecord11ToC(p0)
+		result = _BindingsRecord11FromC(C.dylib_go_42696e64696e6773_call10(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -1405,7 +1416,8 @@ func (b *Bindings) Echo_envelope(p0 BindingsRecord12) (result BindingsRecord12, 
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol11.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord12FromC(C.dylib_go_42696e64696e6773_call11(C.uintptr_t(address), _BindingsRecord12ToC(p0)))
+		c0 := _BindingsRecord12ToC(p0)
+		result = _BindingsRecord12FromC(C.dylib_go_42696e64696e6773_call11(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -1416,7 +1428,8 @@ func (b *Bindings) Shifted_float(p0 int32, p1 BindingsRecord2) (result BindingsR
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol12.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord2FromC(C.dylib_go_42696e64696e6773_call12(C.uintptr_t(address), C.int32_t(p0), _BindingsRecord2ToC(p1)))
+		c1 := _BindingsRecord2ToC(p1)
+		result = _BindingsRecord2FromC(C.dylib_go_42696e64696e6773_call12(C.uintptr_t(address), C.int32_t(p0), &c1))
 		return nil
 	})
 	return result, err
@@ -1427,7 +1440,8 @@ func (b *Bindings) Gap_overflow(p0 float64, p1 float64, p2 float64, p3 float64, 
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol13.WithAddress(func(address uintptr) error {
-		result = float64(C.dylib_go_42696e64696e6773_call13(C.uintptr_t(address), C.double(p0), C.double(p1), C.double(p2), C.double(p3), C.double(p4), C.double(p5), C.double(p6), C.double(p7), _BindingsRecord3ToC(p8), C.double(p9)))
+		c8 := _BindingsRecord3ToC(p8)
+		result = float64(C.dylib_go_42696e64696e6773_call13(C.uintptr_t(address), C.double(p0), C.double(p1), C.double(p2), C.double(p3), C.double(p4), C.double(p5), C.double(p6), C.double(p7), &c8, C.double(p9)))
 		return nil
 	})
 	return result, err
@@ -1438,7 +1452,8 @@ func (b *Bindings) Gap_variadic(p0 float64, p1 float64, p2 float64, p3 float64, 
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol14.WithAddress(func(address uintptr) error {
-		result = float64(C.dylib_go_42696e64696e6773_call14(C.uintptr_t(address), C.double(p0), C.double(p1), C.double(p2), C.double(p3), C.double(p4), C.double(p5), C.double(p6), C.double(p7), _BindingsRecord3ToC(p8), C.int32_t(p9), C.float(p10)))
+		c8 := _BindingsRecord3ToC(p8)
+		result = float64(C.dylib_go_42696e64696e6773_call14(C.uintptr_t(address), C.double(p0), C.double(p1), C.double(p2), C.double(p3), C.double(p4), C.double(p5), C.double(p6), C.double(p7), &c8, C.int32_t(p9), C.float(p10)))
 		return nil
 	})
 	return result, err
@@ -1460,7 +1475,8 @@ func (b *Bindings) Forward_float(p0 unsafe.Pointer, p1 BindingsRecord2) (result 
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol16.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord2FromC(C.dylib_go_42696e64696e6773_call16(C.uintptr_t(address), p0, _BindingsRecord2ToC(p1)))
+		c1 := _BindingsRecord2ToC(p1)
+		result = _BindingsRecord2FromC(C.dylib_go_42696e64696e6773_call16(C.uintptr_t(address), p0, &c1))
 		return nil
 	})
 	return result, err
@@ -1471,7 +1487,8 @@ func (b *Bindings) Gap_pointer(p0 BindingsRecord3) (result unsafe.Pointer, err e
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol17.WithAddress(func(address uintptr) error {
-		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call17(C.uintptr_t(address), _BindingsRecord3ToC(p0)))
+		c0 := _BindingsRecord3ToC(p0)
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call17(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err

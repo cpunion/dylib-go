@@ -12,14 +12,15 @@ import (
 // the cgo boundary, so their padding/alignment need not match Go storage.
 type cgoTypes struct {
 	*directTypes
-	cPrefix     string
-	windows     bool
-	msLayout    bool
-	ms386       bool
-	gnuPacking  bool
-	gnuAMD64    bool
-	pointerSize int
-	transports  map[int]bool
+	cPrefix          string
+	windows          bool
+	msLayout         bool
+	ms386            bool
+	gnuPacking       bool
+	gnuAMD64         bool
+	pointerTransport bool
+	pointerSize      int
+	transports       map[int]bool
 }
 
 func (t *cgoTypes) recordIndex(description abi.TypeDesc) (int, error) {

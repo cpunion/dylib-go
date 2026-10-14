@@ -315,8 +315,8 @@ root alignment. Simply deleting it can change i386 floating-argument expansion
 or AMD64 integer coercion; adding integer padding can change SysV register classes.
 Clang also retains an outer zero-width declaration where needed to preserve
 its trailing integer coercion width; GCC retains the capped inner declaration.
-On SysV AMD64, generated Go/C helpers receive a temporary transport address and
-construct the by-value native argument inside C. This keeps aggregate register
+On ARM64 and SysV AMD64, generated Go/C helpers receive a temporary transport
+address and construct the by-value native argument inside C. This keeps aggregate register
 allocation and stack slots under the C compiler, including register exhaustion.
 The public Go method still takes a value. Standard cgo may allocate this temporary
 when escape analysis requires it; no transport address is retained by the helper.
