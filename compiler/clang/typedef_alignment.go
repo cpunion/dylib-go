@@ -8,7 +8,7 @@ import (
 	"github.com/cpunion/dylib-go/abi"
 )
 
-// TypedefFieldAlignment preserves an aligned scalar/native-address or fixed-array
+// TypedefFieldAlignment preserves an aligned scalar/native-address, record or fixed-array
 // alias and the compiler-observed placement of a named member. Windows
 // compilers can ignore a lowered alias alignment differently for different types.
 type TypedefFieldAlignment struct {
@@ -73,10 +73,8 @@ func (r *typeResolver) typedefAlignments(spelling string, depth int) ([]TypedefF
 				return nil, err
 			}
 		}
-		if base.Kind != "BuiltinType" && base.Kind != "EnumType" && base.Kind != "PointerType" {
-			if arrayDepth == 0 || base.Kind != "RecordType" {
-				return nil, fmt.Errorf("unsupported typedef attribute AlignedAttr on %s: requires a scalar, pointer or fixed array", spelling)
-			}
+		if base.Kind != "BuiltinType" && base.Kind != "EnumType" && base.Kind != "PointerType" && base.Kind != "RecordType" {
+			return nil, fmt.Errorf("unsupported typedef attribute AlignedAttr on %s: requires a scalar, pointer, record or fixed array", spelling)
 		}
 		alignment, err := r.recordAlignment(child)
 		if err != nil {
@@ -127,8 +125,8 @@ func validateFieldTypeAlignments(r Record, complete bool) error {
 			arrayDepth++
 			d = *d.Elem
 		}
-		if field.ArrayDepth > arrayDepth || field.ArrayDepth == 0 && d.Type == abi.Struct || d.Type == abi.Void || d.Elem != nil {
-			return fmt.Errorf("clang: typedef field alignment requires a scalar/native-address leaf or fixed array in %s", r.Name)
+		if field.ArrayDepth > arrayDepth || d.Type == abi.Void || d.Elem != nil {
+			return fmt.Errorf("clang: typedef field alignment requires a scalar/native-address/record leaf or fixed array in %s", r.Name)
 		}
 		if !validAlignment(field.StorageAlignment) || field.Position == previous && field.StorageAlignment != previousStorage || complete && (field.StorageAlignment == 0 || field.StorageAlignment > r.Layout.Alignment || r.Layout.Offsets[field.Position]%field.StorageAlignment != 0) {
 			return fmt.Errorf("clang: invalid typedef member storage alignment in %s", r.Name)

@@ -278,6 +278,9 @@ func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 		if err := header.probeRecordABI(ctx, compiler, path, flags); err != nil {
 			return nil, err
 		}
+		if err := header.probeRecordTypedefABI(ctx, compiler, path, flags); err != nil {
+			return nil, err
+		}
 	}
 	if err := ctx.Err(); err != nil {
 		return nil, err

@@ -54,6 +54,13 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 				fmt.Fprintf(&output, "%d,", offset)
 			}
 			fmt.Fprint(&output, "}}")
+			if len(record.TypedefAlignments) != 0 {
+				fmt.Fprint(&output, ",TypedefAlignments:[]clang.RecordTypedefAlignment{")
+				for _, alias := range record.TypedefAlignments {
+					fmt.Fprintf(&output, "{Name:%q,Aligned:%d},", alias.Name, alias.Aligned)
+				}
+				fmt.Fprint(&output, "}")
+			}
 			if record.Packed {
 				fmt.Fprint(&output, ",Packed:true")
 			}
