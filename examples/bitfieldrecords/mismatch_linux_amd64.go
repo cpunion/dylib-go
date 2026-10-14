@@ -74,8 +74,8 @@ result.f5 = value.f5;
 return result;
 }
 typedef dylib_go_42616442696e64696e6773_record0 (*dylib_go_42616442696e64696e6773_call0_function)(dylib_go_42616442696e64696e6773_record0);
-static dylib_go_42616442696e64696e6773_record0_transport dylib_go_42616442696e64696e6773_call0(uintptr_t address,dylib_go_42616442696e64696e6773_record0_transport p0) {
-return dylib_go_42616442696e64696e6773_record0_to_transport(((dylib_go_42616442696e64696e6773_call0_function)address)(dylib_go_42616442696e64696e6773_record0_from_transport(p0)));
+static dylib_go_42616442696e64696e6773_record0_transport dylib_go_42616442696e64696e6773_call0(uintptr_t address,const dylib_go_42616442696e64696e6773_record0_transport *p0) {
+return dylib_go_42616442696e64696e6773_record0_to_transport(((dylib_go_42616442696e64696e6773_call0_function)address)(dylib_go_42616442696e64696e6773_record0_from_transport(*p0)));
 }
 */
 import "C"
@@ -161,7 +161,8 @@ func (b *BadBindings) Echo_bits(p0 BadBindingsRecord0) (result BadBindingsRecord
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol0.WithAddress(func(address uintptr) error {
-		result = _BadBindingsRecord0FromC(C.dylib_go_42616442696e64696e6773_call0(C.uintptr_t(address), _BadBindingsRecord0ToC(p0)))
+		c0 := _BadBindingsRecord0ToC(p0)
+		result = _BadBindingsRecord0FromC(C.dylib_go_42616442696e64696e6773_call0(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
