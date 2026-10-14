@@ -10,7 +10,7 @@ import (
 	"github.com/cpunion/dylib-go/abi"
 )
 
-var bitfieldTypedefFunctions = []string{"echo_low", "echo_high", "echo_low_wide", "echo_high_wide", "echo_down", "echo_shared", "echo_float", "echo_packed", "echo_pragma", "echo_maximum", "echo_choice", "echo_envelope", "echo_member", "echo_member_packed", "echo_boundary", "echo_padding"}
+var bitfieldTypedefFunctions = []string{"echo_low", "echo_high", "echo_low_wide", "echo_high_wide", "echo_down", "echo_shared", "echo_float", "echo_packed", "echo_pragma", "echo_maximum", "echo_choice", "echo_envelope", "echo_member", "echo_member_packed", "echo_boundary", "echo_padding", "echo_packed_parent"}
 
 func bitfieldTypedefFixture(t *testing.T) string {
 	t.Helper()
@@ -172,4 +172,18 @@ Boundary f(Boundary); SharedPadding g(SharedPadding); AlignedBoundary h(AlignedB
 		producers = append(producers, target.triple)
 	}
 	testCompilerBridgeTargets(t, typedefCompilerTool(t), source, nil, producers, "f", "g", "h")
+}
+
+func TestBitfieldTypedefPackedParent(t *testing.T) {
+	source := `typedef unsigned High __attribute__((aligned(16)));
+typedef struct __attribute__((packed)) { char tag; High bits:31; short tail; } Packed;
+#pragma pack(push,1)
+typedef struct { char parent_tag; Packed child; char parent_tail; } Parent;
+#pragma pack(pop)
+Packed f(Packed); Parent g(Parent);`
+	var producers []string
+	for _, target := range targets {
+		producers = append(producers, target.triple)
+	}
+	testCompilerBridgeTargets(t, typedefCompilerTool(t), source, nil, producers, "f", "g")
 }

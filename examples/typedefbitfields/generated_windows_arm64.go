@@ -356,7 +356,11 @@ result.f1 = value.f1;
 result.f2 = value.f2;
 return result;
 }
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+#if defined(_WIN32) && !defined(_MSC_VER)
+__attribute__((aligned(16)))
+#endif
+{
 int8_t f0;
 uint32_t f1:31 __attribute__((aligned(16)));
 int16_t f2;
@@ -811,6 +815,50 @@ result.f1 = value.f1;
 result.f2 = value.f2;
 return result;
 }
+#if defined(_WIN32) && !defined(_MSC_VER)
+typedef struct {
+int8_t f0 __attribute__((aligned(1)));
+dylib_go_42696e64696e6773_record7 f1 __attribute__((packed,aligned(1)));
+int8_t f2 __attribute__((aligned(1)));
+} dylib_go_42696e64696e6773_record16;
+#else
+#pragma pack(push,1)
+typedef struct {
+int8_t f0;
+dylib_go_42696e64696e6773_record7 f1;
+int8_t f2;
+} dylib_go_42696e64696e6773_record16;
+#pragma pack(pop)
+#endif
+static uint64_t dylib_go_42696e64696e6773_record16_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record16);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record16);
+case 2:return offsetof(dylib_go_42696e64696e6773_record16,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record16,f1);
+case 4:return offsetof(dylib_go_42696e64696e6773_record16,f2);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+dylib_go_42696e64696e6773_record7_transport f1;
+int8_t f2;
+} dylib_go_42696e64696e6773_record16_transport;
+static dylib_go_42696e64696e6773_record16 dylib_go_42696e64696e6773_record16_from_transport(dylib_go_42696e64696e6773_record16_transport value) {
+dylib_go_42696e64696e6773_record16 result = {0};
+result.f0 = value.f0;
+result.f1 = dylib_go_42696e64696e6773_record7_from_transport(value.f1);
+result.f2 = value.f2;
+return result;
+}
+static dylib_go_42696e64696e6773_record16_transport dylib_go_42696e64696e6773_record16_to_transport(dylib_go_42696e64696e6773_record16 value) {
+dylib_go_42696e64696e6773_record16_transport result = {0};
+result.f0 = value.f0;
+result.f1 = dylib_go_42696e64696e6773_record7_to_transport(value.f1);
+result.f2 = value.f2;
+return result;
+}
 typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call0_function)(dylib_go_42696e64696e6773_record0);
 static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call0(uintptr_t address,dylib_go_42696e64696e6773_record0_transport p0) {
 return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call0_function)address)(dylib_go_42696e64696e6773_record0_from_transport(p0)));
@@ -909,6 +957,10 @@ typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call23_fu
 static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call23(uintptr_t address,dylib_go_42696e64696e6773_record15_transport p0) {
 return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call23_function)address)(dylib_go_42696e64696e6773_record15_from_transport(p0)));
 }
+typedef dylib_go_42696e64696e6773_record16 (*dylib_go_42696e64696e6773_call24_function)(dylib_go_42696e64696e6773_record16);
+static dylib_go_42696e64696e6773_record16_transport dylib_go_42696e64696e6773_call24(uintptr_t address,dylib_go_42696e64696e6773_record16_transport p0) {
+return dylib_go_42696e64696e6773_record16_to_transport(((dylib_go_42696e64696e6773_call24_function)address)(dylib_go_42696e64696e6773_record16_from_transport(p0)));
+}
 */
 import "C"
 
@@ -948,6 +1000,7 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "echo_member_packed", Symbol: "echo_member_packed", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "member_packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "member_packed_bits", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "member_packed_tail", Type: abi.TypeDesc{Type: abi.I16}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "member_packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "member_packed_bits", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "member_packed_tail", Type: abi.TypeDesc{Type: abi.I16}}}}}},
 		{Name: "echo_boundary", Symbol: "echo_boundary", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "boundary_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "boundary_bits", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "boundary_tail", Type: abi.TypeDesc{Type: abi.I8}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "boundary_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "boundary_bits", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "boundary_tail", Type: abi.TypeDesc{Type: abi.I8}}}}}},
 		{Name: "echo_padding", Symbol: "echo_padding", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "padding_first", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "padding_next", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "padding_tail", Type: abi.TypeDesc{Type: abi.I8}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "padding_first", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "padding_next", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "padding_tail", Type: abi.TypeDesc{Type: abi.I8}}}}}},
+		{Name: "echo_packed_parent", Symbol: "echo_packed_parent", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_parent_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_parent_child", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_bits", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I16}}}}}, {Name: "packed_parent_tail", Type: abi.TypeDesc{Type: abi.I8}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_parent_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_parent_child", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_bits", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I16}}}}}, {Name: "packed_parent_tail", Type: abi.TypeDesc{Type: abi.I8}}}}}},
 	},
 	Records: []clang.Record{
 		{Name: "LowTiny", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "low_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "low_bits", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "low_tail", Type: abi.TypeDesc{Type: abi.I8}}}}, Layout: abi.Layout{Size: 12, Alignment: 4, Offsets: []uint64{0, 4, 8}}, Bitfields: []clang.Bitfield{{Position: 1, Width: 3, TypeAlignment: 1, StorageAlignment: 4, Mask: []byte{7}}}},
@@ -966,6 +1019,7 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "MemberPacked", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "member_packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "member_packed_bits", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "member_packed_tail", Type: abi.TypeDesc{Type: abi.I16}}}}, Layout: abi.Layout{Size: 32, Alignment: 16, Offsets: []uint64{0, 16, 20}}, PackedFields: []int{1}, Bitfields: []clang.Bitfield{{Position: 1, Width: 31, TypeAlignment: 16, StorageAlignment: 16, Mask: []byte{255, 255, 255, 127}}}},
 		{Name: "Boundary", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "boundary_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "boundary_bits", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "boundary_tail", Type: abi.TypeDesc{Type: abi.I8}}}}, Layout: abi.Layout{Size: 32, Alignment: 16, Offsets: []uint64{0, 16, 24}}, Bitfields: []clang.Bitfield{{Position: 1, Width: 3, TypeAlignment: 16, StorageAlignment: 16, Mask: []byte{7}}}, Padding: []clang.BitfieldPadding{{Before: 2, Type: abi.Type(2), Width: 0, Offset: 24, Aligned: 8}}},
 		{Name: "SharedPadding", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "padding_first", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "padding_next", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "padding_tail", Type: abi.TypeDesc{Type: abi.I8}}}}, Layout: abi.Layout{Size: 32, Alignment: 16, Offsets: []uint64{0, 16, 20}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, TypeAlignment: 1, StorageAlignment: 4, Mask: []byte{7}}, {Position: 1, Width: 31, TypeAlignment: 16, StorageAlignment: 16, Mask: []byte{255, 255, 255, 127}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 5, Offset: 0}}},
+		{Name: "PackedParent", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_parent_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_parent_child", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_bits", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I16}}}}}, {Name: "packed_parent_tail", Type: abi.TypeDesc{Type: abi.I8}}}}, Layout: abi.Layout{Size: 34, Alignment: 1, Offsets: []uint64{0, 1, 33}}, MaxFieldAlignment: 1, MemberAlignments: []uint64{1, 1, 1}},
 	},
 }
 
@@ -1113,6 +1167,15 @@ type BindingsRecord15 struct {
 	Padding_first uint32
 	Padding_next  uint32
 	Padding_tail  int8
+}
+
+// BindingsRecord16 describes PackedParent; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord16 struct {
+	Packed_parent_tag   int8
+	Packed_parent_child BindingsRecord7
+	Packed_parent_tail  int8
 }
 
 func _BindingsRecord0ToC(value BindingsRecord0) (result C.dylib_go_42696e64696e6773_record0_transport) {
@@ -1347,6 +1410,20 @@ func _BindingsRecord15FromC(value C.dylib_go_42696e64696e6773_record15_transport
 	return result
 }
 
+func _BindingsRecord16ToC(value BindingsRecord16) (result C.dylib_go_42696e64696e6773_record16_transport) {
+	result.f0 = C.int8_t(value.Packed_parent_tag)
+	result.f1 = _BindingsRecord7ToC(value.Packed_parent_child)
+	result.f2 = C.int8_t(value.Packed_parent_tail)
+	return result
+}
+
+func _BindingsRecord16FromC(value C.dylib_go_42696e64696e6773_record16_transport) (result BindingsRecord16) {
+	result.Packed_parent_tag = int8(value.f0)
+	result.Packed_parent_child = _BindingsRecord7FromC(value.f1)
+	result.Packed_parent_tail = int8(value.f2)
+	return result
+}
+
 // Bindings retains symbol handles; its caller owns the Session.
 type Bindings struct {
 	symbol0  *dylib.Symbol
@@ -1373,6 +1450,7 @@ type Bindings struct {
 	symbol21 *dylib.Symbol
 	symbol22 *dylib.Symbol
 	symbol23 *dylib.Symbol
+	symbol24 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -1431,6 +1509,9 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 	}
 	if uint64(C.dylib_go_42696e64696e6773_record15_layout(0)) != 32 || uint64(C.dylib_go_42696e64696e6773_record15_layout(1)) != 16 || uint64(C.dylib_go_42696e64696e6773_record15_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record15_layout(3)) != 16 || uint64(C.dylib_go_42696e64696e6773_record15_layout(4)) != 20 || uint64(C.dylib_go_42696e64696e6773_record15_mask(0, 0)) != 7 || uint64(C.dylib_go_42696e64696e6773_record15_mask(1, 16)) != 255 || uint64(C.dylib_go_42696e64696e6773_record15_mask(1, 17)) != 255 || uint64(C.dylib_go_42696e64696e6773_record15_mask(1, 18)) != 255 || uint64(C.dylib_go_42696e64696e6773_record15_mask(1, 19)) != 127 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for SharedPadding")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record16_layout(0)) != 34 || uint64(C.dylib_go_42696e64696e6773_record16_layout(1)) != 1 || uint64(C.dylib_go_42696e64696e6773_record16_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record16_layout(3)) != 1 || uint64(C.dylib_go_42696e64696e6773_record16_layout(4)) != 33 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PackedParent")
 	}
 	symbol0, err := session.Resolve("echo_low")
 	if err != nil {
@@ -1552,6 +1633,11 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol23 = symbol23
+	symbol24, err := session.Resolve("echo_packed_parent")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol24 = symbol24
 	return b, nil
 }
 
@@ -1814,6 +1900,17 @@ func (b *Bindings) Echo_padding(p0 BindingsRecord15) (result BindingsRecord15, e
 	}
 	err = b.symbol23.WithAddress(func(address uintptr) error {
 		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call23(C.uintptr_t(address), _BindingsRecord15ToC(p0)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_packed_parent(p0 BindingsRecord16) (result BindingsRecord16, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol24.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord16FromC(C.dylib_go_42696e64696e6773_call24(C.uintptr_t(address), _BindingsRecord16ToC(p0)))
 		return nil
 	})
 	return result, err

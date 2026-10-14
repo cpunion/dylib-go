@@ -18,3 +18,4 @@ HighWide read_high(HighWide *v){return *v;}
 HighTiny shifted_high(int marker,HighTiny v){v.high_tag+=marker;return v;}
 ECHO(Member,echo_member) ECHO(MemberPacked,echo_member_packed)
 ECHO(Boundary,echo_boundary) ECHO(SharedPadding,echo_padding)
+ECHO(PackedParent,echo_packed_parent)

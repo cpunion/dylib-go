@@ -39,7 +39,7 @@ func TestTypedefBitfieldCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_low", "echo_high", "echo_low_wide", "echo_high_wide", "echo_down", "echo_shared", "echo_float", "echo_packed", "echo_pragma", "echo_maximum", "echo_choice", "echo_envelope", "float_variadic", "high_variadic", "float_factory", "forward_float", "high_pointer", "mutate_high", "read_high", "shifted_high", "echo_member", "echo_member_packed", "echo_boundary", "echo_padding"}
+	names := []string{"echo_low", "echo_high", "echo_low_wide", "echo_high_wide", "echo_down", "echo_shared", "echo_float", "echo_packed", "echo_pragma", "echo_maximum", "echo_choice", "echo_envelope", "float_variadic", "high_variadic", "float_factory", "forward_float", "high_pointer", "mutate_high", "read_high", "shifted_high", "echo_member", "echo_member_packed", "echo_boundary", "echo_padding", "echo_packed_parent"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -216,4 +216,7 @@ func checkCalls(t *testing.T, path string) {
 	padding := BindingsRecord15{Padding_first: 7, Padding_next: 0x7fffffff, Padding_tail: -123}
 	v15, err := b.Echo_padding(padding)
 	check(v15, padding, err)
+	packedParent := BindingsRecord16{Packed_parent_tag: -7, Packed_parent_child: packed, Packed_parent_tail: 42}
+	v16, err := b.Echo_packed_parent(packedParent)
+	check(v16, packedParent, err)
 }

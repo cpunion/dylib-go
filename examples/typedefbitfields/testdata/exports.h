@@ -36,3 +36,7 @@ Member echo_member(Member); MemberPacked echo_member_packed(MemberPacked);
 typedef struct { signed char boundary_tag; UIntHigh boundary_bits:3; unsigned :0 __attribute__((aligned(8))); signed char boundary_tail; } Boundary;
 typedef struct { UIntLow padding_first:3; unsigned :5; UIntHigh padding_next:31; signed char padding_tail; } SharedPadding;
 Boundary echo_boundary(Boundary); SharedPadding echo_padding(SharedPadding);
+#pragma pack(push,1)
+typedef struct { signed char packed_parent_tag; Packed packed_parent_child; signed char packed_parent_tail; } PackedParent;
+#pragma pack(pop)
+PackedParent echo_packed_parent(PackedParent);

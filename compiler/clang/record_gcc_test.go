@@ -15,9 +15,6 @@ import (
 
 func testCompilerRecordGCCBridge(t *testing.T, compiler, source string, names []string) {
 	t.Helper()
-	if runtime.GOOS == "windows" {
-		t.Skip("MS layout has separate MinGW bridge coverage")
-	}
 	candidates := []string{"gcc"}
 	if fc := os.Getenv("DYLIB_FC"); strings.Contains(filepath.Base(fc), "gfortran") {
 		candidates = append(candidates, filepath.Join(filepath.Dir(fc), strings.Replace(filepath.Base(fc), "gfortran", "gcc", 1)))

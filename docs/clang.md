@@ -272,6 +272,9 @@ attributes and the measured record alignment. MSVC probes reconstruct the
 original base typedef to observe active allocation-unit starts; MinGW bridges
 preserve their alignment even inside packed units. Generated constructors
 validate sizes, alignments, offsets and byte masks before binding symbols.
+MinGW facades also restore the measured alignment of packed records because GCC
+can suppress an aligned unit's contribution to record alignment. MSVC retains
+its natural alignment so that an enclosing packing pragma can cap it.
 
 On Linux AArch64, natural 16-byte alignment can require an even general-register
 pair for a small record argument. Explicit record alignment alone does not

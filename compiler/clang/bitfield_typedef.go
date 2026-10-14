@@ -19,8 +19,16 @@ func (r Record) hasBitfieldTypedefs() bool {
 func (t *cgoTypes) nativeAttributes(r Record) string {
 	// MS unit attributes already preserve natural record alignment. Adding a
 	// record-level request there would incorrectly bypass a parent's packing cap.
-	if t.gnuPacking && r.hasBitfieldTypedefs() && r.Layout.Alignment > r.Aligned {
-		r.Aligned = r.Layout.Alignment
+	if r.hasBitfieldTypedefs() && r.Layout.Alignment > r.Aligned {
+		if t.msLayout && r.Packed {
+			// GCC keeps the aligned unit offset but suppresses its contribution
+			// to packed record alignment. MSVC needs the original natural
+			// alignment so that enclosing pragma-packed records can cap it.
+			return r.cAttributes() + fmt.Sprintf("\n#if defined(_WIN32) && !defined(_MSC_VER)\n__attribute__((aligned(%d)))\n#endif\n", r.Layout.Alignment)
+		}
+		if t.gnuPacking {
+			r.Aligned = r.Layout.Alignment
+		}
 	}
 	return r.cAttributes()
 }
