@@ -1,4 +1,7 @@
 #include "exports.h"
+#if defined(_MSC_VER)
+int _fltused=0x9875;
+#endif
 #define ECHO(T,name) T name(T v) { return v; }
 ECHO(Plain,echo_plain) ECHO(High,echo_high) ECHO(Low,echo_low) ECHO(Inherited,echo_inherited)
 ECHO(WideHigh,echo_wide) ECHO(WideLow,echo_wide_low) ECHO(FloatHigh,echo_float) ECHO(FloatLow,echo_float_low)
