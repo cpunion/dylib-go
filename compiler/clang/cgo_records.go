@@ -207,9 +207,12 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 		}
 		prefixPadding := t.gnuPrefixPadding(record)
-		if t.gnuAMD64 && record.MaxFieldAlignment != 0 && record.Layout.Size <= 16 && t.sysVAlignedRecord(record, 0) {
+		if t.gnuAMD64 && (record.MaxFieldAlignment != 0 || record.hasBitfieldTypedefs()) && record.Layout.Size <= 16 && t.sysVAlignedRecord(record, 0) {
 			for index, padding := range record.Padding {
-				if padding.Width == 0 && padding.Aligned > record.MaxFieldAlignment && padding.Aligned > record.Layout.Alignment && padding.Gap != 0 && (!tailPadding || padding.Before != len(record.Description.Fields)) && !prefixPadding[index] {
+				if padding.Width != 0 && padding.TypeAlignment != 0 && padding.Gap != 0 && hasFloatingFields(record.Description) {
+					return fmt.Errorf("clang: GNU AMD64 small unnamed typedef gaps in %s require an implicit-padding C bridge", record.Name)
+				}
+				if padding.Width == 0 && (padding.TypeAlignment != 0 || padding.Aligned > record.MaxFieldAlignment) && padding.requestedAlignment() > record.Layout.Alignment && padding.Gap != 0 && (!tailPadding || padding.Before != len(record.Description.Fields)) && !prefixPadding[index] {
 					return fmt.Errorf("clang: GNU AMD64 small zero-width gaps in %s require an implicit-padding C bridge", record.Name)
 				}
 			}
@@ -244,8 +247,15 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 			fmt.Fprint(output, "#else\n")
 		}
-		if record.MaxFieldAlignment != 0 {
-			fmt.Fprintf(output, "#pragma pack(push,%d)\n", record.MaxFieldAlignment)
+		bridgePacking := record.MaxFieldAlignment
+		if t.gnuPacking && record.hasPaddingTypedefs() && bridgePacking > record.Layout.Alignment {
+			bridgePacking = record.Layout.Alignment
+		}
+		if len(prefixPadding) != 0 && bridgePacking == 0 {
+			bridgePacking = record.Layout.Alignment
+		}
+		if bridgePacking != 0 {
+			fmt.Fprintf(output, "#pragma pack(push,%d)\n", bridgePacking)
 		}
 		// MinGW ignores a record's packed attribute for MS-layout bitfields.
 		// Preserve the packed allocation units with a scoped pragma. Explicit
@@ -293,17 +303,36 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 						}
 					} else {
 						alignment = record.Padding[member.padding].Aligned
+						if record.Padding[member.padding].StorageAlignment > alignment {
+							alignment = record.Padding[member.padding].StorageAlignment
+						}
 					}
 					beginPackedBitfieldUnit(output, alignment)
 				}
 			}
 			if member.padding >= 0 {
-				p := record.Padding[member.padding]
+				p := t.nativePadding(record.Padding[member.padding])
 				if tailPadding && p.Width != 0 && p.Before == len(record.Description.Fields) {
 					continue
 				}
 				if prefixPadding[member.padding] {
 					fmt.Fprint(output, "};\n")
+				}
+				if t.gnuPacking && p.TypeAlignment != 0 && (p.Width == 0 || p.Gap != 0) {
+					gap := p.Gap
+					if prefixPadding[member.padding] || tailPadding && p.Before == len(record.Description.Fields) {
+						gap = 0
+					}
+					writeGNUPragmaBoundary(output, gap)
+					if p.Width == 0 {
+						// Retain the base zero-width declaration when its natural
+						// boundary already fits; it can affect SysV coercion width.
+						natural := uint64(bitfieldTypeBits(p.Type) / 8)
+						if t.gnuAMD64 && natural != 0 && p.Offset%natural == 0 {
+							fmt.Fprintf(output, "%s :0;\n", bitfieldBaseType(p.Type))
+						}
+						continue
+					}
 				}
 				if t.gnuPacking && record.MaxFieldAlignment != 0 && p.Aligned > record.MaxFieldAlignment && (p.Width != 0 || p.Aligned > record.Layout.Alignment) {
 					if p.Width == 0 {
@@ -378,7 +407,7 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		if tailPadding {
 			fmt.Fprintf(output, "typedef %s %s __attribute__((aligned(%d)));\n", bodyName, name, record.Layout.Alignment)
 		}
-		if record.MaxFieldAlignment != 0 {
+		if bridgePacking != 0 {
 			fmt.Fprint(output, "#pragma pack(pop)\n")
 		}
 		if packedBits {

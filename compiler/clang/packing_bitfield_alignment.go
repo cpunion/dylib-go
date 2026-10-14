@@ -17,7 +17,7 @@ func (h *Header) bitfieldAlignmentProbes() (declarations, constants string) {
 		if (r.MaxFieldAlignment == 0 && !r.hasBitfieldTypedefs()) || !r.hasBitfields() {
 			continue
 		}
-		aliases, kinds := r.bitfieldTypedefProbes(fmt.Sprintf("dylib_record_%d_bittypedef", i))
+		aliases, kinds, paddingKinds := r.bitfieldTypedefProbes(fmt.Sprintf("dylib_record_%d_bittypedef", i))
 		types.WriteString(aliases)
 		fmt.Fprintf(&types, "#pragma pack(push,%d)\n", r.MaxFieldAlignment)
 		members := recordMembers(r)
@@ -31,6 +31,9 @@ func (h *Header) bitfieldAlignmentProbes() (declarations, constants string) {
 			if member.padding >= 0 {
 				p := r.Padding[member.padding]
 				kind, width, attributes = bitfieldBaseType(p.Type), p.Width, p.cAttributes()
+				if alias := paddingKinds[member.padding]; alias != "" {
+					kind = alias
+				}
 				key = fmt.Sprintf("dylib_record_%d_paddingalign_%d", i, member.padding)
 			} else {
 				j := member.field

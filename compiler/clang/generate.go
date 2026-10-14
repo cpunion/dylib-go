@@ -129,6 +129,9 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 					if field.Aligned != 0 {
 						fmt.Fprintf(&output, ",Aligned:%d", field.Aligned)
 					}
+					if field.TypeAlignment != 0 {
+						fmt.Fprintf(&output, ",TypeAlignment:%d", field.TypeAlignment)
+					}
 					if field.StorageAlignment != 0 {
 						fmt.Fprintf(&output, ",StorageAlignment:%d", field.StorageAlignment)
 					}

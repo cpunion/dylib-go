@@ -24,7 +24,7 @@ func (t *cgoTypes) writePackedPadding(output *bytes.Buffer, index int) error {
 	padding := 0
 	for j := 0; j <= len(r.Description.Fields); j++ {
 		for padding < len(r.Padding) && r.Padding[padding].Before == j {
-			p := r.Padding[padding]
+			p := t.nativePadding(r.Padding[padding])
 			if p.Width != 0 && p.Aligned != 0 && paddingStarts[padding] {
 				// MinGW's packing pragma suppresses this request. Reproduce
 				// the original bit position measured from a compiler constant.

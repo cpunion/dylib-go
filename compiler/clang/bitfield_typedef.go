@@ -11,6 +11,15 @@ func (r Record) hasBitfieldTypedefs() bool {
 			return true
 		}
 	}
+	return r.hasPaddingTypedefs()
+}
+
+func (r Record) hasPaddingTypedefs() bool {
+	for _, padding := range r.Padding {
+		if padding.TypeAlignment != 0 {
+			return true
+		}
+	}
 	return false
 }
 
@@ -35,9 +44,10 @@ func (t *cgoTypes) nativeAttributes(r Record) string {
 
 // Original-layout probes need typedef attributes on the base type, not on the
 // member. MSVC also ignores some lowered requests and shared-unit requests.
-func (r Record) bitfieldTypedefProbes(prefix string) (string, map[int]string) {
+func (r Record) bitfieldTypedefProbes(prefix string) (string, map[int]string, map[int]string) {
 	var types strings.Builder
 	kinds := make(map[int]string)
+	paddingKinds := make(map[int]string)
 	for _, bit := range r.Bitfields {
 		if bit.TypeAlignment == 0 {
 			continue
@@ -47,7 +57,15 @@ func (r Record) bitfieldTypedefProbes(prefix string) (string, map[int]string) {
 		fmt.Fprintf(&types, "typedef %s %s __attribute__((aligned(%d)));\n", kind, name, bit.TypeAlignment)
 		kinds[bit.Position] = name
 	}
-	return types.String(), kinds
+	for i, padding := range r.Padding {
+		if padding.TypeAlignment == 0 {
+			continue
+		}
+		name := fmt.Sprintf("%s_padding%d", prefix, i)
+		fmt.Fprintf(&types, "typedef %s %s __attribute__((aligned(%d)));\n", bitfieldBaseType(padding.Type), name, padding.TypeAlignment)
+		paddingKinds[i] = name
+	}
+	return types.String(), kinds, paddingKinds
 }
 
 // A POSIX short field can remain inside the preceding allocation unit even
@@ -74,4 +92,24 @@ func (h *Header) reconcileBitfieldTypedefs(r *Record) {
 		}
 		bit.StorageAlignment = alignment
 	}
+}
+
+// C bridges use canonical integral bases and independently preserve GNU
+// bit positions/root alignment. MS layout uses the producer's observed request
+// at an active allocation-unit start.
+func (t *cgoTypes) nativePadding(p BitfieldPadding) BitfieldPadding {
+	if p.TypeAlignment == 0 {
+		return p
+	}
+	if t.msLayout {
+		if p.StorageAlignment > p.Aligned {
+			p.Aligned = p.StorageAlignment
+		}
+	} else if t.gnuPacking {
+		// GCC can raise alignment from an unnamed base where Clang does not.
+		// Preserve positions with observed byte gaps and root alignment instead.
+		p.Packed = p.Packed || p.Width != 0
+		p.Aligned = 0
+	}
+	return p
 }

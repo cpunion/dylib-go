@@ -1,0 +1,52 @@
+typedef unsigned UIntLow __attribute__((aligned(1)));
+typedef UIntLow LowChain;
+typedef unsigned UIntHigh __attribute__((aligned(16)));
+typedef UIntHigh UIntDown __attribute__((aligned(2)));
+typedef unsigned UIntHigher __attribute__((aligned(32)));
+typedef unsigned UIntMaximum __attribute__((aligned));
+typedef unsigned UIntEight __attribute__((aligned(8)));
+typedef _Bool BoolLow __attribute__((aligned(1)));
+enum Choice { choice_min=-1, choice_max=1 };
+typedef enum Choice ChoiceHigh __attribute__((aligned(16)));
+typedef struct { signed char low_tag; LowChain :3; signed char low_tail; } LowTiny;
+typedef struct { signed char high_tag; UIntHigh :3; signed char high_tail; } HighTiny;
+typedef struct { signed char low_wide_tag; UIntLow :31; signed char low_wide_tail; } LowWide;
+typedef struct { signed char high_wide_tag; UIntHigh :31; signed char high_wide_tail; } HighWide;
+typedef struct { signed char zero_tag; UIntHigh :0; signed char zero_tail; } Zero;
+typedef struct { signed char active_tag; UIntLow active_bits:3; UIntHigh :0; signed char active_tail; } Active;
+typedef struct { signed char zero_low_tag; UIntLow :0; signed char zero_low_tail; } ZeroLow;
+typedef struct { UIntLow shared_bits:3; UIntHigh :5; UIntHigher shared_next:31; signed char shared_tail; } Shared;
+typedef struct { signed char float_tag; UIntHigh :3; double float_real; } FloatRecord;
+typedef struct __attribute__((packed)) { signed char packed_tag; UIntHigh :31; short packed_tail; } Packed;
+#pragma pack(push,2)
+typedef struct { signed char pragma_tag; UIntHigh :31; UIntHigh :0; signed char pragma_tail; } Pragma;
+#pragma pack(pop)
+typedef struct { signed char max_tag; UIntMaximum :3; signed char max_tail; } Maximum;
+typedef struct { BoolLow :1; ChoiceHigh :2; signed char choice_tail; } ChoiceRecord;
+typedef struct { signed char envelope_tag; HighTiny envelope_items[2]; ZeroLow envelope_low; } Envelope;
+typedef struct { signed char member_tag; UIntHigh :31 __attribute__((packed,aligned(8))); short member_tail; } MemberPacked;
+typedef struct { float small_value; UIntEight :0; signed char small_tail; } SmallZero;
+typedef struct { float tail_value; UIntLow :3; } TailFloat;
+LowTiny echo_low(LowTiny); HighTiny echo_high(HighTiny); LowWide echo_low_wide(LowWide); HighWide echo_high_wide(HighWide);
+Zero echo_zero(Zero); Active echo_active(Active); ZeroLow echo_zero_low(ZeroLow); Shared echo_shared(Shared);
+FloatRecord echo_float(FloatRecord); Packed echo_packed(Packed); Pragma echo_pragma(Pragma); Maximum echo_maximum(Maximum);
+ChoiceRecord echo_choice(ChoiceRecord); Envelope echo_envelope(Envelope); MemberPacked echo_member(MemberPacked);
+SmallZero echo_small(SmallZero); TailFloat echo_tail(TailFloat);
+int float_variadic(FloatRecord,...); int small_variadic(SmallZero,...);
+typedef FloatRecord (*FloatEntry)(FloatRecord);
+FloatEntry float_factory(void); FloatRecord forward_float(FloatEntry,FloatRecord);
+HighWide *high_pointer(HighWide); HighWide *mutate_high(HighWide *); HighWide read_high(HighWide *);
+HighTiny shifted_high(int,HighTiny);
+typedef struct { signed char down_tag; UIntDown :3; UIntDown :0; signed char down_tail; } Down;
+typedef struct { UIntLow consecutive_bits:3; UIntHigh :0; UIntLow :0; signed char consecutive_tail; UIntHigh :0; } Consecutive;
+#pragma pack(push,1)
+typedef struct { signed char parent_tag; Packed parent_child; signed char parent_tail; } PackedParent;
+#pragma pack(pop)
+typedef struct { signed char maximum_zero_tag; UIntMaximum :0; signed char maximum_zero_tail; } MaximumZero;
+typedef struct { UIntHigh :0; signed char leading_tag; signed char leading_tail; } Leading;
+Down echo_down(Down); Consecutive echo_consecutive(Consecutive); PackedParent echo_parent(PackedParent);
+MaximumZero echo_maximum_zero(MaximumZero); Leading echo_leading(Leading);
+SmallZero shifted_small(int,SmallZero);
+double small_overflow(double,double,double,double,double,double,double,double,SmallZero,double);
+typedef struct { signed char aligned_tag; UIntHigh :3 __attribute__((aligned(8))); signed char aligned_tail; } MemberAligned;
+MemberAligned echo_aligned(MemberAligned);

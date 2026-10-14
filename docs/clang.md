@@ -42,7 +42,7 @@ Run
 | Typedefs and ordinary qualifiers | Desugared/resolved, including integer and pointer aliases |
 | Scalar/enum/native-pointer typedef `aligned(N)` or omitted `aligned` | Scalar calls retain their ordinary ABI; record fields and scalar/native-address array leaves use compiler-validated C bridges, preserving raised/lowered alignment and alias chains |
 | Fixed-array typedef `aligned(N)` or omitted `aligned` | `CgoSource` preserves each array alias layer independently, including scalar/enum/record/native-address elements, nested aliases, lowered/raised alignment and packing combinations |
-| Named bitfields with an aligned scalar/enum typedef | Compiler-validated C bridges preserve effective allocation boundaries, record alignment and argument lowering; unnamed/zero-width aligned typedefs are rejected |
+| Named/unnamed/zero-width bitfields with an aligned scalar/enum typedef | Compiler-validated C bridges preserve effective allocation boundaries, record alignment and argument lowering; small GNU AMD64 gaps require a qualified implicit-padding facade |
 | Object/opaque pointers | Native addresses; no automatic pointee allocation, copying or ownership |
 | Ordinary structs, including anonymous typedef records | Arguments/results; compiler-evaluated layout checked against the native backend |
 | Structs with `#pragma pack` | `CgoSource` for Go/llgo; caps 1/2/4/8/16, over-aligned ordinary members/bitfield units/zero-width boundaries, nested records/arrays and native addresses/function-pointer fields |
@@ -252,8 +252,8 @@ decay to scalar pointers, variadic prefixes and provider-owned pointer mutation.
 Scalar or pointer typedef alignment alone does not change the scalar calling
 interface, so those boundary signatures also support `Session.Bind` and direct
 llgo adapters. Attributed record values still require C bridges. Aligned
-record typedefs and aligned unnamed typedef bitfields remain rejected; they
-need additional type identity and compiler ABI qualification. Unsupported
+record typedefs remain rejected; they need additional type identity and
+compiler ABI qualification. Unsupported
 attributes in an alias chain are rejected before generation. See GCC's
 [typedef alignment rules](https://gcc.gnu.org/onlinedocs/gcc-15.2.0/gcc/Common-Type-Attributes.html).
 
@@ -290,7 +290,29 @@ and variadic calls, preceding scalar/native-entry arguments, factories and
 producer-owned pointers with mutation/null checks. Compiler tests compare all
 eight target layouts, three Windows GNU producers, MSVC/MinGW bridges and
 LLVM argument/result shapes; GCC independently checks native layout and masks.
-Aligned unnamed/zero-width base typedefs remain rejected.
+Unnamed and zero-width base typedefs retain their own
+`BitfieldPadding.TypeAlignment`. The public Go record contains only named value
+fields. Prefix probes reconstruct the original typedefs, while compiler
+constants confirm positive-width bit positions, effective unit alignment and
+the byte gap before a moved boundary. Requests on leading/consecutive MS
+zero-width fields and inside shared units remain ignored.
+
+GNU bridges use canonical packed padding bases, measured gaps and native root
+alignment. This prevents GCC from moving short fields or raising alignment where
+Clang does not. Small GNU AMD64 zero-width gaps and qualified integer-only positive-width
+gaps use implicit anonymous prefixes
+and trailing padding preserves size without acquiring a value register. Gaps
+with non-power-of-two boundaries or original positive unnamed padding can still
+require an unavailable implicit facade. Small positive-width typedef gaps with
+floating fields are rejected for the same reason; other unqualified trailing
+unnamed forms also remain rejected.
+
+The [padding typedef example](../examples/paddingtypedefs/call.go) tests lowered,
+raised and omitted requests, alias chains, enum/Boolean bases, packing and member
+attributes, active/ignored/consecutive boundaries, nested arrays and floating
+values. Native object/archive/library tests include variadic promotions,
+preceding scalar arguments, SSE register exhaustion with a following stack
+argument, factories and producer-owned pointer mutation/null checks.
 
 ## Explicitly packed C records
 
@@ -463,7 +485,7 @@ small/large values, ignored shared requests, named/unnamed/zero-width boundaries
 packed combinations, floating aggregates, multidimensional nested arrays,
 aligned native function-pointer fields, factories, pointer identity/mutation,
 nulls and concrete variadic prefixes/results at `-O0`/`-O2` with Go and llgo.
-Record typedef alignment and aligned unnamed typedef bitfields remain unqualified. The
+Record typedef alignment remains unqualified. The
 [packed example](../examples/packedrecords/call.go) executes object/archive/library
 calls at `-O0`/`-O2`, including nested packing levels, restored natural outer
 layout, numeric/omitted/type-based member alignment, packed combinations, nested

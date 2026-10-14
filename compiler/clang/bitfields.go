@@ -30,20 +30,30 @@ type BitfieldPadding struct {
 	// Aligned preserves an explicit alignment request, including omitted GNU
 	// arguments. A producer may ignore it within a shared allocation unit.
 	Aligned uint64
+	// TypeAlignment retains the aligned base typedef, independently of a
+	// declaration's member attribute and its observed allocation boundary.
+	TypeAlignment uint64
 	// Offset is the compiler-confirmed boundary for a zero-width field, or the
-	// first byte of a nonzero-width field with an explicit alignment request.
+	// first byte of a nonzero-width field with a member/base alignment request.
 	Offset uint64
-	// StorageAlignment observes an MS pragma-packed allocation-unit start or
-	// active zero-width boundary. Shared/ignored declarations retain zero.
+	// StorageAlignment observes an MS allocation-unit start/active zero-width
+	// boundary, or a GNU aligned typedef boundary. Shared requests retain zero.
 	StorageAlignment uint64
-	// Gap is the compiler-observed byte gap before an over-cap GNU pragma
-	// zero-width boundary. C bridges use unnamed padding without raising
-	// the record alignment, which GCC would otherwise do for that request.
+	// Gap observes bytes before a GNU typedef-aligned allocation boundary or
+	// an over-cap pragma zero-width boundary. Bridges preserve this gap without
+	// introducing an alignment request that GCC would apply differently.
 	Gap uint64
 }
 
 func (p BitfieldPadding) cAttributes() string {
 	return fieldCAttributes(p.Packed, p.Aligned)
+}
+
+func (p BitfieldPadding) requestedAlignment() uint64 {
+	if p.TypeAlignment > p.Aligned {
+		return p.TypeAlignment
+	}
+	return p.Aligned
 }
 
 func (r Record) hasBitfields() bool {
@@ -104,17 +114,17 @@ func validateBitfields(r Record, complete bool) error {
 	before := 0
 	for _, f := range r.Padding {
 		bits := bitfieldTypeBits(f.Type)
-		if f.Before < before || f.Before > len(r.Description.Fields) || bits == 0 || f.Width < 0 || f.Width > bits || !validAlignment(f.Aligned) || !validAlignment(f.StorageAlignment) || f.StorageAlignment != 0 && r.MaxFieldAlignment == 0 {
+		if f.Before < before || f.Before > len(r.Description.Fields) || bits == 0 || f.Width < 0 || f.Width > bits || !validAlignment(f.Aligned) || !validAlignment(f.TypeAlignment) || !validAlignment(f.StorageAlignment) || f.StorageAlignment != 0 && r.MaxFieldAlignment == 0 && f.TypeAlignment == 0 {
 			return fmt.Errorf("clang: invalid unnamed bitfield in %s", r.Name)
 		}
-		if f.Width != 0 && f.Aligned == 0 && f.Offset != 0 || complete && (f.Offset > r.Layout.Size || f.Width != 0 && f.Aligned != 0 && f.Offset == r.Layout.Size) {
+		if f.Width != 0 && f.requestedAlignment() == 0 && f.Offset != 0 || complete && (f.Offset > r.Layout.Size || f.Width != 0 && f.requestedAlignment() != 0 && f.Offset == r.Layout.Size) {
 			return fmt.Errorf("clang: invalid unnamed bitfield boundary in %s", r.Name)
 		}
-		if complete && f.StorageAlignment != 0 && (f.StorageAlignment > r.Layout.Alignment || (f.Width == 0 || f.Aligned != 0) && f.Offset%f.StorageAlignment != 0) {
+		if complete && f.StorageAlignment != 0 && (f.StorageAlignment > r.Layout.Alignment && f.TypeAlignment == 0 || (f.Width == 0 || f.requestedAlignment() != 0) && f.Offset%f.StorageAlignment != 0) {
 			return fmt.Errorf("clang: incompatible unnamed storage alignment in %s", r.Name)
 		}
-		if f.Gap > 65536 || f.Gap != 0 && (f.Width != 0 || r.MaxFieldAlignment == 0 || f.Aligned <= r.MaxFieldAlignment || complete && f.Gap > f.Offset) {
-			return fmt.Errorf("clang: invalid pragma boundary gap in %s", r.Name)
+		if f.Gap > 65536 || f.Gap != 0 && (f.TypeAlignment == 0 && (f.Width != 0 || r.MaxFieldAlignment == 0 || f.Aligned <= r.MaxFieldAlignment) || complete && f.Gap > f.Offset) {
+			return fmt.Errorf("clang: invalid bitfield boundary gap in %s", r.Name)
 		}
 		before = f.Before
 	}
