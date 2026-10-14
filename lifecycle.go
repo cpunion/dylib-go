@@ -197,6 +197,7 @@ func (im *image) prepareLifecycle() error {
 		return !a.section.initOffsets && b.section.initOffsets
 	})
 	var fini []uintptr
+	startupInit := im.startupAddress(".init")
 	coff := false
 	for _, a := range arrays {
 		s := a.section
@@ -238,6 +239,13 @@ func (im *image) prepareLifecycle() error {
 			if a.object.info.Arch == "arm64" && address%4 != 0 || !im.executableAddress(uintptr(address)) {
 				return fmt.Errorf("%s: %s+%#x: initializer/finalizer is outside executable image sections", a.object.info.Name, s.name, pos)
 			}
+			if s.lifecycle == lifecycleInit && a.object.info.Format == "ELF" {
+				// PREINIT precedes the complete .init function; ordinary init arrays follow.
+				if startupInit != 0 {
+					im.initializers = append(im.initializers, startupInit)
+					startupInit = 0
+				}
+			}
 			if s.lifecycle == lifecycleFini {
 				fini = append(fini, uintptr(address))
 			} else if s.lifecycle == lifecycleCInit {
@@ -251,6 +259,12 @@ func (im *image) prepareLifecycle() error {
 		for i, j := 0, len(fini)-1; i < j; i, j = i+1, j-1 {
 			fini[i], fini[j] = fini[j], fini[i]
 		}
+	}
+	if startupInit != 0 {
+		im.initializers = append(im.initializers, startupInit)
+	}
+	if address := im.startupAddress(".fini"); address != 0 {
+		fini = append(fini, address)
 	}
 	im.finalizers = fini
 	return nil
