@@ -471,6 +471,10 @@ Go fields hold ordinary scalar values. The [tested bitfield example](examples/bi
 covers signed/Boolean fields, cross-byte widths, unnamed/zero-width boundaries,
 leading padding, numeric/omitted unnamed alignment, floating fields, pragma
 packing and packed combinations, including nested bitfield arrays and variadic calls.
+Small GNU AMD64 records with only trailing unnamed values use implicit padding
+to preserve Clang/GCC register classes and stack arguments; see the
+[tested tail padding example](examples/tailpadding/call.go) and its
+[qualification limits](docs/clang.md#pragma-packing).
 Named and unnamed member-level `packed` bitfields use validated C bridges,
 including small value returns, packed/aligned named and unnamed members, ignored
 MSVC alignment requests and mixed zero-width boundaries; see the

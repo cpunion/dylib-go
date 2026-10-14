@@ -96,16 +96,20 @@ func writeGNUPragmaBoundary(output *bytes.Buffer, gap uint64) {
 // with alignment instead, then lower its typedef alignment to the native value.
 // This changes size without introducing an extra argument/result register.
 func gnuImplicitTailPadding(r Record) bool {
-	if r.MaxFieldAlignment == 0 || r.Layout.Size > 16 || r.Layout.Size&(r.Layout.Size-1) != 0 {
+	if r.Layout.Size > 16 || r.Layout.Size&(r.Layout.Size-1) != 0 {
 		return false
 	}
 	found := false
 	for _, p := range r.Padding {
+		if p.Width != 0 && p.Before != len(r.Description.Fields) {
+			return false
+		}
 		if p.Before == len(r.Description.Fields) {
 			if p.Width != 0 {
-				return false
+				found = found || len(r.Bitfields) == 0
+				continue
 			}
-			found = found || p.Aligned > r.MaxFieldAlignment && p.Gap != 0 && p.Offset == r.Layout.Size
+			found = found || r.MaxFieldAlignment != 0 && p.Aligned > r.MaxFieldAlignment && p.Gap != 0 && p.Offset == r.Layout.Size
 		}
 	}
 	return found

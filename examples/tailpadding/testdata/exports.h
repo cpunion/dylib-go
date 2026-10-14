@@ -1,0 +1,16 @@
+typedef struct { float float_value; unsigned :3; } Float;
+typedef struct { double double_value; unsigned :3; } Double;
+typedef struct { long long integer_value; unsigned :3; } Integer;
+typedef struct { float array_values[1]; unsigned :3; } Array;
+typedef struct { float first,second,third; unsigned :3; } Triple;
+typedef struct { signed char parent_tag; Float parent_values[2]; } Parent;
+Float echo_float(Float); Double echo_double(Double); Integer echo_integer(Integer);
+Array echo_array(Array); Triple echo_triple(Triple); Parent echo_parent(Parent);
+double float_overflow(double,double,double,double,double,double,double,double,Float,double);
+double double_overflow(double,double,double,double,double,double,double,double,Double,double);
+long long integer_overflow(int,int,int,int,int,int,int,int,Integer,int);
+double float_variadic(double,double,double,double,double,double,double,double,Float,...);
+double double_variadic(double,double,double,double,double,double,double,double,Double,...);
+typedef Float (*FloatEntry)(Float);
+FloatEntry float_factory(void); Float forward_float(FloatEntry,Float);
+Double *double_pointer(Double); Double *mutate_double(Double *); Double read_double(Double *);

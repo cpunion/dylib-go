@@ -439,6 +439,25 @@ bitfields, signed bytes, nested records, arrays and variadic register positions.
 Interior gaps mixed with original unnamed nonzero bitfields remain unqualified
 and are rejected before generation.
 
+GNU AMD64 also requires care with nonzero trailing unnamed bitfields. Clang can
+ignore their padding when assigning argument/result registers, while GCC counts
+it as an integer value. Matching sizes and offsets alone cannot detect this.
+For small records without named bitfields or earlier nonzero unnamed fields,
+`CgoSource` replaces trailing unnamed values with implicit tail padding when the
+measured size is a power of two, up to 16 bytes. The private body rounds up to
+that size and its typedef restores the measured native alignment. This preserves
+both register classes and stack allocation when registers are exhausted.
+Other small trailing unnamed layouts in this subset require another adapter and
+are rejected before generation, including a 12-byte pair of floats with padding.
+Other targets retain their native declarations.
+
+The [tail padding example](../examples/tailpadding/call.go) runs float/double,
+integer and array values, nested arrays, native factories and pointer mutation.
+Object/archive/library calls at `-O0`/`-O2` exercise exhausted floating/integer
+registers, subsequent stack arguments, variadic promotions and returns through
+Go and llgo. Compiler tests independently check eight target layouts, LLVM call
+shapes and GCC native sizes/alignments/offsets.
+
 The [over-aligned bitfield example](../examples/overalignedbits/call.go) executes
 small/large values, ignored shared requests, named/unnamed/zero-width boundaries,
 packed combinations, floating aggregates, multidimensional nested arrays,
