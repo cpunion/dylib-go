@@ -9,10 +9,11 @@ Go and llgo use independent workflows and separately compiled test processes:
 Workflows run on pushes to main, pull requests, and manual dispatch. Pure Go jobs set `CGO_ENABLED=0` and run parser, error, and execution-refusal tests in a process compiled for the target architecture.
 
 Native Go suites allow 20 minutes per test package within their 40-minute jobs.
-The llgo suites allow 25 minutes per package within 75-minute jobs; the independent
-Windows ARM64 Go process keeps its 20-minute package budget. Intel compiler
-qualification took over 18 minutes before the whole-array typedef matrix was
-added. The timeouts remain bounded and all probes still run.
+The llgo suites allow 25 minutes per package within 75-minute jobs. macOS Intel
+allows 30 minutes per package within a 90-minute job after the expanded compiler
+matrix reached the previous 25-minute limit near the end of its tests. The
+independent Windows ARM64 Go process keeps its 20-minute package budget.
+The timeouts remain bounded and all probes still run.
 
 | Target | Go execution | Pure Go inspection | llgo execution |
 | --- | --- | --- | --- |
