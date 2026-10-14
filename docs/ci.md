@@ -10,9 +10,9 @@ Workflows run on pushes to main, pull requests, and manual dispatch. Pure Go job
 
 Native Go suites allow 20 minutes per test package within their 40-minute jobs.
 The llgo suites allow 25 minutes per package within 75-minute jobs. macOS Intel
-allows 30 minutes per package within a 90-minute job after the expanded compiler
-matrix reached the previous 25-minute limit near the end of its tests. The
-independent Windows ARM64 Go process keeps its 20-minute package budget.
+allows 40 minutes per package within a 100-minute job after the expanded compiler
+matrix exceeded its previous 30-minute budget. Layout and calling-ABI checks
+reuse the same parsed headers where possible. The independent Windows ARM64 Go process keeps its 20-minute package budget.
 The timeouts remain bounded and all probes still run.
 
 | Target | Go execution | Pure Go inspection | llgo execution |

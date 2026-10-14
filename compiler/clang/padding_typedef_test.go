@@ -28,42 +28,34 @@ func TestPaddingTypedefLayouts(t *testing.T) {
 			producers = append(producers, strings.Replace(target.triple, "pc-windows-msvc", "w64-windows-gnu", 1))
 		}
 	}
-	testCompilerBridgeTargets(t, typedefCompilerTool(t), paddingTypedefFixture(t), nil, producers, paddingTypedefFunctions...)
+	compiler := typedefCompilerTool(t)
+	inspect := func(t *testing.T, path string, h *Header) {
+		// Retain the original eight-target calling checks; Windows GNU producers
+		// additionally qualify layout/bridge compatibility below.
+		if h.Target.OS == "windows" && !h.Target.msLayout() {
+			return
+		}
+		if h.Target.OS != "windows" || h.Target.Arch != "386" {
+			testCompilerRecordCallingABI(t, compiler, path, h)
+		}
+		low, _ := h.LookupRecord("LowTiny")
+		high, _ := h.LookupRecord("HighTiny")
+		wide, _ := h.LookupRecord("HighWide")
+		if low.Padding[0].TypeAlignment != 1 || high.Padding[0].TypeAlignment != 16 {
+			t.Fatal("missing base typedef request", low, high)
+		}
+		if h.Target.OS != "windows" && (low.Layout.Size != 3 || high.Layout.Offsets[1] != 2 || wide.Layout.Offsets[1] != 20) {
+			t.Fatal("typedef allocation placement", low, high, wide)
+		}
+		high.Padding[0].TypeAlignment = 32
+		fresh, _ := h.LookupRecord("HighTiny")
+		if fresh.Padding[0].TypeAlignment != 16 {
+			t.Fatal("shared metadata")
+		}
+	}
+	testCompilerBridgeTargetsWithInspection(t, compiler, paddingTypedefFixture(t), nil, producers, inspect, paddingTypedefFunctions...)
 }
 
-func TestPaddingTypedefCallingABI(t *testing.T) {
-	path, compiler := headerFile(t, paddingTypedefFixture(t)), typedefCompilerTool(t)
-	for _, target := range targets {
-		t.Run(target.triple, func(t *testing.T) {
-			t.Parallel()
-			h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: target.triple, Functions: paddingTypedefFunctions})
-			if errors.Is(err, errTypedefABI) {
-				t.Log(err)
-				return
-			}
-			if err != nil {
-				t.Fatal(err)
-			}
-			if target.os != "windows" || target.arch != "386" {
-				testCompilerRecordCallingABI(t, compiler, path, h)
-			}
-			low, _ := h.LookupRecord("LowTiny")
-			high, _ := h.LookupRecord("HighTiny")
-			wide, _ := h.LookupRecord("HighWide")
-			if low.Padding[0].TypeAlignment != 1 || high.Padding[0].TypeAlignment != 16 {
-				t.Fatal("missing base typedef request", low, high)
-			}
-			if target.os != "windows" && (low.Layout.Size != 3 || high.Layout.Offsets[1] != 2 || wide.Layout.Offsets[1] != 20) {
-				t.Fatal("typedef allocation placement", low, high, wide)
-			}
-			high.Padding[0].TypeAlignment = 32
-			fresh, _ := h.LookupRecord("HighTiny")
-			if fresh.Padding[0].TypeAlignment != 16 {
-				t.Fatal("shared metadata")
-			}
-		})
-	}
-}
 func TestPaddingTypedefGCCBridge(t *testing.T) {
 	testCompilerRecordGCCBridge(t, typedefCompilerTool(t), paddingTypedefFixture(t), paddingTypedefFunctions)
 }
