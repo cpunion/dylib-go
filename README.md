@@ -487,7 +487,10 @@ records require compiler-probed Clang 19-compatible lowering; see the
 [tested typedef example](examples/typedefalignment/call.go). Whole-array typedef
 alignment also preserves each alias layer, including nested scalar, record and
 native-address arrays, with packing/member alignment handled separately.
-Aligned record typedefs and aligned typedef bitfields remain unsupported.
+Named scalar/enum typedef bitfields also preserve raised/lowered alignment,
+shared allocation units and Linux ARM64 argument alignment through C bridges;
+see the [tested typedef bitfield example](examples/typedefbitfields/call.go).
+Aligned record typedefs and aligned unnamed typedef bitfields remain unsupported.
 Complete struct pointees use `unsafe.Pointer` native addresses with their C
 prototypes preserved. They do not accept pointers to public Go record storage;
 use producer-owned storage or a compatible `abi.NativeValue` lease. Other

@@ -14,6 +14,9 @@ import (
 // MinGW's ordinary C prototype passes inline bytes instead. Observe the producer
 // lowering rather than deriving required alignment from storage alignment.
 func (h *Header) probeRecordABI(ctx context.Context, compiler, path string, flags []string) error {
+	if h.Target.OS == "linux" && h.Target.Arch == "arm64" {
+		return h.probeBitfieldArgumentAlignment(ctx, compiler, path, flags)
+	}
 	if h.Target.OS != "windows" || h.Target.Arch != "386" || !strings.Contains(h.Target.Triple, "msvc") {
 		return nil
 	}

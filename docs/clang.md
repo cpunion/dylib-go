@@ -42,6 +42,7 @@ Run
 | Typedefs and ordinary qualifiers | Desugared/resolved, including integer and pointer aliases |
 | Scalar/enum/native-pointer typedef `aligned(N)` or omitted `aligned` | Scalar calls retain their ordinary ABI; record fields and scalar/native-address array leaves use compiler-validated C bridges, preserving raised/lowered alignment and alias chains |
 | Fixed-array typedef `aligned(N)` or omitted `aligned` | `CgoSource` preserves each array alias layer independently, including scalar/enum/record/native-address elements, nested aliases, lowered/raised alignment and packing combinations |
+| Named bitfields with an aligned scalar/enum typedef | Compiler-validated C bridges preserve effective allocation boundaries, record alignment and argument lowering; unnamed/zero-width aligned typedefs are rejected |
 | Object/opaque pointers | Native addresses; no automatic pointee allocation, copying or ownership |
 | Ordinary structs, including anonymous typedef records | Arguments/results; compiler-evaluated layout checked against the native backend |
 | Structs with `#pragma pack` | `CgoSource` for Go/llgo; caps 1/2/4/8/16, over-aligned ordinary members/bitfield units/zero-width boundaries, nested records/arrays and native addresses/function-pointer fields |
@@ -251,10 +252,42 @@ decay to scalar pointers, variadic prefixes and provider-owned pointer mutation.
 Scalar or pointer typedef alignment alone does not change the scalar calling
 interface, so those boundary signatures also support `Session.Bind` and direct
 llgo adapters. Attributed record values still require C bridges. Aligned
-record typedefs and aligned typedef bitfields remain rejected; they
+record typedefs and aligned unnamed typedef bitfields remain rejected; they
 need additional type identity and compiler ABI qualification. Unsupported
 attributes in an alias chain are rejected before generation. See GCC's
 [typedef alignment rules](https://gcc.gnu.org/onlinedocs/gcc-15.2.0/gcc/Common-Type-Attributes.html).
+
+### Aligned typedef bitfields
+
+Named integral, Boolean and enum bitfields accept aligned base typedefs,
+including numeric/omitted requests, inherited aliases and alignment overrides.
+`Bitfield.TypeAlignment` retains the request; `StorageAlignment` retains a
+compiler-qualified allocation boundary, or zero for a shared/ignored request.
+These values are separate from explicit member alignment and packing.
+
+A short field can stay in an earlier allocation unit while its typedef raises
+the record alignment. Wider fields can start a new aligned unit. GNU C facades
+preserve both observations using canonical bitfield types, effective member
+attributes and the measured record alignment. MSVC probes reconstruct the
+original base typedef to observe active allocation-unit starts; MinGW bridges
+preserve their alignment even inside packed units. Generated constructors
+validate sizes, alignments, offsets and byte masks before binding symbols.
+
+On Linux AArch64, natural 16-byte alignment can require an even general-register
+pair for a small record argument. Explicit record alignment alone does not
+reproduce this rule. `Record.ArgumentAlignment` records Clang's argument lowering;
+a private zero-length naturally aligned C member preserves that rule without
+adding a public field or changing storage. Other targets omit this marker.
+
+The [typedef bitfield example](../examples/typedefbitfields/call.go) executes
+short/wide fields, shared units, signed/Boolean/enum values, explicit member and
+record packing, pragma caps, nested arrays and floating records. Go and llgo
+tests load objects, archives and OS libraries at `-O0`/`-O2`, exercising fixed
+and variadic calls, preceding scalar/native-entry arguments, factories and
+producer-owned pointers with mutation/null checks. Compiler tests compare all
+eight target layouts, three Windows GNU producers, MSVC/MinGW bridges and
+LLVM argument/result shapes; GCC independently checks native layout and masks.
+Aligned unnamed/zero-width base typedefs remain rejected.
 
 ## Explicitly packed C records
 
@@ -408,7 +441,7 @@ small/large values, ignored shared requests, named/unnamed/zero-width boundaries
 packed combinations, floating aggregates, multidimensional nested arrays,
 aligned native function-pointer fields, factories, pointer identity/mutation,
 nulls and concrete variadic prefixes/results at `-O0`/`-O2` with Go and llgo.
-Record typedef alignment and aligned typedef bitfields remain unqualified. The
+Record typedef alignment and aligned unnamed typedef bitfields remain unqualified. The
 [packed example](../examples/packedrecords/call.go) executes object/archive/library
 calls at `-O0`/`-O2`, including nested packing levels, restored natural outer
 layout, numeric/omitted/type-based member alignment, packed combinations, nested

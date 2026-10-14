@@ -50,6 +50,10 @@ type Record struct {
 	// IndirectResult records an MSVC i386 hidden result pointer requiring a
 	// compiled C adapter for GCC fastcall interoperability.
 	IndirectResult bool
+	// ArgumentAlignment preserves compiler-observed natural argument alignment
+	// on Linux AArch64, where an explicitly aligned record alone does not require
+	// an even general-register pair. Zero needs no additional facade marker.
+	ArgumentAlignment uint64
 	// Bitfields retains the width and native byte mask of each named bitfield.
 	// Layout.Offsets stores its first byte. Description remains logical fields.
 	Bitfields []Bitfield
@@ -199,6 +203,9 @@ func (h *Header) validateDescriptions() error {
 		if (record.IndirectArgument || record.IndirectResult) && (h.Target.OS != "windows" || h.Target.Arch != "386" || !strings.Contains(h.Target.Triple, "msvc")) {
 			return fmt.Errorf("clang: compiler-observed indirect records require an MSVC i386 target")
 		}
+		if record.ArgumentAlignment != 0 && (record.ArgumentAlignment != 16 || h.Target.OS != "linux" || h.Target.Arch != "arm64") {
+			return fmt.Errorf("clang: argument alignment requires Linux AArch64 in %s", record.Name)
+		}
 		for _, pointer := range record.FunctionPointers {
 			if pointer.Position < 0 {
 				return fmt.Errorf("clang: invalid function-pointer field position")
@@ -278,6 +285,9 @@ func validateSignature(s abi.Signature, budget *int) error {
 }
 
 func validRecordLayout(record Record) error {
+	if record.ArgumentAlignment != 0 && (record.ArgumentAlignment != 16 || record.Layout.Alignment < 16 || record.Layout.Size > 16) {
+		return fmt.Errorf("clang: invalid record argument alignment in %s", record.Name)
+	}
 	if err := validateFieldTypeAlignments(record, true); err != nil {
 		return err
 	}
@@ -473,6 +483,22 @@ func (h *Header) decodeRecordLayouts(data []byte) error {
 		}
 		h.Records[i].Layout = layout
 		r := &h.Records[i]
+		starts := bitfieldUnitStarts(*r, recordMembers(*r))
+		if h.Target.msLayout() {
+			for position, member := range recordMembers(*r) {
+				if member.field < 0 || !starts[position] {
+					continue
+				}
+				bit := r.bitfieldAt(member.field)
+				if bit == nil || bit.TypeAlignment == 0 {
+					continue
+				}
+				bit.StorageAlignment, err = get(fmt.Sprintf("dylib_record_%d_bittypestorage_%d", i, member.field))
+				if err != nil {
+					return err
+				}
+			}
+		}
 		for j := range r.FieldTypeAlignments {
 			field := &r.FieldTypeAlignments[j]
 			alignment, err := get(fmt.Sprintf("dylib_record_%d_memberalign_%d", i, field.Position))
@@ -492,7 +518,7 @@ func (h *Header) decodeRecordLayouts(data []byte) error {
 			}
 		}
 		members := recordMembers(*r)
-		starts := bitfieldUnitStarts(*r, members)
+		starts = bitfieldUnitStarts(*r, members)
 		if r.MaxFieldAlignment != 0 {
 			namedStarts := make(map[int]bool)
 			for position := range starts {

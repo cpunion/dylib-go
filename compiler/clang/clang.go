@@ -142,7 +142,9 @@ const maxFunctions = 256
 // and alias chains through C bridges, including fixed-array leaves. Whole-array
 // aliases preserve independent alignment at each nested array layer. GNU AMD64
 // records require compiler-probed Clang 19-compatible SysV lowering. Aligned
-// record typedefs and aligned typedef bitfields remain unsupported.
+// scalar/enum typedef bitfields use observed allocation units and argument
+// alignment. Aligned record typedefs and aligned unnamed typedef bitfields
+// remain unsupported.
 // Unions, other attributed
 // records/fields/typedefs, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes

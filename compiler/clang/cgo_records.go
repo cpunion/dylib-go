@@ -263,7 +263,7 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		if tailPadding {
 			declarationRecord.Aligned = record.Layout.Size
 		}
-		fmt.Fprint(output, declarationRecord.cAttributes())
+		fmt.Fprint(output, t.nativeAttributes(declarationRecord))
 		fmt.Fprint(output, "{\n")
 		// Open outer boundaries first. Closing each prefix at its measured
 		// zero-width declaration leaves its gap as implicit tail padding.
@@ -281,6 +281,9 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 					alignment := uint64(0)
 					if member.field >= 0 {
 						alignment = record.fieldAlignment(member.field)
+						if bit := record.bitfieldAt(member.field); bit != nil && bit.StorageAlignment > alignment {
+							alignment = bit.StorageAlignment
+						}
 					} else {
 						alignment = record.Padding[member.padding].Aligned
 					}
@@ -355,6 +358,11 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 					endPackedBitfieldUnit(output)
 				}
 			}
+		}
+		if record.ArgumentAlignment != 0 {
+			// A zero-length naturally aligned integer member preserves AAPCS64
+			// even-register allocation without introducing a value or moving fields.
+			fmt.Fprint(output, "__int128 argument_alignment[0];\n")
 		}
 		fmt.Fprintf(output, "} %s;\n", bodyName)
 		if tailPadding {

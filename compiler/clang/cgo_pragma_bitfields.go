@@ -31,7 +31,7 @@ func (t *cgoTypes) writePragmaBitfields(output *bytes.Buffer, index int) error {
 			return fmt.Errorf("clang: missing or inconsistent MS allocation alignment in %s", r.Name)
 		}
 	}
-	fmt.Fprintf(output, "typedef struct %s{\n", r.cAttributes())
+	fmt.Fprintf(output, "typedef struct %s{\n", t.nativeAttributes(r))
 	for position, member := range members {
 		for _, unit := range units {
 			if unit.first == position {

@@ -11,6 +11,8 @@ import (
 // original declaration, never this synthetic type.
 func (r Record) alignedPaddingProbe(record, padding int) string {
 	var source strings.Builder
+	aliases, kinds := r.bitfieldTypedefProbes(fmt.Sprintf("dylib_padding_%d_%d_bittypedef", record, padding))
+	source.WriteString(aliases)
 	if r.MaxFieldAlignment != 0 {
 		fmt.Fprintf(&source, "#pragma pack(push,%d)\n", r.MaxFieldAlignment)
 	}
@@ -26,7 +28,11 @@ func (r Record) alignedPaddingProbe(record, padding int) string {
 		} else {
 			j := member.field
 			if bit := r.bitfieldAt(j); bit != nil {
-				fmt.Fprintf(&source, "%s f%d:%d%s;\n", bitfieldBaseType(r.Description.Fields[j].Type.Type), j, bit.Width, r.cFieldAttributes(j))
+				kind := bitfieldBaseType(r.Description.Fields[j].Type.Type)
+				if alias := kinds[j]; alias != "" {
+					kind = alias
+				}
+				fmt.Fprintf(&source, "%s f%d:%d%s;\n", kind, j, bit.Width, r.cFieldAttributes(j))
 			} else {
 				fmt.Fprintf(&source, "__typeof__(((%s *)0)->%s) f%d%s;\n", r.Name, r.Description.Fields[j].Name, j, r.cFieldAttributes(j))
 			}

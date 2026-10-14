@@ -12,6 +12,10 @@ import (
 type Bitfield struct {
 	Position, Width int
 	Mask            []byte
+	// TypeAlignment preserves an aligned scalar/enum typedef request, separately
+	// from member attributes. StorageAlignment is the qualified bridge boundary;
+	// zero means a shared/ignored allocation-unit request.
+	TypeAlignment, StorageAlignment uint64
 }
 
 // BitfieldPadding describes an unnamed C bitfield before a logical field.
@@ -47,7 +51,7 @@ func (r Record) hasBitfields() bool {
 }
 
 func (r Record) requiresCAdapter() bool {
-	return r.Packed || r.MaxFieldAlignment != 0 || len(r.PackedFields) != 0 || r.hasBitfields() || r.Aligned != 0 || len(r.FieldAlignments) != 0 || len(r.FieldTypeAlignments) != 0 || r.IndirectArgument || r.IndirectResult
+	return r.Packed || r.MaxFieldAlignment != 0 || len(r.PackedFields) != 0 || r.hasBitfields() || r.Aligned != 0 || len(r.FieldAlignments) != 0 || len(r.FieldTypeAlignments) != 0 || r.IndirectArgument || r.IndirectResult || r.ArgumentAlignment != 0
 }
 
 func cloneBitfields(fields []Bitfield) []Bitfield {
@@ -120,6 +124,9 @@ func validateBitfields(r Record, complete bool) error {
 			return fmt.Errorf("clang: invalid or duplicate bitfield position in %s", r.Name)
 		}
 		seen[f.Position] = true
+		if !validAlignment(f.TypeAlignment) || !validAlignment(f.StorageAlignment) || f.TypeAlignment == 0 && f.StorageAlignment != 0 || complete && f.StorageAlignment > r.Layout.Alignment {
+			return fmt.Errorf("clang: invalid bitfield typedef alignment in %s", r.Name)
+		}
 		d := r.Description.Fields[f.Position].Type
 		if f.Width < 1 || f.Width > bitfieldTypeBits(d.Type) || d.Elem != nil || len(f.Mask) > 9 {
 			return fmt.Errorf("clang: invalid bitfield width/type in %s", r.Name)
@@ -152,6 +159,9 @@ func validateBitfields(r Record, complete bool) error {
 				return fmt.Errorf("clang: missing bitfield offsets in %s", r.Name)
 			}
 			offset := r.Layout.Offsets[f.Position]
+			if f.StorageAlignment != 0 && (offset%f.StorageAlignment != 0 || f.Mask[0]&1 == 0) {
+				return fmt.Errorf("clang: incompatible bitfield typedef boundary in %s", r.Name)
+			}
 			if offset >= r.Layout.Size || uint64(len(f.Mask)) > r.Layout.Size-offset {
 				return fmt.Errorf("clang: bitfield mask outside %s", r.Name)
 			}
