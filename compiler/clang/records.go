@@ -603,7 +603,7 @@ func (h *Header) decodeRecordLayouts(data []byte) error {
 				if err != nil {
 					return err
 				}
-				if h.Target.gnuPacking() && (p.TypeAlignment != 0 || r.MaxFieldAlignment != 0 && p.Aligned > r.MaxFieldAlignment) {
+				if h.Target.gnuPacking() && (p.TypeAlignment != 0 || r.MaxFieldAlignment != 0 && p.Aligned > r.MaxFieldAlignment || r.gnuPlainZeroBoundary(*p)) {
 					before, err := get(fmt.Sprintf("dylib_record_%d_paddingbefore_%d", i, j))
 					if err != nil || before > p.Offset {
 						return fmt.Errorf("clang: invalid pragma boundary gap for %s", r.Name)

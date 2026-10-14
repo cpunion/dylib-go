@@ -211,7 +211,7 @@ _Alignas(2) struct {
 uint32_t f2:3;
 };
 #pragma pack(pop)
-_Alignas(4) unsigned char boundary0[0];
+_Alignas(2) unsigned char boundary0[0];
 unsigned int :0;
 int16_t f3 __attribute__((packed,aligned(2)));
 } dylib_go_42696e64696e6773_record7;
@@ -222,16 +222,16 @@ int8_t f0;
 dylib_go_42696e64696e6773_record7_field1 f1 __attribute__((packed,aligned(2)));
 uint32_t f2:3;
 #if defined(_WIN32) && !defined(_MSC_VER)
-unsigned int boundary0[0] __attribute__((aligned(4)));
+unsigned int boundary0[0];
 #else
-unsigned int :0 __attribute__((aligned(4)));
+unsigned int :0;
 #endif
 int16_t f3;
 } dylib_go_42696e64696e6773_record7;
 #pragma pack(pop)
 #endif
 #if defined(_WIN32) && !defined(_MSC_VER)
-_Static_assert(offsetof(dylib_go_42696e64696e6773_record7,boundary0)==12,"incompatible zero-width boundary");
+_Static_assert(offsetof(dylib_go_42696e64696e6773_record7,boundary0)==10,"incompatible zero-width boundary");
 #endif
 static uint64_t dylib_go_42696e64696e6773_record7_mask(int32_t field,uint64_t byte) {
 volatile dylib_go_42696e64696e6773_record7 value;
@@ -643,7 +643,7 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "Doubles", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "real_first", Type: abi.TypeDesc{Type: abi.F64}}, {Name: "real_second", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 16, Alignment: 8, Offsets: []uint64{0, 8}}, TypedefAlignments: []clang.RecordTypedefAlignment{{Name: "Doubles", Aligned: 1}}},
 		{Name: "Maximum", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "omitted_value", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 4, Alignment: 4, Offsets: []uint64{0}}, TypedefAlignments: []clang.RecordTypedefAlignment{{Name: "Maximum", Aligned: 16}}},
 		{Name: "Packed", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_child", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 32, Alignment: 16, Offsets: []uint64{0, 16, 20}}, TypedefAlignments: []clang.RecordTypedefAlignment{{Name: "Packed", Aligned: 32}}, Packed: true, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 16, StorageAlignment: 16}}},
-		{Name: "Pragma", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_child", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, {Name: "pragma_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_tail", Type: abi.TypeDesc{Type: abi.I16}}}}, Layout: abi.Layout{Size: 16, Alignment: 4, Offsets: []uint64{0, 2, 6, 12}}, TypedefAlignments: []clang.RecordTypedefAlignment{{Name: "Pragma", Aligned: 16}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 1, 2, 2}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 2}}, Bitfields: []clang.Bitfield{{Position: 2, Width: 3, Mask: []byte{7}}}, Padding: []clang.BitfieldPadding{{Before: 3, Type: abi.Type(2), Width: 0, Offset: 12, Aligned: 4, StorageAlignment: 4}}},
+		{Name: "Pragma", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_child", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, {Name: "pragma_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_tail", Type: abi.TypeDesc{Type: abi.I16}}}}, Layout: abi.Layout{Size: 12, Alignment: 2, Offsets: []uint64{0, 2, 6, 10}}, TypedefAlignments: []clang.RecordTypedefAlignment{{Name: "Pragma", Aligned: 16}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 1, 2, 2}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 2}}, Bitfields: []clang.Bitfield{{Position: 2, Width: 3, Mask: []byte{7}}}, Padding: []clang.BitfieldPadding{{Before: 3, Type: abi.Type(2), Width: 0, Offset: 10, StorageAlignment: 2}}},
 		{Name: "Member", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "member_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "member_child", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, {Name: "member_tail", Type: abi.TypeDesc{Type: abi.I8}}}}, Layout: abi.Layout{Size: 16, Alignment: 8, Offsets: []uint64{0, 8, 12}}, TypedefAlignments: []clang.RecordTypedefAlignment{{Name: "Member", Aligned: 32}}, FieldAlignments: []clang.FieldAlignment{{Position: 1, Aligned: 8}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 8}}},
 		{Name: "Bits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bits_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "bits_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bits_tail", Type: abi.TypeDesc{Type: abi.I8}}}}, Layout: abi.Layout{Size: 32, Alignment: 16, Offsets: []uint64{0, 16, 20}}, TypedefAlignments: []clang.RecordTypedefAlignment{{Name: "Bits", Aligned: 32}}, Bitfields: []clang.Bitfield{{Position: 1, Width: 3, TypeAlignment: 16, StorageAlignment: 16, Mask: []byte{7}}}, Padding: []clang.BitfieldPadding{{Before: 2, Type: abi.Type(2), Width: 0, Offset: 20}}},
 		{Name: "Nested", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "nested_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "nested_child", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, {Name: "nested_wide", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first", Type: abi.TypeDesc{Type: abi.I64}}, {Name: "second", Type: abi.TypeDesc{Type: abi.I64}}, {Name: "third", Type: abi.TypeDesc{Type: abi.I64}}}}}}}, Layout: abi.Layout{Size: 32, Alignment: 8, Offsets: []uint64{0, 4, 8}}, TypedefAlignments: []clang.RecordTypedefAlignment{{Name: "Nested", Aligned: 32}}, FieldTypeAlignments: []clang.TypedefFieldAlignment{{Position: 1, Aligned: 1, StorageAlignment: 4}, {Position: 2, Aligned: 1, StorageAlignment: 8}}},
@@ -1005,7 +1005,7 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 	if uint64(C.dylib_go_42696e64696e6773_record6_layout(0)) != 32 || uint64(C.dylib_go_42696e64696e6773_record6_layout(1)) != 16 || uint64(C.dylib_go_42696e64696e6773_record6_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record6_layout(3)) != 16 || uint64(C.dylib_go_42696e64696e6773_record6_layout(4)) != 20 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for Packed")
 	}
-	if uint64(C.dylib_go_42696e64696e6773_record7_layout(0)) != 16 || uint64(C.dylib_go_42696e64696e6773_record7_layout(1)) != 4 || uint64(C.dylib_go_42696e64696e6773_record7_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record7_layout(3)) != 2 || uint64(C.dylib_go_42696e64696e6773_record7_layout(4)) != 6 || uint64(C.dylib_go_42696e64696e6773_record7_layout(5)) != 12 || uint64(C.dylib_go_42696e64696e6773_record7_mask(2, 6)) != 7 {
+	if uint64(C.dylib_go_42696e64696e6773_record7_layout(0)) != 12 || uint64(C.dylib_go_42696e64696e6773_record7_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record7_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record7_layout(3)) != 2 || uint64(C.dylib_go_42696e64696e6773_record7_layout(4)) != 6 || uint64(C.dylib_go_42696e64696e6773_record7_layout(5)) != 10 || uint64(C.dylib_go_42696e64696e6773_record7_mask(2, 6)) != 7 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for Pragma")
 	}
 	if uint64(C.dylib_go_42696e64696e6773_record8_layout(0)) != 16 || uint64(C.dylib_go_42696e64696e6773_record8_layout(1)) != 8 || uint64(C.dylib_go_42696e64696e6773_record8_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record8_layout(3)) != 8 || uint64(C.dylib_go_42696e64696e6773_record8_layout(4)) != 12 {

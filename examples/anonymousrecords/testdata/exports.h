@@ -9,7 +9,7 @@ typedef struct { double real_first,real_second; } Doubles __attribute__((aligned
 typedef struct { int omitted_value; } Maximum __attribute__((aligned));
 typedef struct __attribute__((packed)) { signed char packed_tag; High packed_child; int packed_tail; } Packed __attribute__((aligned(32)));
 #pragma pack(push,2)
-typedef struct { signed char pragma_tag; Low pragma_child; unsigned pragma_flags:3; unsigned :0 __attribute__((aligned(4))); short pragma_tail; } Pragma __attribute__((aligned(16)));
+typedef struct { signed char pragma_tag; Low pragma_child; unsigned pragma_flags:3; unsigned :0; short pragma_tail; } Pragma __attribute__((aligned(16)));
 #pragma pack(pop)
 typedef struct { signed char member_tag; Low member_child __attribute__((aligned(8))); signed char member_tail; } Member __attribute__((aligned(32)));
 typedef unsigned BitBase __attribute__((aligned(16)));

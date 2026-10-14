@@ -505,6 +505,10 @@ factories/pointers and stack arguments. Alias alignment is saved separately
 from body size/alignment, and parsing checks that their calling ABI agrees.
 The [anonymous record example](examples/anonymousrecords/call.go) verifies
 independent body reconstruction, alias alignment, bitfield masks and call shapes.
+Plain zero-width pragma boundaries preserve the producer's root alignment and
+calling ABI across Clang and GCC, including floating values, lowered record
+members and leading/trailing/consecutive boundaries; see the
+[tested zero-width example](examples/zeroboundaries/call.go).
 Complete struct pointees use `unsafe.Pointer` native addresses with their C
 prototypes preserved. They do not accept pointers to public Go record storage;
 use producer-owned storage or a compatible `abi.NativeValue` lease. Other

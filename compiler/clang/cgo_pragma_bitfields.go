@@ -118,12 +118,37 @@ func gnuImplicitTailPadding(r Record) bool {
 // Small interior gaps also need implicit padding to preserve SysV registers.
 // Wrap the preceding fields in anonymous aligned records: their rounded size
 // supplies each gap, while the outer pragma keeps the original base alignment.
-func (t *cgoTypes) gnuPrefixPadding(r Record) map[int]bool {
-	if !t.gnuAMD64 || r.Layout.Size > 16 || !t.sysVAlignedRecord(r, 0) {
+func (t *cgoTypes) gnuPrefixPadding(r Record) map[int]uint64 {
+	if !t.gnuPacking {
 		return nil
 	}
-	var result map[int]bool
+	var result map[int]uint64
 	for index, padding := range r.Padding {
+		if r.gnuPlainZeroBoundary(padding) && uint64(bitfieldTypeBits(padding.Type)/8) > r.Layout.Alignment {
+			// Round only the preceding prefix, retaining the observed root
+			// alignment and implicit padding on every GNU target. i386's
+			// long-long boundary can be four bytes despite its eight-byte size.
+			alignment := min(uint64(bitfieldTypeBits(padding.Type)/8), padding.Offset&-padding.Offset)
+			if padding.Before != 0 && alignment != 0 && padding.Gap < alignment {
+				if t.gnuAMD64 && r.Layout.Size <= 16 && t.sysVAlignedRecord(r, 0) {
+					unnamedValues := false
+					for _, prior := range r.Padding[:index] {
+						unnamedValues = unnamedValues || prior.Width != 0
+					}
+					if unnamedValues && !t.sysVIntegerPaddingCompatible(r, padding.Offset) {
+						continue
+					}
+				}
+				if result == nil {
+					result = make(map[int]uint64)
+				}
+				result[index] = alignment
+			}
+			continue
+		}
+		if !t.gnuAMD64 || r.Layout.Size > 16 || !t.sysVAlignedRecord(r, 0) {
+			continue
+		}
 		if padding.Width != 0 && (padding.TypeAlignment == 0 || hasFloatingFields(r.Description)) {
 			continue
 		}
@@ -143,11 +168,32 @@ func (t *cgoTypes) gnuPrefixPadding(r Record) map[int]bool {
 			continue
 		}
 		if result == nil {
-			result = make(map[int]bool)
+			result = make(map[int]uint64)
 		}
-		result[index] = true
+		result[index] = padding.Offset
 	}
 	return result
+}
+
+// Unnamed fields inside a prefix cannot add a SysV integer class when each
+// eight-byte chunk touched by that prefix already has a named integer value.
+// Composite/floating members do not establish that class in this proof.
+func (t *cgoTypes) sysVIntegerPaddingCompatible(r Record, extent uint64) bool {
+	var chunks uint64
+	for i, field := range r.Description.Fields {
+		if field.Type.Type == abi.Struct || field.Type.Type == abi.Array || field.Type.Type == abi.F32 || field.Type.Type == abi.F64 {
+			continue
+		}
+		size := t.sysVTypeSize(field.Type)
+		if bit := r.bitfieldAt(i); bit != nil {
+			size = uint64(len(bit.Mask))
+		}
+		for position := r.Layout.Offsets[i]; position < r.Layout.Offsets[i]+size; position++ {
+			chunks |= 1 << (position / 8)
+		}
+	}
+	required := (uint64(1) << ((extent + 7) / 8)) - 1
+	return chunks&required == required
 }
 
 // Unaligned ordinary fields already force SysV memory arguments. Changing body
