@@ -6,6 +6,7 @@ import (
 	"debug/elf"
 	"debug/macho"
 	"debug/pe"
+	"encoding/binary"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -22,7 +23,7 @@ func (h *Header) probeBitfields(ctx context.Context, compiler, header string, fl
 	var size uint64
 	for i, r := range h.Records {
 		for j, p := range r.Padding {
-			if p.Width == 0 || p.Aligned == 0 {
+			if p.Width == 0 || p.requestedAlignment() == 0 {
 				continue
 			}
 			if r.Layout.Size == 0 || r.Layout.Size > 65536 || size > maxBitfieldProbe-r.Layout.Size {
@@ -96,7 +97,7 @@ func (h *Header) probeBitfields(ctx context.Context, compiler, header string, fl
 		}
 		for j := range r.Padding {
 			p := &r.Padding[j]
-			if p.Width == 0 || p.Aligned == 0 {
+			if p.Width == 0 || p.requestedAlignment() == 0 {
 				continue
 			}
 			value, err := symbols.value(fmt.Sprintf("dylib_bitfield_padding_%d_%d", i, j), r.Layout.Size)
@@ -118,6 +119,26 @@ func (h *Header) probeBitfields(ctx context.Context, compiler, header string, fl
 				return fmt.Errorf("clang: invalid compiler unnamed bitfield mask")
 			}
 			p.Offset = uint64(first)
+			if h.Target.gnuPacking() && p.TypeAlignment != 0 {
+				alignment := p.TypeAlignment
+				if r.MaxFieldAlignment != 0 && alignment > r.MaxFieldAlignment {
+					alignment = r.MaxFieldAlignment
+				}
+				if r.Packed || p.Packed {
+					alignment = 1
+				}
+				if value[first]&1 != 0 && p.Offset%alignment == 0 {
+					p.StorageAlignment = alignment
+				}
+				before, err := symbols.value(fmt.Sprintf("dylib_bitfield_paddingbefore_%d_%d", i, j), 8)
+				if err != nil {
+					return err
+				}
+				end := binary.LittleEndian.Uint64(before)
+				if p.Offset > end {
+					p.Gap = p.Offset - end
+				}
+			}
 		}
 
 		h.reconcileBitfieldTypedefs(r)

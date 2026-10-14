@@ -109,7 +109,7 @@ func gnuImplicitTailPadding(r Record) bool {
 				found = found || len(r.Bitfields) == 0
 				continue
 			}
-			found = found || r.MaxFieldAlignment != 0 && p.Aligned > r.MaxFieldAlignment && p.Gap != 0 && p.Offset == r.Layout.Size
+			found = found || (p.TypeAlignment != 0 || r.MaxFieldAlignment != 0 && p.Aligned > r.MaxFieldAlignment) && p.Gap != 0 && p.Offset == r.Layout.Size
 		}
 	}
 	return found
@@ -119,19 +119,24 @@ func gnuImplicitTailPadding(r Record) bool {
 // Wrap the preceding fields in anonymous aligned records: their rounded size
 // supplies each gap, while the outer pragma keeps the original base alignment.
 func (t *cgoTypes) gnuPrefixPadding(r Record) map[int]bool {
-	if !t.gnuAMD64 || r.MaxFieldAlignment == 0 || r.Layout.Size > 16 || !t.sysVAlignedRecord(r, 0) {
+	if !t.gnuAMD64 || r.Layout.Size > 16 || !t.sysVAlignedRecord(r, 0) {
 		return nil
-	}
-	for _, padding := range r.Padding {
-		if padding.Width != 0 {
-			// Original unnamed values can already affect GCC's register
-			// classification; this facade only qualifies zero-width gaps.
-			return nil
-		}
 	}
 	var result map[int]bool
 	for index, padding := range r.Padding {
-		if padding.Aligned <= r.MaxFieldAlignment || padding.Aligned <= r.Layout.Alignment || padding.Gap == 0 || padding.Before == 0 || padding.Before == len(r.Description.Fields) {
+		if padding.Width != 0 && (padding.TypeAlignment == 0 || hasFloatingFields(r.Description)) {
+			continue
+		}
+		priorValues := false
+		for other, prior := range r.Padding {
+			if padding.Width == 0 || other < index {
+				priorValues = priorValues || prior.Width != 0
+			}
+		}
+		if priorValues {
+			continue
+		}
+		if padding.TypeAlignment == 0 && padding.Aligned <= r.MaxFieldAlignment || padding.requestedAlignment() <= r.Layout.Alignment || padding.Gap == 0 || padding.Before == 0 || padding.Before == len(r.Description.Fields) {
 			continue
 		}
 		if padding.Offset == 0 || padding.Offset >= r.Layout.Size || padding.Offset&(padding.Offset-1) != 0 {
@@ -197,4 +202,21 @@ func (t *cgoTypes) sysVTypeSize(d abi.TypeDesc) uint64 {
 		}
 	}
 	return 0
+}
+
+// Integer-only SysV records already classify occupied padding lanes as integer.
+// Floating fields need an implicit facade when a new unnamed gap crosses them.
+func hasFloatingFields(d abi.TypeDesc) bool {
+	if d.Type == abi.F32 || d.Type == abi.F64 {
+		return true
+	}
+	if d.Type == abi.Array {
+		return hasFloatingFields(*d.Elem)
+	}
+	for _, field := range d.Fields {
+		if hasFloatingFields(field.Type) {
+			return true
+		}
+	}
+	return false
 }

@@ -494,7 +494,11 @@ native-address arrays, with packing/member alignment handled separately.
 Named scalar/enum typedef bitfields also preserve raised/lowered alignment,
 shared allocation units and Linux ARM64 argument alignment through C bridges;
 see the [tested typedef bitfield example](examples/typedefbitfields/call.go).
-Aligned record typedefs and aligned unnamed typedef bitfields remain unsupported.
+Unnamed and zero-width aligned base typedefs also preserve observed boundaries,
+including ignored/shared MS requests and GNU gaps; see the
+[tested padding typedef example](examples/paddingtypedefs/call.go). Some small
+GNU AMD64 gaps still require an unqualified implicit-padding facade. Aligned
+record typedefs remain unsupported.
 Complete struct pointees use `unsafe.Pointer` native addresses with their C
 prototypes preserved. They do not accept pointers to public Go record storage;
 use producer-owned storage or a compatible `abi.NativeValue` lease. Other

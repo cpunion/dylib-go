@@ -11,20 +11,27 @@ import (
 // original declaration, never this synthetic type.
 func (r Record) alignedPaddingProbe(record, padding int) string {
 	var source strings.Builder
-	aliases, kinds := r.bitfieldTypedefProbes(fmt.Sprintf("dylib_padding_%d_%d_bittypedef", record, padding))
+	aliases, kinds, paddingKinds := r.bitfieldTypedefProbes(fmt.Sprintf("dylib_padding_%d_%d_bittypedef", record, padding))
 	source.WriteString(aliases)
 	if r.MaxFieldAlignment != 0 {
 		fmt.Fprintf(&source, "#pragma pack(push,%d)\n", r.MaxFieldAlignment)
 	}
-	fmt.Fprintf(&source, "const struct %s{\n", r.cAttributes())
+	var body strings.Builder
 	for _, member := range recordMembers(r) {
 		if member.padding >= 0 {
 			p := r.Padding[member.padding]
+			kind := bitfieldBaseType(p.Type)
+			if alias := paddingKinds[member.padding]; alias != "" {
+				kind = alias
+			}
 			name := ""
 			if member.padding == padding {
 				name = "value"
+				if p.TypeAlignment != 0 {
+					fmt.Fprintf(&source, "const unsigned long long dylib_bitfield_paddingbefore_%d_%d = __builtin_offsetof(struct %s{\n%s unsigned char marker;\n},marker);\n", record, padding, r.cAttributes(), body.String())
+				}
 			}
-			fmt.Fprintf(&source, "%s %s:%d%s;\n", bitfieldBaseType(p.Type), name, p.Width, p.cAttributes())
+			fmt.Fprintf(&body, "%s %s:%d%s;\n", kind, name, p.Width, p.cAttributes())
 		} else {
 			j := member.field
 			if bit := r.bitfieldAt(j); bit != nil {
@@ -32,14 +39,14 @@ func (r Record) alignedPaddingProbe(record, padding int) string {
 				if alias := kinds[j]; alias != "" {
 					kind = alias
 				}
-				fmt.Fprintf(&source, "%s f%d:%d%s;\n", kind, j, bit.Width, r.cFieldAttributes(j))
+				fmt.Fprintf(&body, "%s f%d:%d%s;\n", kind, j, bit.Width, r.cFieldAttributes(j))
 			} else {
-				fmt.Fprintf(&source, "__typeof__(((%s *)0)->%s) f%d%s;\n", r.Name, r.Description.Fields[j].Name, j, r.cFieldAttributes(j))
+				fmt.Fprintf(&body, "__typeof__(((%s *)0)->%s) f%d%s;\n", r.Name, r.Description.Fields[j].Name, j, r.cFieldAttributes(j))
 			}
 		}
 	}
 	p := r.Padding[padding]
-	fmt.Fprintf(&source, "} dylib_bitfield_padding_%d_%d = {.value=%s};\n", record, padding, bitfieldValue(p.Type, p.Width))
+	fmt.Fprintf(&source, "const struct %s{\n%s} dylib_bitfield_padding_%d_%d = {.value=%s};\n", r.cAttributes(), body.String(), record, padding, bitfieldValue(p.Type, p.Width))
 	if r.MaxFieldAlignment != 0 {
 		fmt.Fprint(&source, "#pragma pack(pop)\n")
 	}

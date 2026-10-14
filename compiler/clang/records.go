@@ -547,7 +547,7 @@ func (h *Header) decodeRecordLayouts(data []byte) error {
 			}
 		}
 		for position, member := range members {
-			if member.padding >= 0 && r.MaxFieldAlignment != 0 && h.Target.msLayout() && starts[position] {
+			if member.padding >= 0 && (r.MaxFieldAlignment != 0 || r.Padding[member.padding].TypeAlignment != 0) && h.Target.msLayout() && starts[position] {
 				r.Padding[member.padding].StorageAlignment, err = get(fmt.Sprintf("dylib_record_%d_paddingalign_%d", i, member.padding))
 				if err != nil {
 					return err
@@ -561,7 +561,7 @@ func (h *Header) decodeRecordLayouts(data []byte) error {
 				if err != nil {
 					return err
 				}
-				if h.Target.gnuPacking() && r.MaxFieldAlignment != 0 && p.Aligned > r.MaxFieldAlignment {
+				if h.Target.gnuPacking() && (p.TypeAlignment != 0 || r.MaxFieldAlignment != 0 && p.Aligned > r.MaxFieldAlignment) {
 					before, err := get(fmt.Sprintf("dylib_record_%d_paddingbefore_%d", i, j))
 					if err != nil || before > p.Offset {
 						return fmt.Errorf("clang: invalid pragma boundary gap for %s", r.Name)
