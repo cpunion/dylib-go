@@ -276,10 +276,10 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 		if err != nil {
 			return abi.TypeDesc{}, fmt.Errorf("%s.%s: %w", name, child.Name, err)
 		}
-		if len(typeAlignments) != 0 {
-			if child.IsBitfield {
-				return abi.TypeDesc{}, fmt.Errorf("%s.%s: aligned typedef bitfields are unsupported", name, child.Name)
-			}
+		if len(typeAlignments) != 0 && child.IsBitfield && unnamed {
+			return abi.TypeDesc{}, fmt.Errorf("%s: aligned typedef unnamed bitfields are unsupported", name)
+		}
+		if !child.IsBitfield {
 			for _, alignment := range typeAlignments {
 				alignment.Position = len(d.Fields)
 				fieldTypeAlignments = append(fieldTypeAlignments, alignment)
@@ -294,7 +294,11 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 			if unnamed {
 				padding = append(padding, BitfieldPadding{Before: len(d.Fields), Type: field.Type, Width: width, Packed: fieldPacked, Aligned: fieldAligned})
 			} else {
-				bitfields = append(bitfields, Bitfield{Position: len(d.Fields), Width: width})
+				bit := Bitfield{Position: len(d.Fields), Width: width}
+				if len(typeAlignments) != 0 {
+					bit.TypeAlignment = typeAlignments[0].Aligned
+				}
+				bitfields = append(bitfields, bit)
 			}
 		}
 		if !unnamed {

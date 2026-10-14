@@ -83,6 +83,9 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 			if record.IndirectResult {
 				fmt.Fprint(&output, ",IndirectResult:true")
 			}
+			if record.ArgumentAlignment != 0 {
+				fmt.Fprintf(&output, ",ArgumentAlignment:%d", record.ArgumentAlignment)
+			}
 			if len(record.FieldAlignments) != 0 {
 				fmt.Fprint(&output, ",FieldAlignments:[]clang.FieldAlignment{")
 				for _, field := range record.FieldAlignments {
@@ -104,7 +107,11 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 			if len(record.Bitfields) != 0 {
 				fmt.Fprint(&output, ",Bitfields:[]clang.Bitfield{")
 				for _, field := range record.Bitfields {
-					fmt.Fprintf(&output, "{Position:%d,Width:%d,Mask:[]byte{", field.Position, field.Width)
+					fmt.Fprintf(&output, "{Position:%d,Width:%d", field.Position, field.Width)
+					if field.TypeAlignment != 0 {
+						fmt.Fprintf(&output, ",TypeAlignment:%d,StorageAlignment:%d", field.TypeAlignment, field.StorageAlignment)
+					}
+					fmt.Fprint(&output, ",Mask:[]byte{")
 					for _, b := range field.Mask {
 						fmt.Fprintf(&output, "%d,", b)
 					}

@@ -15,7 +15,7 @@ jobs:
   native:
     name: llgo / ${{ matrix.target }} / ${{ matrix.mode }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 75
+    timeout-minutes: ${{ matrix.target == 'darwin-amd64' && 90 || 75 }}
     strategy:
       fail-fast: false
       matrix:
@@ -31,6 +31,7 @@ jobs:
         shell: bash
     env:
       CGO_ENABLED: '1'
+      LLGO_TEST_TIMEOUT: ${{ matrix.target == 'darwin-amd64' && '30m' || '25m' }}
       DYLIB_TEST_REQUIRE_NATIVE: ${{ matrix.mode == 'native' && '1' || '0' }}
       DYLIB_TEST_REQUIRE_SHARED: '1'
       DYLIB_TEST_REQUIRE_TOOLS: '1'
@@ -72,13 +73,12 @@ jobs:
         # Build a separate gc test executable, including Go/llgo DLL producers.
         run: go test -count=1 -timeout=20m -v -tags libffi ./...
       - name: Execute direct llgo function-pointer path
-        # Intel compiler qualification already takes over 18m; allow the
-        # expanded array typedef probes within the bounded 75m job.
-        run: llgo test -count=1 -timeout=25m -v ./...
+        # The expanded Intel compiler matrix reached the previous 25m limit.
+        run: llgo test -count=1 -timeout="$LLGO_TEST_TIMEOUT" -v ./...
       - name: Execute optional scalar, struct and callback libffi ABI
         env:
           DYLIB_TEST_LANGUAGES: ''
-        run: llgo test -count=1 -timeout=25m -v -tags libffi ./...
+        run: llgo test -count=1 -timeout="$LLGO_TEST_TIMEOUT" -v -tags libffi ./...
       - name: Build CLI with llgo
         run: llgo build -o ddlgo ./cmd/ddlgo
       - name: Execute README llgo, dynamic call and callback examples

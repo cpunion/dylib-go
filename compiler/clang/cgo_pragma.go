@@ -16,7 +16,7 @@ func (t *cgoTypes) writePragmaRecord(output *bytes.Buffer, index int) error {
 	if err := validateMemberAlignments(r, true); err != nil {
 		return err
 	}
-	fmt.Fprintf(output, "typedef struct %s{\n", r.cAttributes())
+	fmt.Fprintf(output, "typedef struct %s{\n", t.nativeAttributes(r))
 	for i, field := range r.Description.Fields {
 		declaration, err := t.cNativeField(r, i)
 		if err != nil {

@@ -14,9 +14,11 @@ func (h *Header) bitfieldAlignmentProbes() (declarations, constants string) {
 	}
 	var types, values strings.Builder
 	for i, r := range h.Records {
-		if r.MaxFieldAlignment == 0 || !r.hasBitfields() {
+		if (r.MaxFieldAlignment == 0 && !r.hasBitfieldTypedefs()) || !r.hasBitfields() {
 			continue
 		}
+		aliases, kinds := r.bitfieldTypedefProbes(fmt.Sprintf("dylib_record_%d_bittypedef", i))
+		types.WriteString(aliases)
 		fmt.Fprintf(&types, "#pragma pack(push,%d)\n", r.MaxFieldAlignment)
 		members := recordMembers(r)
 		starts := bitfieldUnitStarts(r, members)
@@ -33,6 +35,9 @@ func (h *Header) bitfieldAlignmentProbes() (declarations, constants string) {
 			} else {
 				j := member.field
 				kind, width, attributes = bitfieldBaseType(r.Description.Fields[j].Type.Type), r.bitfieldAt(j).Width, r.cFieldAttributes(j)
+				if alias := kinds[j]; alias != "" {
+					kind = alias
+				}
 				key = fmt.Sprintf("dylib_record_%d_memberalign_%d", i, j)
 			}
 			name := key + "_type"
@@ -48,6 +53,9 @@ func (h *Header) bitfieldAlignmentProbes() (declarations, constants string) {
 			}
 			fmt.Fprintf(&types, "%s :%d%s;\n} %s;\n", kind, width, attributes, name)
 			fmt.Fprintf(&values, "%s=_Alignof(%s),\n", key, name)
+			if member.field >= 0 && r.bitfieldAt(member.field).TypeAlignment != 0 {
+				fmt.Fprintf(&values, "dylib_record_%d_bittypestorage_%d=_Alignof(%s),\n", i, member.field, name)
+			}
 		}
 		fmt.Fprint(&types, "#pragma pack(pop)\n")
 	}

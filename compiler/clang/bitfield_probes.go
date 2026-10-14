@@ -120,6 +120,7 @@ func (h *Header) probeBitfields(ctx context.Context, compiler, header string, fl
 			p.Offset = uint64(first)
 		}
 
+		h.reconcileBitfieldTypedefs(r)
 		if err := validRecordLayout(*r); err != nil {
 			return err
 		}

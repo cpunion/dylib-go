@@ -18,7 +18,7 @@ func (h *Header) probeTypedefABI(ctx context.Context, compiler string, flags []s
 	}
 	needed := false
 	for _, record := range h.Records {
-		needed = needed || len(record.FieldTypeAlignments) != 0
+		needed = needed || len(record.FieldTypeAlignments) != 0 || record.hasBitfieldTypedefs()
 	}
 	if !needed {
 		return nil

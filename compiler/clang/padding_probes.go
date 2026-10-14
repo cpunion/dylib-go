@@ -16,6 +16,8 @@ func (h *Header) paddingProbes() (declarations, constants string) {
 		if len(r.Padding) == 0 {
 			continue
 		}
+		aliases, kinds := r.bitfieldTypedefProbes(fmt.Sprintf("dylib_padding_%d_bittypedef", i))
+		types.WriteString(aliases)
 		if r.MaxFieldAlignment != 0 {
 			fmt.Fprintf(&types, "#pragma pack(push,%d)\n", r.MaxFieldAlignment)
 		}
@@ -44,7 +46,11 @@ func (h *Header) paddingProbes() (declarations, constants string) {
 			}
 			field := r.Description.Fields[j]
 			if bit := r.bitfieldAt(j); bit != nil {
-				fmt.Fprintf(&body, "%s f%d:%d%s;\n", bitfieldBaseType(field.Type.Type), j, bit.Width, r.cFieldAttributes(j))
+				kind := bitfieldBaseType(field.Type.Type)
+				if alias := kinds[j]; alias != "" {
+					kind = alias
+				}
+				fmt.Fprintf(&body, "%s f%d:%d%s;\n", kind, j, bit.Width, r.cFieldAttributes(j))
 			} else {
 				fmt.Fprintf(&body, "__typeof__(((%s *)0)->%s) f%d%s;\n", r.Name, field.Name, j, r.cFieldAttributes(j))
 			}
