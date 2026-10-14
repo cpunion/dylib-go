@@ -95,7 +95,6 @@ func TestRecordTypedefValidation(t *testing.T) {
 		t.Fatal("duplicate alias names on distinct bodies accepted")
 	}
 	for _, source := range []string{
-		`typedef struct { int value; } High __attribute__((aligned(16))); typedef High Alias; Alias f(Alias);`,
 		`typedef struct { int value; } Plain; typedef Plain High __attribute__((aligned(16))); struct S { High values[2]; }; struct S f(struct S);`,
 		`typedef union { int value; float scalar; } U; typedef U High __attribute__((aligned(16))); High f(High);`,
 	} {

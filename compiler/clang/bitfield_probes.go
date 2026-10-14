@@ -21,6 +21,12 @@ const maxBitfieldProbe = 16 << 20
 func (h *Header) probeBitfields(ctx context.Context, compiler, header string, flags []string) error {
 	var source strings.Builder
 	var size uint64
+	for _, r := range h.Records {
+		if r.namedTypedefAlignment() != 0 && len(r.Bitfields) != 0 {
+			source.WriteString(h.recordBodyProbes())
+			break
+		}
+	}
 	for i, r := range h.Records {
 		for j, p := range r.Padding {
 			if p.Width == 0 || p.requestedAlignment() == 0 {
@@ -39,6 +45,13 @@ func (h *Header) probeBitfields(ctx context.Context, compiler, header string, fl
 			size += r.Layout.Size
 			field := r.Description.Fields[f.Position]
 			fmt.Fprintf(&source, "const %s dylib_bitfield_%d_%d = {.%s=%s};\n", r.Name, i, f.Position, field.Name, bitfieldValue(field.Type.Type, f.Width))
+			if r.namedTypedefAlignment() != 0 {
+				if size > maxBitfieldProbe-r.Layout.Size {
+					return fmt.Errorf("clang: bitfield probes exceed storage limit")
+				}
+				size += r.Layout.Size
+				fmt.Fprintf(&source, "const %s dylib_bitfield_body_%d_%d = {.%s=%s};\n", r.bodyProbeName(i), i, f.Position, field.Name, bitfieldValue(field.Type.Type, f.Width))
+			}
 		}
 	}
 	if source.Len() == 0 {
@@ -79,6 +92,12 @@ func (h *Header) probeBitfields(ctx context.Context, compiler, header string, fl
 			value, err := symbols.value(fmt.Sprintf("dylib_bitfield_%d_%d", i, f.Position), r.Layout.Size)
 			if err != nil {
 				return err
+			}
+			if r.namedTypedefAlignment() != 0 {
+				bodyMask, err := symbols.value(fmt.Sprintf("dylib_bitfield_body_%d_%d", i, f.Position), r.Layout.Size)
+				if err != nil || !bytes.Equal(value, bodyMask) {
+					return fmt.Errorf("clang: canonical body bitfield mask mismatch for %s", r.Name)
+				}
 			}
 			first, last := -1, -1
 			for index, b := range value {

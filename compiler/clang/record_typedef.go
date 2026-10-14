@@ -3,6 +3,7 @@ package clang
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -70,20 +71,22 @@ func validateRecordTypedefs(r Record) error {
 // i386 conventions, rather than using alias alignment as argument alignment.
 func (h *Header) probeRecordTypedefABI(ctx context.Context, compiler, path string, flags []string) error {
 	var source strings.Builder
+	source.WriteString(h.recordBodyProbes())
 	var pairs [][2]string
 	conventions := []string{""}
 	if h.Target.OS == "windows" && h.Target.Arch == "386" {
 		conventions = append(conventions, "__attribute__((stdcall)) ", "__attribute__((fastcall)) ")
 	}
-	for _, r := range h.Records {
+	for i, r := range h.Records {
 		for _, alias := range r.TypedefAlignments {
 			for _, cc := range conventions {
 				body, name := fmt.Sprintf("dylib_record_typedef_body_%d", len(pairs)), fmt.Sprintf("dylib_record_typedef_alias_%d", len(pairs))
 				// Explicit assembler names keep i386 stdcall/fastcall decoration
 				// out of the comparison without changing their calling convention.
-				fmt.Fprintf(&source, "%s%s %s(int,%s) __asm__(%q);\n", cc, r.Name, body, r.Name, body)
+				bodyType := r.bodyProbeName(i)
+				fmt.Fprintf(&source, "%s%s %s(int,%s) __asm__(%q);\n", cc, bodyType, body, bodyType, body)
 				fmt.Fprintf(&source, "%s%s %s(int,%s) __asm__(%q);\n", cc, alias.Name, name, alias.Name, name)
-				fmt.Fprintf(&source, "%s%s %s(int marker,%s value) { (void)marker; return value; }\n", cc, r.Name, body, r.Name)
+				fmt.Fprintf(&source, "%s%s %s(int marker,%s value) { (void)marker; return value; }\n", cc, bodyType, body, bodyType)
 				fmt.Fprintf(&source, "%s%s %s(int marker,%s value) { (void)marker; return value; }\n", cc, alias.Name, name, alias.Name)
 				pairs = append(pairs, [2]string{body, name})
 			}
@@ -97,6 +100,8 @@ func (h *Header) probeRecordTypedefABI(ctx context.Context, compiler, path strin
 	if err != nil {
 		return err
 	}
+	// Synthetic and original record names differ but do not affect the ABI.
+	recordNames := regexp.MustCompile(`%struct\.[a-zA-Z0-9_.]+`)
 	entry := func(name string) string {
 		for _, line := range strings.Split(string(data), "\n") {
 			if !strings.HasPrefix(line, "define ") {
@@ -107,7 +112,7 @@ func (h *Header) probeRecordTypedefABI(ctx context.Context, compiler, path strin
 					// Attribute-group numbers describe function bodies, not the
 					// physical argument/result ABI being qualified here.
 					line, _, _ = strings.Cut(strings.TrimSuffix(line, " {"), " #")
-					return strings.Replace(line, marker, "@entry(", 1)
+					return recordNames.ReplaceAllString(strings.Replace(line, marker, "@entry(", 1), "%record")
 				}
 			}
 		}

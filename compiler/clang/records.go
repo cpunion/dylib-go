@@ -13,7 +13,8 @@ const maxRecords = 256
 const maxDescriptionNodes = 65536
 
 // Record contains a usable C type spelling, logical fields, and the compiler's
-// target-specific storage layout. It does not describe pointer ownership.
+// target-specific canonical body layout. Name may be an aligned alias; its
+// request is retained separately. It does not describe pointer ownership.
 type Record struct {
 	Name        string
 	Description abi.TypeDesc
@@ -191,7 +192,7 @@ func (h *Header) validateDescriptions() error {
 			return err
 		}
 		for _, alias := range record.TypedefAlignments {
-			if alias.Name == record.Name || aliasNames[alias.Name] || len(aliasNames) >= maxRecords {
+			if aliasNames[alias.Name] || len(aliasNames) >= maxRecords {
 				return fmt.Errorf("clang: duplicate or excessive record typedef declarations")
 			}
 			aliasNames[alias.Name] = true
@@ -423,16 +424,24 @@ func (h *Header) recordProbes() string {
 	var source strings.Builder
 	source.WriteString(declarations)
 	source.WriteString(alignmentTypes)
+	source.WriteString(h.recordBodyProbes())
 	fmt.Fprintln(&source, "enum {")
 	source.WriteString(boundaries)
 	source.WriteString(alignmentValues)
 	for i, record := range h.Records {
-		fmt.Fprintf(&source, "dylib_record_%d_size=sizeof(%s),\ndylib_record_%d_align=_Alignof(%s),\n", i, record.Name, i, record.Name)
+		body := record.bodyProbeName(i)
+		fmt.Fprintf(&source, "dylib_record_%d_size=sizeof(%s),\ndylib_record_%d_align=_Alignof(%s),\n", i, record.Name, i, body)
+		if body != record.Name {
+			fmt.Fprintf(&source, "dylib_record_%d_bodysize=sizeof(%s),\ndylib_record_%d_aliasalign=_Alignof(%s),\n", i, body, i, record.Name)
+		}
 		for j, field := range record.Description.Fields {
 			if record.bitfieldAt(j) != nil {
 				continue
 			}
 			fmt.Fprintf(&source, "dylib_record_%d_offset_%d=__builtin_offsetof(%s,%s),\n", i, j, record.Name, field.Name)
+			if body != record.Name {
+				fmt.Fprintf(&source, "dylib_record_%d_bodyoffset_%d=__builtin_offsetof(%s,%s),\n", i, j, body, field.Name)
+			}
 			if record.MaxFieldAlignment != 0 || record.fieldTypeAlignment(j) != 0 {
 				fmt.Fprintf(&source, "dylib_record_%d_memberalign_%d=__alignof__(((%s*)0)->%s),\n", i, j, record.Name, field.Name)
 			}
@@ -487,6 +496,16 @@ func (h *Header) decodeRecordLayouts(data []byte) error {
 		if layout.Alignment, err = get(fmt.Sprintf("dylib_record_%d_align", i)); err != nil {
 			return err
 		}
+		if aliasAlignment := h.Records[i].namedTypedefAlignment(); aliasAlignment != 0 {
+			bodySize, err := get(fmt.Sprintf("dylib_record_%d_bodysize", i))
+			if err != nil || bodySize != layout.Size {
+				return fmt.Errorf("clang: canonical body size mismatch for %s", h.Records[i].Name)
+			}
+			measured, err := get(fmt.Sprintf("dylib_record_%d_aliasalign", i))
+			if err != nil || measured != aliasAlignment {
+				return fmt.Errorf("clang: record typedef alignment mismatch for %s", h.Records[i].Name)
+			}
+		}
 		for j := range h.Records[i].Description.Fields {
 			if h.Records[i].bitfieldAt(j) != nil {
 				layout.Offsets = append(layout.Offsets, 0)
@@ -495,6 +514,12 @@ func (h *Header) decodeRecordLayouts(data []byte) error {
 			offset, err := get(fmt.Sprintf("dylib_record_%d_offset_%d", i, j))
 			if err != nil {
 				return err
+			}
+			if h.Records[i].namedTypedefAlignment() != 0 {
+				bodyOffset, err := get(fmt.Sprintf("dylib_record_%d_bodyoffset_%d", i, j))
+				if err != nil || bodyOffset != offset {
+					return fmt.Errorf("clang: canonical body offset mismatch for %s", h.Records[i].Name)
+				}
 			}
 			layout.Offsets = append(layout.Offsets, offset)
 		}

@@ -189,7 +189,6 @@ func TestScalarTypedefAlignmentValidation(t *testing.T) {
 		t.Fatal("typedef bitfield metadata accepted")
 	}
 	for _, source := range []string{
-		`typedef struct {int value;} S __attribute__((aligned(16))); S f(S);`,
 		`typedef int I __attribute__((aligned(1),deprecated)); typedef I J; J f(J);`,
 	} {
 		if h, err := Parse(context.Background(), headerFile(t, source), Options{Compiler: typedefCompilerTool(t), Functions: []string{"f"}}); err == nil {
