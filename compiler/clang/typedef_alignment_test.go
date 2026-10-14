@@ -226,9 +226,14 @@ func TestLegacyTypedefCompilerRejected(t *testing.T) {
 	if !strings.Contains(string(version), "clang version 18.") {
 		t.Skip("Clang 18 is unavailable")
 	}
-	path := headerFile(t, `typedef int Low __attribute__((aligned(1))); struct S{char tag;Low value;};struct S echo(struct S);`)
-	h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: "x86_64-unknown-linux-gnu", Functions: []string{"echo"}})
-	if !errors.Is(err, errTypedefABI) || h != nil {
-		t.Fatal("legacy ABI was published", h, err)
+	for _, source := range []string{
+		`typedef int Low __attribute__((aligned(1))); struct S{char tag;Low value;};struct S echo(struct S);`,
+		`typedef unsigned Low __attribute__((aligned(1))); struct S{char tag;Low bits:3;};struct S echo(struct S);`,
+	} {
+		path := headerFile(t, source)
+		h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: "x86_64-unknown-linux-gnu", Functions: []string{"echo"}})
+		if !errors.Is(err, errTypedefABI) || h != nil {
+			t.Fatal("legacy ABI was published", h, err)
+		}
 	}
 }

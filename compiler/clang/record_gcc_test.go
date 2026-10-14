@@ -3,6 +3,7 @@ package clang
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -38,6 +39,10 @@ func testCompilerRecordGCCBridge(t *testing.T, compiler, source string, names []
 		t.Skip("GNU GCC is unavailable")
 	}
 	h, err := Parse(context.Background(), headerFile(t, source), Options{Compiler: compiler, Functions: names})
+	if errors.Is(err, errTypedefABI) {
+		t.Log("compiler rejects legacy SysV typedef ABI:", err)
+		return
+	}
 	if err != nil {
 		t.Fatal(err)
 	}
