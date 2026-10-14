@@ -15,5 +15,6 @@ long long wide_overflow(int a,int b,int c,int d,int e,int f,int g,int h,WideLow 
 double variadic(PREFIX,Float v,...){__builtin_va_list args;__builtin_va_start(args,v);int marker=__builtin_va_arg(args,int);double tail=__builtin_va_arg(args,double);__builtin_va_end(args);return SUM+v.scalar+marker+tail;}
 HighEntry factory(void){return echo_high;} High forward(HighEntry entry,High v){return entry(v);}
 High *pointer(High v){static High storage;storage=v;return &storage;}
-High read(High *p){High v={0};if(p)v=*p;return v;}
+/* A distinct export name avoids Windows CRT read import collisions. */
+High read_high(High *p){High v={0};if(p)v=*p;return v;}
 int alignment(High *p){return (unsigned long long)p % _Alignof(High);}

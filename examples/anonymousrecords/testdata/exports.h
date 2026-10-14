@@ -26,4 +26,4 @@ High shifted(int,High); double overflow(double,double,double,double,double,doubl
 long long wide_overflow(int,int,int,int,int,int,int,int,WideLow,int);
 double variadic(double,double,double,double,double,double,double,double,Float,...);
 typedef High (*HighEntry)(High); HighEntry factory(void); High forward(HighEntry,High);
-High *pointer(High); High read(High *); int alignment(High *);
+High *pointer(High); High read_high(High *); int alignment(High *);

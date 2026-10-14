@@ -611,7 +611,7 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "factory", Symbol: "factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}}}},
 		{Name: "forward", Symbol: "forward", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}}}},
 		{Name: "pointer", Symbol: "pointer", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}}},
-		{Name: "read", Symbol: "read", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}},
+		{Name: "read_high", Symbol: "read_high", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}},
 		{Name: "alignment", Symbol: "alignment", Signature: abi.Signature{Result: abi.I32, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "high_value", Type: abi.TypeDesc{Type: abi.I32}}}}}}}},
 	},
 	Records: []clang.Record{
@@ -1120,7 +1120,7 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol22 = symbol22
-	symbol23, err := session.Resolve("read")
+	symbol23, err := session.Resolve("read_high")
 	if err != nil {
 		return nil, err
 	}
@@ -1386,7 +1386,7 @@ func (b *Bindings) Pointer(p0 BindingsRecord0) (result unsafe.Pointer, err error
 	return result, err
 }
 
-func (b *Bindings) Read(p0 unsafe.Pointer) (result BindingsRecord0, err error) {
+func (b *Bindings) Read_high(p0 unsafe.Pointer) (result BindingsRecord0, err error) {
 	if b == nil {
 		return result, dylib.ErrClosed
 	}

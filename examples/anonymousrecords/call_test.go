@@ -38,7 +38,7 @@ func TestAnonymousRecordCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_high", "echo_inherited", "echo_low", "echo_low_only", "echo_float", "echo_wide", "echo_wide_low", "echo_doubles", "echo_maximum", "echo_packed", "echo_pragma", "echo_member", "echo_bits", "echo_nested", "echo_array", "echo_explicit", "shifted", "overflow", "wide_overflow", "variadic", "factory", "forward", "pointer", "read", "alignment"}
+	names := []string{"echo_high", "echo_inherited", "echo_low", "echo_low_only", "echo_float", "echo_wide", "echo_wide_low", "echo_doubles", "echo_maximum", "echo_packed", "echo_pragma", "echo_member", "echo_bits", "echo_nested", "echo_array", "echo_explicit", "shifted", "overflow", "wide_overflow", "variadic", "factory", "forward", "pointer", "read_high", "alignment"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -202,10 +202,10 @@ func checkCalls(t *testing.T, path string) {
 	if err != nil || pointer == nil {
 		t.Fatal(pointer, err)
 	}
-	got, err = b.Read(pointer)
+	got, err = b.Read_high(pointer)
 	check(got, high, err)
 	alignment, err := b.Alignment(pointer)
 	check(alignment, int32(0), err)
-	got, err = b.Read(nil)
+	got, err = b.Read_high(nil)
 	check(got, BindingsRecord0{}, err)
 }
