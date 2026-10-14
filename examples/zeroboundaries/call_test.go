@@ -135,66 +135,66 @@ func checkCalls(t *testing.T, path string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	check := func(got, want any, err error) {
+	check := func(name string, got, want any, err error) {
 		t.Helper()
 		if err != nil || !reflect.DeepEqual(got, want) {
-			t.Fatal(got, want, err)
+			t.Fatal(name, got, want, err)
 		}
 	}
 	parent := BindingsRecord1{Parent_tag: -7, Parent_child: BindingsRecord0{Child_value: -123456789}, Parent_flags: 5, Parent_tail: -1234}
 	v1, err := b.Echo_parent(parent)
-	check(v1, parent, err)
+	check("echo_parent", v1, parent, err)
 	pair := BindingsRecord2{Float_first: -1.25, Float_second: 2.5}
 	v2, err := b.Echo_float(pair)
-	check(v2, pair, err)
+	check("echo_float", v2, pair, err)
 	gap := BindingsRecord3{Gap_first: 1.5, Gap_second: -2.25}
 	v3, err := b.Echo_gap(gap)
-	check(v3, gap, err)
+	check("echo_gap", v3, gap, err)
 	bits := BindingsRecord4{Bits_tag: -9, Bits_flags: 7, Bits_tail: 1234}
 	v4, err := b.Echo_bits(bits)
-	check(v4, bits, err)
+	check("echo_bits", v4, bits, err)
 	trailing := BindingsRecord5{Trailing_tag: -42}
 	v5, err := b.Echo_trailing(trailing)
-	check(v5, trailing, err)
+	check("echo_trailing", v5, trailing, err)
 	leading := BindingsRecord6{Leading_tag: 42}
 	v6, err := b.Echo_leading(leading)
-	check(v6, leading, err)
+	check("echo_leading", v6, leading, err)
 	consecutive := BindingsRecord7{Consecutive_tag: -8, Consecutive_tail: -9876}
 	v7, err := b.Echo_consecutive(consecutive)
-	check(v7, consecutive, err)
+	check("echo_consecutive", v7, consecutive, err)
 	nonpower := BindingsRecord8{Nonpower_head: -123456789012345, Nonpower_mid: -321, Nonpower_tail: 1234}
 	v8, err := b.Echo_nonpower(nonpower)
-	check(v8, nonpower, err)
+	check("echo_nonpower", v8, nonpower, err)
 	large := BindingsRecord9{Large_tag: -6, Large_child: parent.Parent_child, Large_flags: 3, Large_values: [3]float64{1.25, -2.5, 3.75}}
 	v9, err := b.Echo_large(large)
-	check(v9, large, err)
+	check("echo_large", v9, large, err)
 	mixed := BindingsRecord10{Mixed_tag: -5, Mixed_flags: 6, Mixed_tail: -4321}
 	v10, err := b.Echo_mixed(mixed)
-	check(v10, mixed, err)
+	check("echo_mixed", v10, mixed, err)
 	packed := BindingsRecord11{Packed_tag: -4, Packed_flags: 5, Packed_tail: -3.5}
 	v11, err := b.Echo_packed(packed)
-	check(v11, packed, err)
+	check("echo_packed", v11, packed, err)
 	envelope := BindingsRecord12{Envelope_gap: gap, Envelope_pair: nonpower, Envelope_items: [2]BindingsRecord5{trailing, {Trailing_tag: 17}}, Envelope_check: -987654321}
 	v12, err := b.Echo_envelope(envelope)
-	check(v12, envelope, err)
+	check("echo_envelope", v12, envelope, err)
 	v2, err = b.Shifted_float(3, pair)
-	check(v2, BindingsRecord2{Float_first: 1.75, Float_second: 2.5}, err)
+	check("shifted_float", v2, BindingsRecord2{Float_first: 1.75, Float_second: 2.5}, err)
 	number, err := b.Gap_overflow(1, 2, 3, 4, 5, 6, 7, 8, BindingsRecord3{Gap_first: 1, Gap_second: 2}, 3)
-	check(number, float64(42), err)
+	check("gap_overflow", number, float64(42), err)
 	number, err = b.Gap_variadic(1, 2, 3, 4, 5, 6, 7, 8, BindingsRecord3{Gap_first: 1, Gap_second: 2}, 1, 2)
-	check(number, float64(42), err)
+	check("gap_variadic", number, float64(42), err)
 	entry, err := b.Float_factory()
 	if err != nil || entry == nil {
 		t.Fatal(entry, err)
 	}
 	v2, err = b.Forward_float(entry, pair)
-	check(v2, pair, err)
+	check("forward_float", v2, pair, err)
 	pointer, err := b.Gap_pointer(gap)
 	if err != nil || pointer == nil {
 		t.Fatal(pointer, err)
 	}
 	v3, err = b.Read_gap(pointer)
-	check(v3, gap, err)
+	check("read_gap", v3, gap, err)
 	v3, err = b.Read_gap(nil)
-	check(v3, BindingsRecord3{}, err)
+	check("read_gap_null", v3, BindingsRecord3{}, err)
 }

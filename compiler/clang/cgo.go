@@ -193,11 +193,26 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 		goKind, _ := mapper.goType(s.ArgumentType(i))
 		goParams = append(goParams, fmt.Sprintf("p%d %s", i, goKind))
 		transport := mapper.transport(s.ArgumentType(i))
-		bridge = append(bridge, fmt.Sprintf("%s p%d", transport, i))
+		indirectTransport := mapper.gnuAMD64 && s.Args[i] == abi.Struct
+		if indirectTransport {
+			// Keep aggregate register allocation inside C. In particular, a
+			// spilled pair of floats must occupy eight bytes, not the sixteen
+			// bytes LLVM assigns to a standalone spilled vector parameter.
+			bridge = append(bridge, fmt.Sprintf("const %s *p%d", transport, i))
+		} else {
+			bridge = append(bridge, fmt.Sprintf("%s p%d", transport, i))
+		}
 		argument := fmt.Sprintf("p%d", i)
 		if s.Args[i] == abi.Struct {
 			index, _ := mapper.recordIndex(s.ArgumentType(i))
-			goArgs = append(goArgs, mapper.conversion(index, true)+"("+argument+")")
+			converted := mapper.conversion(index, true) + "(" + argument + ")"
+			if indirectTransport {
+				conversions = append(conversions, fmt.Sprintf("c%d := %s\n", i, converted))
+				goArgs = append(goArgs, fmt.Sprintf("&c%d", i))
+				argument = "*" + argument
+			} else {
+				goArgs = append(goArgs, converted)
+			}
 		} else if s.Args[i] == abi.Bool {
 			conversions = append(conversions, fmt.Sprintf("var c%d C.int32_t\nif p%d { c%d = 1 }\n", i, i, i))
 			goArgs = append(goArgs, fmt.Sprintf("c%d", i))

@@ -32,7 +32,7 @@ typedef Packed (*Entry)(Packed); Entry factory(void); Packed apply(Entry,Packed)
 			if err != nil {
 				t.Fatal(err)
 			}
-			for _, marker := range []string{"Packed: true", "__attribute__((packed))", "_record0_transport", "_record1_transport", "_from_transport(p0)", "_to_transport(((", "i1 < 3"} {
+			for _, marker := range []string{"Packed: true", "__attribute__((packed))", "_record0_transport", "_record1_transport", "_from_transport(", "_to_transport(((", "i1 < 3"} {
 				if !strings.Contains(string(source), marker) {
 					t.Fatalf("missing packed bridge %s", marker)
 				}
