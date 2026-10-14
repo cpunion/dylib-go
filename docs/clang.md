@@ -510,9 +510,18 @@ typedef High Low __attribute__((aligned(1)));
 `Record.TypedefAlignments` separately records used alias names and their effective
 requests, including inheritance and overrides. High still has size 4 and alias
 alignment 16; it does not become a 16-byte record. Snapshots and generated header
-metadata preserve both facts. A named struct tag or an unaligned typedef must
-make the body accessible. An anonymous body exposed only by aligned aliases,
-including unannotated aliases that inherit alignment, remains rejected.
+metadata preserve both facts. Anonymous bodies exposed only through aligned aliases are also supported,
+including unannotated aliases that inherit alignment. In that case `Record.Name`
+is a usable original alias spelling and `Layout` still describes the canonical
+body. `TypedefAlignments` contains that written name as well as used aliases.
+
+Compiler probes reconstruct the inaccessible body using the original member
+types, packing and member attributes. Size and ordinary offsets must match the
+original declaration, alias alignment must match its request, and named bitfield
+masks are compared independently in target objects. Synthetic bodies restore
+the saved packing policy even when the header leaves a pragma open. The body
+retains the existing strict size/alignment rules; alias alignment never relaxes
+those checks.
 
 Named members retain their alias requests in `FieldTypeAlignments`; compiler
 probes separately measure storage alignment and offsets. GNU producers honor
@@ -536,6 +545,18 @@ null pointers, exhausted argument registers and concrete variadic tails. Fresh
 bindings and `-O0`/`-O2` object/archive/shared-library calls run with Go and llgo;
 compiler tests check eight target layouts, MSVC/MinGW bridges, LLVM call shapes
 and an independent GCC bridge.
+
+The [anonymous record example](../examples/anonymousrecords/call.go) verifies
+inherited/raised/lowered/omitted requests, packed and explicitly aligned bodies,
+pragma/member alignment, bitfields and zero-width boundaries, nested records
+and arrays, float/double and large returns, native factories/aligned pointers,
+exhausted registers and variadic tails. Go and llgo execute fresh bindings from
+objects, archives and shared libraries at both optimization levels.
+
+Unadorned GNU zero-width boundaries combined with pragma packing and lowered
+record members remain unqualified where GCC raises the body alignment. Native
+constructor layout checks reject that discrepancy before calls; explicit
+boundary attributes use the already-qualified gap facade.
 
 ### Compiler default packing
 

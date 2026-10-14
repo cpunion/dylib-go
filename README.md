@@ -498,12 +498,13 @@ Unnamed and zero-width aligned base typedefs also preserve observed boundaries,
 including ignored/shared MS requests and GNU gaps; see the
 [tested padding typedef example](examples/paddingtypedefs/call.go). Some small
 GNU AMD64 gaps still require an unqualified implicit-padding facade.
-Aligned record aliases with a named tag or an unaligned body typedef also use
-C bridges; the [tested record typedef example](examples/recordtypedefs/call.go)
+Aligned record aliases, including anonymous bodies accessible only through
+aligned typedefs, also use C bridges; the [tested record typedef example](examples/recordtypedefs/call.go)
 covers inheritance, lowered/raised member alignment, arrays, packing, native
 factories/pointers and stack arguments. Alias alignment is saved separately
 from body size/alignment, and parsing checks that their calling ABI agrees.
-Anonymous bodies accessible only through aligned aliases remain unsupported.
+The [anonymous record example](examples/anonymousrecords/call.go) verifies
+independent body reconstruction, alias alignment, bitfield masks and call shapes.
 Complete struct pointees use `unsafe.Pointer` native addresses with their C
 prototypes preserved. They do not accept pointers to public Go record storage;
 use producer-owned storage or a compatible `abi.NativeValue` lease. Other

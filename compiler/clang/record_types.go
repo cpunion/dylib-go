@@ -82,6 +82,15 @@ func newTypeResolver(root astNode, aliases map[string]string, sizes map[string]i
 			r.spellings[id] = node.Name
 		}
 	}
+	// Anonymous bodies may have no unaligned spelling. Retain a written alias
+	// for field inspection and reconstruct its canonical body in compiler probes.
+	for _, node := range root.Inner {
+		if node.Kind == "TypedefDecl" {
+			if id := r.names[node.Name]; id != "" && r.spellings[id] == "" {
+				r.spellings[id] = node.Name
+			}
+		}
+	}
 	return r
 }
 
@@ -336,5 +345,10 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 	}
 	r.resolved[id] = d
 	r.records = append(r.records, Record{Name: name, Description: d, Packed: packed, MaxFieldAlignment: packing, PackedFields: packedFields, Aligned: aligned, FieldAlignments: fieldAlignments, FieldTypeAlignments: fieldTypeAlignments, Bitfields: bitfields, Padding: padding})
+	if alignment, err := r.typedefAlignment(name, depth); err != nil {
+		return abi.TypeDesc{}, err
+	} else if alignment != 0 {
+		r.rememberRecordTypedef(id, name, alignment)
+	}
 	return d, nil
 }
