@@ -61,7 +61,7 @@ func (r Record) hasBitfields() bool {
 }
 
 func (r Record) requiresCAdapter() bool {
-	return r.Packed || r.MaxFieldAlignment != 0 || len(r.PackedFields) != 0 || r.hasBitfields() || r.Aligned != 0 || len(r.FieldAlignments) != 0 || len(r.FieldTypeAlignments) != 0 || r.IndirectArgument || r.IndirectResult || r.ArgumentAlignment != 0
+	return r.Packed || r.MaxFieldAlignment != 0 || len(r.PackedFields) != 0 || r.hasBitfields() || r.Aligned != 0 || len(r.FieldAlignments) != 0 || len(r.FieldTypeAlignments) != 0 || len(r.TypedefAlignments) != 0 || r.IndirectArgument || r.IndirectResult || r.ArgumentAlignment != 0
 }
 
 func cloneBitfields(fields []Bitfield) []Bitfield {

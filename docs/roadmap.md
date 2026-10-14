@@ -87,7 +87,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Whole-array typedef alignment at independent nested alias layers, including scalar/enum/record/native-address elements, compiler-validated packing and native Go/llgo object/archive/library calls.
 - [x] Named aligned scalar/enum typedef bitfields with raised/lowered requests, shared allocation units, packing/member alignment, Linux AArch64 argument alignment and native Go/llgo object/archive/library calls.
 - [x] Aligned unnamed/zero-width scalar/enum typedef bitfields with observed unit starts/gaps, ignored/shared boundaries, packing, small SysV prefix/tail facades and native Go/llgo object/archive/library calls.
-- [ ] Record typedef alignment; remaining typedef packing forms and small GNU AMD64 unnamed gaps with floating fields outside qualified implicit facades.
+- [x] Aligned record aliases with accessible canonical bodies, inherited/raised/lowered requests, separate alias/body metadata, compiler calling-ABI checks and native Go/llgo object/archive/library calls.
+- [ ] Anonymous record bodies accessible only through aligned typedefs; remaining typedef packing forms and small GNU AMD64 unnamed gaps with floating fields outside qualified implicit facades.
 - [x] Named integral/Boolean bitfields through compiler byte-mask probes and validated Go/llgo C bridges, including packed combinations, nested arrays, native factories and variadic calls.
 - [x] Unnamed/zero-width bitfields with compiler-qualified declaration positions, leading/trailing padding, packed combinations, nested arrays, floating fields and native pointer/factory/variadic calls.
 - [x] Explicit numeric record/member alignment through validated C bridges, including packed/bitfield combinations, nested arrays, floating aggregates, native factories and variadic calls.

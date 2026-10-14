@@ -1,0 +1,37 @@
+typedef struct { int value; } Plain;
+typedef Plain High __attribute__((aligned(16)));
+typedef High Inherited;
+typedef Inherited Low __attribute__((aligned(1)));
+typedef Low Down __attribute__((aligned(2)));
+typedef struct { long long first,second,third; } Wide;
+typedef Wide WideHigh __attribute__((aligned(16)));
+typedef WideHigh WideLow __attribute__((aligned(1)));
+typedef struct { float scalar; } Float;
+typedef Float FloatHigh __attribute__((aligned(16)));
+typedef FloatHigh FloatLow __attribute__((aligned(1)));
+typedef struct { long long left,right; } Pair;
+typedef Pair PairHigh __attribute__((aligned(16)));
+typedef struct { signed char low_tag; Low low_child; signed char low_tail; } LowParent;
+typedef struct { signed char high_tag; High high_child; signed char high_tail; } HighParent;
+typedef struct { signed char down_tag; Down down_child; signed char down_tail; } DownParent;
+typedef struct { signed char wide_tag; WideLow wide_child; signed char wide_tail; } WideParent;
+typedef struct { signed char float_tag; FloatLow float_child; signed char float_tail; } FloatParent;
+typedef struct { signed char array_tag; PairHigh array_children[2]; signed char array_tail; } ArrayParent;
+typedef struct __attribute__((packed)) { signed char packed_tag; High packed_child; signed char packed_tail; } PackedParent;
+#pragma pack(push,2)
+typedef struct { signed char pragma_tag; High pragma_child; signed char pragma_tail; } PragmaParent;
+#pragma pack(pop)
+typedef struct { signed char member_tag; Low member_child __attribute__((aligned(8))); signed char member_tail; } MemberParent;
+Plain echo_plain(Plain); High echo_high(High); Low echo_low(Low); Inherited echo_inherited(Inherited);
+WideHigh echo_wide(WideHigh); WideLow echo_wide_low(WideLow); FloatHigh echo_float(FloatHigh); FloatLow echo_float_low(FloatLow);
+LowParent echo_low_parent(LowParent); HighParent echo_high_parent(HighParent); DownParent echo_down_parent(DownParent);
+WideParent echo_wide_parent(WideParent); FloatParent echo_float_parent(FloatParent); ArrayParent echo_array_parent(ArrayParent);
+PackedParent echo_packed_parent(PackedParent); PragmaParent echo_pragma_parent(PragmaParent); MemberParent echo_member_parent(MemberParent);
+High shifted(int,High); double overflow(double,double,double,double,double,double,double,double,FloatLow,double);
+typedef High (*HighEntry)(High);
+HighEntry high_factory(void); High forward_high(HighEntry,High);
+High *high_pointer(High); High read_high(High *); int high_alignment(High *);
+long long wide_overflow(int,int,int,int,int,int,int,int,WideLow,int);
+double alias_variadic(double,double,double,double,double,double,double,double,FloatLow,...);
+typedef struct { High small_child; signed char small_tail; } SmallParent;
+SmallParent echo_small_parent(SmallParent); SmallParent shifted_small(int,SmallParent);

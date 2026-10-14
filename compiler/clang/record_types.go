@@ -47,15 +47,12 @@ func newTypeResolver(root astNode, aliases map[string]string, sizes map[string]i
 		index(node)
 	}
 	for _, node := range root.Inner {
+		if node.Kind == "TypedefDecl" {
+			r.aliasNodes[node.Name] = node
+		}
+	}
+	for _, node := range root.Inner {
 		if node.Kind != "TypedefDecl" {
-			continue
-		}
-		r.aliasNodes[node.Name] = node
-		hasAttributes := false
-		for _, child := range node.Inner {
-			hasAttributes = hasAttributes || strings.HasSuffix(child.Kind, "Attr")
-		}
-		if hasAttributes {
 			continue
 		}
 		id := recordReference(node)
@@ -73,7 +70,14 @@ func newTypeResolver(root astNode, aliases map[string]string, sizes map[string]i
 		if !record.CompleteDefinition || strings.ContainsAny(spelling, "*[]()") {
 			continue
 		}
-		r.names[node.Name], r.names[spelling] = id, id
+		r.names[node.Name] = id
+		// Aligned aliases share their body's fields and calling ABI, but must
+		// not replace its spelling in layout probes. Alias alignment does not
+		// round the body's size or change its natural alignment.
+		if r.recordTypedefAttributes(node) {
+			continue
+		}
+		r.names[spelling] = id
 		if r.spellings[id] == "" || strings.HasPrefix(r.spellings[id], "struct ") {
 			r.spellings[id] = node.Name
 		}
@@ -114,11 +118,19 @@ func (r *typeResolver) describe(spelling string, typedPointers bool, depth int) 
 		return abi.TypeDesc{}, fmt.Errorf("C type nesting exceeds 16 levels")
 	}
 	spelling = unqualified(spelling)
-	if _, err := r.typedefAlignment(spelling, depth); err != nil {
+	alignment, err := r.typedefAlignment(spelling, depth)
+	if err != nil {
 		return abi.TypeDesc{}, err
 	}
 	if id := r.names[spelling]; id != "" {
-		return r.record(id, depth)
+		d, err := r.record(id, depth)
+		if err != nil {
+			return d, err
+		}
+		if alignment != 0 {
+			r.rememberRecordTypedef(id, spelling, alignment)
+		}
+		return d, nil
 	}
 	if e := r.enums[spelling]; e != nil {
 		return r.describeEnum(e)
@@ -167,7 +179,7 @@ func (r *typeResolver) describe(spelling string, typedPointers bool, depth int) 
 			base = unqualified(alias)
 		}
 		if id := r.names[base]; id != "" && r.nodes[id].TagUsed == "struct" {
-			element, err := r.record(id, depth+1)
+			element, err := r.describe(base, false, depth+1)
 			if err != nil {
 				return abi.TypeDesc{}, err
 			}

@@ -18,6 +18,9 @@ type Record struct {
 	Name        string
 	Description abi.TypeDesc
 	Layout      abi.Layout
+	// TypedefAlignments preserves used aligned aliases independently of the
+	// canonical body layout. Parse verifies their calling ABI against the body.
+	TypedefAlignments []RecordTypedefAlignment
 	// Packed requests the C compiler's packed attribute. Description remains a
 	// logical field model; only compiled C adapters may pass this record by value.
 	Packed bool
@@ -39,7 +42,7 @@ type Record struct {
 	// declarations require compiled C adapters, never a Go memory view.
 	Aligned         uint64
 	FieldAlignments []FieldAlignment
-	// FieldTypeAlignments preserves scalar/native-address and fixed-array typedef
+	// FieldTypeAlignments preserves scalar/native-address, record and fixed-array typedef
 	// alignment on named fields, separately from member attributes. Typedefs may
 	// lower alignment and never change size. C bridges preserve
 	// native storage and compiler calling classes through C-only facades.
@@ -133,6 +136,7 @@ func (h *Header) LookupRecord(name string) (Record, error) {
 				record.FieldTypeAlignments = append([]TypedefFieldAlignment(nil), record.FieldTypeAlignments...)
 				record.MemberAlignments = append([]uint64(nil), record.MemberAlignments...)
 				record.PackedFields = append([]int(nil), record.PackedFields...)
+				record.TypedefAlignments = append([]RecordTypedefAlignment(nil), record.TypedefAlignments...)
 				return record, nil
 			}
 		}
@@ -164,6 +168,7 @@ func (h *Header) validateDescriptions() error {
 		return fmt.Errorf("clang: declaration count exceeds supported limits")
 	}
 	budget := maxDescriptionNodes
+	aliasNames := make(map[string]bool)
 	for _, function := range h.Functions {
 		if err := validateSignature(function.Signature, &budget); err != nil {
 			return err
@@ -181,6 +186,15 @@ func (h *Header) validateDescriptions() error {
 		}
 		if err := record.Description.Validate(); err != nil {
 			return err
+		}
+		if err := validateRecordTypedefs(record); err != nil {
+			return err
+		}
+		for _, alias := range record.TypedefAlignments {
+			if alias.Name == record.Name || aliasNames[alias.Name] || len(aliasNames) >= maxRecords {
+				return fmt.Errorf("clang: duplicate or excessive record typedef declarations")
+			}
+			aliasNames[alias.Name] = true
 		}
 		if err := validateBitfields(record, false); err != nil {
 			return err
@@ -285,6 +299,9 @@ func validateSignature(s abi.Signature, budget *int) error {
 }
 
 func validRecordLayout(record Record) error {
+	if err := validateRecordTypedefs(record); err != nil {
+		return err
+	}
 	if record.ArgumentAlignment != 0 && (record.ArgumentAlignment != 16 || record.Layout.Alignment < 16 || record.Layout.Size > 16) {
 		return fmt.Errorf("clang: invalid record argument alignment in %s", record.Name)
 	}

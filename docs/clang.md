@@ -485,7 +485,7 @@ small/large values, ignored shared requests, named/unnamed/zero-width boundaries
 packed combinations, floating aggregates, multidimensional nested arrays,
 aligned native function-pointer fields, factories, pointer identity/mutation,
 nulls and concrete variadic prefixes/results at `-O0`/`-O2` with Go and llgo.
-Record typedef alignment remains unqualified. The
+The
 [packed example](../examples/packedrecords/call.go) executes object/archive/library
 calls at `-O0`/`-O2`, including nested packing levels, restored natural outer
 layout, numeric/omitted/type-based member alignment, packed combinations, nested
@@ -495,6 +495,47 @@ The [bitfield example](../examples/bitfieldrecords/call.go) adds small signed
 returns, active/consecutive/trailing boundaries, packed/aligned unnamed fields,
 floating aggregates, nested arrays, native pointer mutation/factories and
 variadic bitfield prefixes/results at both optimization levels.
+
+### Aligned record typedefs
+
+A record alias may raise or lower alignment without changing the body's size:
+
+```c
+typedef struct { int value; } Plain;
+typedef Plain High __attribute__((aligned(16)));
+typedef High Low __attribute__((aligned(1)));
+```
+
+`LookupRecord("Plain")` retains the body layout (size 4, alignment 4 here).
+`Record.TypedefAlignments` separately records used alias names and their effective
+requests, including inheritance and overrides. High still has size 4 and alias
+alignment 16; it does not become a 16-byte record. Snapshots and generated header
+metadata preserve both facts. A named struct tag or an unaligned typedef must
+make the body accessible. An anonymous body exposed only by aligned aliases,
+including unannotated aliases that inherit alignment, remains rejected.
+
+Named members retain their alias requests in `FieldTypeAlignments`; compiler
+probes separately measure storage alignment and offsets. GNU producers honor
+lowered record member alignment, while MSVC may retain the body's natural member
+alignment. C bridges preserve the observed rule alongside explicit member
+alignment, packed records, pragma caps and fixed arrays. Invalid element strides
+remain rejected; raising alignment never adds bytes to an array element.
+
+Parse compares the alias and body LLVM argument/result lowering, including a
+preceding integer argument and Windows i386 cdecl/stdcall/fastcall conventions.
+A difference is rejected before generation. These declarations require
+`CgoSource` for Go or llgo. Public values keep logical Go fields, while C-only
+values retain the compiler's native layout. Pointers to aligned aliases require
+producer-owned storage satisfying the alias's alignment; the ordinary body's
+layout does not qualify `abi.NewNativeValue` for an over-aligned alias.
+
+The [record typedef example](../examples/recordtypedefs/call.go) executes inherited,
+raised and lowered aliases, small floating and large integer returns, nested
+records/arrays, packing/member attributes, native factories and aligned pointers,
+null pointers, exhausted argument registers and concrete variadic tails. Fresh
+bindings and `-O0`/`-O2` object/archive/shared-library calls run with Go and llgo;
+compiler tests check eight target layouts, MSVC/MinGW bridges, LLVM call shapes
+and an independent GCC bridge.
 
 ### Compiler default packing
 
@@ -586,7 +627,8 @@ producer, MinGW bridges suppress ignored requests and reproduce effective
 boundaries with aligned allocation units or compiler-confirmed byte gaps.
 MinGW producers retain their original declarations and ABI.
 
-Alignment on typedefs remains unsupported. Named member requests whose alignment
+Typedef alignment follows the qualified scalar, array, bitfield and record
+alias rules above. Named member requests whose alignment
 cannot be confirmed in the native layout remain rejected outside the qualified
 pragma bitfield bridges. Other packing policies are not inferred. The [aligned example](../examples/alignedrecords/call.go)
 executes object/archive/library calls at `-O0` and `-O2` on the eight Go and six
