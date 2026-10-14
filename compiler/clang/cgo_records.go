@@ -199,6 +199,13 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			return err
 		}
 		tailPadding := t.gnuAMD64 && gnuImplicitTailPadding(record) && t.sysVAlignedRecord(record, 0)
+		if t.gnuAMD64 && record.Layout.Size <= 16 && len(record.Bitfields) == 0 && !tailPadding && t.sysVAlignedRecord(record, 0) {
+			for _, padding := range record.Padding {
+				if padding.Width != 0 && padding.Before == len(record.Description.Fields) {
+					return fmt.Errorf("clang: GNU AMD64 small trailing unnamed bitfields in %s require an implicit-padding C bridge", record.Name)
+				}
+			}
+		}
 		prefixPadding := t.gnuPrefixPadding(record)
 		if t.gnuAMD64 && record.MaxFieldAlignment != 0 && record.Layout.Size <= 16 && t.sysVAlignedRecord(record, 0) {
 			for index, padding := range record.Padding {
@@ -292,6 +299,9 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 			if member.padding >= 0 {
 				p := record.Padding[member.padding]
+				if tailPadding && p.Width != 0 && p.Before == len(record.Description.Fields) {
+					continue
+				}
 				if prefixPadding[member.padding] {
 					fmt.Fprint(output, "};\n")
 				}
