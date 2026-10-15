@@ -103,14 +103,23 @@ func TestNativeWindowsRuntimeFunctionTables(t *testing.T) {
 }
 
 func TestNativeWindowsChainedRuntimeFunctionTables(t *testing.T) {
+	testNativeWindowsChainedTables(t, "testdata/unwind_chained_amd64.S", "testdata/unwind_host_windows.c", "unwind_chain_root", 4, false)
+}
+
+func TestNativeWindowsOverlappingRuntimeFunctionTables(t *testing.T) {
+	testNativeWindowsChainedTables(t, "testdata/unwind_chained_overlap_amd64.S", "testdata/unwind_overlap_host_windows.c", "unwind_overlap_root", 7, true)
+}
+
+func testNativeWindowsChainedTables(t *testing.T, source, hostSource, root string, ranges int, overlap bool) {
+	t.Helper()
 	if runtime.GOARCH != "amd64" {
 		t.Skip("x64 chained unwind requires Windows AMD64")
 	}
 	needNative(t)
 	dir := t.TempDir()
 	host := filepath.Join(dir, "chain_host.dll")
-	command(t, compiler(), "-shared", "-O0", "-funwind-tables", "testdata/unwind_host_windows.c", "-o", host)
-	obj := compile(t, "testdata/unwind_chained_amd64.S", filepath.Join(dir, "chain.o"))
+	command(t, compiler(), "-shared", "-O0", "-funwind-tables", hostSource, "-o", host)
+	obj := compile(t, source, filepath.Join(dir, "chain.o"))
 	lookup := syscall.NewLazyDLL("kernel32.dll").NewProc("RtlLookupFunctionEntry")
 	for _, mode := range []string{"default", "object", "archive"} {
 		t.Run(mode, func(t *testing.T) {
@@ -123,15 +132,27 @@ func TestNativeWindowsChainedRuntimeFunctionTables(t *testing.T) {
 			defer s.Close()
 			load(t, s, host, input)
 			if mode == "default" {
-				call(t, s, "unwind_chain_root", 20, 22, -1)
+				call(t, s, root, 20, 22, -1)
 				return
 			}
 			// The observer must unwind both secondary records and the primary
 			// allocation to reach the second raw frame and return 42.
-			call(t, s, "unwind_chain_root", 20, 22, 42)
-			owned := s.image.unwind
-			if owned == nil || !owned.registered || len(owned.mem) != 48 {
-				t.Fatal("four native runtime function ranges were not registered")
+			call(t, s, root, 20, 22, 42)
+			if overlap {
+				for stage := int32(0); stage < 7; stage++ {
+					call(t, s, "unwind_overlap_probe", stage, 0, 42)
+				}
+				var region [48]byte // MEMORY_BASIC_INFORMATION on Windows AMD64.
+				query := syscall.NewLazyDLL("kernel32.dll").NewProc("VirtualQuery")
+				n, _, _ := query.Call(s.image.base+uintptr(s.image.unwindProxyStart), uintptr(unsafe.Pointer(&region[0])), uintptr(len(region)))
+				if n != uintptr(len(region)) || le.Uint32(region[36:]) != 2 || s.image.unwindProxyUsed != 32 {
+					t.Fatalf("proxy storage is not read-only: size=%d protection=%#x used=%d", n, le.Uint32(region[36:]), s.image.unwindProxyUsed)
+				}
+			}
+			image := s.image
+			owned := image.unwind
+			if owned == nil || !owned.registered || len(owned.mem) != ranges*12 {
+				t.Fatalf("expected %d registered runtime function ranges", ranges)
 			}
 			var addresses []uintptr
 			for p := 0; p < len(owned.mem); p += 12 {
@@ -153,7 +174,7 @@ func TestNativeWindowsChainedRuntimeFunctionTables(t *testing.T) {
 					t.Fatalf("chained function table retained after close: %#x", entry)
 				}
 			}
-			if owned.mem != nil || owned.registered {
+			if owned.mem != nil || owned.registered || image.mem != nil {
 				t.Fatal("native table storage retained")
 			}
 		})
@@ -180,11 +201,11 @@ func TestNativeWindowsChainedRuntimeFunctionTables(t *testing.T) {
 		}
 		original := metadata.data[index]
 		metadata.data[index] |= 8 // A chain cannot also declare a handler.
-		if err := s.Link("unwind_chain_root"); err == nil || s.image != nil || s.initErr != nil {
+		if err := s.Link(root); err == nil || s.image != nil || s.initErr != nil {
 			t.Fatalf("invalid chain published or became permanent: %v", err)
 		}
 		metadata.data[index] = original
-		call(t, s, "unwind_chain_root", 20, 22, 42)
+		call(t, s, root, 20, 22, 42)
 		if err := s.Close(); err != nil {
 			t.Fatal(err)
 		}
