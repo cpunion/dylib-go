@@ -15,7 +15,7 @@ jobs:
   native:
     name: llgo / ${{ matrix.target }} / ${{ matrix.mode }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: ${{ matrix.target == 'darwin-amd64' && 100 || 75 }}
+    timeout-minutes: ${{ matrix.target == 'darwin-amd64' && 120 || 75 }}
     strategy:
       fail-fast: false
       matrix:
@@ -31,7 +31,7 @@ jobs:
         shell: bash
     env:
       CGO_ENABLED: '1'
-      LLGO_TEST_TIMEOUT: ${{ matrix.target == 'darwin-amd64' && '60m' || '35m' }}
+      LLGO_TEST_TIMEOUT: '35m'
       DYLIB_TEST_REQUIRE_NATIVE: ${{ matrix.mode == 'native' && '1' || '0' }}
       DYLIB_TEST_REQUIRE_SHARED: '1'
       DYLIB_TEST_REQUIRE_TOOLS: '1'
@@ -89,7 +89,20 @@ jobs:
       - name: Execute optional scalar, struct and callback libffi ABI
         env:
           DYLIB_TEST_LANGUAGES: ''
-        run: llgo test -count=1 -timeout="$LLGO_TEST_TIMEOUT" -v -tags libffi ./...
+        run: |
+          if [[ '${{ matrix.target }}' == darwin-amd64 ]]; then
+            go list -tags llgo,libffi ./... > "$RUNNER_TEMP/dylib-llgo-ffi-packages"
+            packages=()
+            while IFS= read -r package; do
+              if [[ "$package" != github.com/cpunion/dylib-go/compiler/clang ]]; then
+                packages+=("$package")
+              fi
+            done < "$RUNNER_TEMP/dylib-llgo-ffi-packages"
+            llgo test -count=1 -timeout="$LLGO_TEST_TIMEOUT" -v -tags libffi "${packages[@]}"
+            bash scripts/test-llgo-compiler.sh
+          else
+            llgo test -count=1 -timeout="$LLGO_TEST_TIMEOUT" -v -tags libffi ./...
+          fi
       - name: Build CLI with llgo
         run: llgo build -o ddlgo ./cmd/ddlgo
       - name: Execute README llgo, dynamic call and callback examples

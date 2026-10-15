@@ -10,8 +10,11 @@ Workflows run on pushes to main, pull requests, and manual dispatch. Pure Go job
 
 Native Go suites allow 20 minutes per test package within their 40-minute jobs.
 The llgo suites allow 35 minutes per package within 75-minute jobs; macOS Intel
-allows 60 minutes within a 100-minute job. Its expanded compiler qualification
-matrix exceeded the previous 40-minute package budget while tests were progressing.
+has a 120-minute job budget. Its expanded compiler qualification matrix exceeded
+a 60-minute single-process budget while tests were progressing. Intel macOS now
+compiles that test binary once, enumerates its real top-level tests, and executes
+four disjoint batches with 35-minute limits. Every test runs once; fresh processes
+bound retained compiler-probe state without a manually maintained test list.
 The full compiler matrix runs once with libffi. Direct calls in all other packages
 also run without libffi, together with the compiler's record, callback-field and
 metadata checks that exercise backend-unavailable behavior. This preserves both
