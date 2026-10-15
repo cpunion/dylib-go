@@ -86,14 +86,15 @@ type file struct {
 	slices  []*file // Universal Mach-O alternatives, separate from ar members.
 }
 type object struct {
-	info         Info
-	directory    string     // Search origin for DLL dependencies of staged imports.
-	timestamp    uint32     // COFF header time stamp, used by NEWEST COMDAT selection.
-	originalBase uint64     // Mach-O's preferred __TEXT address; usually zero in objects.
-	sections     []*section // Original section indices (zero reserved).
-	symbols      []symbol   // Original symbol table indices.
-	relocs       []relocation
-	groups       []sectionGroup
+	info                    Info
+	inputOrder, memberOrder int        // Original session/file order, independent of archive extraction.
+	directory               string     // Search origin for DLL dependencies of staged imports.
+	timestamp               uint32     // COFF header time stamp, used by NEWEST COMDAT selection.
+	originalBase            uint64     // Mach-O's preferred __TEXT address; usually zero in objects.
+	sections                []*section // Original section indices (zero reserved).
+	symbols                 []symbol   // Original symbol table indices.
+	relocs                  []relocation
+	groups                  []sectionGroup
 }
 
 // ELF COMDAT groups and COFF COMDAT sections share selection and discard rules.
@@ -115,6 +116,7 @@ type section struct {
 	priority              uint32
 	legacyLifecycle       bool // ELF .ctors/.dtors: reverse entries and -1 sentinels.
 	initOffsets           bool // Mach-O linker-resolved uint32 image-relative entries.
+	startup               bool // Executable ELF .init/.fini fragment, joined before invocation.
 }
 
 // section: 0 undefined, -1 absolute, -2 common, -3 ignored/debug, -4 DLL import,

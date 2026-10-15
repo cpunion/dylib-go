@@ -223,7 +223,6 @@ func TestLifecycleDependencyCycles(t *testing.T) {
 // Inspect must still reject lifecycle forms whose execution contracts differ.
 func TestRejectUnsupportedLifecycleForms(t *testing.T) {
 	for _, tc := range []struct{ triple, source string }{
-		{"x86_64-linux-gnu", ".section .init,\"ax\",@progbits\n.byte 0\n"},
 		{"x86_64-pc-windows-msvc", ".section .CRT$XLA,\"dr\"\n.quad 0\n"},
 	} {
 		file := filepath.Join(t.TempDir(), "unsupported.s")

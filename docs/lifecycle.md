@@ -9,6 +9,7 @@
 | Format | Initialization | Termination | Order |
 | --- | --- | --- | --- |
 | ELF32/ELF64 | `SHT_PREINIT_ARRAY`, `SHT_INIT_ARRAY` | `SHT_FINI_ARRAY` | Preinitializers first; numeric suffix priorities ascending, default 65535; finalizers reverse |
+| ELF AMD64/ARM64/i386 split CRT | Executable `.init` fragments | Executable `.fini` fragments | Join in original input/member order; `.init` after preinit and before init tables; `.fini` after fini tables |
 | ELF32/ELF64 legacy | `.ctors`, `.ctors.NNNNN` | `.dtors`, `.dtors.NNNNN` | Priority is `65535 - NNNNN`, default 65535; constructors reverse each table, destructors retain forward entry order |
 | Mach-O64 | `S_MOD_INIT_FUNC_POINTERS`, linker-resolved `S_INIT_FUNC_OFFSETS` | `S_MOD_TERM_FUNC_POINTERS` | Pointer tables before offset tables within each object; entries forward; terminators reverse |
 | COFF AMD64/ARM64/i386 | `.CRT$XI*` `int(void)` tables, then `.CRT$XC*` void tables | `.CRT$XP*`, `.CRT$XT*` void terminator tables | XI before XC; lexicographic subsection order; XP before XT, both forward |
@@ -21,7 +22,15 @@ Only selected archive members participate. COMDAT-discarded arrays and their ref
 
 Mach-O offset tables contain whole read-only, non-executable, four-byte-aligned `uint32` entries with no relocations. Each entry is relative to the original `__TEXT` segment's preferred address, or zero when that segment is absent, as in ordinary `MH_OBJECT` files. `Link` maps the original address to an unambiguous retained executable section in the same input object, then normalizes it to the private image's base. Independent code pages cannot be rebased with a uniform Mach-O slide. Offset zero is a valid initializer, not a null sentinel. Overflow, discarded/missing code, overlapping original ranges, non-code targets and unaligned ARM64 instructions fail before any initializer runs. Unselected archive members do not undergo this address validation. Within each object, pointer initializers precede offsets even if the offset section appeared first; provider-before-consumer ordering still applies between objects.
 
-Executable ELF `.init`/`.fini` sections and CRT TLS tables remain unsupported. `.init`/`.fini` may contain separate prologue/body/epilogue fragments that need a different section layout. This does not implement a complete CRT startup environment. Optional Windows/Linux/macOS C [unwind registration](unwind.md) is owned through initialization and cleanup.
+## ELF executable startup fragments
+
+On Linux AMD64, ARM64, and i386, selected read-only executable `SHT_PROGBITS` `.init` and `.fini` sections are joined into one function per name. Stage the CRT prologue (`crti.o`), body objects or archives, and CRT epilogue (`crtn.o`) in that order. Archive members keep their original file/member positions even when symbol resolution discovers them later. Only selected members participate; root an otherwise unreferenced member explicitly with `Link`.
+
+Each group occupies contiguous RX pages. Alignment gaps contain architecture-specific NOP instructions so execution falls through from prologue to body to epilogue. Ordinary section relocation still applies, including references between fragments. `_init` or `_fini` must begin the first retained fragment. The loader checks the standard GNU split CRT frame: AMD64 reserves eight stack bytes, i386 saves EBX and reserves eight bytes, and ARM64 saves/restores X29/X30. CET landing pads and ARM64 NOP, BTI, and paired PAC signing/authentication forms are accepted. This is a conservative completeness check for these CRT conventions, not general instruction verification; arbitrary standalone `.init`/`.fini` function frames are outside this contract.
+
+The complete `_init` runs after preinitializers and before modern or legacy constructor tables. The complete `_fini` runs after reversed termination tables. Both share the image lifetime and execute once. Missing entries/epilogues, writable or non-PROGBITS fragments, excessive alignment, and incompatible frames fail before initialization; missing dependencies can be staged and linking retried. `Inspect` can describe an individual fragment, while execution requires a complete selected group.
+
+This does not supply process startup, CRT TLS tables, or arbitrary runtime services. Optional Windows/Linux/macOS C [unwind registration](unwind.md) is owned through initialization and cleanup.
 
 ## Integer initialization failures
 

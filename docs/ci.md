@@ -9,6 +9,9 @@ Go and llgo use independent workflows and separately compiled test processes:
 Workflows run on pushes to main, pull requests, and manual dispatch. Pure Go jobs set `CGO_ENABLED=0` and run parser, error, and execution-refusal tests in a process compiled for the target architecture.
 
 Native Go suites allow 20 minutes per test package within their 40-minute jobs.
+macOS Intel uses a 75-minute job budget: its ordinary and race compiler
+qualification suites can together exceed 40 minutes. Both full suites still run,
+with the same per-package limits as the other Go targets.
 The llgo suites allow 35 minutes per package within 75-minute jobs; macOS Intel
 has a 120-minute job budget. Its expanded compiler qualification matrix exceeded
 a 60-minute single-process budget while tests were progressing. Intel macOS now
@@ -117,6 +120,8 @@ arguments and variadic promotions checked at runtime.
 Raw lifecycle fixtures run in every native Go and llgo job, without requiring libffi: C++ dependency initialization/destruction, ordinary archive selection, C termination tables, `atexit`/`__cxa_atexit`, selective and recursive `__cxa_finalize`, two-image isolation, validation rollback, and close idempotence. A retained observer library verifies callbacks after raw-image release. Pure Go jobs cross-inspect the eight target lifecycle table formats. See [lifecycle coverage](lifecycle.md).
 
 Linux jobs also execute real Clang `-fno-use-init-array` `.ctors/.dtors` output, including 386 Go. Tests cover reversed constructor entries, forward destructor entries, `0/-1` sentinels, normalized priorities mixed with modern arrays, C++ dependency/ordinary-archive selection, retry, and finalizer validation before initialization. All pure Go jobs inspect legacy ELF tables for amd64, arm64, and 386 and check malformed tables and priorities.
+
+Linux native jobs execute independently assembled split `.init/.fini` fixtures and the installed system `crti.o/crtn.o`, with ordinary object and lazily selected archive bodies. Tests check preinit/startup/init ordering, fini/startup termination ordering, original archive positions, missing-epilogue retry and repeated close. Pure Go jobs inspect AMD64/ARM64/i386 fragments and check NOP gaps, invalid section storage, CET frames and paired ARM64 PAC/BTI forms.
 
 Windows jobs execute COFF integer `.CRT$XI*` initialization before void `.CRT$XC*`, including native Go i386 cdecl. Positive/negative errors stop initialization, prevent repeated calls/publication, and retain registered-exit code until `Close`. Tests check dependency/root validation retry, invalid entries, and successful/failed cleanup. POSIX jobs exercise the shared integer-call and ownership machinery through a private test table, without claiming ELF/Mach-O integer-array support. libffi jobs run cleanup callbacks that reenter Go and verify `ErrClosed` without deadlock.
 

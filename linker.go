@@ -342,11 +342,13 @@ func references(o *object) ([]symbol, error) {
 
 func (s *Session) selectObjects(roots []string) ([]*object, error) {
 	var objs, archives []*object
-	for _, f := range s.files {
+	for fileOrder, f := range s.files {
 		if f.obj != nil {
+			f.obj.inputOrder, f.obj.memberOrder = fileOrder, -1
 			objs = append(objs, f.obj)
 		}
-		for _, m := range f.members {
+		for memberOrder, m := range f.members {
+			m.obj.inputOrder, m.obj.memberOrder = fileOrder, memberOrder
 			archives = append(archives, m.obj)
 		}
 	}
@@ -644,6 +646,7 @@ type image struct {
 	initializers, finalizers               []uintptr
 	cInitializers                          []cInitializer
 	unwind                                 *runtimeFunctions
+	startup                                []startupGroup
 	initialized                            bool
 }
 
@@ -675,7 +678,7 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 			}
 		}
 		for _, s := range o.sections {
-			if s == nil {
+			if s == nil || s.startup {
 				continue
 			}
 			if s.align > im.page {
@@ -687,6 +690,9 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 				return nil, fmt.Errorf("image exceeds 64 MiB")
 			}
 		}
+	}
+	if size, err = im.layoutStartup(size); err != nil {
+		return nil, err
 	}
 	// Merge tentative/common definitions by maximum size and alignment.
 	type commonSize struct{ size, align uint64 }
@@ -755,6 +761,9 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	if e := im.prepareRuntimeHelpers(); e != nil {
 		return nil, e
 	}
+	if e := im.fillStartupPadding(); e != nil {
+		return nil, e
+	}
 	// Populate every selected IAT slot and validate forwarding targets before
 	// publication, including definitions with no object relocations.
 	for _, o := range objs {
@@ -793,12 +802,17 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	// Each section owns whole pages; never grant WRITE and EXEC together.
 	for _, o := range objs {
 		for _, s := range o.sections {
-			if s == nil || s.size+s.tail == 0 {
+			if s == nil || s.startup || s.size+s.tail == 0 {
 				continue
 			}
 			if e := native.Protect(b[s.offset:s.offset+alignUp(s.size+s.tail, im.page)], s.exec, s.write); e != nil {
 				return nil, e
 			}
+		}
+	}
+	for _, group := range im.startup {
+		if e := native.Protect(b[group.offset:group.offset+group.size], true, false); e != nil {
+			return nil, e
 		}
 	}
 	if e := native.Protect(b[im.gotStart:im.stubStart], false, false); e != nil {
