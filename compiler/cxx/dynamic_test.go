@@ -24,9 +24,16 @@ func TestNativeDynamicClassFacade(t *testing.T) {
 	source, metadata := prepare(t, facade)
 	for _, optimization := range []string{"-O0", "-O2"} {
 		t.Run(optimization, func(t *testing.T) {
+			// Register library-directory cleanup before the session's cleanup:
+			// Windows cannot remove a DLL until its loader handle is closed.
+			library := shared(t, source, optimization)
 			session := dylib.New(dylib.Options{})
-			t.Cleanup(func() { session.Close() })
-			if err := session.Load(shared(t, source, optimization)); err != nil {
+			t.Cleanup(func() {
+				if err := session.Close(); err != nil {
+					t.Error(err)
+				}
+			})
+			if err := session.Load(library); err != nil {
 				t.Fatal(err)
 			}
 			functions := make(map[string]*dylib.Function)
