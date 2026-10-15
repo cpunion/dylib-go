@@ -646,6 +646,8 @@ type image struct {
 	initializers, finalizers               []uintptr
 	cInitializers                          []cInitializer
 	unwind                                 *runtimeFunctions
+	unwindProxyStart, unwindProxySize      uint64
+	unwindProxyUsed                        uint64
 	startup                                []startupGroup
 	initialized                            bool
 }
@@ -692,6 +694,9 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 		}
 	}
 	if size, err = im.layoutStartup(size); err != nil {
+		return nil, err
+	}
+	if size, err = im.layoutWindowsUnwindProxies(size); err != nil {
 		return nil, err
 	}
 	// Merge tentative/common definitions by maximum size and alignment.

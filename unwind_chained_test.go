@@ -156,9 +156,9 @@ func chainedUnwindMetadataImage(t *testing.T, path string) *image {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Relocate only RVA metadata into ordinary Go storage. This exercises
-	// genuine assembler output even in the CGO_ENABLED=0 jobs.
-	im := &image{objects: []*object{f.obj}, defs: defs}
+	// Relocate data into ordinary Go storage, without executing call fixups.
+	// This exercises genuine assembler output in the CGO_ENABLED=0 jobs.
+	im := &image{objects: []*object{f.obj}, defs: defs, page: 16}
 	size := uint64(16)
 	for _, s := range f.obj.sections {
 		if s == nil {
@@ -167,6 +167,10 @@ func chainedUnwindMetadataImage(t *testing.T, path string) *image {
 		size = alignUp(size, 16)
 		s.offset = size
 		size += s.size
+	}
+	size, err = im.layoutWindowsUnwindProxies(size)
+	if err != nil {
+		t.Fatal(err)
 	}
 	im.mem = make([]byte, size)
 	for _, s := range f.obj.sections {
@@ -178,8 +182,8 @@ func chainedUnwindMetadataImage(t *testing.T, path string) *image {
 		if f.obj.sections[r.section].exec {
 			continue
 		}
-		if r.typ != 3 {
-			t.Fatalf("expected image-relative metadata: %+v", r)
+		if r.typ != 3 && r.typ != 1 {
+			t.Fatalf("unexpected data relocation: %+v", r)
 		}
 		if err := im.relocate(f.obj, r); err != nil {
 			t.Fatal(err)
@@ -188,10 +192,24 @@ func chainedUnwindMetadataImage(t *testing.T, path string) *image {
 	return im
 }
 
-func TestWindowsOverlappingChainedProducerRejected(t *testing.T) {
-	path := compile(t, "testdata/unwind_chained_overlap_amd64.S", filepath.Join(t.TempDir(), "overlap.o"), "--target=x86_64-pc-windows-msvc")
-	im := chainedUnwindMetadataImage(t, path)
-	if _, err := im.windowsFunctionTable("amd64"); err == nil || !strings.Contains(err.Error(), "overlapping") {
-		t.Fatalf("overlapping assembler ranges: %v", err)
+func TestWindowsOverlappingChainedProducer(t *testing.T) {
+	for _, triple := range []string{"x86_64-pc-windows-msvc", "x86_64-w64-windows-gnu"} {
+		t.Run(triple, func(t *testing.T) {
+			path := compile(t, "testdata/unwind_chained_overlap_amd64.S", filepath.Join(t.TempDir(), "overlap.o"), "--target="+triple)
+			im := chainedUnwindMetadataImage(t, path)
+			table, err := im.windowsFunctionTable("amd64")
+			if err != nil || len(table) != 7*12 || im.unwindProxyUsed != 32 {
+				t.Fatalf("normalized assembler ranges: %x, proxies=%d, %v", table, im.unwindProxyUsed, err)
+			}
+			for p := 0; p < len(table); p += 12 {
+				begin, end, rva := le.Uint32(table[p:]), le.Uint32(table[p+4:]), le.Uint32(table[p+8:])
+				if p != 0 && begin < le.Uint32(table[p-8:]) {
+					t.Fatal("normalized ranges overlap")
+				}
+				if err := im.x64UnwindInfo(rva, uint64(end-begin)); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
 	}
 }

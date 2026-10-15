@@ -23,6 +23,10 @@ func elfUnwindSection(name string) bool {
 	return name == ".eh_frame" || strings.HasPrefix(name, ".eh_frame.")
 }
 
+func coffPdataSection(s *section) bool {
+	return s != nil && (s.name == ".pdata" || strings.HasPrefix(s.name, ".pdata$"))
+}
+
 func discardUnwind(o *object) {
 	if o != nil && o.info.Format == "Mach-O" {
 		discardUnwindSections(o, func(s *section) bool { return s.name == "__eh_frame" })
@@ -43,7 +47,7 @@ func discardCOFFUnwind(o *object) {
 		return
 	}
 	discardUnwindSections(o, func(s *section) bool {
-		return s.name == ".pdata" || s.name == ".xdata" || strings.HasPrefix(s.name, ".pdata$") || strings.HasPrefix(s.name, ".xdata$")
+		return coffPdataSection(s) || s.name == ".xdata" || strings.HasPrefix(s.name, ".xdata$")
 	})
 }
 
@@ -76,6 +80,11 @@ func (im *image) registerUnwind() error {
 	table, err := im.windowsFunctionTable(arch)
 	if err != nil || len(table) == 0 {
 		return err
+	}
+	if im.unwindProxySize != 0 {
+		if err := native.Protect(im.mem[im.unwindProxyStart:im.unwindProxyStart+im.unwindProxySize], false, false); err != nil {
+			return err
+		}
 	}
 	mem, err := native.Alloc(len(table))
 	if err != nil {
@@ -132,20 +141,17 @@ func (u *runtimeFunctions) close() error {
 // Decode after relocation and COMDAT selection. Input .pdata arrays can have
 // different section/object orders, so publish one sorted, private native table.
 func (im *image) windowsFunctionTable(arch string) ([]byte, error) {
+	im.unwindProxyUsed = 0
 	width := uint64(12)
 	if arch == "arm64" {
 		width = 8
 	} else if arch != "amd64" {
 		return nil, fmt.Errorf("unsupported Windows unwind architecture %s", arch)
 	}
-	type entry struct {
-		begin, end uint32
-		data       []byte
-	}
-	var entries []entry
+	var entries []windowsFunction
 	for _, o := range im.objects {
 		for _, s := range o.sections {
-			if s == nil || s.name != ".pdata" && !strings.HasPrefix(s.name, ".pdata$") {
+			if !coffPdataSection(s) {
 				continue
 			}
 			if s.exec || s.size%width != 0 {
@@ -172,11 +178,23 @@ func (im *image) windowsFunctionTable(arch string) ([]byte, error) {
 						return nil, err
 					}
 				}
-				entries = append(entries, entry{begin, uint32(end), b})
+				entries = append(entries, windowsFunction{begin, uint32(end), b})
 			}
 		}
 	}
-	sort.Slice(entries, func(i, j int) bool { return entries[i].begin < entries[j].begin })
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].begin == entries[j].begin {
+			return entries[i].end > entries[j].end
+		}
+		return entries[i].begin < entries[j].begin
+	})
+	if arch == "amd64" {
+		var err error
+		entries, err = im.normalizeX64Unwind(entries)
+		if err != nil {
+			return nil, err
+		}
+	}
 	table := make([]byte, 0, uint64(len(entries))*width)
 	for i, e := range entries {
 		if i != 0 && e.begin < entries[i-1].end {
@@ -199,7 +217,9 @@ func (im *image) unwindRange(offset, size uint64, exec bool) bool {
 }
 
 func (im *image) unwindData(rva uint32, size uint64) ([]byte, error) {
-	if rva%4 != 0 || !im.unwindRange(uint64(rva), size, false) {
+	offset := uint64(rva)
+	proxy := offset >= im.unwindProxyStart && offset-im.unwindProxyStart < im.unwindProxyUsed && size <= im.unwindProxyUsed-(offset-im.unwindProxyStart)
+	if rva%4 != 0 || !proxy && !im.unwindRange(offset, size, false) {
 		return nil, fmt.Errorf("unwind metadata is outside an aligned data section")
 	}
 	return im.mem[uint64(rva) : uint64(rva)+size], nil

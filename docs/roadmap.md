@@ -67,7 +67,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Optional Linux amd64/arm64/386 C `.eh_frame` registration with retained libgcc, native stack traversal and deregistration.
 - [x] Optional macOS amd64/arm64 C DWARF registration with system libunwind, implicit FDE rebasing, native traversal and deregistration.
 - [x] Windows AMD64 version 1 disjoint chained C unwind records, shared primaries, multi-level integer saves, validation retry and native Go/llgo stack traversal.
-- [ ] Windows language handlers, overlapping chained ranges and newer unwind versions, POSIX personality/LSDA and additional providers, and Mach-O compact unwind registration.
+- [x] Windows AMD64 nested overlapping chains, disjoint registration intervals and read-only resumed-parent proxies, with partial-prolog and register/stack restoration tests.
+- [ ] Windows language handlers and newer unwind versions, POSIX personality/LSDA and additional providers, and Mach-O compact unwind registration.
 - [x] Concurrent Symbol/Function/CallPlan calls and reentrant callbacks, with retirement before cleanup and no invocation lock across native calls.
 - [x] Scoped reentrant load/link initializers with staged raw symbols, prior OS-library/retained-provider symbols, busy errors for ordinary operations, and concurrent close/failure lifetime guards before publication.
 - [ ] Explicit raw-object TLS models, per-thread allocation, and thread destructor ownership.

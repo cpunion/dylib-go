@@ -133,6 +133,12 @@ unregistration and validation retry. Pure Go jobs relocate genuine MSVC/MinGW
 assembler metadata, check shared/empty/FAR chains, and reject malformed tails,
 frame mismatches and cycles, including a 2048-level chain.
 
+The Windows AMD64 suites also execute overlapping LLVM `.seh_startchained`
+output, from objects and archives. Seven native contexts validate partial
+prologs, nested saves, resumed parents and restored registers/stack/return PC;
+`VirtualQuery` checks proxy page permissions. Pure Go tests check the normalized
+intervals, frame metadata, siblings, shared ends, unchanged input bytes and limits.
+
 Linux amd64/arm64 Go and llgo jobs, and native Go 386, execute optional ELF frame registration with libgcc, `_Unwind_Backtrace` through two raw C frames, and `_Unwind_Find_FDE` before/after close. Object/archive calls, default loading, validation retry and failed-initializer ownership are covered. Pure Go jobs inspect all three ELF producers and reject malformed CIE/FDE/CFI records.
 
 macOS amd64/arm64 Go and llgo jobs execute optional per-FDE DWARF registration with system libunwind, real object/archive stack traversal, before/after-close FDE lookup, validation retry and failed initialization cleanup. Pure Go jobs inspect real `__eh_frame` compiler output and verify explicit ARM64 pairs and implicit x86-64 address rebasing.

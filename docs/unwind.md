@@ -17,7 +17,7 @@ continue to use their OS-managed unwind registration.
 ## Windows
 
 Go validates relocated ranges and metadata, merges retained `.pdata` and
-`.pdata$*` arrays, rejects overlaps, and sorts the private output table by
+`.pdata$*` arrays, normalizes supported AMD64 nested chains, and sorts the private output table by
 function start. Function ranges must lie inside executable image sections.
 Metadata must lie in aligned data sections. AMD64 code slots/operand counts,
 ARM64 packed lengths, full/extended headers, and epilog scope bounds are checked.
@@ -33,10 +33,19 @@ tails, language handlers and other secondary operations fail before registration
 Shared primaries and multi-level chains are supported. Embedded parent records
 need not have a separate `.pdata` entry.
 
-Registered `.pdata` ranges must still be disjoint. Overlapping ranges, including
-those produced by LLVM's nested `.seh_startchained` directives, need normalization
-before this loader can accept them. This does not add language exception handling
-or version 2/3 unwind formats.
+LLVM's nested `.seh_startchained` ranges are accepted when each overlapping child
+contains the enclosing entry in its unwind chain and begins after that parent's
+prolog is complete. Go selects the innermost range and produces a sorted,
+disjoint registration table. Equal starts, crossing ranges and unrelated overlaps
+are rejected; a child may end at its parent's end.
+
+When a parent resumes after a child, an empty chain points to its original
+`RUNTIME_FUNCTION`. Reusing the original unwind address with a moved function
+start would incorrectly treat the resumed code as another partial prolog. These
+16-byte proxy records use preallocated, non-executable image pages inside the
+32-bit RVA window. The pages become read-only before registration and remain
+owned through deregistration. Original section bytes are not rewritten.
+This does not add language exception handling or version 2/3 unwind formats.
 
 The output table lives in OS-owned read-only memory. Go calls
 `RtlAddFunctionTable` after link/root validation and before initialization.
@@ -135,6 +144,13 @@ chain through the same OS unwinder, with objects, archives, default loading,
 per-range lookup, unregistration and validation retry. Pure Go jobs relocate
 the MSVC and MinGW assembler metadata and validate shared/empty/FAR chains,
 malformed records, and a 2048-level chain and cycle.
+
+The same native jobs execute LLVM's overlapping two-level output, with objects,
+archives, cleanup and retry. Seven controlled `RtlVirtualUnwind` contexts check
+partial prologs, nested saves and both resumed parents, including restored
+registers, stack pointer and return address. `VirtualQuery` verifies read-only
+proxy storage. Pure Go tests check nesting, sibling and shared-end intervals,
+frame registers, deterministic output, unchanged input sections and storage limits.
 
 References: [Microsoft x64 unwind format](https://learn.microsoft.com/en-us/cpp/build/exception-handling-x64),
 [Microsoft ARM64 unwind format](https://learn.microsoft.com/en-us/cpp/build/arm64-exception-handling),
