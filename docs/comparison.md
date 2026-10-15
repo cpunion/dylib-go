@@ -54,7 +54,7 @@ ABIBridge provides native language calls and runtime interpretation above Apple 
 | --- | --- | --- |
 | Dynamic C calls | Explicit signatures, variadic tails with C promotions, and reusable prepared call interfaces; no fixed argument-count limit | Host C ABI plus Windows 386 stdcall/fastcall; scalars, ordinary C structs, concrete variadic shapes, and owned reusable CIFs. Argument storage follows the concrete signature length; additional aggregate forms and conventions remain |
 | Declaration resolution | Source-level Swift/C++ declarations, overload selection, image scopes, and shared metadata indexes | Exact linkage names; Go-style parsing supplies types but does not discover native prototypes. Header/declaration manifests or generated adapters can add validation |
-| C++ receivers and virtual entries | Direct methods, owned/borrowed receiver storage, explicit base views, and adapter-described virtual tables/authentication | No built-in method/object ABI. Callers need C facades or compiled adapters; nontrivial C++ values also require compiler adapters in ABIBridge |
+| C++ receivers and virtual entries | Direct methods, owned/borrowed receiver storage, explicit base views, and adapter-described virtual tables/authentication | Explicit `compiler/cxx` manifests generate constructor/member/delete C facades for scalar/native-address calls, native virtual dispatch and caught exceptions. Class values, discovered declarations and automatic base views remain; nontrivial C++ values also require compiler adapters in ABIBridge |
 | Swift native ABI | Supported native values, metadata/witnesses, generic binding, direct/indirect results, async/throws, and explicit value operations | Tested C facades from complete libraries include explicit object retain/release and leased Go observers. Native Swift signatures, managed values, generics, tasks, and errors need a dedicated runtime adapter |
 | Objective-C and SwiftUI | Runtime dispatch, ownership, method hooks, and a separate SwiftUI adapter product | ObjC++ C facades explicitly manage ARC objects and leased Go observers; no built-in message-dispatch, ARC, or UI adapter. Raw registration objects are rejected and thread contracts remain adapter-specific |
 | Native callbacks and replacement | Native callback entry owners, supported Swift closures, import/method/virtual hooks, and publication/retirement contracts | Fixed C callback entries support scalars, ordinary structs, Go captures, and C-created threads, with leases and explicit unregister/join/close. Explicit registration owners couple code/value/callback leases with unregister/join and cleanup retry. No import/method/virtual hooks, Swift closures, or inferred native dependency ownership |
@@ -98,7 +98,9 @@ be generated for direct llgo calls without libffi, with Clang/llgo storage check
 Fixed/variadic cdecl function-pointer parameters/results retain typed native prototypes and
 explicit code ownership; managed captures and foreign-thread callback entries
 still use owned adapters. Direct llgo methods support concrete variadic tails with
-C promotions without libffi. C++ adapters remain separate work.
+C promotions without libffi. Explicit [C++ class manifests](cxx.md) now render
+small C++17 facades whose C headers reuse these adapters, including native
+constructor/member/destructor calls and exception status codes.
 
 `CgoSource` also generates typed scalar/record/native-address methods for Go and
 llgo without libffi. Record conversions copy fields into independently checked C
@@ -114,7 +116,7 @@ The following integrations remain proposals:
 
 1. Add an optional dynamic mode to llcppg. Preserve its generated types, names, and layouts, and generate binding fields owned by a session. Known signatures can use caller-defined `//llgo:type C` function types through `Symbol.WithAddress`. The loader need not duplicate header parsing.
 2. Define a declaration manifest with target triple, C/C++ ABI, linkage name, arguments/results, record size/alignment, `this` and hidden result parameters, ownership, and exception boundaries. Existing `abi.Signature` covers concrete fixed/variadic scalar and ordinary C struct signatures with supported native C conventions; it does not express these additional language contracts.
-3. Generate small `extern "C"` facades for complex C++ classes. A matching compiler handles construction, destruction, inheritance, results, and conversion of exceptions into error codes. Load the resulting objects or libraries through this project.
+3. Extend the implemented `compiler/cxx` C facades for complex C++ classes. Fixed scalar/native-address constructors and members already use a matching compiler for object calls, virtual dispatch and exception status codes. Class values, declaration discovery and automatic base views need additional adapters. Complete libraries own native runtime and exception registration.
 4. Use ABIBridge on a Swift/ObjC++ side of an Apple-specific adapter and expose a small C API. The executed [Apple C facades](apple-facades.md) establish an opaque-handle/retain/release/observer boundary without ABIBridge. An ABIBridge-backed adapter, its runtime dependencies and any main-thread requirements still need separate implementation and tests.
 5. Use `abi.NewCallback` and its leases for fixed C callback entries. An integration must separately own the registering library, remove native registrations, and join callers before releasing the lease. Swift closures, import/method hooks, and language exception adaptation still need dedicated adapters. See [callback lifetime](callbacks.md).
 

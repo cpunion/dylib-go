@@ -51,7 +51,7 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y gcc-multilib libffi-dev:i386
+          sudo apt-get install -y g++-multilib libffi-dev:i386
           echo 'CC=clang -m32' >> "$GITHUB_ENV"
           echo 'PKG_CONFIG_LIBDIR=/usr/lib/i386-linux-gnu/pkgconfig' >> "$GITHUB_ENV"
       - if: runner.os != 'Windows' && matrix.arch != '386'
