@@ -700,14 +700,29 @@ result.f2 = value.f2;
 return result;
 }
 #pragma pack(push,2)
-typedef struct {
+typedef struct __attribute__((aligned(2))) {
+struct __attribute__((aligned(4))) {
+struct __attribute__((aligned(8))) {
+struct __attribute__((aligned(4))) {
 int8_t f0;
 uint32_t :3 __attribute__((aligned(2)));
 uint32_t f1:5 __attribute__((packed));
-uint32_t :0;
-uint64_t :0;
+unsigned int :0;
+};
+#if defined(__clang__)
+unsigned int :0;
+#endif
+unsigned long long :0;
+};
+#if defined(__clang__)
+unsigned long long :0;
+#endif
 int32_t f2:7 __attribute__((packed));
-uint32_t :0 __attribute__((packed));
+unsigned int :0;
+};
+#if defined(__clang__)
+unsigned int :0;
+#endif
 _Bool f3:1;
 uint64_t f4:40;
 double f5[2];
@@ -782,12 +797,22 @@ result.f6 = value.f6;
 return result;
 }
 #pragma pack(push,1)
-typedef struct {
+typedef struct __attribute__((aligned(1))) {
+struct __attribute__((aligned(4))) {
+struct __attribute__((aligned(8))) {
 uint32_t f0:3;
 int32_t f1:5;
 uint32_t :4;
-uint64_t :0;
-uint32_t :0;
+unsigned long long :0;
+};
+#if defined(__clang__)
+unsigned long long :0;
+#endif
+unsigned int :0;
+};
+#if defined(__clang__)
+unsigned int :0;
+#endif
 } dylib_go_42696e64696e6773_record16;
 #pragma pack(pop)
 static uint64_t dylib_go_42696e64696e6773_record16_mask(int32_t field,uint64_t byte) {
@@ -831,13 +856,23 @@ result.f1 = value.f1;
 return result;
 }
 #pragma pack(push,2)
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed,aligned(2))) {
+struct __attribute__((packed,aligned(4))) {
+struct __attribute__((packed,aligned(8))) {
 int8_t f0;
 uint32_t :3 __attribute__((aligned(2)));
 uint32_t f1:5;
-uint64_t :0;
+unsigned long long :0;
+};
+#if defined(__clang__)
+unsigned long long :0;
+#endif
 int32_t f2:7;
-uint32_t :0;
+unsigned int :0;
+};
+#if defined(__clang__)
+unsigned int :0;
+#endif
 double f3;
 } dylib_go_42696e64696e6773_record17;
 #pragma pack(pop)
@@ -890,9 +925,14 @@ result.f3 = value.f3;
 return result;
 }
 #pragma pack(push,2)
-typedef struct {
+typedef struct __attribute__((aligned(2))) {
+struct __attribute__((aligned(8))) {
 float f0;
-uint64_t :0;
+unsigned long long :0;
+};
+#if defined(__clang__)
+unsigned long long :0;
+#endif
 float f1;
 } dylib_go_42696e64696e6773_record18;
 #pragma pack(pop)
@@ -1011,16 +1051,16 @@ result.f1 = value.f1;
 return result;
 }
 typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call0_function)(dylib_go_42696e64696e6773_record0);
-static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call0(uintptr_t address,dylib_go_42696e64696e6773_record0_transport p0) {
-return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call0_function)address)(dylib_go_42696e64696e6773_record0_from_transport(p0)));
+static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call0(uintptr_t address,const dylib_go_42696e64696e6773_record0_transport *p0) {
+return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call0_function)address)(dylib_go_42696e64696e6773_record0_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record1 (*dylib_go_42696e64696e6773_call1_function)(dylib_go_42696e64696e6773_record1);
-static dylib_go_42696e64696e6773_record1_transport dylib_go_42696e64696e6773_call1(uintptr_t address,dylib_go_42696e64696e6773_record1_transport p0) {
-return dylib_go_42696e64696e6773_record1_to_transport(((dylib_go_42696e64696e6773_call1_function)address)(dylib_go_42696e64696e6773_record1_from_transport(p0)));
+static dylib_go_42696e64696e6773_record1_transport dylib_go_42696e64696e6773_call1(uintptr_t address,const dylib_go_42696e64696e6773_record1_transport *p0) {
+return dylib_go_42696e64696e6773_record1_to_transport(((dylib_go_42696e64696e6773_call1_function)address)(dylib_go_42696e64696e6773_record1_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record2 (*dylib_go_42696e64696e6773_call2_function)(dylib_go_42696e64696e6773_record2);
-static dylib_go_42696e64696e6773_record2_transport dylib_go_42696e64696e6773_call2(uintptr_t address,dylib_go_42696e64696e6773_record2_transport p0) {
-return dylib_go_42696e64696e6773_record2_to_transport(((dylib_go_42696e64696e6773_call2_function)address)(dylib_go_42696e64696e6773_record2_from_transport(p0)));
+static dylib_go_42696e64696e6773_record2_transport dylib_go_42696e64696e6773_call2(uintptr_t address,const dylib_go_42696e64696e6773_record2_transport *p0) {
+return dylib_go_42696e64696e6773_record2_to_transport(((dylib_go_42696e64696e6773_call2_function)address)(dylib_go_42696e64696e6773_record2_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call3_pointer0)(dylib_go_42696e64696e6773_record0);
 typedef dylib_go_42696e64696e6773_call3_pointer0 (*dylib_go_42696e64696e6773_call3_function)(void);
@@ -1029,8 +1069,8 @@ return (void *)((dylib_go_42696e64696e6773_call3_function)address)();
 }
 typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call4_pointer1)(dylib_go_42696e64696e6773_record0);
 typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call4_function)(dylib_go_42696e64696e6773_call4_pointer1,dylib_go_42696e64696e6773_record0);
-static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call4(uintptr_t address,void * p0,dylib_go_42696e64696e6773_record0_transport p1) {
-return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call4_function)address)((dylib_go_42696e64696e6773_call4_pointer1)p0,dylib_go_42696e64696e6773_record0_from_transport(p1)));
+static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call4(uintptr_t address,void * p0,const dylib_go_42696e64696e6773_record0_transport *p1) {
+return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call4_function)address)((dylib_go_42696e64696e6773_call4_pointer1)p0,dylib_go_42696e64696e6773_record0_from_transport(*p1)));
 }
 typedef dylib_go_42696e64696e6773_record0 * (*dylib_go_42696e64696e6773_call5_function)(void);
 static void * dylib_go_42696e64696e6773_call5(uintptr_t address) {
@@ -1045,28 +1085,28 @@ static double dylib_go_42696e64696e6773_call7(uintptr_t address,void * p0) {
 return ((dylib_go_42696e64696e6773_call7_function)address)((dylib_go_42696e64696e6773_record0 *)p0);
 }
 typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call8_function)(dylib_go_42696e64696e6773_record0,...);
-static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call8(uintptr_t address,dylib_go_42696e64696e6773_record0_transport p0,int32_t p1,float p2) {
-return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call8_function)address)(dylib_go_42696e64696e6773_record0_from_transport(p0),(int8_t)p1,p2));
+static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call8(uintptr_t address,const dylib_go_42696e64696e6773_record0_transport *p0,int32_t p1,float p2) {
+return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call8_function)address)(dylib_go_42696e64696e6773_record0_from_transport(*p0),(int8_t)p1,p2));
 }
 typedef dylib_go_42696e64696e6773_record3 (*dylib_go_42696e64696e6773_call9_function)(dylib_go_42696e64696e6773_record3);
-static dylib_go_42696e64696e6773_record3_transport dylib_go_42696e64696e6773_call9(uintptr_t address,dylib_go_42696e64696e6773_record3_transport p0) {
-return dylib_go_42696e64696e6773_record3_to_transport(((dylib_go_42696e64696e6773_call9_function)address)(dylib_go_42696e64696e6773_record3_from_transport(p0)));
+static dylib_go_42696e64696e6773_record3_transport dylib_go_42696e64696e6773_call9(uintptr_t address,const dylib_go_42696e64696e6773_record3_transport *p0) {
+return dylib_go_42696e64696e6773_record3_to_transport(((dylib_go_42696e64696e6773_call9_function)address)(dylib_go_42696e64696e6773_record3_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record4 (*dylib_go_42696e64696e6773_call10_function)(dylib_go_42696e64696e6773_record4);
-static dylib_go_42696e64696e6773_record4_transport dylib_go_42696e64696e6773_call10(uintptr_t address,dylib_go_42696e64696e6773_record4_transport p0) {
-return dylib_go_42696e64696e6773_record4_to_transport(((dylib_go_42696e64696e6773_call10_function)address)(dylib_go_42696e64696e6773_record4_from_transport(p0)));
+static dylib_go_42696e64696e6773_record4_transport dylib_go_42696e64696e6773_call10(uintptr_t address,const dylib_go_42696e64696e6773_record4_transport *p0) {
+return dylib_go_42696e64696e6773_record4_to_transport(((dylib_go_42696e64696e6773_call10_function)address)(dylib_go_42696e64696e6773_record4_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record5 (*dylib_go_42696e64696e6773_call11_function)(dylib_go_42696e64696e6773_record5);
-static dylib_go_42696e64696e6773_record5_transport dylib_go_42696e64696e6773_call11(uintptr_t address,dylib_go_42696e64696e6773_record5_transport p0) {
-return dylib_go_42696e64696e6773_record5_to_transport(((dylib_go_42696e64696e6773_call11_function)address)(dylib_go_42696e64696e6773_record5_from_transport(p0)));
+static dylib_go_42696e64696e6773_record5_transport dylib_go_42696e64696e6773_call11(uintptr_t address,const dylib_go_42696e64696e6773_record5_transport *p0) {
+return dylib_go_42696e64696e6773_record5_to_transport(((dylib_go_42696e64696e6773_call11_function)address)(dylib_go_42696e64696e6773_record5_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record6 (*dylib_go_42696e64696e6773_call12_function)(dylib_go_42696e64696e6773_record6);
-static dylib_go_42696e64696e6773_record6_transport dylib_go_42696e64696e6773_call12(uintptr_t address,dylib_go_42696e64696e6773_record6_transport p0) {
-return dylib_go_42696e64696e6773_record6_to_transport(((dylib_go_42696e64696e6773_call12_function)address)(dylib_go_42696e64696e6773_record6_from_transport(p0)));
+static dylib_go_42696e64696e6773_record6_transport dylib_go_42696e64696e6773_call12(uintptr_t address,const dylib_go_42696e64696e6773_record6_transport *p0) {
+return dylib_go_42696e64696e6773_record6_to_transport(((dylib_go_42696e64696e6773_call12_function)address)(dylib_go_42696e64696e6773_record6_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record7 (*dylib_go_42696e64696e6773_call13_function)(dylib_go_42696e64696e6773_record7);
-static dylib_go_42696e64696e6773_record7_transport dylib_go_42696e64696e6773_call13(uintptr_t address,dylib_go_42696e64696e6773_record7_transport p0) {
-return dylib_go_42696e64696e6773_record7_to_transport(((dylib_go_42696e64696e6773_call13_function)address)(dylib_go_42696e64696e6773_record7_from_transport(p0)));
+static dylib_go_42696e64696e6773_record7_transport dylib_go_42696e64696e6773_call13(uintptr_t address,const dylib_go_42696e64696e6773_record7_transport *p0) {
+return dylib_go_42696e64696e6773_record7_to_transport(((dylib_go_42696e64696e6773_call13_function)address)(dylib_go_42696e64696e6773_record7_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record4 * (*dylib_go_42696e64696e6773_call14_function)(void);
 static void * dylib_go_42696e64696e6773_call14(uintptr_t address) {
@@ -1087,60 +1127,60 @@ return (void *)((dylib_go_42696e64696e6773_call17_function)address)();
 }
 typedef dylib_go_42696e64696e6773_record4 (*dylib_go_42696e64696e6773_call18_pointer1)(dylib_go_42696e64696e6773_record4);
 typedef dylib_go_42696e64696e6773_record4 (*dylib_go_42696e64696e6773_call18_function)(dylib_go_42696e64696e6773_call18_pointer1,dylib_go_42696e64696e6773_record4);
-static dylib_go_42696e64696e6773_record4_transport dylib_go_42696e64696e6773_call18(uintptr_t address,void * p0,dylib_go_42696e64696e6773_record4_transport p1) {
-return dylib_go_42696e64696e6773_record4_to_transport(((dylib_go_42696e64696e6773_call18_function)address)((dylib_go_42696e64696e6773_call18_pointer1)p0,dylib_go_42696e64696e6773_record4_from_transport(p1)));
+static dylib_go_42696e64696e6773_record4_transport dylib_go_42696e64696e6773_call18(uintptr_t address,void * p0,const dylib_go_42696e64696e6773_record4_transport *p1) {
+return dylib_go_42696e64696e6773_record4_to_transport(((dylib_go_42696e64696e6773_call18_function)address)((dylib_go_42696e64696e6773_call18_pointer1)p0,dylib_go_42696e64696e6773_record4_from_transport(*p1)));
 }
 typedef dylib_go_42696e64696e6773_record4 (*dylib_go_42696e64696e6773_call19_function)(dylib_go_42696e64696e6773_record4,...);
-static dylib_go_42696e64696e6773_record4_transport dylib_go_42696e64696e6773_call19(uintptr_t address,dylib_go_42696e64696e6773_record4_transport p0,int32_t p1,float p2) {
-return dylib_go_42696e64696e6773_record4_to_transport(((dylib_go_42696e64696e6773_call19_function)address)(dylib_go_42696e64696e6773_record4_from_transport(p0),(int8_t)p1,p2));
+static dylib_go_42696e64696e6773_record4_transport dylib_go_42696e64696e6773_call19(uintptr_t address,const dylib_go_42696e64696e6773_record4_transport *p0,int32_t p1,float p2) {
+return dylib_go_42696e64696e6773_record4_to_transport(((dylib_go_42696e64696e6773_call19_function)address)(dylib_go_42696e64696e6773_record4_from_transport(*p0),(int8_t)p1,p2));
 }
 typedef dylib_go_42696e64696e6773_record8 (*dylib_go_42696e64696e6773_call20_function)(dylib_go_42696e64696e6773_record8);
-static dylib_go_42696e64696e6773_record8_transport dylib_go_42696e64696e6773_call20(uintptr_t address,dylib_go_42696e64696e6773_record8_transport p0) {
-return dylib_go_42696e64696e6773_record8_to_transport(((dylib_go_42696e64696e6773_call20_function)address)(dylib_go_42696e64696e6773_record8_from_transport(p0)));
+static dylib_go_42696e64696e6773_record8_transport dylib_go_42696e64696e6773_call20(uintptr_t address,const dylib_go_42696e64696e6773_record8_transport *p0) {
+return dylib_go_42696e64696e6773_record8_to_transport(((dylib_go_42696e64696e6773_call20_function)address)(dylib_go_42696e64696e6773_record8_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record9 (*dylib_go_42696e64696e6773_call21_function)(dylib_go_42696e64696e6773_record9);
-static dylib_go_42696e64696e6773_record9_transport dylib_go_42696e64696e6773_call21(uintptr_t address,dylib_go_42696e64696e6773_record9_transport p0) {
-return dylib_go_42696e64696e6773_record9_to_transport(((dylib_go_42696e64696e6773_call21_function)address)(dylib_go_42696e64696e6773_record9_from_transport(p0)));
+static dylib_go_42696e64696e6773_record9_transport dylib_go_42696e64696e6773_call21(uintptr_t address,const dylib_go_42696e64696e6773_record9_transport *p0) {
+return dylib_go_42696e64696e6773_record9_to_transport(((dylib_go_42696e64696e6773_call21_function)address)(dylib_go_42696e64696e6773_record9_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record10 (*dylib_go_42696e64696e6773_call22_function)(dylib_go_42696e64696e6773_record10);
-static dylib_go_42696e64696e6773_record10_transport dylib_go_42696e64696e6773_call22(uintptr_t address,dylib_go_42696e64696e6773_record10_transport p0) {
-return dylib_go_42696e64696e6773_record10_to_transport(((dylib_go_42696e64696e6773_call22_function)address)(dylib_go_42696e64696e6773_record10_from_transport(p0)));
+static dylib_go_42696e64696e6773_record10_transport dylib_go_42696e64696e6773_call22(uintptr_t address,const dylib_go_42696e64696e6773_record10_transport *p0) {
+return dylib_go_42696e64696e6773_record10_to_transport(((dylib_go_42696e64696e6773_call22_function)address)(dylib_go_42696e64696e6773_record10_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record11 (*dylib_go_42696e64696e6773_call23_function)(dylib_go_42696e64696e6773_record11);
-static dylib_go_42696e64696e6773_record11_transport dylib_go_42696e64696e6773_call23(uintptr_t address,dylib_go_42696e64696e6773_record11_transport p0) {
-return dylib_go_42696e64696e6773_record11_to_transport(((dylib_go_42696e64696e6773_call23_function)address)(dylib_go_42696e64696e6773_record11_from_transport(p0)));
+static dylib_go_42696e64696e6773_record11_transport dylib_go_42696e64696e6773_call23(uintptr_t address,const dylib_go_42696e64696e6773_record11_transport *p0) {
+return dylib_go_42696e64696e6773_record11_to_transport(((dylib_go_42696e64696e6773_call23_function)address)(dylib_go_42696e64696e6773_record11_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record12 (*dylib_go_42696e64696e6773_call24_function)(dylib_go_42696e64696e6773_record12);
-static dylib_go_42696e64696e6773_record12_transport dylib_go_42696e64696e6773_call24(uintptr_t address,dylib_go_42696e64696e6773_record12_transport p0) {
-return dylib_go_42696e64696e6773_record12_to_transport(((dylib_go_42696e64696e6773_call24_function)address)(dylib_go_42696e64696e6773_record12_from_transport(p0)));
+static dylib_go_42696e64696e6773_record12_transport dylib_go_42696e64696e6773_call24(uintptr_t address,const dylib_go_42696e64696e6773_record12_transport *p0) {
+return dylib_go_42696e64696e6773_record12_to_transport(((dylib_go_42696e64696e6773_call24_function)address)(dylib_go_42696e64696e6773_record12_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record13 (*dylib_go_42696e64696e6773_call25_function)(dylib_go_42696e64696e6773_record13);
-static dylib_go_42696e64696e6773_record13_transport dylib_go_42696e64696e6773_call25(uintptr_t address,dylib_go_42696e64696e6773_record13_transport p0) {
-return dylib_go_42696e64696e6773_record13_to_transport(((dylib_go_42696e64696e6773_call25_function)address)(dylib_go_42696e64696e6773_record13_from_transport(p0)));
+static dylib_go_42696e64696e6773_record13_transport dylib_go_42696e64696e6773_call25(uintptr_t address,const dylib_go_42696e64696e6773_record13_transport *p0) {
+return dylib_go_42696e64696e6773_record13_to_transport(((dylib_go_42696e64696e6773_call25_function)address)(dylib_go_42696e64696e6773_record13_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record14 (*dylib_go_42696e64696e6773_call26_function)(dylib_go_42696e64696e6773_record14);
-static dylib_go_42696e64696e6773_record14_transport dylib_go_42696e64696e6773_call26(uintptr_t address,dylib_go_42696e64696e6773_record14_transport p0) {
-return dylib_go_42696e64696e6773_record14_to_transport(((dylib_go_42696e64696e6773_call26_function)address)(dylib_go_42696e64696e6773_record14_from_transport(p0)));
+static dylib_go_42696e64696e6773_record14_transport dylib_go_42696e64696e6773_call26(uintptr_t address,const dylib_go_42696e64696e6773_record14_transport *p0) {
+return dylib_go_42696e64696e6773_record14_to_transport(((dylib_go_42696e64696e6773_call26_function)address)(dylib_go_42696e64696e6773_record14_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call27_function)(dylib_go_42696e64696e6773_record15);
-static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call27(uintptr_t address,dylib_go_42696e64696e6773_record15_transport p0) {
-return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call27_function)address)(dylib_go_42696e64696e6773_record15_from_transport(p0)));
+static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call27(uintptr_t address,const dylib_go_42696e64696e6773_record15_transport *p0) {
+return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call27_function)address)(dylib_go_42696e64696e6773_record15_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record16 (*dylib_go_42696e64696e6773_call28_function)(dylib_go_42696e64696e6773_record16);
-static dylib_go_42696e64696e6773_record16_transport dylib_go_42696e64696e6773_call28(uintptr_t address,dylib_go_42696e64696e6773_record16_transport p0) {
-return dylib_go_42696e64696e6773_record16_to_transport(((dylib_go_42696e64696e6773_call28_function)address)(dylib_go_42696e64696e6773_record16_from_transport(p0)));
+static dylib_go_42696e64696e6773_record16_transport dylib_go_42696e64696e6773_call28(uintptr_t address,const dylib_go_42696e64696e6773_record16_transport *p0) {
+return dylib_go_42696e64696e6773_record16_to_transport(((dylib_go_42696e64696e6773_call28_function)address)(dylib_go_42696e64696e6773_record16_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record17 (*dylib_go_42696e64696e6773_call29_function)(dylib_go_42696e64696e6773_record17);
-static dylib_go_42696e64696e6773_record17_transport dylib_go_42696e64696e6773_call29(uintptr_t address,dylib_go_42696e64696e6773_record17_transport p0) {
-return dylib_go_42696e64696e6773_record17_to_transport(((dylib_go_42696e64696e6773_call29_function)address)(dylib_go_42696e64696e6773_record17_from_transport(p0)));
+static dylib_go_42696e64696e6773_record17_transport dylib_go_42696e64696e6773_call29(uintptr_t address,const dylib_go_42696e64696e6773_record17_transport *p0) {
+return dylib_go_42696e64696e6773_record17_to_transport(((dylib_go_42696e64696e6773_call29_function)address)(dylib_go_42696e64696e6773_record17_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record18 (*dylib_go_42696e64696e6773_call30_function)(dylib_go_42696e64696e6773_record18);
-static dylib_go_42696e64696e6773_record18_transport dylib_go_42696e64696e6773_call30(uintptr_t address,dylib_go_42696e64696e6773_record18_transport p0) {
-return dylib_go_42696e64696e6773_record18_to_transport(((dylib_go_42696e64696e6773_call30_function)address)(dylib_go_42696e64696e6773_record18_from_transport(p0)));
+static dylib_go_42696e64696e6773_record18_transport dylib_go_42696e64696e6773_call30(uintptr_t address,const dylib_go_42696e64696e6773_record18_transport *p0) {
+return dylib_go_42696e64696e6773_record18_to_transport(((dylib_go_42696e64696e6773_call30_function)address)(dylib_go_42696e64696e6773_record18_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record19 (*dylib_go_42696e64696e6773_call31_function)(dylib_go_42696e64696e6773_record19);
-static dylib_go_42696e64696e6773_record19_transport dylib_go_42696e64696e6773_call31(uintptr_t address,dylib_go_42696e64696e6773_record19_transport p0) {
-return dylib_go_42696e64696e6773_record19_to_transport(((dylib_go_42696e64696e6773_call31_function)address)(dylib_go_42696e64696e6773_record19_from_transport(p0)));
+static dylib_go_42696e64696e6773_record19_transport dylib_go_42696e64696e6773_call31(uintptr_t address,const dylib_go_42696e64696e6773_record19_transport *p0) {
+return dylib_go_42696e64696e6773_record19_to_transport(((dylib_go_42696e64696e6773_call31_function)address)(dylib_go_42696e64696e6773_record19_from_transport(*p0)));
 }
 typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call32_pointer0)(dylib_go_42696e64696e6773_record15);
 typedef dylib_go_42696e64696e6773_call32_pointer0 (*dylib_go_42696e64696e6773_call32_function)(void);
@@ -1149,8 +1189,8 @@ return (void *)((dylib_go_42696e64696e6773_call32_function)address)();
 }
 typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call33_pointer1)(dylib_go_42696e64696e6773_record15);
 typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call33_function)(dylib_go_42696e64696e6773_call33_pointer1,dylib_go_42696e64696e6773_record15);
-static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call33(uintptr_t address,void * p0,dylib_go_42696e64696e6773_record15_transport p1) {
-return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call33_function)address)((dylib_go_42696e64696e6773_call33_pointer1)p0,dylib_go_42696e64696e6773_record15_from_transport(p1)));
+static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call33(uintptr_t address,void * p0,const dylib_go_42696e64696e6773_record15_transport *p1) {
+return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call33_function)address)((dylib_go_42696e64696e6773_call33_pointer1)p0,dylib_go_42696e64696e6773_record15_from_transport(*p1)));
 }
 typedef dylib_go_42696e64696e6773_record15 * (*dylib_go_42696e64696e6773_call34_function)(void);
 static void * dylib_go_42696e64696e6773_call34(uintptr_t address) {
@@ -1165,12 +1205,12 @@ static double dylib_go_42696e64696e6773_call36(uintptr_t address,void * p0) {
 return ((dylib_go_42696e64696e6773_call36_function)address)((dylib_go_42696e64696e6773_record15 *)p0);
 }
 typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call37_function)(dylib_go_42696e64696e6773_record15,...);
-static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call37(uintptr_t address,dylib_go_42696e64696e6773_record15_transport p0,int32_t p1,float p2) {
-return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call37_function)address)(dylib_go_42696e64696e6773_record15_from_transport(p0),(int8_t)p1,p2));
+static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call37(uintptr_t address,const dylib_go_42696e64696e6773_record15_transport *p0,int32_t p1,float p2) {
+return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call37_function)address)(dylib_go_42696e64696e6773_record15_from_transport(*p0),(int8_t)p1,p2));
 }
 typedef dylib_go_42696e64696e6773_record15 (*dylib_go_42696e64696e6773_call38_function)(dylib_go_42696e64696e6773_record20,dylib_go_42696e64696e6773_record15);
-static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call38(uintptr_t address,dylib_go_42696e64696e6773_record20_transport p0,dylib_go_42696e64696e6773_record15_transport p1) {
-return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call38_function)address)(dylib_go_42696e64696e6773_record20_from_transport(p0),dylib_go_42696e64696e6773_record15_from_transport(p1)));
+static dylib_go_42696e64696e6773_record15_transport dylib_go_42696e64696e6773_call38(uintptr_t address,const dylib_go_42696e64696e6773_record20_transport *p0,const dylib_go_42696e64696e6773_record15_transport *p1) {
+return dylib_go_42696e64696e6773_record15_to_transport(((dylib_go_42696e64696e6773_call38_function)address)(dylib_go_42696e64696e6773_record20_from_transport(*p0),dylib_go_42696e64696e6773_record15_from_transport(*p1)));
 }
 */
 import "C"
@@ -1243,10 +1283,10 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "IgnoredFloatZero", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 20, Alignment: 4, Offsets: []uint64{0, 16}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 0, Offset: 16, Aligned: 16}}},
 		{Name: "AlignedUnit", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "aligned_marker", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "aligned_code", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "aligned_tail", Type: abi.TypeDesc{Type: abi.I8}}}}, Layout: abi.Layout{Size: 36, Alignment: 4, Offsets: []uint64{0, 16, 33}}, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 16, Aligned: 16}, {Before: 2, Type: abi.Type(2), Width: 5, Offset: 32, Aligned: 32}}},
 		{Name: "PackedAlignedUnit", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_marker", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_code", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_tail", Type: abi.TypeDesc{Type: abi.I8}}}}, Layout: abi.Layout{Size: 34, Alignment: 1, Offsets: []uint64{0, 16, 33}}, Packed: true, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 16, Aligned: 16}, {Before: 2, Type: abi.Type(2), Width: 5, Offset: 32, Aligned: 32}}},
-		{Name: "PragmaBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 44, Alignment: 2, Offsets: []uint64{0, 2, 8, 12, 12, 18, 34}}, PackedFields: []int{1, 2}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 0, 0, 0, 0, 2, 2}, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 7, Mask: []byte{127}}, {Position: 3, Width: 1, Mask: []byte{1}}, {Position: 4, Width: 40, Mask: []byte{254, 255, 255, 255, 255, 1}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 2, Aligned: 2}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 4}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 8}, {Before: 3, Type: abi.Type(2), Width: 0, Offset: 12, Packed: true}, {Before: 7, Type: abi.Type(2), Width: 5, Offset: 0}}},
-		{Name: "PragmaTiny", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 8, Alignment: 1, Offsets: []uint64{0, 0}}, MaxFieldAlignment: 1, MemberAlignments: []uint64{0, 0}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 2, Type: abi.Type(2), Width: 4, Offset: 0}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 8}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 8}}},
-		{Name: "PragmaPacked", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 20, Alignment: 2, Offsets: []uint64{0, 2, 8, 12}}, Packed: true, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 0, 0, 1}, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 7, Mask: []byte{127}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 2, Aligned: 2}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 8}, {Before: 3, Type: abi.Type(2), Width: 0, Offset: 12}}},
-		{Name: "PragmaFloat", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 12, Alignment: 2, Offsets: []uint64{0, 8}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(4), Width: 0, Offset: 8}}},
+		{Name: "PragmaBits", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 44, Alignment: 2, Offsets: []uint64{0, 2, 8, 12, 12, 18, 34}}, PackedFields: []int{1, 2}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 0, 0, 0, 0, 2, 2}, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 7, Mask: []byte{127}}, {Position: 3, Width: 1, Mask: []byte{1}}, {Position: 4, Width: 40, Mask: []byte{254, 255, 255, 255, 255, 1}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 2, Aligned: 2}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 4, Gap: 1}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 8, Gap: 4}, {Before: 3, Type: abi.Type(2), Width: 0, Offset: 12, Packed: true, Gap: 3}, {Before: 7, Type: abi.Type(2), Width: 5, Offset: 0}}},
+		{Name: "PragmaTiny", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 8, Alignment: 1, Offsets: []uint64{0, 0}}, MaxFieldAlignment: 1, MemberAlignments: []uint64{0, 0}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}}, Padding: []clang.BitfieldPadding{{Before: 2, Type: abi.Type(2), Width: 4, Offset: 0}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 8, Gap: 6}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 8}}},
+		{Name: "PragmaPacked", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 20, Alignment: 2, Offsets: []uint64{0, 2, 8, 12}}, Packed: true, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 0, 0, 1}, Bitfields: []clang.Bitfield{{Position: 1, Width: 5, Mask: []byte{248}}, {Position: 2, Width: 7, Mask: []byte{127}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 2, Aligned: 2}, {Before: 2, Type: abi.Type(4), Width: 0, Offset: 8, Gap: 5}, {Before: 3, Type: abi.Type(2), Width: 0, Offset: 12, Gap: 3}}},
+		{Name: "PragmaFloat", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 12, Alignment: 2, Offsets: []uint64{0, 8}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(4), Width: 0, Offset: 8, Gap: 4}}},
 		{Name: "PragmaBitsEnvelope", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "envelope_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "bits", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}, {Name: "packed", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "packed_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "packed_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "packed_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "packed_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}, {Name: "tiny", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}}, {Name: "floating", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_left", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_right", Type: abi.TypeDesc{Type: abi.F32}}}}}}}, Layout: abi.Layout{Size: 238, Alignment: 2, Offsets: []uint64{0, 2, 178, 218, 226}}, MaxFieldAlignment: 4, MemberAlignments: []uint64{1, 2, 2, 1, 2}},
 		{Name: "PragmaBitsSlot", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "slot_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "entry", Type: abi.TypeDesc{Type: abi.Pointer}}}}, Layout: abi.Layout{Size: 10, Alignment: 2, Offsets: []uint64{0, 2}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2}, FunctionPointers: []clang.FunctionPointer{{Position: 1, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "pragma_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "pragma_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "pragma_high", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "pragma_active", Type: abi.TypeDesc{Type: abi.Bool}}, {Name: "pragma_wide", Type: abi.TypeDesc{Type: abi.U64}}, {Name: "pragma_samples", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.F64}}}, {Name: "pragma_context", Type: abi.TypeDesc{Type: abi.Pointer}}}}}}}},
 	},
@@ -2091,7 +2131,8 @@ func (b *Bindings) Echo_bits(p0 BindingsRecord0) (result BindingsRecord0, err er
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol0.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord0FromC(C.dylib_go_42696e64696e6773_call0(C.uintptr_t(address), _BindingsRecord0ToC(p0)))
+		c0 := _BindingsRecord0ToC(p0)
+		result = _BindingsRecord0FromC(C.dylib_go_42696e64696e6773_call0(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2102,7 +2143,8 @@ func (b *Bindings) Echo_packed_bits(p0 BindingsRecord1) (result BindingsRecord1,
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol1.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord1FromC(C.dylib_go_42696e64696e6773_call1(C.uintptr_t(address), _BindingsRecord1ToC(p0)))
+		c0 := _BindingsRecord1ToC(p0)
+		result = _BindingsRecord1FromC(C.dylib_go_42696e64696e6773_call1(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2113,7 +2155,8 @@ func (b *Bindings) Echo_envelope(p0 BindingsRecord2) (result BindingsRecord2, er
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol2.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord2FromC(C.dylib_go_42696e64696e6773_call2(C.uintptr_t(address), _BindingsRecord2ToC(p0)))
+		c0 := _BindingsRecord2ToC(p0)
+		result = _BindingsRecord2FromC(C.dylib_go_42696e64696e6773_call2(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2135,7 +2178,8 @@ func (b *Bindings) Apply_bits(p0 unsafe.Pointer, p1 BindingsRecord0) (result Bin
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol4.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord0FromC(C.dylib_go_42696e64696e6773_call4(C.uintptr_t(address), p0, _BindingsRecord0ToC(p1)))
+		c1 := _BindingsRecord0ToC(p1)
+		result = _BindingsRecord0FromC(C.dylib_go_42696e64696e6773_call4(C.uintptr_t(address), p0, &c1))
 		return nil
 	})
 	return result, err
@@ -2179,7 +2223,8 @@ func (b *Bindings) Bits_variable(p0 BindingsRecord0, p1 int8, p2 float32) (resul
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol8.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord0FromC(C.dylib_go_42696e64696e6773_call8(C.uintptr_t(address), _BindingsRecord0ToC(p0), C.int32_t(p1), C.float(p2)))
+		c0 := _BindingsRecord0ToC(p0)
+		result = _BindingsRecord0FromC(C.dylib_go_42696e64696e6773_call8(C.uintptr_t(address), &c0, C.int32_t(p1), C.float(p2)))
 		return nil
 	})
 	return result, err
@@ -2190,7 +2235,8 @@ func (b *Bindings) Echo_signed_wide(p0 BindingsRecord3) (result BindingsRecord3,
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol9.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord3FromC(C.dylib_go_42696e64696e6773_call9(C.uintptr_t(address), _BindingsRecord3ToC(p0)))
+		c0 := _BindingsRecord3ToC(p0)
+		result = _BindingsRecord3FromC(C.dylib_go_42696e64696e6773_call9(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2201,7 +2247,8 @@ func (b *Bindings) Echo_gaps(p0 BindingsRecord4) (result BindingsRecord4, err er
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol10.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord4FromC(C.dylib_go_42696e64696e6773_call10(C.uintptr_t(address), _BindingsRecord4ToC(p0)))
+		c0 := _BindingsRecord4ToC(p0)
+		result = _BindingsRecord4FromC(C.dylib_go_42696e64696e6773_call10(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2212,7 +2259,8 @@ func (b *Bindings) Echo_prefix(p0 BindingsRecord5) (result BindingsRecord5, err 
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol11.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord5FromC(C.dylib_go_42696e64696e6773_call11(C.uintptr_t(address), _BindingsRecord5ToC(p0)))
+		c0 := _BindingsRecord5ToC(p0)
+		result = _BindingsRecord5FromC(C.dylib_go_42696e64696e6773_call11(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2223,7 +2271,8 @@ func (b *Bindings) Echo_packed_gaps(p0 BindingsRecord6) (result BindingsRecord6,
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol12.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord6FromC(C.dylib_go_42696e64696e6773_call12(C.uintptr_t(address), _BindingsRecord6ToC(p0)))
+		c0 := _BindingsRecord6ToC(p0)
+		result = _BindingsRecord6FromC(C.dylib_go_42696e64696e6773_call12(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2234,7 +2283,8 @@ func (b *Bindings) Echo_gap_envelope(p0 BindingsRecord7) (result BindingsRecord7
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol13.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord7FromC(C.dylib_go_42696e64696e6773_call13(C.uintptr_t(address), _BindingsRecord7ToC(p0)))
+		c0 := _BindingsRecord7ToC(p0)
+		result = _BindingsRecord7FromC(C.dylib_go_42696e64696e6773_call13(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2289,7 +2339,8 @@ func (b *Bindings) Apply_gaps(p0 unsafe.Pointer, p1 BindingsRecord4) (result Bin
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol18.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord4FromC(C.dylib_go_42696e64696e6773_call18(C.uintptr_t(address), p0, _BindingsRecord4ToC(p1)))
+		c1 := _BindingsRecord4ToC(p1)
+		result = _BindingsRecord4FromC(C.dylib_go_42696e64696e6773_call18(C.uintptr_t(address), p0, &c1))
 		return nil
 	})
 	return result, err
@@ -2300,7 +2351,8 @@ func (b *Bindings) Gaps_variable(p0 BindingsRecord4, p1 int8, p2 float32) (resul
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol19.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord4FromC(C.dylib_go_42696e64696e6773_call19(C.uintptr_t(address), _BindingsRecord4ToC(p0), C.int32_t(p1), C.float(p2)))
+		c0 := _BindingsRecord4ToC(p0)
+		result = _BindingsRecord4FromC(C.dylib_go_42696e64696e6773_call19(C.uintptr_t(address), &c0, C.int32_t(p1), C.float(p2)))
 		return nil
 	})
 	return result, err
@@ -2311,7 +2363,8 @@ func (b *Bindings) Echo_floating_gap(p0 BindingsRecord8) (result BindingsRecord8
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol20.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord8FromC(C.dylib_go_42696e64696e6773_call20(C.uintptr_t(address), _BindingsRecord8ToC(p0)))
+		c0 := _BindingsRecord8ToC(p0)
+		result = _BindingsRecord8FromC(C.dylib_go_42696e64696e6773_call20(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2322,7 +2375,8 @@ func (b *Bindings) Echo_member_tiny(p0 BindingsRecord9) (result BindingsRecord9,
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol21.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord9FromC(C.dylib_go_42696e64696e6773_call21(C.uintptr_t(address), _BindingsRecord9ToC(p0)))
+		c0 := _BindingsRecord9ToC(p0)
+		result = _BindingsRecord9FromC(C.dylib_go_42696e64696e6773_call21(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2333,7 +2387,8 @@ func (b *Bindings) Echo_member_trailing(p0 BindingsRecord10) (result BindingsRec
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol22.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord10FromC(C.dylib_go_42696e64696e6773_call22(C.uintptr_t(address), _BindingsRecord10ToC(p0)))
+		c0 := _BindingsRecord10ToC(p0)
+		result = _BindingsRecord10FromC(C.dylib_go_42696e64696e6773_call22(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2344,7 +2399,8 @@ func (b *Bindings) Echo_packed_zero(p0 BindingsRecord11) (result BindingsRecord1
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol23.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord11FromC(C.dylib_go_42696e64696e6773_call23(C.uintptr_t(address), _BindingsRecord11ToC(p0)))
+		c0 := _BindingsRecord11ToC(p0)
+		result = _BindingsRecord11FromC(C.dylib_go_42696e64696e6773_call23(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2355,7 +2411,8 @@ func (b *Bindings) Echo_ignored_float_zero(p0 BindingsRecord12) (result Bindings
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol24.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord12FromC(C.dylib_go_42696e64696e6773_call24(C.uintptr_t(address), _BindingsRecord12ToC(p0)))
+		c0 := _BindingsRecord12ToC(p0)
+		result = _BindingsRecord12FromC(C.dylib_go_42696e64696e6773_call24(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2366,7 +2423,8 @@ func (b *Bindings) Echo_aligned_unit(p0 BindingsRecord13) (result BindingsRecord
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol25.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord13FromC(C.dylib_go_42696e64696e6773_call25(C.uintptr_t(address), _BindingsRecord13ToC(p0)))
+		c0 := _BindingsRecord13ToC(p0)
+		result = _BindingsRecord13FromC(C.dylib_go_42696e64696e6773_call25(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2377,7 +2435,8 @@ func (b *Bindings) Echo_packed_aligned_unit(p0 BindingsRecord14) (result Binding
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol26.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord14FromC(C.dylib_go_42696e64696e6773_call26(C.uintptr_t(address), _BindingsRecord14ToC(p0)))
+		c0 := _BindingsRecord14ToC(p0)
+		result = _BindingsRecord14FromC(C.dylib_go_42696e64696e6773_call26(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2388,7 +2447,8 @@ func (b *Bindings) Echo_pragma_bits(p0 BindingsRecord15) (result BindingsRecord1
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol27.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call27(C.uintptr_t(address), _BindingsRecord15ToC(p0)))
+		c0 := _BindingsRecord15ToC(p0)
+		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call27(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2399,7 +2459,8 @@ func (b *Bindings) Echo_pragma_tiny(p0 BindingsRecord16) (result BindingsRecord1
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol28.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord16FromC(C.dylib_go_42696e64696e6773_call28(C.uintptr_t(address), _BindingsRecord16ToC(p0)))
+		c0 := _BindingsRecord16ToC(p0)
+		result = _BindingsRecord16FromC(C.dylib_go_42696e64696e6773_call28(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2410,7 +2471,8 @@ func (b *Bindings) Echo_pragma_packed(p0 BindingsRecord17) (result BindingsRecor
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol29.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord17FromC(C.dylib_go_42696e64696e6773_call29(C.uintptr_t(address), _BindingsRecord17ToC(p0)))
+		c0 := _BindingsRecord17ToC(p0)
+		result = _BindingsRecord17FromC(C.dylib_go_42696e64696e6773_call29(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2421,7 +2483,8 @@ func (b *Bindings) Echo_pragma_float(p0 BindingsRecord18) (result BindingsRecord
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol30.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord18FromC(C.dylib_go_42696e64696e6773_call30(C.uintptr_t(address), _BindingsRecord18ToC(p0)))
+		c0 := _BindingsRecord18ToC(p0)
+		result = _BindingsRecord18FromC(C.dylib_go_42696e64696e6773_call30(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2432,7 +2495,8 @@ func (b *Bindings) Echo_pragma_bits_envelope(p0 BindingsRecord19) (result Bindin
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol31.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord19FromC(C.dylib_go_42696e64696e6773_call31(C.uintptr_t(address), _BindingsRecord19ToC(p0)))
+		c0 := _BindingsRecord19ToC(p0)
+		result = _BindingsRecord19FromC(C.dylib_go_42696e64696e6773_call31(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -2454,7 +2518,8 @@ func (b *Bindings) Apply_pragma_bits(p0 unsafe.Pointer, p1 BindingsRecord15) (re
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol33.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call33(C.uintptr_t(address), p0, _BindingsRecord15ToC(p1)))
+		c1 := _BindingsRecord15ToC(p1)
+		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call33(C.uintptr_t(address), p0, &c1))
 		return nil
 	})
 	return result, err
@@ -2498,7 +2563,8 @@ func (b *Bindings) Pragma_bits_variable(p0 BindingsRecord15, p1 int8, p2 float32
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol37.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call37(C.uintptr_t(address), _BindingsRecord15ToC(p0), C.int32_t(p1), C.float(p2)))
+		c0 := _BindingsRecord15ToC(p0)
+		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call37(C.uintptr_t(address), &c0, C.int32_t(p1), C.float(p2)))
 		return nil
 	})
 	return result, err
@@ -2509,7 +2575,9 @@ func (b *Bindings) Apply_pragma_bits_slot(p0 BindingsRecord20, p1 BindingsRecord
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol38.WithAddress(func(address uintptr) error {
-		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call38(C.uintptr_t(address), _BindingsRecord20ToC(p0), _BindingsRecord15ToC(p1)))
+		c0 := _BindingsRecord20ToC(p0)
+		c1 := _BindingsRecord15ToC(p1)
+		result = _BindingsRecord15FromC(C.dylib_go_42696e64696e6773_call38(C.uintptr_t(address), &c0, &c1))
 		return nil
 	})
 	return result, err

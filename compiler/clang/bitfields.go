@@ -40,7 +40,8 @@ type BitfieldPadding struct {
 	// boundary, or a GNU aligned typedef boundary. Shared requests retain zero.
 	StorageAlignment uint64
 	// Gap observes bytes before a GNU typedef-aligned allocation boundary or
-	// an over-cap pragma zero-width boundary. Bridges preserve this gap without
+	// an over-cap pragma zero-width boundary, including plain base types.
+	// Bridges preserve this gap without
 	// introducing an alignment request that GCC would apply differently.
 	Gap uint64
 }
@@ -54,6 +55,12 @@ func (p BitfieldPadding) requestedAlignment() uint64 {
 		return p.TypeAlignment
 	}
 	return p.Aligned
+}
+
+// Observe plain zero widths in pragma records as well as attributed ones.
+// GCC can raise their root alignment differently, even within the packing cap.
+func (r Record) gnuPlainZeroBoundary(p BitfieldPadding) bool {
+	return r.MaxFieldAlignment != 0 && p.Width == 0 && p.requestedAlignment() == 0
 }
 
 func (r Record) hasBitfields() bool {
@@ -123,7 +130,8 @@ func validateBitfields(r Record, complete bool) error {
 		if complete && f.StorageAlignment != 0 && (f.StorageAlignment > r.Layout.Alignment && f.TypeAlignment == 0 || (f.Width == 0 || f.requestedAlignment() != 0) && f.Offset%f.StorageAlignment != 0) {
 			return fmt.Errorf("clang: incompatible unnamed storage alignment in %s", r.Name)
 		}
-		if f.Gap > 65536 || f.Gap != 0 && (f.TypeAlignment == 0 && (f.Width != 0 || r.MaxFieldAlignment == 0 || f.Aligned <= r.MaxFieldAlignment) || complete && f.Gap > f.Offset) {
+		gapAllowed := f.TypeAlignment != 0 || r.gnuPlainZeroBoundary(f) || f.Width == 0 && r.MaxFieldAlignment != 0 && f.Aligned > r.MaxFieldAlignment
+		if f.Gap > 65536 || f.Gap != 0 && (!gapAllowed || complete && f.Gap > f.Offset) {
 			return fmt.Errorf("clang: invalid bitfield boundary gap in %s", r.Name)
 		}
 		before = f.Before

@@ -9,11 +9,18 @@ Go and llgo use independent workflows and separately compiled test processes:
 Workflows run on pushes to main, pull requests, and manual dispatch. Pure Go jobs set `CGO_ENABLED=0` and run parser, error, and execution-refusal tests in a process compiled for the target architecture.
 
 Native Go suites allow 20 minutes per test package within their 40-minute jobs.
-The llgo suites allow 25 minutes per package within 75-minute jobs. macOS Intel
-allows 40 minutes per package within a 100-minute job after the expanded compiler
-matrix exceeded its previous 30-minute budget. Layout and calling-ABI checks
-reuse the same parsed headers where possible. The independent Windows ARM64 Go process keeps its 20-minute package budget.
-The timeouts remain bounded and all probes still run.
+The llgo suites allow 35 minutes per package within 75-minute jobs; macOS Intel
+has a 120-minute job budget. Its expanded compiler qualification matrix exceeded
+a 60-minute single-process budget while tests were progressing. Intel macOS now
+compiles that test binary once, enumerates its real top-level tests, and executes
+four disjoint batches with 35-minute limits. Every test runs once; fresh processes
+bound retained compiler-probe state without a manually maintained test list.
+The full compiler matrix runs once with libffi. Direct calls in all other packages
+also run without libffi, together with the compiler's record, callback-field and
+metadata checks that exercise backend-unavailable behavior. This preserves both
+backend modes without repeating the expensive producer/layout matrix.
+Layout and calling-ABI checks reuse parsed headers where possible. The independent
+Windows ARM64 Go process keeps its 20-minute package budget. All probes still run.
 
 | Target | Go execution | Pure Go inspection | llgo execution |
 | --- | --- | --- | --- |
@@ -65,6 +72,7 @@ All eight Go execution targets and six llgo targets set `DYLIB_TEST_REQUIRE_NATI
 | Aligned unnamed typedef bitfields | Eight-target layouts, MSVC/MinGW bridges, LLVM calling shapes and independent GCC checks; fresh `-O0`/`-O2` object/archive/library calls cover raised/lowered aliases, Boolean/enums, active/ignored/consecutive zero-width fields, packing caps, nested arrays, SSE overflow, variadic prefixes, preceding scalars, native factories and pointer mutation/nulls; unsupported SysV gaps and malformed metadata are rejected | Same native fixture paths on six llgo hosts without libffi |
 | Aligned record typedefs | Eight-target body/alias layout and LLVM calling-ABI checks, MSVC/MinGW comparisons, default packing and an independent GCC bridge; fresh `-O0`/`-O2` object/archive/library calls cover raised/lowered/inherited requests, small/large returns, nested arrays, packed/pragma/member alignment, factories, aligned native pointers/nulls, exhausted registers and variadic tails. | The same compiler checks and native executions on six 64-bit hosts, including committed binding freshness. |
 | Anonymous aligned record typedefs | Eight-target synthetic body/original size, offset, alias alignment and bitfield mask comparisons; LLVM argument/result lowering, MSVC/MinGW and GCC checks; fresh O0/O2 object/archive/library calls cover inherited/raised/lowered aliases, packed/pragma/member attributes, nested arrays, float/double and large returns, factories, aligned pointers, register overflow and variadic tails. | The same compiler probes and actual native calls on six 64-bit hosts. |
+| Plain GNU zero-width pragma boundaries | Eight-target layout/mask and LLVM calling-shape checks, compiler default packing, independent GCC bridge checks and conservative SysV rejection. Fresh `-O0`/`-O2` object/archive/library calls cover lowered record members, float/HFA values, leading/trailing/consecutive and non-power-of-two boundaries, packed/large/nested records, native factories/pointers/nulls, register exhaustion and variadic tails. | The same compiler checks and native executions on six 64-bit hosts without libffi. |
 | GNU AMD64 unnamed tail padding | Eight-target layouts, LLVM argument/result shapes, independent GCC layout checks and unqualified-shape rejection; fresh `-O0`/`-O2` object/archive/library calls cover float/double/integer values, nested arrays, exhausted registers, following stack arguments, variadic promotions, factories and native pointer mutation/nulls | Same fixture paths on six llgo hosts without libffi |
 | Native layout queries | Actual C `sizeof`, `_Alignof` and `offsetof` compared with backend layouts from objects/archives/libraries: all scalar widths, Boolean/pointers, padded/nested records and arrays/matrices; independent results, limits and conventions | Same native cases on six hosts; independent Go process on Windows ARM64 |
 | Owned native storage | Scalar/record/array round trips, snapshots, stable/interior addresses, invalid writes, concurrent reads/writes and lease retirement. C objects/archives/libraries verify layouts, retain pointers across GC/calls, mutate data and invoke a Go reader; executable retained-record example | Same native cases on six hosts; independent Go process on Windows ARM64 |

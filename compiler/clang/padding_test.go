@@ -60,7 +60,7 @@ Bits echo(Bits); Prefix prefix(Prefix); Bits *pointer(Bits *); Entries fields(En
 			if err != nil {
 				t.Fatal(err)
 			}
-			for _, marker := range []string{"Padding:", "uint32_t :3;", "uint32_t :0;", "uint32_t :5;", "_record1_transport", "_from_transport(p0)"} {
+			for _, marker := range []string{"Padding:", "uint32_t :3;", "uint32_t :0;", "uint32_t :5;", "_record1_transport", "_from_transport("} {
 				if !strings.Contains(string(source), marker) {
 					t.Fatal("missing unnamed field", marker)
 				}

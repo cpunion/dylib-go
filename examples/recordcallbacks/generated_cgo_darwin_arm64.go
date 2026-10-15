@@ -51,12 +51,12 @@ static dylib_go_4342696e64696e6773_record0 dylib_go_4342696e64696e6773_call1(uin
 return ((dylib_go_4342696e64696e6773_call1_function)address)();
 }
 typedef dylib_go_4342696e64696e6773_record0 (*dylib_go_4342696e64696e6773_call2_function)(dylib_go_4342696e64696e6773_record0);
-static dylib_go_4342696e64696e6773_record0 dylib_go_4342696e64696e6773_call2(uintptr_t address,dylib_go_4342696e64696e6773_record0 p0) {
-return ((dylib_go_4342696e64696e6773_call2_function)address)(p0);
+static dylib_go_4342696e64696e6773_record0 dylib_go_4342696e64696e6773_call2(uintptr_t address,const dylib_go_4342696e64696e6773_record0 *p0) {
+return ((dylib_go_4342696e64696e6773_call2_function)address)(*p0);
 }
 typedef int32_t (*dylib_go_4342696e64696e6773_call3_function)(dylib_go_4342696e64696e6773_record0,int32_t,int32_t);
-static int32_t dylib_go_4342696e64696e6773_call3(uintptr_t address,dylib_go_4342696e64696e6773_record0 p0,int32_t p1,int32_t p2) {
-return ((dylib_go_4342696e64696e6773_call3_function)address)(p0,p1,p2);
+static int32_t dylib_go_4342696e64696e6773_call3(uintptr_t address,const dylib_go_4342696e64696e6773_record0 *p0,int32_t p1,int32_t p2) {
+return ((dylib_go_4342696e64696e6773_call3_function)address)(*p0,p1,p2);
 }
 typedef int32_t (*dylib_go_4342696e64696e6773_call4_function)(dylib_go_4342696e64696e6773_record0 *,int32_t,int32_t);
 static int32_t dylib_go_4342696e64696e6773_call4(uintptr_t address,void * p0,int32_t p1,int32_t p2) {
@@ -67,16 +67,16 @@ static void * dylib_go_4342696e64696e6773_call5(uintptr_t address) {
 return (void *)((dylib_go_4342696e64696e6773_call5_function)address)();
 }
 typedef dylib_go_4342696e64696e6773_record1 (*dylib_go_4342696e64696e6773_call6_function)(dylib_go_4342696e64696e6773_record1);
-static dylib_go_4342696e64696e6773_record1 dylib_go_4342696e64696e6773_call6(uintptr_t address,dylib_go_4342696e64696e6773_record1 p0) {
-return ((dylib_go_4342696e64696e6773_call6_function)address)(p0);
+static dylib_go_4342696e64696e6773_record1 dylib_go_4342696e64696e6773_call6(uintptr_t address,const dylib_go_4342696e64696e6773_record1 *p0) {
+return ((dylib_go_4342696e64696e6773_call6_function)address)(*p0);
 }
 typedef int32_t (*dylib_go_4342696e64696e6773_call7_function)(dylib_go_4342696e64696e6773_record1,int32_t,int32_t);
-static int32_t dylib_go_4342696e64696e6773_call7(uintptr_t address,dylib_go_4342696e64696e6773_record1 p0,int32_t p1,int32_t p2) {
-return ((dylib_go_4342696e64696e6773_call7_function)address)(p0,p1,p2);
+static int32_t dylib_go_4342696e64696e6773_call7(uintptr_t address,const dylib_go_4342696e64696e6773_record1 *p0,int32_t p1,int32_t p2) {
+return ((dylib_go_4342696e64696e6773_call7_function)address)(*p0,p1,p2);
 }
 typedef void (*dylib_go_4342696e64696e6773_call8_function)(dylib_go_4342696e64696e6773_record0);
-static void dylib_go_4342696e64696e6773_call8(uintptr_t address,dylib_go_4342696e64696e6773_record0 p0) {
-((dylib_go_4342696e64696e6773_call8_function)address)(p0);
+static void dylib_go_4342696e64696e6773_call8(uintptr_t address,const dylib_go_4342696e64696e6773_record0 *p0) {
+((dylib_go_4342696e64696e6773_call8_function)address)(*p0);
 }
 typedef int32_t (*dylib_go_4342696e64696e6773_call9_function)(int32_t,int32_t);
 static int32_t dylib_go_4342696e64696e6773_call9(uintptr_t address,int32_t p0,int32_t p1) {
@@ -91,16 +91,16 @@ static dylib_go_4342696e64696e6773_record2 dylib_go_4342696e64696e6773_call11(ui
 return ((dylib_go_4342696e64696e6773_call11_function)address)();
 }
 typedef dylib_go_4342696e64696e6773_record2 (*dylib_go_4342696e64696e6773_call12_function)(dylib_go_4342696e64696e6773_record2);
-static dylib_go_4342696e64696e6773_record2 dylib_go_4342696e64696e6773_call12(uintptr_t address,dylib_go_4342696e64696e6773_record2 p0) {
-return ((dylib_go_4342696e64696e6773_call12_function)address)(p0);
+static dylib_go_4342696e64696e6773_record2 dylib_go_4342696e64696e6773_call12(uintptr_t address,const dylib_go_4342696e64696e6773_record2 *p0) {
+return ((dylib_go_4342696e64696e6773_call12_function)address)(*p0);
 }
 typedef int32_t (*dylib_go_4342696e64696e6773_call13_function)(dylib_go_4342696e64696e6773_record2,int32_t,int32_t,int32_t,int32_t);
-static int32_t dylib_go_4342696e64696e6773_call13(uintptr_t address,dylib_go_4342696e64696e6773_record2 p0,int32_t p1,int32_t p2,int32_t p3,int32_t p4) {
-return ((dylib_go_4342696e64696e6773_call13_function)address)(p0,p1,p2,p3,p4);
+static int32_t dylib_go_4342696e64696e6773_call13(uintptr_t address,const dylib_go_4342696e64696e6773_record2 *p0,int32_t p1,int32_t p2,int32_t p3,int32_t p4) {
+return ((dylib_go_4342696e64696e6773_call13_function)address)(*p0,p1,p2,p3,p4);
 }
 typedef void (*dylib_go_4342696e64696e6773_call14_function)(dylib_go_4342696e64696e6773_record2);
-static void dylib_go_4342696e64696e6773_call14(uintptr_t address,dylib_go_4342696e64696e6773_record2 p0) {
-((dylib_go_4342696e64696e6773_call14_function)address)(p0);
+static void dylib_go_4342696e64696e6773_call14(uintptr_t address,const dylib_go_4342696e64696e6773_record2 *p0) {
+((dylib_go_4342696e64696e6773_call14_function)address)(*p0);
 }
 typedef int32_t (*dylib_go_4342696e64696e6773_call15_function)(int32_t,int32_t,int32_t,int32_t);
 static int32_t dylib_go_4342696e64696e6773_call15(uintptr_t address,int32_t p0,int32_t p1,int32_t p2,int32_t p3) {
@@ -370,7 +370,8 @@ func (b *CBindings) Callbacks_echo(p0 CBindingsRecord0) (result CBindingsRecord0
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol2.WithAddress(func(address uintptr) error {
-		result = _CBindingsRecord0FromC(C.dylib_go_4342696e64696e6773_call2(C.uintptr_t(address), _CBindingsRecord0ToC(p0)))
+		c0 := _CBindingsRecord0ToC(p0)
+		result = _CBindingsRecord0FromC(C.dylib_go_4342696e64696e6773_call2(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -381,7 +382,8 @@ func (b *CBindings) Callbacks_apply(p0 CBindingsRecord0, p1 int32, p2 int32) (re
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol3.WithAddress(func(address uintptr) error {
-		result = int32(C.dylib_go_4342696e64696e6773_call3(C.uintptr_t(address), _CBindingsRecord0ToC(p0), C.int32_t(p1), C.int32_t(p2)))
+		c0 := _CBindingsRecord0ToC(p0)
+		result = int32(C.dylib_go_4342696e64696e6773_call3(C.uintptr_t(address), &c0, C.int32_t(p1), C.int32_t(p2)))
 		return nil
 	})
 	return result, err
@@ -414,7 +416,8 @@ func (b *CBindings) Callbacks_nested(p0 CBindingsRecord1) (result CBindingsRecor
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol6.WithAddress(func(address uintptr) error {
-		result = _CBindingsRecord1FromC(C.dylib_go_4342696e64696e6773_call6(C.uintptr_t(address), _CBindingsRecord1ToC(p0)))
+		c0 := _CBindingsRecord1ToC(p0)
+		result = _CBindingsRecord1FromC(C.dylib_go_4342696e64696e6773_call6(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -425,7 +428,8 @@ func (b *CBindings) Callbacks_nested_apply(p0 CBindingsRecord1, p1 int32, p2 int
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol7.WithAddress(func(address uintptr) error {
-		result = int32(C.dylib_go_4342696e64696e6773_call7(C.uintptr_t(address), _CBindingsRecord1ToC(p0), C.int32_t(p1), C.int32_t(p2)))
+		c0 := _CBindingsRecord1ToC(p0)
+		result = int32(C.dylib_go_4342696e64696e6773_call7(C.uintptr_t(address), &c0, C.int32_t(p1), C.int32_t(p2)))
 		return nil
 	})
 	return result, err
@@ -436,7 +440,8 @@ func (b *CBindings) Callbacks_store(p0 CBindingsRecord0) error {
 		return dylib.ErrClosed
 	}
 	return b.symbol8.WithAddress(func(address uintptr) error {
-		C.dylib_go_4342696e64696e6773_call8(C.uintptr_t(address), _CBindingsRecord0ToC(p0))
+		c0 := _CBindingsRecord0ToC(p0)
+		C.dylib_go_4342696e64696e6773_call8(C.uintptr_t(address), &c0)
 		return nil
 	})
 }
@@ -478,7 +483,8 @@ func (b *CBindings) Callback_array_echo(p0 CBindingsRecord2) (result CBindingsRe
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol12.WithAddress(func(address uintptr) error {
-		result = _CBindingsRecord2FromC(C.dylib_go_4342696e64696e6773_call12(C.uintptr_t(address), _CBindingsRecord2ToC(p0)))
+		c0 := _CBindingsRecord2ToC(p0)
+		result = _CBindingsRecord2FromC(C.dylib_go_4342696e64696e6773_call12(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err
@@ -489,7 +495,8 @@ func (b *CBindings) Callback_array_apply(p0 CBindingsRecord2, p1 int32, p2 int32
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol13.WithAddress(func(address uintptr) error {
-		result = int32(C.dylib_go_4342696e64696e6773_call13(C.uintptr_t(address), _CBindingsRecord2ToC(p0), C.int32_t(p1), C.int32_t(p2), C.int32_t(p3), C.int32_t(p4)))
+		c0 := _CBindingsRecord2ToC(p0)
+		result = int32(C.dylib_go_4342696e64696e6773_call13(C.uintptr_t(address), &c0, C.int32_t(p1), C.int32_t(p2), C.int32_t(p3), C.int32_t(p4)))
 		return nil
 	})
 	return result, err
@@ -500,7 +507,8 @@ func (b *CBindings) Callback_array_store(p0 CBindingsRecord2) error {
 		return dylib.ErrClosed
 	}
 	return b.symbol14.WithAddress(func(address uintptr) error {
-		C.dylib_go_4342696e64696e6773_call14(C.uintptr_t(address), _CBindingsRecord2ToC(p0))
+		c0 := _CBindingsRecord2ToC(p0)
+		C.dylib_go_4342696e64696e6773_call14(C.uintptr_t(address), &c0)
 		return nil
 	})
 }

@@ -33,7 +33,13 @@ func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	mapper := &cgoTypes{directTypes: direct, cPrefix: prefix, windows: h.Target.OS == "windows", msLayout: h.Target.msLayout(), ms386: h.Target.msLayout() && h.Target.Arch == "386", gnuPacking: h.Target.gnuPacking(), gnuAMD64: h.Target.gnuPacking() && h.Target.Arch == "amd64", pointerSize: h.Target.PointerSize}
+	mapper := &cgoTypes{
+		directTypes: direct, cPrefix: prefix, pointerSize: h.Target.PointerSize,
+		windows: h.Target.OS == "windows", msLayout: h.Target.msLayout(),
+		ms386:      h.Target.msLayout() && h.Target.Arch == "386",
+		gnuPacking: h.Target.gnuPacking(), gnuAMD64: h.Target.gnuPacking() && h.Target.Arch == "amd64",
+		pointerTransport: h.Target.Arch == "arm64" || h.Target.gnuPacking() && h.Target.Arch == "amd64",
+	}
 	var preamble, methods bytes.Buffer
 	fmt.Fprint(&preamble, "/*\n#include <stdint.h>\n")
 	if len(h.Records) != 0 {
@@ -193,11 +199,25 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 		goKind, _ := mapper.goType(s.ArgumentType(i))
 		goParams = append(goParams, fmt.Sprintf("p%d %s", i, goKind))
 		transport := mapper.transport(s.ArgumentType(i))
-		bridge = append(bridge, fmt.Sprintf("%s p%d", transport, i))
+		indirectTransport := mapper.pointerTransport && s.Args[i] == abi.Struct
+		if indirectTransport {
+			// Keep aggregate register allocation and stack layout inside C,
+			// including SysV and AArch64 values after argument registers run out.
+			bridge = append(bridge, fmt.Sprintf("const %s *p%d", transport, i))
+		} else {
+			bridge = append(bridge, fmt.Sprintf("%s p%d", transport, i))
+		}
 		argument := fmt.Sprintf("p%d", i)
 		if s.Args[i] == abi.Struct {
 			index, _ := mapper.recordIndex(s.ArgumentType(i))
-			goArgs = append(goArgs, mapper.conversion(index, true)+"("+argument+")")
+			converted := mapper.conversion(index, true) + "(" + argument + ")"
+			if indirectTransport {
+				conversions = append(conversions, fmt.Sprintf("c%d := %s\n", i, converted))
+				goArgs = append(goArgs, fmt.Sprintf("&c%d", i))
+				argument = "*" + argument
+			} else {
+				goArgs = append(goArgs, converted)
+			}
 		} else if s.Args[i] == abi.Bool {
 			conversions = append(conversions, fmt.Sprintf("var c%d C.int32_t\nif p%d { c%d = 1 }\n", i, i, i))
 			goArgs = append(goArgs, fmt.Sprintf("c%d", i))

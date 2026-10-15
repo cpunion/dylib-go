@@ -307,6 +307,27 @@ require an unavailable implicit facade. Small positive-width typedef gaps with
 floating fields are rejected for the same reason; other unqualified trailing
 unnamed forms also remain rejected.
 
+Plain zero-width fields in pragma records also retain compiler-observed gaps.
+GCC can raise their root alignment where Clang does not, even without explicit
+attributes. Their C bridge keeps the original zero-width declaration inside a
+capped anonymous member, preserving its ABI effect while retaining the measured
+root alignment. Simply deleting it can change i386 floating-argument expansion
+or AMD64 integer coercion; adding integer padding can change SysV register classes.
+Clang also retains an outer zero-width declaration where needed to preserve
+its trailing integer coercion width; GCC retains the capped inner declaration.
+On ARM64 and SysV AMD64, generated Go/C helpers receive a temporary transport
+address and construct the by-value native argument inside C. This keeps aggregate register
+allocation and stack slots under the C compiler, including register exhaustion.
+The public Go method still takes a value. Standard cgo may allocate this temporary
+when escape analysis requires it; no transport address is retained by the helper.
+Rounded prefixes also cover natural boundaries at non-power-of-two offsets,
+empty leading/consecutive boundaries, trailing padding, packed records and
+lowered record members. Small original unnamed positive-width fields remain
+unqualified where they could add a SysV integer class to a floating/padding chunk.
+The [zero-width example](../examples/zeroboundaries/call.go) executes these cases,
+including floating factories/pointers, nested arrays, register exhaustion and
+variadic promotions, from objects, archives and OS libraries at `-O0`/`-O2`.
+
 The [padding typedef example](../examples/paddingtypedefs/call.go) tests lowered,
 raised and omitted requests, alias chains, enum/Boolean bases, packing and member
 attributes, active/ignored/consecutive boundaries, nested arrays and floating

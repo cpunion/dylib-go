@@ -177,7 +177,7 @@ Bits echo(Bits); Outer nest(Outer); Bits *pointer(Bits *);`)
 			if err != nil {
 				t.Fatal(err)
 			}
-			for _, marker := range []string{"Bitfields:", "uint32_t f0:3;", "int32_t f1:5;", "_Bool f2:1;", "_mask(0,UINT64_MAX)", "_from_transport(p0)"} {
+			for _, marker := range []string{"Bitfields:", "uint32_t f0:3;", "int32_t f1:5;", "_Bool f2:1;", "_mask(0,UINT64_MAX)", "_from_transport("} {
 				if !strings.Contains(string(source), marker) {
 					t.Fatal("missing generated bitfield", marker)
 				}

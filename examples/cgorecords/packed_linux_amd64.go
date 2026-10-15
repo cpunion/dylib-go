@@ -23,8 +23,8 @@ default:return UINT64_MAX;
 }
 }
 typedef dylib_go_5061636b656442696e64696e6773_record0 (*dylib_go_5061636b656442696e64696e6773_call0_function)(dylib_go_5061636b656442696e64696e6773_record0);
-static dylib_go_5061636b656442696e64696e6773_record0 dylib_go_5061636b656442696e64696e6773_call0(uintptr_t address,dylib_go_5061636b656442696e64696e6773_record0 p0) {
-return ((dylib_go_5061636b656442696e64696e6773_call0_function)address)(p0);
+static dylib_go_5061636b656442696e64696e6773_record0 dylib_go_5061636b656442696e64696e6773_call0(uintptr_t address,const dylib_go_5061636b656442696e64696e6773_record0 *p0) {
+return ((dylib_go_5061636b656442696e64696e6773_call0_function)address)(*p0);
 }
 */
 import "C"
@@ -100,7 +100,8 @@ func (b *PackedBindings) Echo_pair(p0 PackedBindingsRecord0) (result PackedBindi
 		return result, dylib.ErrClosed
 	}
 	err = b.symbol0.WithAddress(func(address uintptr) error {
-		result = _PackedBindingsRecord0FromC(C.dylib_go_5061636b656442696e64696e6773_call0(C.uintptr_t(address), _PackedBindingsRecord0ToC(p0)))
+		c0 := _PackedBindingsRecord0ToC(p0)
+		result = _PackedBindingsRecord0FromC(C.dylib_go_5061636b656442696e64696e6773_call0(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err

@@ -12,14 +12,15 @@ import (
 // the cgo boundary, so their padding/alignment need not match Go storage.
 type cgoTypes struct {
 	*directTypes
-	cPrefix     string
-	windows     bool
-	msLayout    bool
-	ms386       bool
-	gnuPacking  bool
-	gnuAMD64    bool
-	pointerSize int
-	transports  map[int]bool
+	cPrefix          string
+	windows          bool
+	msLayout         bool
+	ms386            bool
+	gnuPacking       bool
+	gnuAMD64         bool
+	pointerTransport bool
+	pointerSize      int
+	transports       map[int]bool
 }
 
 func (t *cgoTypes) recordIndex(description abi.TypeDesc) (int, error) {
@@ -207,12 +208,22 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			}
 		}
 		prefixPadding := t.gnuPrefixPadding(record)
+		plainBoundary := false
+		if t.gnuPacking {
+			for index, padding := range record.Padding {
+				adapt := record.gnuPlainZeroBoundary(padding) && uint64(bitfieldTypeBits(padding.Type)/8) > record.Layout.Alignment
+				plainBoundary = plainBoundary || adapt
+				if adapt && padding.Gap != 0 && prefixPadding[index] == 0 {
+					return fmt.Errorf("clang: GNU plain zero-width gaps in %s require an implicit-padding C bridge", record.Name)
+				}
+			}
+		}
 		if t.gnuAMD64 && (record.MaxFieldAlignment != 0 || record.hasBitfieldTypedefs()) && record.Layout.Size <= 16 && t.sysVAlignedRecord(record, 0) {
 			for index, padding := range record.Padding {
 				if padding.Width != 0 && padding.TypeAlignment != 0 && padding.Gap != 0 && hasFloatingFields(record.Description) {
 					return fmt.Errorf("clang: GNU AMD64 small unnamed typedef gaps in %s require an implicit-padding C bridge", record.Name)
 				}
-				if padding.Width == 0 && (padding.TypeAlignment != 0 || padding.Aligned > record.MaxFieldAlignment) && padding.requestedAlignment() > record.Layout.Alignment && padding.Gap != 0 && (!tailPadding || padding.Before != len(record.Description.Fields)) && !prefixPadding[index] {
+				if padding.Width == 0 && (padding.TypeAlignment != 0 || padding.Aligned > record.MaxFieldAlignment) && padding.requestedAlignment() > record.Layout.Alignment && padding.Gap != 0 && (!tailPadding || padding.Before != len(record.Description.Fields)) && prefixPadding[index] == 0 {
 					return fmt.Errorf("clang: GNU AMD64 small zero-width gaps in %s require an implicit-padding C bridge", record.Name)
 				}
 			}
@@ -251,7 +262,7 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		if t.gnuPacking && record.hasPaddingTypedefs() && bridgePacking > record.Layout.Alignment {
 			bridgePacking = record.Layout.Alignment
 		}
-		if len(prefixPadding) != 0 && bridgePacking == 0 {
+		if (plainBoundary || len(prefixPadding) != 0) && (bridgePacking == 0 || bridgePacking > record.Layout.Alignment) {
 			bridgePacking = record.Layout.Alignment
 		}
 		if bridgePacking != 0 {
@@ -267,6 +278,11 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		}
 		fmt.Fprint(output, "typedef struct ")
 		declarationRecord := record
+		if plainBoundary && declarationRecord.Aligned < record.Layout.Alignment {
+			// A packed producer can derive its root alignment from the zero
+			// width. Its capped anonymous replacement must restore that root.
+			declarationRecord.Aligned = record.Layout.Alignment
+		}
 		if t.gnuPacking && record.MaxFieldAlignment != 0 {
 			for _, padding := range record.Padding {
 				if padding.Width == 0 && padding.Aligned > record.MaxFieldAlignment && padding.Aligned > record.Layout.Alignment {
@@ -285,8 +301,8 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 		// Open outer boundaries first. Closing each prefix at its measured
 		// zero-width declaration leaves its gap as implicit tail padding.
 		for index := len(record.Padding) - 1; index >= 0; index-- {
-			if prefixPadding[index] {
-				prefix := Record{Packed: record.Packed, Aligned: record.Padding[index].Offset}
+			if alignment := prefixPadding[index]; alignment != 0 {
+				prefix := Record{Packed: record.Packed, Aligned: alignment}
 				fmt.Fprintf(output, "struct %s{\n", prefix.cAttributes())
 			}
 		}
@@ -315,12 +331,27 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 				if tailPadding && p.Width != 0 && p.Before == len(record.Description.Fields) {
 					continue
 				}
-				if prefixPadding[member.padding] {
+				if t.gnuPacking && record.gnuPlainZeroBoundary(p) && uint64(bitfieldTypeBits(p.Type)/8) > record.Layout.Alignment {
+					// Keep the zero width inside a capped anonymous member. It
+					// affects i386 float expansion and SysV integer coercion even
+					// when the byte gap is empty, but must not raise GCC's root.
+					if prefixPadding[member.padding] != 0 {
+						fmt.Fprintf(output, "%s :0;\n};\n", bitfieldBaseType(p.Type))
+						// Clang also needs the original outer declaration to
+						// retain trailing integer coercion widths. It has no
+						// extra byte gap here; GCC must keep it inside the cap.
+						fmt.Fprintf(output, "#if defined(__clang__)\n%s :0;\n#endif\n", bitfieldBaseType(p.Type))
+					} else {
+						fmt.Fprintf(output, "struct {%s :0;};\n", bitfieldBaseType(p.Type))
+					}
+					continue
+				}
+				if prefixPadding[member.padding] != 0 {
 					fmt.Fprint(output, "};\n")
 				}
 				if t.gnuPacking && p.TypeAlignment != 0 && (p.Width == 0 || p.Gap != 0) {
 					gap := p.Gap
-					if prefixPadding[member.padding] || tailPadding && p.Before == len(record.Description.Fields) {
+					if prefixPadding[member.padding] != 0 || tailPadding && p.Before == len(record.Description.Fields) {
 						gap = 0
 					}
 					writeGNUPragmaBoundary(output, gap)
@@ -337,7 +368,7 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 				if t.gnuPacking && record.MaxFieldAlignment != 0 && p.Aligned > record.MaxFieldAlignment && (p.Width != 0 || p.Aligned > record.Layout.Alignment) {
 					if p.Width == 0 {
 						gap := p.Gap
-						if prefixPadding[member.padding] || tailPadding && p.Before == len(record.Description.Fields) {
+						if prefixPadding[member.padding] != 0 || tailPadding && p.Before == len(record.Description.Fields) {
 							gap = 0
 						}
 						writeGNUPragmaBoundary(output, gap)
