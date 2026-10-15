@@ -88,7 +88,8 @@ jobs:
             -run '^(TestRecordsAcrossTargets|TestCallbackRecordFieldsAcrossTargets|TestRecordMetadataValidationAndBudgets)$' ./compiler/clang
       - name: Execute optional scalar, struct and callback libffi ABI
         env:
-          DYLIB_TEST_LANGUAGES: ''
+          # C facade ownership needs libffi; other producers run in direct mode.
+          DYLIB_TEST_LANGUAGES: ${{ runner.os == 'macOS' && 'swift,objc' || '' }}
         run: |
           if [[ '${{ matrix.target }}' == darwin-amd64 ]]; then
             go list -tags llgo,libffi ./... > "$RUNNER_TEMP/dylib-llgo-ffi-packages"
