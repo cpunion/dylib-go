@@ -8,7 +8,7 @@ continue to use their OS-managed unwind registration.
 
 | Target | Accepted raw metadata |
 | --- | --- |
-| Windows amd64 | 12-byte `.pdata` records and version 1 `.xdata`, without language handlers or chained records |
+| Windows amd64 | 12-byte `.pdata` records and version 1 `.xdata`, including the chained C records below, without language handlers |
 | Windows arm64 | 8-byte `.pdata`; packed function/fragment records, or version 0 full/extended `.xdata`, without language handlers |
 | Linux amd64/arm64/386 | ELF `.eh_frame` and `.eh_frame.*`, DWARF32 CIE versions 1/3, ordinary C augmentation, and the CFI subset below; libgcc_s required |
 | macOS amd64/arm64 | Mach-O `__eh_frame`, PC-relative DWARF32 C records, individually registered with system libunwind |
@@ -23,6 +23,20 @@ Metadata must lie in aligned data sections. AMD64 code slots/operand counts,
 ARM64 packed lengths, full/extended headers, and epilog scope bounds are checked.
 Unwind instructions still describe compiler-generated native code; these
 checks do not verify each instruction against its machine-code prolog.
+
+AMD64 version 1 records may use `UNW_FLAG_CHAININFO`. Secondary records can
+be empty or contain `UWOP_SAVE_NONVOL`/`UWOP_SAVE_NONVOL_FAR` integer-register
+saves; stack allocation belongs to the primary record. Go follows each embedded
+`RUNTIME_FUNCTION` iteratively, validating its executable range, aligned metadata,
+prolog length, operands and matching frame register/offset. Cycles, truncated
+tails, language handlers and other secondary operations fail before registration.
+Shared primaries and multi-level chains are supported. Embedded parent records
+need not have a separate `.pdata` entry.
+
+Registered `.pdata` ranges must still be disjoint. Overlapping ranges, including
+those produced by LLVM's nested `.seh_startchained` directives, need normalization
+before this loader can accept them. This does not add language exception handling
+or version 2/3 unwind formats.
 
 The output table lives in OS-owned read-only memory. Go calls
 `RtlAddFunctionTable` after link/root validation and before initialization.
@@ -99,8 +113,9 @@ that no dynamic FDE is registered rather than requiring traversal to fail.
 
 The option defaults to false. Default loading discards COFF, ELF and Mach-O DWARF unwind
 sections and their relocations/dependencies as before. With registration enabled,
-unsupported versions, handler/chained records, CIE augmentations and invalid
-metadata fail before initialization. Leaf functions can legitimately have no table entries.
+unsupported versions, language handlers, unsupported chained records, CIE
+augmentations and invalid metadata fail before initialization. Leaf functions
+can legitimately have no table entries.
 
 This extension supports native C frame lookup and stack traversal. C++/SEH
 language handlers, RTTI/runtime adapters, Windows 386 SEH, other POSIX unwind
@@ -114,6 +129,12 @@ two raw C frames, returning a checked result. Tests verify OS table lookup,
 unregistration after close, and registration ownership during failed integer
 initialization cleanup. Every pure Go job inspects real cross-target compiler
 records and rejects malformed/unsupported table cases.
+
+Windows AMD64 Go and llgo jobs also execute a separately assembled two-level
+chain through the same OS unwinder, with objects, archives, default loading,
+per-range lookup, unregistration and validation retry. Pure Go jobs relocate
+the MSVC and MinGW assembler metadata and validate shared/empty/FAR chains,
+malformed records, and a 2048-level chain and cycle.
 
 References: [Microsoft x64 unwind format](https://learn.microsoft.com/en-us/cpp/build/exception-handling-x64),
 [Microsoft ARM64 unwind format](https://learn.microsoft.com/en-us/cpp/build/arm64-exception-handling),
