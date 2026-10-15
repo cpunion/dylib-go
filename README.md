@@ -643,12 +643,13 @@ Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cde
 | Go gc C exports | `c-shared` + `//export`, generated C entries | Verified subset | All eight Go targets; retain runtime libraries with `KeepLibraries` |
 | Go gc native functions | ABIInternal / ABI0 | Not implemented | Ordinary Go functions, strings, slices, and GC-managed values are not supported plugin interfaces |
 | llgo C interfaces | C exports / `c-shared`; typed C-pointer adapters | Verified subset | Six amd64/arm64 targets; 386 is unqualified; runtime initialization and ownership still apply |
-| Swift C exports | `@_cdecl`, C-compatible types | Verified subset | Shared libraries on macOS amd64 and arm64; raw runtime-registration objects are rejected |
+| Swift C exports | `@_cdecl`, C-compatible types | Verified subset | macOS amd64/arm64 dylibs; opaque object retain/release, leased Go observers and destruction cleanup; raw runtime-registration objects are rejected |
 | Swift native functions | Swift calling convention and runtime ABI | Not implemented | No native generics, async, throws, or Swift value lifetime adaptation |
-| Objective-C / ObjC++ methods | Objective-C runtime dispatch | Not implemented | No built-in message-dispatch or ARC adapter; C facades are unverified |
+| Objective-C / ObjC++ C exports | `extern "C"` facade, host C ABI | Verified subset | macOS amd64/arm64 ObjC++ dylibs; ARC-managed opaque objects, retain/release and leased Go observers |
+| Objective-C / ObjC++ methods | Objective-C runtime dispatch | Not implemented | No built-in message-dispatch or ARC adapter; use an explicit C facade |
 | Other native languages | Explicit C-compatible exports | Unverified | No compiler-producer execution tests or current support claim |
 
-The [language producer probes](languages_test.go) primarily test `int32` addition through C exports. Mixed scalar, struct, and pointer coverage comes from C fixtures; it does not establish every language's native value representation. On Windows 386, stdcall differs from cdecl, so a C-compatible Rust `extern "system"` entry needs explicit `abi.StdCall`; the Rust producer itself is not tested on Windows. On Windows amd64/arm64, an ignored `__stdcall` annotation does not by itself select a different ABI. Caller-defined cgo/llgo adapters can cover additional contracts, but that is not built-in dynamic ABI support.
+The [language producer probes](languages_test.go) primarily test `int32` addition through C exports. The [Apple C facades](docs/apple-facades.md) additionally test opaque Swift/ObjC objects and Go observer lifetimes, with runtime images pinned using `KeepLibraries`. Mixed scalar, struct, and pointer coverage comes from C fixtures; it does not establish every language's native value representation. On Windows 386, stdcall differs from cdecl, so a C-compatible Rust `extern "system"` entry needs explicit `abi.StdCall`; the Rust producer itself is not tested on Windows. On Windows amd64/arm64, an ignored `__stdcall` annotation does not by itself select a different ABI. Caller-defined cgo/llgo adapters can cover additional contracts, but that is not built-in dynamic ABI support.
 
 See the [DDL and ABIBridge comparison](docs/comparison.md#remaining-gaps) for missing loader features, native language adaptation, and proposed integration with llcppg.
 
@@ -684,7 +685,7 @@ The former experimental `BindInt32`, `CallInt32`, and `Int32Func` APIs have been
 | `testdata/` | Native compiler inputs for language probes |
 | `docs/` | Design, compatibility, comparisons, CI, and evidence |
 
-Run `scripts/verify.sh` for ordinary Go, no-cgo, and vet checks. Set `DYLIB_TEST_FFI=1 DYLIB_TEST_LLGO=1` to add race/libffi and llgo tests. Set `DYLIB_TEST_LANGUAGES=rust,zig,fortran,go` for those compiler probes, or `DYLIB_TEST_LANGUAGES=1 DYLIB_TEST_LLGO=1` for all macOS probes, including Swift and llgo-produced libraries. Explicitly selected compilers are required; missing tools fail the test.
+Run `scripts/verify.sh` for ordinary Go, no-cgo, and vet checks. Set `DYLIB_TEST_FFI=1 DYLIB_TEST_LLGO=1` to add race/libffi and llgo tests. Set `DYLIB_TEST_LANGUAGES=rust,zig,fortran,go` for those compiler probes, or `DYLIB_TEST_LANGUAGES=1 DYLIB_TEST_LLGO=1` for all macOS probes, including Swift, ObjC++ and llgo-produced libraries. Explicitly selected compilers are required; missing tools fail the test.
 
 All fenced code in this README comes from source files under `examples/`, embedded with [embedme](https://github.com/zakhenry/embedme). Edit those files, run `npm ci --ignore-scripts` followed by `npm run readme`, and commit the source and regenerated README together. The README workflow runs `npm run readme:verify` to reject stale snippets; the Go and llgo workflows execute the examples and check their results.
 

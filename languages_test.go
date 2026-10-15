@@ -21,7 +21,7 @@ func selectedLanguages(t *testing.T) map[string]bool {
 	if value == "1" {
 		value = "rust,zig,fortran,go"
 		if runtime.GOOS == "darwin" {
-			value += ",swift"
+			value += ",swift,objc"
 		}
 		if os.Getenv("DYLIB_TEST_LLGO") == "1" {
 			value += ",llgo"
@@ -34,10 +34,10 @@ func selectedLanguages(t *testing.T) map[string]bool {
 	for _, name := range strings.Split(value, ",") {
 		name = strings.TrimSpace(name)
 		switch name {
-		case "rust", "zig", "fortran", "swift", "go", "llgo":
+		case "rust", "zig", "fortran", "swift", "objc", "go", "llgo":
 			selected[name] = true
 		default:
-			t.Fatalf("unknown DYLIB_TEST_LANGUAGES entry %q; use rust,zig,fortran,swift,go,llgo", name)
+			t.Fatalf("unknown DYLIB_TEST_LANGUAGES entry %q; use rust,zig,fortran,swift,objc,go,llgo", name)
 		}
 	}
 	return selected
