@@ -101,3 +101,92 @@ func TestNativeWindowsRuntimeFunctionTables(t *testing.T) {
 	}
 	expectEvents(t, read, 1, 2, 7, 8)
 }
+
+func TestNativeWindowsChainedRuntimeFunctionTables(t *testing.T) {
+	if runtime.GOARCH != "amd64" {
+		t.Skip("x64 chained unwind requires Windows AMD64")
+	}
+	needNative(t)
+	dir := t.TempDir()
+	host := filepath.Join(dir, "chain_host.dll")
+	command(t, compiler(), "-shared", "-O0", "-funwind-tables", "testdata/unwind_host_windows.c", "-o", host)
+	obj := compile(t, "testdata/unwind_chained_amd64.S", filepath.Join(dir, "chain.o"))
+	lookup := syscall.NewLazyDLL("kernel32.dll").NewProc("RtlLookupFunctionEntry")
+	for _, mode := range []string{"default", "object", "archive"} {
+		t.Run(mode, func(t *testing.T) {
+			input := obj
+			if mode == "archive" {
+				input = filepath.Join(dir, "chain.a")
+				command(t, "ar", "rcs", input, obj)
+			}
+			s := New(Options{RegisterUnwind: mode != "default"})
+			defer s.Close()
+			load(t, s, host, input)
+			if mode == "default" {
+				call(t, s, "unwind_chain_root", 20, 22, -1)
+				return
+			}
+			// The observer must unwind both secondary records and the primary
+			// allocation to reach the second raw frame and return 42.
+			call(t, s, "unwind_chain_root", 20, 22, 42)
+			owned := s.image.unwind
+			if owned == nil || !owned.registered || len(owned.mem) != 48 {
+				t.Fatal("four native runtime function ranges were not registered")
+			}
+			var addresses []uintptr
+			for p := 0; p < len(owned.mem); p += 12 {
+				begin, end := le.Uint32(owned.mem[p:]), le.Uint32(owned.mem[p+4:])
+				address := s.image.base + uintptr(begin+(end-begin)/2)
+				var base uint64
+				entry, _, _ := lookup.Call(address, uintptr(unsafe.Pointer(&base)), 0)
+				if entry == 0 || base != uint64(s.image.base) {
+					t.Fatalf("OS lookup for range %d: entry=%#x base=%#x", p/12, entry, base)
+				}
+				addresses = append(addresses, address)
+			}
+			if err := s.Close(); err != nil {
+				t.Fatal(err)
+			}
+			for _, address := range addresses {
+				var base uint64
+				if entry, _, _ := lookup.Call(address, uintptr(unsafe.Pointer(&base)), 0); entry != 0 {
+					t.Fatalf("chained function table retained after close: %#x", entry)
+				}
+			}
+			if owned.mem != nil || owned.registered {
+				t.Fatal("native table storage retained")
+			}
+		})
+	}
+	t.Run("validation retry", func(t *testing.T) {
+		s := New(Options{RegisterUnwind: true})
+		defer s.Close()
+		load(t, s, host, obj)
+		var metadata *section
+		index := -1
+		for _, section := range s.files[0].obj.sections {
+			if section == nil || section.name != ".xdata" {
+				continue
+			}
+			for p := 0; p+8 <= len(section.data); p += 4 {
+				if section.data[p] == 0x21 && section.data[p+2] == 2 {
+					metadata, index = section, p
+					break
+				}
+			}
+		}
+		if index == -1 {
+			t.Fatal("producer chained metadata missing")
+		}
+		original := metadata.data[index]
+		metadata.data[index] |= 8 // A chain cannot also declare a handler.
+		if err := s.Link("unwind_chain_root"); err == nil || s.image != nil || s.initErr != nil {
+			t.Fatalf("invalid chain published or became permanent: %v", err)
+		}
+		metadata.data[index] = original
+		call(t, s, "unwind_chain_root", 20, 22, 42)
+		if err := s.Close(); err != nil {
+			t.Fatal(err)
+		}
+	})
+}

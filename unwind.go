@@ -206,60 +206,93 @@ func (im *image) unwindData(rva uint32, size uint64) ([]byte, error) {
 }
 
 func (im *image) x64UnwindInfo(rva uint32, length uint64) error {
-	b, err := im.unwindData(rva, 4)
-	if err != nil {
-		return err
-	}
-	if b[0] != 1 { // Version 1, no language handlers or chained records.
-		return fmt.Errorf("unsupported x64 unwind version/handler flags %#x", b[0])
-	}
-	if b[3]&15 == 0 && b[3]>>4 != 0 {
-		return fmt.Errorf("invalid x64 unwind frame offset without a frame register")
-	}
-	count, prolog := int(b[2]), b[1]
-	if uint64(prolog) > length {
-		return fmt.Errorf("x64 unwind prolog exceeds its function")
-	}
-	b, err = im.unwindData(rva, alignUp(4+2*uint64(count), 4))
-	if err != nil {
-		return err
-	}
-	previous := prolog
-	for i := 0; i < count; i++ {
-		code, op := b[4+i*2], b[5+i*2]
-		if code > previous {
-			return fmt.Errorf("invalid x64 unwind code order/prolog offset")
+	// Walk chains iteratively: malformed native metadata must not recurse on
+	// the Go stack, and a shared primary is valid but a cycle is not.
+	seen := make(map[uint32]bool)
+	frame := -1
+	for {
+		if seen[rva] {
+			return fmt.Errorf("cyclic x64 chained unwind metadata")
 		}
-		previous = code
-		extra := 0
-		switch op & 15 {
-		case 0, 2:
-		case 1:
-			if op>>4 > 1 {
-				return fmt.Errorf("invalid x64 large-allocation encoding")
-			}
-			extra = 1 + int(op>>4)
-		case 3:
-			if op>>4 != 0 || b[3]&15 == 0 {
-				return fmt.Errorf("invalid x64 frame-register encoding")
-			}
-		case 4, 8:
-			extra = 1
-		case 5, 9:
-			extra = 2
-		case 10:
-			if op>>4 > 1 {
-				return fmt.Errorf("invalid x64 machine-frame encoding")
-			}
-		default:
-			return fmt.Errorf("unsupported x64 unwind opcode %d", op&15)
+		seen[rva] = true
+		b, err := im.unwindData(rva, 4)
+		if err != nil {
+			return err
 		}
-		if i+extra >= count {
-			return fmt.Errorf("truncated x64 unwind opcode operands")
+		chained := b[0] == 0x21    // Version 1, UNW_FLAG_CHAININFO.
+		if b[0] != 1 && !chained { // Version 1, without language handlers.
+			return fmt.Errorf("unsupported x64 unwind version/handler flags %#x", b[0])
 		}
-		i += extra
+		if frame >= 0 && frame != int(b[3]) {
+			return fmt.Errorf("inconsistent x64 chained unwind frame register/offset")
+		}
+		frame = int(b[3])
+		if b[3]&15 == 0 && b[3]>>4 != 0 {
+			return fmt.Errorf("invalid x64 unwind frame offset without a frame register")
+		}
+		count, prolog := int(b[2]), b[1]
+		if uint64(prolog) > length {
+			return fmt.Errorf("x64 unwind prolog exceeds its function")
+		}
+		size := alignUp(4+2*uint64(count), 4)
+		b, err = im.unwindData(rva, size)
+		if err != nil {
+			return err
+		}
+		previous := prolog
+		for i := 0; i < count; i++ {
+			code, op := b[4+i*2], b[5+i*2]
+			if code > previous {
+				return fmt.Errorf("invalid x64 unwind code order/prolog offset")
+			}
+			previous = code
+			// Secondary prologues may save nonvolatile registers in the existing
+			// frame; stack allocation belongs to the primary record.
+			if chained && op&15 != 4 && op&15 != 5 {
+				return fmt.Errorf("unsupported x64 chained unwind opcode %d", op&15)
+			}
+			extra := 0
+			switch op & 15 {
+			case 0, 2:
+			case 1:
+				if op>>4 > 1 {
+					return fmt.Errorf("invalid x64 large-allocation encoding")
+				}
+				extra = 1 + int(op>>4)
+			case 3:
+				if op>>4 != 0 || b[3]&15 == 0 {
+					return fmt.Errorf("invalid x64 frame-register encoding")
+				}
+			case 4, 8:
+				extra = 1
+			case 5, 9:
+				extra = 2
+			case 10:
+				if op>>4 > 1 {
+					return fmt.Errorf("invalid x64 machine-frame encoding")
+				}
+			default:
+				return fmt.Errorf("unsupported x64 unwind opcode %d", op&15)
+			}
+			if i+extra >= count {
+				return fmt.Errorf("truncated x64 unwind opcode operands")
+			}
+			i += extra
+		}
+		if !chained {
+			return nil
+		}
+		b, err = im.unwindData(rva, size+12)
+		if err != nil {
+			return err
+		}
+		parent := b[size:]
+		begin, end := binary.LittleEndian.Uint32(parent), binary.LittleEndian.Uint32(parent[4:])
+		if end <= begin || uint64(end) > uint64(len(im.mem)) || !im.unwindRange(uint64(begin), uint64(end)-uint64(begin), true) {
+			return fmt.Errorf("x64 chained function range is outside an executable section")
+		}
+		rva, length = binary.LittleEndian.Uint32(parent[8:]), uint64(end)-uint64(begin)
 	}
-	return nil
 }
 
 func (im *image) arm64UnwindLength(word uint32) (uint64, error) {
