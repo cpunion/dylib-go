@@ -9,9 +9,10 @@ Go and llgo use independent workflows and separately compiled test processes:
 Workflows run on pushes to main, pull requests, and manual dispatch. Pure Go jobs set `CGO_ENABLED=0` and run parser, error, and execution-refusal tests in a process compiled for the target architecture.
 
 Native Go suites allow 20 minutes per test package within their 40-minute jobs.
-macOS Intel uses a 75-minute job budget: its ordinary and race compiler
-qualification suites can together exceed 40 minutes. Both full suites still run,
-with the same per-package limits as the other Go targets.
+macOS Intel allows 30 minutes per package within a 75-minute job: its complete
+compiler qualification package already takes about 19 minutes on a passing run,
+leaving too little margin under the former 20-minute limit. Both ordinary and
+race suites still run in full.
 The llgo suites allow 35 minutes per package within 75-minute jobs; macOS Intel
 has a 120-minute job budget. Its expanded compiler qualification matrix exceeded
 a 60-minute single-process budget while tests were progressing. Intel macOS now
@@ -88,6 +89,7 @@ All eight Go execution targets and six llgo targets set `DYLIB_TEST_REQUIRE_NATI
 | Rust `extern C`, Zig `export`, Fortran `bind(C)` | Both Linux/macOS architectures | Both Linux/macOS architectures |
 | Swift C-exported library and raw metadata refusal | Both macOS architectures | Both macOS architectures |
 | Swift/ObjC++ opaque C facades | Both macOS architectures, unoptimized/optimized dylibs; null handles/observers, object retain/release, Go observer calls, destruction during owner retirement, cleanup retry and raw metadata refusal | Same native lifecycle cases through libffi on both macOS architectures |
+| Generated C++ class facades | Eight-target C/C++ declaration compilation; fresh no-libffi cgo callers and dynamic libffi calls against `-O0`/`-O2` libraries, constructor/method/destructor exceptions, const overloads, scalar widths, native pointers and secondary-base virtual dispatch | Same generation and actual caller execution on six native hosts, plus fresh direct llgo callers without libffi; dynamic cases run in the libffi suite |
 | Go c-shared | Eight library targets, including both 386 hosts | Six library targets |
 | llgo c-shared | Local macOS and CI Windows ARM64; other targets use llgo hosts | Six library targets |
 

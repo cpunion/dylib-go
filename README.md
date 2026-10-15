@@ -623,6 +623,50 @@ Use `Callback.WithAddress` for synchronous calls. For a stored registration, hol
 
 C-created threads may invoke the entry concurrently; captures need appropriate synchronization. A handler may resolve, bind, and call functions on the same session, including the same bound function. It must not close its own session, call plan, or callback from an active call. With llgo, the public `//export` entry relies on compiler-generated foreign-thread protection; use the [qualified compiler revision](docs/ci.md). llgo v1.0.6 does not protect dependency-package or executable exports on this path. See [callback ownership and thread integration](docs/callbacks.md). Run `bash examples/run.sh go library` or `bash examples/run.sh llgo library` to execute the README examples, including this callback.
 
+## C++ class facades
+
+The optional [`compiler/cxx`](compiler/cxx) package generates C++17 adapters from
+an explicit class manifest. A matching C++ compiler handles construction, exact
+member signatures, virtual calls and destruction. The C interface returns status
+codes and writes results through output pointers, keeping catchable exceptions
+inside C++. The [CI-executed example](examples/cxx/generate.go) selects a small
+class interface:
+
+<!-- embedme examples/cxx/generate.go -->
+
+```go
+// Package cxxexample demonstrates a generated C facade for a C++ class.
+package cxxexample
+
+import (
+	"github.com/cpunion/dylib-go/abi"
+	"github.com/cpunion/dylib-go/compiler/cxx"
+)
+
+// Generate selects constructor, member and destruction exports. Compile the
+// returned CXXSource with the class's own C++17 toolchain/runtime. Its CHeader
+// can use compiler/clang.Parse and CgoSource for Go/llgo without libffi.
+func Generate(header string) (*cxx.Facade, error) {
+	return cxx.Generate(header, []cxx.Class{{
+		Name:   "example::Counter",
+		Delete: "counter_delete",
+		Constructors: []cxx.Constructor{{
+			Symbol: "counter_new", Args: []abi.Type{abi.I32},
+		}},
+		Methods: []cxx.Method{{
+			Name: "add", Symbol: "counter_add",
+			Signature: abi.Signature{Result: abi.I32, Args: []abi.Type{abi.I32}},
+		}},
+	}})
+}
+
+```
+
+Compile the returned `CXXSource` into a complete library. Parse `CHeader` with
+`compiler/clang.Parse`, selecting `Facade.Functions`, then use `CgoSource` for
+Go/llgo without libffi or `Session.Bind` for dynamic calls. Retain the library
+through final object destruction. See [C++ types, status codes and ownership](docs/cxx.md).
+
 ## Language interfaces and calling conventions
 
 Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cdecl and Windows 386 stdcall/fastcall selection. Language C exports and native language ABIs have different support levels:
@@ -635,7 +679,8 @@ Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cde
 | C with other conventions | vectorcall and other non-default ABIs | Not implemented | Use a compiled adapter matching the convention |
 | C++ C exports | `extern "C"`, host C ABI | Verified subset | C exports and global construction/destruction on native targets; raw fixtures disable exceptions and RTTI |
 | C++ free functions | C-compatible representation, exact mangled symbol | Conditional | Caller supplies the exact symbol and signature; direct mangled entry calls are not separately tested in CI |
-| C++ methods and objects | Compiler-specific C++ object ABI | Not implemented | No automatic `this` adjustment, virtual dispatch, receiver construction/destruction, or exception adaptation |
+| C++ class facades | Generated C exports + matching C++17 compiler | Supported subset | Explicit `compiler/cxx` manifests: constructors, ordinary/const/static members, native virtual dispatch and exception status codes; complete libraries, scalar/opaque-pointer values |
+| C++ native methods and values | Compiler-specific C++ object ABI | Not implemented | Class layout, member pointers and class value marshalling require native adapters |
 | Rust C exports | `extern "C"` | Verified subset | Linux/macOS amd64 and arm64; `no_std` leaf objects, `panic=abort` |
 | Rust native functions | Rust ABI | Not implemented | Use C exports; Rust-specific values and panic unwinding are not adapted |
 | Zig C exports | `export fn`, C calling convention | Verified subset | Linux/macOS amd64 and arm64; C-compatible exported functions |
@@ -676,6 +721,7 @@ The former experimental `BindInt32`, `CallInt32`, and `Int32Func` APIs have been
 | `abi/` | Go signatures, reusable libffi calls, and leased native C callbacks |
 | `abi/signature/` | Pure Go declaration, typed-invocation, and typed literal parsing |
 | `compiler/clang/` | Optional validated C prototypes, dynamic descriptors and direct llgo adapter generation |
+| `compiler/cxx/` | Go-rendered C++17 class facades with fixed C entry points and exception status codes |
 | `internal/native/` | OS memory, instruction cache, and shared-library operations |
 | `examples/call/` | Fixed-signature adapter used only by the CLI and tests |
 | `examples/cgo/`, `examples/llgo/`, `examples/bind/`, `examples/callback/` | Executable README examples |

@@ -6,6 +6,11 @@ explicitly requested function declarations and their type probes. Go decodes the
 AST and renders source; no libclang library or compiler dependency is added to the
 core loader.
 
+For explicit C++ class manifests, [`compiler/cxx`](cxx.md) generates a C header
+and C++17 facade. Parse that C header with the export list in `Facade.Functions`
+to reuse the same dynamic, cgo and direct llgo adapters. The C++ compiler supplies
+object/member dispatch and catches native exceptions before the C boundary.
+
 Set `Options.Functions` to the C names to inspect. `Options.Compiler` selects the
 executable; `Options.Target` defaults to the qualified native host triple.
 `Options.Flags` supplies matching include directories, defines and preprocessing
