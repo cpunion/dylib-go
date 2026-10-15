@@ -9,11 +9,15 @@ Go and llgo use independent workflows and separately compiled test processes:
 Workflows run on pushes to main, pull requests, and manual dispatch. Pure Go jobs set `CGO_ENABLED=0` and run parser, error, and execution-refusal tests in a process compiled for the target architecture.
 
 Native Go suites allow 20 minutes per test package within their 40-minute jobs.
-The llgo suites allow 25 minutes per package within 75-minute jobs. macOS Intel
-allows 40 minutes per package within a 100-minute job after the expanded compiler
-matrix exceeded its previous 30-minute budget. Layout and calling-ABI checks
-reuse the same parsed headers where possible. The independent Windows ARM64 Go process keeps its 20-minute package budget.
-The timeouts remain bounded and all probes still run.
+The llgo suites allow 35 minutes per package within 75-minute jobs; macOS Intel
+allows 60 minutes within a 100-minute job. Its expanded compiler qualification
+matrix exceeded the previous 40-minute package budget while tests were progressing.
+The full compiler matrix runs once with libffi. Direct calls in all other packages
+also run without libffi, together with the compiler's record, callback-field and
+metadata checks that exercise backend-unavailable behavior. This preserves both
+backend modes without repeating the expensive producer/layout matrix.
+Layout and calling-ABI checks reuse parsed headers where possible. The independent
+Windows ARM64 Go process keeps its 20-minute package budget. All probes still run.
 
 | Target | Go execution | Pure Go inspection | llgo execution |
 | --- | --- | --- | --- |
