@@ -75,8 +75,8 @@ File format support alone does not establish language support. A callable entry 
 | Fortran | `bind(C)`, `iso_c_binding`, explicit `value` arguments | gfortran objects on both Linux/macOS architectures; I/O/descriptors need runtime libraries and wrappers |
 | Go gc | `go build -buildmode=c-shared`, `//export` | Libraries on all six amd64/arm64 targets and both Linux/Windows 386 hosts; Go `.a`, ordinary Go ABI, and GC-managed layouts are not C ABI inputs |
 | llgo | Compile the host with llgo; plugins export C ABI / c-shared | Host and producer tested on six amd64/arm64 targets; setup-llgo does not provide a 386 installation, so 386 is unqualified; LLVM output still requires correct GC, initialization, and metadata |
-| Swift | Complete library with C exports | C-exported dylibs on both macOS architectures; raw registration objects rejected; native generics/async/throws unsupported |
-| Objective-C / ObjC++ | OS-loaded framework/dylib with C facade or explicit adapter | Raw registration sections rejected; no objc_msgSend signature or ARC management |
+| Swift | Complete library with C exports | Both macOS architectures: opaque object retain/release, leased Go observers and destruction through [C facades](apple-facades.md); runtime libraries pinned; raw registration objects rejected; native generics/async/throws unsupported |
+| Objective-C / ObjC++ | OS-loaded framework/dylib with C facade or explicit adapter | Both macOS architectures execute ObjC++ C facades with ARC-managed opaque objects and leased Go observers; runtime libraries pinned; raw registration sections rejected; no built-in objc_msgSend signature or ARC management |
 | D | Independent C ABI boundary can be attempted as native input | No DDL-specific D compatibility or D compiler/runtime verification |
 | Odin, Nim, Pascal, other native compilers | C exports with complete runtimes or standalone computation objects | Possible extensions, but no execution evidence and no current support claim |
 
