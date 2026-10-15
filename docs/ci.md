@@ -146,4 +146,22 @@ Linux amd64/arm64 Go and llgo jobs, and native Go 386, execute optional ELF fram
 
 macOS amd64/arm64 Go and llgo jobs execute optional per-FDE DWARF registration with system libunwind, real object/archive stack traversal, before/after-close FDE lookup, validation retry and failed initialization cleanup. Pure Go jobs inspect real `__eh_frame` compiler output and verify explicit ARM64 pairs and implicit x86-64 address rebasing.
 
-CI pins a commit from llgo `main`, which includes [public C-export foreign-thread guards](https://github.com/xgo-dev/llgo/pull/2752) for dependency packages and executables, [indirect C variadic arguments](https://github.com/xgo-dev/llgo/pull/2766), the [C ABI fix](https://github.com/xgo-dev/llgo/pull/2776), and the [native function-pointer debug fix](https://github.com/xgo-dev/llgo/pull/2783). The library uses ordinary `//export` declarations and has no private llgo runtime hooks; v1.0.6 cannot qualify C-created-thread callbacks or these indirect variadic calls. `setup-llgo` builds the upstream commit from source; the job summary records that revision and the full matrix tests it without local compiler patches.
+CI pins merged llgo `main` commit `cb9f3eccdae4909194e5086eaca1380b3e827d00`,
+which includes [SysV aggregate register exhaustion](https://github.com/xgo-dev/llgo/pull/2822)
+and [ARM64 HFA stack layout](https://github.com/xgo-dev/llgo/pull/2825), as well as
+[public C-export foreign-thread guards](https://github.com/xgo-dev/llgo/pull/2752),
+[indirect C variadic arguments](https://github.com/xgo-dev/llgo/pull/2766), the
+[C ABI fix](https://github.com/xgo-dev/llgo/pull/2776), and the
+[native function-pointer debug fix](https://github.com/xgo-dev/llgo/pull/2783).
+`TestNativeDirectAggregateRegisters` executes caller-defined `//llgo:cdecl`
+adapters through `Symbol.WithAddress` on all six native llgo hosts, without
+libffi. `TestNativeDynamicAggregateRegisters` independently exercises libffi
+on Go and llgo. Both use objects, archives and complete libraries at `-O0`/`-O2`,
+covering exhausted/partial register banks, mixed integer/float rollback, nested
+float arrays, four-double aggregates and hidden result pointers. These cases
+exercise native calls, rather than only compiler output inspection.
+
+The library uses ordinary `//export` declarations and has no private llgo runtime
+hooks; v1.0.6 cannot qualify C-created-thread callbacks or these indirect variadic
+calls. `setup-llgo` builds the upstream commit from source; the job summary records
+that revision and the full matrix tests it without local compiler patches.
