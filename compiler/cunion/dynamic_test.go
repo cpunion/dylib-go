@@ -41,35 +41,35 @@ func TestNativeDynamicUnionFacade(t *testing.T) {
 						}
 						entries[name] = entry
 					}
-					call := func(name string, want abi.Value, args ...abi.Value) {
+					call := func(t *testing.T, name string, want abi.Value, args ...abi.Value) {
 						t.Helper()
 						got, err := entries[name].Call(args...)
 						if err != nil || got != want {
 							t.Fatalf("%s: %v, %v; want %v", name, got, err, want)
 						}
 					}
-					call("union_add", abi.Int32(42), abi.Int32(20), abi.Int32(22))
+					call(t, "union_add", abi.Int32(42), abi.Int32(20), abi.Int32(22))
 					for _, test := range []struct {
 						name  string
 						value abi.Value
 					}{
 						{"i8", abi.Int8(-128)}, {"u8", abi.Uint8(255)}, {"i16", abi.Int16(-32768)}, {"u16", abi.Uint16(65535)}, {"i32", abi.Int32(-2147483648)}, {"u32", abi.Uint32(4294967295)}, {"i64", abi.Int64(-9223372036854775808)}, {"u64", abi.Uint64(18446744073709551615)}, {"f32", abi.Float32(-42.5)}, {"double", abi.Float64(42.5)}, {"double", abi.Float64(math.Float64frombits(0x7ff8000000000042))}, {"double", abi.Float64(math.Copysign(0, -1))}, {"bool", abi.Boolean(true)}, {"bool", abi.Boolean(false)}, {"pointer", abi.Ptr(0)},
 					} {
-						t.Run(test.name, func(t *testing.T) { call("union_"+test.name, test.value, test.value) })
+						t.Run(test.name, func(t *testing.T) { call(t, "union_"+test.name, test.value, test.value) })
 					}
-					call("union_small", abi.Float32(42), abi.Float32(20), abi.Float32(22))
-					call("union_large", abi.Int32(42), abi.Int32(20), abi.Int32(22))
-					call("union_packed", abi.Float64(42), abi.Float64(20.5), abi.Float64(21.5))
-					call("union_aligned", abi.Int32(42), abi.Int32(20), abi.Int32(22))
-					call("union_store", abi.Value{Type: abi.Void}, abi.Int32(42))
-					call("union_stored", abi.Int32(42))
-					call("union_read", abi.Int32(42), abi.Int32(42))
+					call(t, "union_small", abi.Float32(42), abi.Float32(20), abi.Float32(22))
+					call(t, "union_large", abi.Int32(42), abi.Int32(20), abi.Int32(22))
+					call(t, "union_packed", abi.Float64(42), abi.Float64(20.5), abi.Float64(21.5))
+					call(t, "union_aligned", abi.Int32(42), abi.Int32(20), abi.Int32(22))
+					call(t, "union_store", abi.Value{Type: abi.Void}, abi.Int32(42))
+					call(t, "union_stored", abi.Int32(42))
+					call(t, "union_read", abi.Int32(42), abi.Int32(42))
 					address, err := entries["union_address"].Call()
 					if err != nil || address.Type != abi.Pointer || address.Bits == 0 {
 						t.Fatal(address, err)
 					}
-					call("union_pointer", address, address)
-					call("union_pointer_read", abi.Int32(42), address)
+					call(t, "union_pointer", address, address)
+					call(t, "union_pointer_read", abi.Int32(42), address)
 					// A pointer projection remains borrowed from this provider. A retained code
 					// entry keeps the native global alive while the session retires.
 					lease, err := entries["union_pointer_read"].Acquire()

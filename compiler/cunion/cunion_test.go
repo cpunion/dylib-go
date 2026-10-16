@@ -84,7 +84,7 @@ func render(t *testing.T) (*cunion.Facade, string, *clang.Header) {
 	h := filepath.Join(dir, "facade.h")
 	write(t, src, f.CSource)
 	write(t, h, f.CHeader)
-	m, err := clang.Parse(context.Background(), h, clang.Options{Compiler: clangTool(t), Functions: f.Functions})
+	m, err := clang.Parse(context.Background(), h, clang.Options{Compiler: clangTool(t), Flags: []string{"-ffreestanding"}, Functions: f.Functions})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestUnionFacadesAcrossTargets(t *testing.T) {
 			if output, err := exec.Command(clangTool(t), "--target="+target, "-x", "c++", "-std=c++17", "-ffreestanding", "-fsyntax-only", h).CombinedOutput(); err != nil {
 				t.Fatalf("C++ consumer header: %v\n%s", err, output)
 			}
-			m, err := clang.Parse(context.Background(), h, clang.Options{Compiler: clangTool(t), Target: target, Functions: f.Functions})
+			m, err := clang.Parse(context.Background(), h, clang.Options{Compiler: clangTool(t), Target: target, Flags: []string{"-ffreestanding"}, Functions: f.Functions})
 			if err != nil {
 				t.Fatal(err)
 			}
