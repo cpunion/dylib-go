@@ -117,6 +117,9 @@ func coalesceObjects(inputs []*object) ([]*object, error) {
 				}
 			}
 		}
+		if err := o.pruneELFFrames(discarded); err != nil {
+			return nil, err
+		}
 		for i := range o.symbols {
 			s := &o.symbols[i]
 			if discarded[s.section] {

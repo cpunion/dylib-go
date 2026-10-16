@@ -23,6 +23,10 @@ func elfUnwindSection(name string) bool {
 	return name == ".eh_frame" || strings.HasPrefix(name, ".eh_frame.")
 }
 
+func elfLSDASection(name string) bool {
+	return name == ".gcc_except_table" || strings.HasPrefix(name, ".gcc_except_table.")
+}
+
 func coffPdataSection(s *section) bool {
 	return s != nil && (s.name == ".pdata" || strings.HasPrefix(s.name, ".pdata$"))
 }
@@ -33,7 +37,7 @@ func discardUnwind(o *object) {
 		return
 	}
 	if o != nil && o.info.Format == "ELF" {
-		discardUnwindSections(o, func(s *section) bool { return elfUnwindSection(s.name) })
+		discardUnwindSections(o, func(s *section) bool { return elfUnwindSection(s.name) || elfLSDASection(s.name) })
 		return
 	}
 	discardCOFFUnwind(o)

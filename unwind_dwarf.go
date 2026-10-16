@@ -33,11 +33,21 @@ func (im *image) registerDwarfFrames(providerName string, frames []uintptr) erro
 type frameCIE struct {
 	encoding  byte
 	augmented bool
+	lsda      byte
 }
 
-// DWARF32 CIE versions 1/3 and ordinary C augmentations. Language personality,
-// LSDA, signal-frame and target-specific augmentations need runtime adapters.
+type framePolicy struct {
+	pcRelative bool
+	language   bool
+	fixup      func(uint64, byte) error
+}
+
+// Keep the existing C-only contract for Mach-O and its implicit-reference fixups.
 func (im *image) validateDWARFFrames(b []byte, imageOffset uint64, pcRelative bool, fixup func(uint64, byte) error) ([]uintptr, error) {
+	return im.validateFrameRecords(b, imageOffset, framePolicy{pcRelative: pcRelative, fixup: fixup})
+}
+
+func (im *image) validateFrameRecords(b []byte, imageOffset uint64, policy framePolicy) ([]uintptr, error) {
 	cies := make(map[int]frameCIE)
 	var fdes []uintptr
 	for offset := 0; offset < len(b); {
@@ -71,7 +81,7 @@ func (im *image) validateDWARFFrames(b []byte, imageOffset uint64, pcRelative bo
 			}
 			augmentation := string(r.b[:zero])
 			r.b = r.b[zero+1:]
-			if augmentation != "" && augmentation != "zR" {
+			if augmentation != "" && augmentation != "zR" && (!policy.language || augmentation[0] != 'z') {
 				return nil, fmt.Errorf("unsupported CIE augmentation %q", augmentation)
 			}
 			code, err := r.leb(false)
@@ -89,21 +99,66 @@ func (im *image) validateDWARFFrames(b []byte, imageOffset uint64, pcRelative bo
 			if err != nil {
 				return nil, err
 			}
-			cie := frameCIE{augmented: augmentation == "zR"}
+			cie := frameCIE{augmented: augmentation != "", lsda: 0xff}
 			if cie.augmented {
 				n, err := r.leb(false)
-				if err != nil || n != 1 {
+				if err != nil || n > uint64(len(r.b)) {
 					return nil, fmt.Errorf("invalid CIE augmentation data")
 				}
-				cie.encoding, err = r.byte()
-				if err != nil {
-					return nil, err
+				data := frameReader{b: r.b[:int(n)]}
+				dataOffset := imageOffset + uint64(end-len(r.b))
+				r.b = r.b[int(n):]
+				seen := make(map[byte]bool)
+				for _, letter := range []byte(augmentation[1:]) {
+					if seen[letter] {
+						return nil, fmt.Errorf("duplicate CIE augmentation %q", letter)
+					}
+					seen[letter] = true
+					switch letter {
+					case 'R':
+						cie.encoding, err = data.byte()
+					case 'L':
+						if !policy.language {
+							return nil, fmt.Errorf("unsupported CIE augmentation %q", augmentation)
+						}
+						cie.lsda, err = data.byte()
+						if err == nil && cie.lsda != 0xff {
+							_, err = frameEncodingSize(cie.lsda&^0x80, im.pointerSize)
+						}
+					case 'P':
+						if !policy.language {
+							return nil, fmt.Errorf("unsupported CIE augmentation %q", augmentation)
+						}
+						var encoding byte
+						encoding, err = data.byte()
+						if err == nil {
+							var pointer uint64
+							pointer, err = im.framePointer(&data, encoding, dataOffset+uint64(n)-uint64(len(data.b)))
+							if err == nil && pointer == 0 {
+								err = fmt.Errorf("null CIE personality")
+							}
+							if err == nil && pointer >= uint64(im.base) && pointer-uint64(im.base) < uint64(len(im.mem)) && !im.unwindRange(pointer-uint64(im.base), 1, true) {
+								err = fmt.Errorf("CIE personality is not executable")
+							}
+						}
+					default:
+						return nil, fmt.Errorf("unsupported CIE augmentation %q", augmentation)
+					}
+					if err != nil {
+						return nil, err
+					}
+				}
+				if len(data.b) != 0 {
+					return nil, fmt.Errorf("unused CIE augmentation data")
+				}
+				if seen['L'] && !seen['P'] {
+					return nil, fmt.Errorf("LSDA requires a CIE personality")
 				}
 			}
 			if _, err := frameEncodingSize(cie.encoding, im.pointerSize); err != nil {
 				return nil, err
 			}
-			if pcRelative && cie.encoding&0x70 != 0x10 {
+			if policy.pcRelative && cie.encoding&0x70 != 0x10 {
 				return nil, fmt.Errorf("macOS FDEs require PC-relative addressing")
 			}
 			if err := r.cfi(); err != nil {
@@ -117,8 +172,8 @@ func (im *image) validateDWARFFrames(b []byte, imageOffset uint64, pcRelative bo
 				return nil, fmt.Errorf("FDE does not reference a preceding CIE")
 			}
 			addressOffset := imageOffset + uint64(offset+8)
-			if fixup != nil {
-				if err := fixup(uint64(offset+8), cie.encoding); err != nil {
+			if policy.fixup != nil {
+				if err := policy.fixup(uint64(offset+8), cie.encoding); err != nil {
 					return nil, err
 				}
 			}
@@ -135,8 +190,23 @@ func (im *image) validateDWARFFrames(b []byte, imageOffset uint64, pcRelative bo
 			}
 			if cie.augmented {
 				n, err := r.leb(false)
-				if err != nil || n != 0 {
+				if err != nil || n > uint64(len(r.b)) {
 					return nil, fmt.Errorf("unsupported FDE augmentation data")
+				}
+				data := frameReader{b: r.b[:int(n)]}
+				dataOffset := imageOffset + uint64(end-len(r.b))
+				r.b = r.b[int(n):]
+				if cie.lsda != 0xff {
+					pointer, err := im.framePointer(&data, cie.lsda, dataOffset)
+					if err != nil {
+						return nil, err
+					}
+					if pointer != 0 && !im.frameLSDA(pointer) {
+						return nil, fmt.Errorf("FDE LSDA is outside read-only exception data")
+					}
+				}
+				if len(data.b) != 0 {
+					return nil, fmt.Errorf("unused FDE augmentation data")
 				}
 			}
 			if err := r.cfi(); err != nil {

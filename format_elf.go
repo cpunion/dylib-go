@@ -93,7 +93,7 @@ func parseELF(name string, b []byte) (*file, error) {
 		if s.Flags&elf.SHF_TLS != 0 {
 			o.unsupported("TLS section " + s.Name)
 		}
-		if s.Flags&elf.SHF_ALLOC == 0 || strings.HasPrefix(s.Name, ".eh_frame") && !elfUnwindSection(s.Name) || s.Name == ".gcc_except_table" {
+		if s.Flags&elf.SHF_ALLOC == 0 || strings.HasPrefix(s.Name, ".eh_frame") && !elfUnwindSection(s.Name) {
 			continue
 		}
 		v := &section{name: s.Name, size: s.Size, align: s.Addralign, write: s.Flags&elf.SHF_WRITE != 0, exec: s.Flags&elf.SHF_EXECINSTR != 0}
