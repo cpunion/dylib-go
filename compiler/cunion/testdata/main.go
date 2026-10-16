@@ -85,6 +85,38 @@ func main() {
 	check(p, e, unsafe.Pointer(nil))
 	v, e = b.Union_pointer_read(address)
 	check(v, e, int32(42))
+	pair, e := b.Union_pair_make(20, 22)
+	if e != nil {
+		panic(e)
+	}
+	zero, e := b.Union_pair_make(0, 0)
+	if e != nil {
+		panic(e)
+	}
+	pairResult, e := b.Union_pair(pair, zero)
+	check(pairResult, e, pair)
+	pairResult, e = b.Union_pair(pair, pair)
+	if e != nil || pairResult.A != 40 || pairResult.B != 44 {
+		panic("union struct member")
+	}
+	bundle, e := b.Union_bundle_make(20, 22)
+	if e != nil {
+		panic(e)
+	}
+	bundleResult, e := b.Union_bundle(bundle)
+	check(bundleResult, e, bundle)
+	if bundleResult.Pair.A != 20 || bundleResult.Rows[1][0] != 22 || bundleResult.Values[1] != 21.5 || bundleResult.Pointer != address {
+		panic("nested union struct member")
+	}
+	hfa, e := b.Union_hfa_make(20.5, 21.5)
+	if e != nil {
+		panic(e)
+	}
+	hfaResult, e := b.Union_hfa(hfa)
+	check(hfaResult, e, hfa)
+	if hfaResult.Values[0]+hfaResult.Values[1] != 42 {
+		panic("union HFA member")
+	}
 	if err := s.Close(); err != nil {
 		panic(err)
 	}

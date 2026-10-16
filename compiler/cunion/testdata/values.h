@@ -19,4 +19,15 @@ int32_t read_number(union Number value);
 int32_t stored_number(void);
 void *native_address(void);
 int32_t read_pointer(union Number value);
+struct Pair { int32_t a, b; };
+struct Bundle { struct Pair pair; int32_t rows[2][2]; double values[2]; void *pointer; };
+struct HFA { double values[2]; };
+union Records { struct HFA hfa; struct Pair pair; struct Bundle bundle; unsigned char storage[128]; };
+struct Pair pair_make(int32_t a, int32_t b);
+union Records record_pair_add(union Records value, struct Pair add);
+struct Bundle bundle_make(int32_t a, int32_t b);
+union Records record_bundle_echo(union Records value);
+
+struct HFA hfa_make(double a,double b);
+union Records record_hfa_echo(union Records value);
 #endif
