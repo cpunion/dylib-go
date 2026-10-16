@@ -168,9 +168,10 @@ It performs no Go callback or allocation.
 Supported compact modes are x86-64 RBP frames, immediate/indirect stack frames,
 and ARM64 frame/frameless encodings. Indirect x86-64 stack sizes must address a
 bounded `subq` immediate inside the function. Source DWARF modes require a retained
-matching FDE; the finder returns its original section directly. Existing DWARF is
-preferred when it already supplies the required personality, preserving FDE lookup
-for those frames. Losing weak definitions' local compact records are excluded,
+matching FDE; the finder returns its original section directly. Compact language
+entries take precedence over redundant DWARF emitted by x86-64 Clang. Ordinary C
+frames retain existing DWARF lookup when present. Losing weak definitions' local
+compact records are excluded,
 including when their function addresses use section-relative relocations.
 
 The explicit DWARF fixtures still use `-femit-dwarf-unwind=always` and a harmless

@@ -160,8 +160,8 @@ func (im *image) machOCompactRanges(dwarf []machoUnwindRange) ([]machoUnwindRang
 						return nil, fmt.Errorf("invalid compact indirect stack-size instruction")
 					}
 				}
-				if hasDwarf && (r.personality || personality == 0) {
-					continue // Preserve the existing FDE lookup when it supplies the needed data.
+				if hasDwarf && personality == 0 {
+					continue // Keep FDE lookup for C frames; native language records use compact.
 				}
 				if used+80 > im.compactSize {
 					return nil, fmt.Errorf("compact unwind tables exceed reserved storage")

@@ -146,12 +146,27 @@ func TestMachOCompactTableAndOwnership(t *testing.T) {
 	if !bytes.Equal(original, im.objects[0].sections[2].data) {
 		t.Fatal("compact table construction changed staged source")
 	}
-	// A retained DWARF FDE with the required personality remains preferred.
+	// Ordinary C frames retain FDE lookup; language compact entries must not be
+	// hidden by redundant DWARF emitted by x86-64 Clang.
 	im = compactTestImage()
+	le.PutUint64(im.mem[8208:], 0)
+	le.PutUint64(im.mem[8216:], 0)
+	le.PutUint32(im.mem[8204:], 0x04000001)
 	dwarf := machoUnwindRange{start: im.base + 4096, end: im.base + 4160, dwarf: im.base + 10000, size: 80, personality: true}
 	ranges, err = im.machOCompactRanges([]machoUnwindRange{dwarf})
 	if err != nil || len(ranges) != 1 || ranges[0] != dwarf || im.compactUsed != 0 {
 		t.Fatal("existing DWARF ownership changed", ranges, err)
+	}
+	im = compactTestImage()
+	ranges, err = im.machOCompactRanges([]machoUnwindRange{dwarf})
+	if err != nil || len(ranges) != 1 || ranges[0].compact == 0 || im.compactUsed != 80 {
+		t.Fatal("native language compact entry hidden by redundant DWARF", ranges, err)
+	}
+	im = compactTestImage()
+	le.PutUint32(im.mem[8204:], 0x03000000)
+	ranges, err = im.machOCompactRanges([]machoUnwindRange{dwarf})
+	if err != nil || len(ranges) != 1 || ranges[0] != dwarf || im.compactUsed != 0 {
+		t.Fatal("explicit DWARF-mode fallback changed", ranges, err)
 	}
 }
 
