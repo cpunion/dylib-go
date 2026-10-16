@@ -42,8 +42,8 @@ jobs:
       - uses: xgo-dev/setup-llgo@v0.2.0
         id: llgo
         with:
-          # Pin the main commit that merged #2783's debug-pointer fix.
-          llgo-version: 1f3baf90db6dadd6438fbc822a02ab4d9967f598
+          # Includes the merged SysV register and ARM64 HFA fixes (#2822/#2825).
+          llgo-version: cb9f3eccdae4909194e5086eaca1380b3e827d00
           install-method: source
           go-version: '1.27.x'
           llvm-version: '22'
