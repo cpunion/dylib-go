@@ -7,6 +7,12 @@ extern "C" void cxx_save(void *);
 struct OuterGuard { ~OuterGuard() { cxx_event(10); } };
 static __attribute__((noinline)) int relay(int a, int b) {
     DYLIB_CXX_DWARF();
+#if defined(DYLIB_CXX_LARGE_STACK)
+    volatile unsigned char stack[8192];
+    stack[0] = 1;
+    stack[8191] = 2;
+    asm volatile("" : : "r"(&stack[0]) : "memory");
+#endif
     try { return cxx_throw(a, b); }
     catch (int value) { cxx_event(100); throw; }
 }

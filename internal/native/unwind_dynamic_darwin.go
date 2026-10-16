@@ -18,12 +18,13 @@ typedef struct {
 } dylib_unwind_sections;
 typedef int (*dylib_unwind_finder)(uintptr_t, dylib_unwind_sections *);
 typedef int (*dylib_unwind_update)(dylib_unwind_finder);
-typedef struct { uintptr_t start, end, dwarf, size; } dylib_unwind_range;
+typedef struct { uintptr_t start, end, dwarf, size, compact, compact_size; } dylib_unwind_range;
 typedef struct dylib_unwind_registration {
     struct dylib_unwind_registration *next;
     size_t count;
     int detached;
     struct mach_header_64 header;
+    uintptr_t image_base;
     dylib_unwind_range ranges[];
 } dylib_unwind_registration;
 
@@ -56,11 +57,11 @@ static int dylib_unwind_lookup(uintptr_t pc, dylib_unwind_sections *info) {
             if (r->ranges[mid].end <= pc) lo = mid+1; else hi = mid;
         }
         if (lo < r->count && r->ranges[lo].start <= pc) {
-            info->dso_base = (uintptr_t)&r->header;
+            info->dso_base = r->image_base;
             info->dwarf_section = r->ranges[lo].dwarf;
             info->dwarf_section_length = r->ranges[lo].size;
-            info->compact_unwind_section = 0;
-            info->compact_unwind_section_length = 0;
+            info->compact_unwind_section = r->ranges[lo].compact;
+            info->compact_unwind_section_length = r->ranges[lo].compact_size;
             found = 1;
             break;
         }
@@ -69,7 +70,7 @@ static int dylib_unwind_lookup(uintptr_t pc, dylib_unwind_sections *info) {
     return found;
 }
 
-static uintptr_t dylib_unwind_register(uintptr_t add, uintptr_t remove,
+static uintptr_t dylib_unwind_register(uintptr_t add, uintptr_t remove, uintptr_t header,
                                      const uintptr_t *ranges, size_t count, int *status) {
     *status = -6547;
     if (!count || count > (SIZE_MAX-sizeof(dylib_unwind_registration))/sizeof(dylib_unwind_range)) return 0;
@@ -78,6 +79,7 @@ static uintptr_t dylib_unwind_register(uintptr_t add, uintptr_t remove,
     r->count = count;
     r->detached = 0;
     r->header = dylib_unwind_header;
+    r->image_base = header ? header : (uintptr_t)&r->header;
     memcpy(r->ranges, ranges, count*sizeof(r->ranges[0]));
     pthread_mutex_lock(&dylib_unwind_operations);
     if (dylib_unwind_add && ((uintptr_t)dylib_unwind_add != add || (uintptr_t)dylib_unwind_remove != remove)) {
@@ -129,7 +131,7 @@ static int dylib_unwind_unregister(uintptr_t handle, uintptr_t clear_group) {
         // Its deregistration entry removes that key without reading FDE bytes.
         // Use a distinct native header per owner so retirement cannot clear a
         // different session's cache. No range lock is held during invalidation.
-        ((void (*)(const void *))clear_group)(&r->header);
+        ((void (*)(const void *))clear_group)((const void *)r->image_base);
         free(r);
     } // Retain the detached handle on a removal error.
     return status;
@@ -142,14 +144,15 @@ import (
 	"unsafe"
 )
 
-// RegisterMachODWARF copies sorted, disjoint [start,end,DWARF,size] ranges into
-// native storage. The registered finder never retains or calls Go memory/code.
-func RegisterMachODWARF(add, remove uintptr, ranges []uintptr) (uintptr, error) {
-	if add == 0 || remove == 0 || len(ranges) == 0 || len(ranges)%4 != 0 {
+// RegisterMachOUnwind copies sorted [start,end,DWARF,size,compact,size] ranges.
+// Header and section addresses must refer to retained native memory, never Go
+// heap storage. A zero header uses an embedded native header for DWARF-only data.
+func RegisterMachOUnwind(add, remove, header uintptr, ranges []uintptr) (uintptr, error) {
+	if add == 0 || remove == 0 || len(ranges) == 0 || len(ranges)%6 != 0 {
 		return 0, fmt.Errorf("invalid dynamic Mach-O unwind registration")
 	}
 	var status C.int
-	handle := uintptr(C.dylib_unwind_register(C.uintptr_t(add), C.uintptr_t(remove), (*C.uintptr_t)(unsafe.Pointer(&ranges[0])), C.size_t(len(ranges)/4), &status))
+	handle := uintptr(C.dylib_unwind_register(C.uintptr_t(add), C.uintptr_t(remove), C.uintptr_t(header), (*C.uintptr_t)(unsafe.Pointer(&ranges[0])), C.size_t(len(ranges)/6), &status))
 	if handle == 0 {
 		return 0, fmt.Errorf("dynamic Mach-O unwind registration: %d", int(status))
 	}

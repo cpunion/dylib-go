@@ -126,7 +126,7 @@ func parseMachO(name string, b []byte) (*file, error) {
 	}
 	o.sections = make([]*section, len(f.Sections)+1)
 	for i, s := range f.Sections {
-		if s.Flags&0x02000000 != 0 || s.Seg == "__DWARF" || s.Name == "__compact_unwind" {
+		if s.Flags&0x02000000 != 0 && s.Name != "__compact_unwind" || s.Seg == "__DWARF" {
 			continue
 		}
 		t := s.Flags & 0xff

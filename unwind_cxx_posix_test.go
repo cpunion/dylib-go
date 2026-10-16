@@ -13,6 +13,10 @@ import (
 )
 
 func testNativeCXXExceptions(t *testing.T) {
+	testNativeCXXExceptionsMode(t, false)
+}
+
+func testNativeCXXExceptionsMode(t *testing.T, compact bool, extra ...string) {
 	needNative(t)
 	cpp := os.Getenv("DYLIB_CXX")
 	if cpp == "" {
@@ -22,12 +26,18 @@ func testNativeCXXExceptions(t *testing.T) {
 		t.Run(optimization, func(t *testing.T) {
 			dir := t.TempDir()
 			flags := []string{"-std=c++17", optimization, "-fPIC", "-fexceptions", "-fno-stack-protector"}
+			flags = append(flags, extra...)
 			libraryName, libraryFlag := "cxx_host.so", "-shared"
 			if runtime.GOOS == "linux" {
 				flags = append(flags, "-stdlib=libstdc++", "-rtlib=libgcc", "-unwindlib=libgcc")
 			} else {
 				libraryName, libraryFlag = "cxx_host.dylib", "-dynamiclib"
-				flags = append(flags, "-stdlib=libc++", "-femit-dwarf-unwind=always")
+				flags = append(flags, "-stdlib=libc++")
+				if compact {
+					flags = append(flags, "-DDYLIB_CXX_COMPACT")
+				} else {
+					flags = append(flags, "-femit-dwarf-unwind=always")
+				}
 				if runtime.GOARCH == "amd64" {
 					flags = append(flags, "--target=x86_64-apple-macosx11")
 				}
@@ -76,6 +86,9 @@ func testNativeCXXExceptions(t *testing.T) {
 						})
 					}
 					call(t, observer, "cxx_has_frame", 0, 0, 1)
+					if compact && session.image.compactUsed == 0 {
+						t.Fatal("default native C++ input did not use compact unwind")
+					}
 					// Native exceptions and frame registration remain valid while a
 					// retained entry finishes work during session retirement.
 					symbol, err := session.Resolve("cxx_catch")
@@ -168,7 +181,7 @@ func testNativeCXXExceptions(t *testing.T) {
 			}
 			for _, object := range plain.image.objects {
 				for _, section := range object.sections {
-					if section != nil && (elfUnwindSection(section.name) || section.name == "__eh_frame" || lsdaSection(object.info.Format, section.name)) {
+					if section != nil && (elfUnwindSection(section.name) || section.name == "__eh_frame" || section.name == "__compact_unwind" || lsdaSection(object.info.Format, section.name)) {
 						t.Fatal("default loading retained exception data")
 					}
 				}
