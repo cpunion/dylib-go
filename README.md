@@ -187,6 +187,11 @@ concurrently; existing consumers can still use a retiring provider. See
 [retained dependencies](docs/dependencies.md) and the
 [CI-executed library example](examples/dependencies/main.go).
 
+The optional [`module`](module) package loads versioned dependency manifests.
+It validates provider versions and declared exports, loads selected dependency
+graphs, retains imported code/data, and closes consumers before providers. See
+the [executed manifest](examples/modules/manifest.go) and [module guide](docs/modules.md).
+
 ## Dynamic signatures
 
 `Bind(name, abi.Signature)` handles caller-supplied signatures through the optional libffi backend. Build with `-tags libffi` and install the libffi development files and pkg-config. This complete [dynamic example](examples/bind/main.go) is compiled and executed in CI, returning 42 with Go on all eight native library targets and llgo on the six amd64/arm64 targets:
@@ -731,6 +736,7 @@ The former experimental `BindInt32`, `CallInt32`, and `Int32Func` APIs have been
 | `abi/signature/` | Pure Go declaration, typed-invocation, and typed literal parsing |
 | `compiler/clang/` | Optional validated C prototypes, dynamic descriptors and direct llgo adapter generation |
 | `compiler/cxx/` | Go-rendered C++17 class facades with fixed C entry points and exception status codes |
+| `module/` | Go-only versioned dependency manifests and retained session graphs |
 | `internal/native/` | OS memory, instruction cache, and shared-library operations |
 | `examples/call/` | Fixed-signature adapter used only by the CLI and tests |
 | `examples/cgo/`, `examples/llgo/`, `examples/bind/`, `examples/callback/` | Executable README examples |
