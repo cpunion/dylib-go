@@ -37,6 +37,14 @@ type Method struct {
 	Const, Static bool
 }
 
+// Base selects a borrowed view of a public, unambiguous C++ base subobject.
+// The native compiler performs pointer adjustment, including virtual bases.
+// The export takes a receiver and a void** output slot; it does not create or
+// retain an object. Its view expires with the original object.
+type Base struct {
+	Name, Symbol string
+}
+
 // Class names an accessible C++ type, including namespace-qualified aliases.
 // Delete names the C export that consumes and clears a void** handle slot before
 // invoking delete. Borrowed base views must not be deleted unless the native
@@ -46,6 +54,7 @@ type Class struct {
 	Delete       string
 	Constructors []Constructor
 	Methods      []Method
+	Bases        []Base
 }
 
 // Facade contains independent source buffers and the ordered C export names.
@@ -172,6 +181,24 @@ return DYLIB_CXX_SUCCESS;
 			}
 			fmt.Fprintf(&body, "%s;\nreturn DYLIB_CXX_SUCCESS;\n} catch (...) { return DYLIB_CXX_EXCEPTION; }\n", call)
 			if err := emit(method.Symbol, parameters, body.String()); err != nil {
+				return nil, err
+			}
+		}
+		for _, base := range class.Bases {
+			if !qualifiedName(base.Name) {
+				return nil, fmt.Errorf("cxx: invalid C++ base type name %q", base.Name)
+			}
+			// Implicit typed conversion accepts only public, unambiguous bases
+			// (or an identical alias). An explicit static_cast to the target
+			// would also accept unsafe base-to-derived downcasts.
+			body := fmt.Sprintf(`if (!output) return DYLIB_CXX_INVALID_ARGUMENT;
+*output = nullptr;
+if (!handle) return DYLIB_CXX_INVALID_ARGUMENT;
+%s *view = static_cast<%s *>(handle);
+*output = view;
+return DYLIB_CXX_SUCCESS;
+`, base.Name, class.Name)
+			if err := emit(base.Symbol, []string{"void *handle", "void **output"}, body); err != nil {
 				return nil, err
 			}
 		}

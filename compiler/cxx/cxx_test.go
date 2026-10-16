@@ -39,6 +39,9 @@ func classes() []cxx.Class {
 		{Name: "example::Counter", Delete: "counter_delete", Constructors: []cxx.Constructor{{Symbol: "counter_new", Args: []abi.Type{abi.I32}}}, Methods: methods},
 		{Name: "example::ThrowingDestructor", Delete: "throwing_delete", Constructors: []cxx.Constructor{{Symbol: "throwing_new"}}},
 		{Name: "example::NullAllocation", Delete: "null_delete", Constructors: []cxx.Constructor{{Symbol: "null_new"}}},
+		{Name: "example::Derived", Delete: "derived_delete", Constructors: []cxx.Constructor{{Symbol: "derived_new", Args: []abi.Type{abi.I32}}}, Bases: []cxx.Base{{Name: "example::Counter", Symbol: "derived_counter"}}},
+		{Name: "example::Diamond", Delete: "diamond_delete", Constructors: []cxx.Constructor{{Symbol: "diamond_new", Args: []abi.Type{abi.I32}}}, Bases: []cxx.Base{{Name: "example::Counter", Symbol: "diamond_counter"}, {Name: "example::VirtualLeft", Symbol: "diamond_left"}}},
+		{Name: "example::VirtualLeft", Delete: "left_delete", Bases: []cxx.Base{{Name: "example::Counter", Symbol: "left_counter"}}},
 	}
 }
 
@@ -125,6 +128,9 @@ func TestFacadeRejectsInvalidManifests(t *testing.T) {
 		func(c []cxx.Class) { c[0].Delete = "bad()" },
 		func(c []cxx.Class) { c[0].Delete = "and" },
 		func(c []cxx.Class) { c[0].Delete = "counter_new" },
+		func(c []cxx.Class) { c[3].Bases[0].Name = "example::Counter*" },
+		func(c []cxx.Class) { c[3].Bases[0].Symbol = "counter_new" },
+		func(c []cxx.Class) { c[3].Bases[0].Symbol = "delete" },
 		func(c []cxx.Class) { c[0].Constructors[0].Args[0] = abi.Void },
 		func(c []cxx.Class) { c[0].Methods[0].Name = "operator+" },
 		func(c []cxx.Class) { c[0].Methods[0].Static, c[0].Methods[0].Const = true, true },
@@ -154,6 +160,32 @@ func TestFacadeRejectsInvalidManifests(t *testing.T) {
 	second, _ := cxx.Generate("a header with spaces.hpp", classes())
 	if !bytes.Equal(first.CHeader, second.CHeader) || !bytes.Equal(first.CXXSource, second.CXXSource) {
 		t.Fatal("generation is not deterministic")
+	}
+}
+
+func TestNativeCompilerRejectsInvalidBaseViews(t *testing.T) {
+	include, err := filepath.Abs("testdata")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct{ name, receiver, base string }{
+		{"private", "example::PrivateCounter", "example::Counter"},
+		{"ambiguous", "example::AmbiguousCounter", "example::Counter"},
+		{"unrelated", "example::Counter", "example::ThrowingDestructor"},
+		{"downcast", "example::Counter", "example::Derived"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			facade, err := cxx.Generate("counter.hpp", []cxx.Class{{Name: tc.receiver, Delete: "remove_object", Bases: []cxx.Base{{Name: tc.base, Symbol: "base_view"}}}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			source := filepath.Join(t.TempDir(), "invalid.cpp")
+			write(t, source, facade.CXXSource)
+			output, err := exec.Command(cppTool(t), "-std=c++17", "-fsyntax-only", "-I"+include, source).CombinedOutput()
+			if err == nil || !strings.Contains(string(output), "*view") {
+				t.Fatalf("invalid base view accepted or wrong diagnostic: %v\n%s", err, output)
+			}
+		})
 	}
 }
 

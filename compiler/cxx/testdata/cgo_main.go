@@ -62,5 +62,21 @@ func main() {
 		panic("destruction did not clear the handle")
 	}
 	check(b.Counter_delete(slot))
+	var derived, base unsafe.Pointer
+	derivedSlot, baseSlot := unsafe.Pointer(&derived), unsafe.Pointer(&base)
+	check(b.Derived_new(20, derivedSlot))
+	defer func() { check(b.Derived_delete(derivedSlot)) }()
+	// The compiler adjusts the secondary base; this borrowed view has no
+	// separate ownership and is never passed to Counter_delete.
+	check(b.Derived_counter(derived, baseSlot))
+	if base == nil || base == derived {
+		panic("missing secondary-base adjustment")
+	}
+	check(b.Counter_add(base, 22, unsafe.Pointer(&result)))
+	if result != 42 {
+		panic("wrong base member result")
+	}
+	check(b.Derived_delete(derivedSlot))
+	base = nil
 	fmt.Println(42)
 }

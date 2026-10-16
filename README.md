@@ -627,8 +627,8 @@ C-created threads may invoke the entry concurrently; captures need appropriate s
 
 The optional [`compiler/cxx`](compiler/cxx) package generates C++17 adapters from
 an explicit class manifest. A matching C++ compiler handles construction, exact
-member signatures, virtual calls and destruction. The C interface returns status
-codes and writes results through output pointers, keeping catchable exceptions
+member signatures, public base conversions, virtual calls and destruction. The
+C interface returns status codes and writes results through output pointers, keeping catchable exceptions
 inside C++. The [CI-executed example](examples/cxx/generate.go) selects a small
 class interface:
 
@@ -643,7 +643,7 @@ import (
 	"github.com/cpunion/dylib-go/compiler/cxx"
 )
 
-// Generate selects constructor, member and destruction exports. Compile the
+// Generate selects constructor, member, base-view and destruction exports. Compile the
 // returned CXXSource with the class's own C++17 toolchain/runtime. Its CHeader
 // can use compiler/clang.Parse and CgoSource for Go/llgo without libffi.
 func Generate(header string) (*cxx.Facade, error) {
@@ -657,6 +657,10 @@ func Generate(header string) (*cxx.Facade, error) {
 			Name: "add", Symbol: "counter_add",
 			Signature: abi.Signature{Result: abi.I32, Args: []abi.Type{abi.I32}},
 		}},
+	}, {
+		Name: "example::Derived", Delete: "derived_delete",
+		Constructors: []cxx.Constructor{{Symbol: "derived_new", Args: []abi.Type{abi.I32}}},
+		Bases:        []cxx.Base{{Name: "example::Counter", Symbol: "derived_counter"}},
 	}})
 }
 
@@ -679,7 +683,7 @@ Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cde
 | C with other conventions | vectorcall and other non-default ABIs | Not implemented | Use a compiled adapter matching the convention |
 | C++ C exports | `extern "C"`, host C ABI | Verified subset | C exports and global construction/destruction on native targets; raw fixtures disable exceptions and RTTI |
 | C++ free functions | C-compatible representation, exact mangled symbol | Conditional | Caller supplies the exact symbol and signature; direct mangled entry calls are not separately tested in CI |
-| C++ class facades | Generated C exports + matching C++17 compiler | Supported subset | Explicit `compiler/cxx` manifests: constructors, ordinary/const/static members, native virtual dispatch and exception status codes; complete libraries, scalar/opaque-pointer values |
+| C++ class facades | Generated C exports + matching C++17 compiler | Supported subset | Explicit `compiler/cxx` manifests: constructors, ordinary/const/static members, public multiple/virtual base views, native virtual dispatch and exception status codes; complete libraries, scalar/opaque-pointer values |
 | C++ native methods and values | Compiler-specific C++ object ABI | Not implemented | Class layout, member pointers and class value marshalling require native adapters |
 | Rust C exports | `extern "C"` | Verified subset | Linux/macOS amd64 and arm64; `no_std` leaf objects, `panic=abort` |
 | Rust native functions | Rust ABI | Not implemented | Use C exports; Rust-specific values and panic unwinding are not adapted |

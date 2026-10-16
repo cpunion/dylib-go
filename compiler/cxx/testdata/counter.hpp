@@ -48,6 +48,25 @@ public:
 inline void *Counter::derived(int32_t initial) {
     return static_cast<Counter *>(new Derived(initial));
 }
+class VirtualLeft : public virtual Counter {
+public:
+    explicit VirtualLeft(int32_t initial) : Counter(initial) {}
+};
+class VirtualRight : public virtual Counter {
+public:
+    explicit VirtualRight(int32_t initial) : Counter(initial) {}
+};
+class Diamond : public VirtualLeft, public VirtualRight {
+public:
+    explicit Diamond(int32_t initial)
+        : Counter(initial), VirtualLeft(initial), VirtualRight(initial) {}
+    int32_t score(int32_t delta) const override { return Counter::score(delta) + 2; }
+};
+// These types make the compiler reject invalid manifest conversions.
+class PrivateCounter : private Counter {};
+class LeftCounter : public Counter {};
+class RightCounter : public Counter {};
+class AmbiguousCounter : public LeftCounter, public RightCounter {};
 class ThrowingDestructor {
 public:
     ~ThrowingDestructor() noexcept(false) { throw 99; }
