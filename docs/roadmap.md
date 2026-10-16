@@ -129,7 +129,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Explicit C++ class values/references/pointers, native copies and copy exceptions, owned noncopyable C++17 results, borrowed const views and static-only classes with inaccessible destructors.
 - [x] Exact C++ native function-pointer arguments/results, constructor retention, native factories and captured Go callback leases with nested reentry and explicit unregister/destruction during retirement.
 - [x] Named C++ captured lambda/`std::function` call operators, mutable state and independent copies, move-only capture ownership, native-entry construction, empty-function exceptions and retained Go callbacks during retirement.
-- [ ] Other C++ typed native pointers, callable/declaration discovery and automatic inheritance discovery.
+- [x] Named C++ scalar/character/void/enum/array/union and multi-level native pointees through existing object-pointer manifests, exact const/level validation, native mutation and borrowed provider retirement.
+- [ ] Callable/declaration discovery and automatic inheritance discovery.
 - [x] Explicit retained session-to-session function/data symbol providers, transitive code leases and cleanup ordering without libffi.
 - [x] Explicit JSON/Go dependency manifests, exact declared ABI versions, multiple-root provider planning, retained import aliases, lazy archive export roots, ordered cleanup and failure rollback without libffi.
 - [ ] Automatic provider discovery and version negotiation beyond explicit manifests.

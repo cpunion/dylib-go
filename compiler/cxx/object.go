@@ -17,7 +17,9 @@ const (
 	ObjectValue
 )
 
-// ObjectType selects an exact native type. Const qualifies pointers/references;
+// ObjectType selects an exact named native type. ObjectPointer also accepts
+// named scalar, void, enum, union, array and pointer pointees; no Go layout is
+// required. Const qualifies the named pointee of a pointer/reference;
 // top-level const values are unsupported. Value results are newly allocated and
 // owned; pointer/reference results borrow the native API's lifetime. Const is a
 // native signature contract, not a restriction enforced on Go address values.
@@ -27,7 +29,7 @@ type ObjectType struct {
 	Const bool
 }
 
-// ObjectArg replaces a zero-based abi.Pointer argument with a native class type.
+// ObjectArg replaces a zero-based abi.Pointer argument with a named native type.
 // References and values require non-null addresses. Value arguments copy the
 // object in C++ and require a noexcept destructor; copy constructors may throw.
 type ObjectArg struct {
