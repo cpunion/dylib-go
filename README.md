@@ -681,7 +681,10 @@ Compile the returned `CXXSource` into a complete library. Parse `CHeader` with
 Go/llgo without libffi or `Session.Bind` for dynamic calls. Retain the library
 through final object destruction. The [object manifest](examples/cxx/objects.go)
 adds native copies, borrowed references, typed pointers and noncopyable value
-results. See [C++ types, status codes and ownership](docs/cxx.md).
+results. The [callable manifest](examples/cxx/callables.go) selects `operator()`
+on named captured lambdas and `std::function`, including mutable state, native
+copies, move-only captures and retained Go callbacks. See
+[C++ types, status codes and ownership](docs/cxx.md).
 
 ## Language interfaces and calling conventions
 
@@ -695,7 +698,7 @@ Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cde
 | C with other conventions | vectorcall and other non-default ABIs | Not implemented | Use a compiled adapter matching the convention |
 | C++ C exports | `extern "C"`, host C ABI | Verified subset | C exports and global construction/destruction on native targets; ordinary raw fixtures disable exceptions and RTTI; Linux amd64/arm64/386 and macOS amd64/arm64 execute native throw/catch/rethrow and RAII with explicit compatible runtimes and `RegisterUnwind`; macOS requires emitted DWARF |
 | C++ free functions | C-compatible representation, exact mangled symbol | Conditional | Caller supplies the exact symbol and signature; direct mangled entry calls are not separately tested in CI |
-| C++ class facades | Generated C exports + matching C++17 compiler | Supported subset | Explicit `compiler/cxx` manifests: constructors, ordinary/const/static members, public multiple/virtual base views, native virtual dispatch, class values/references/pointers, native function pointers and captured Go callbacks, owned results and exception status codes; complete libraries |
+| C++ class facades | Generated C exports + matching C++17 compiler | Supported subset | Explicit `compiler/cxx` manifests: constructors, ordinary/const/static members, public multiple/virtual base views, native virtual dispatch, class values/references/pointers, native function pointers, named lambda/`std::function` calls and captured Go callbacks, owned results and exception status codes; complete libraries |
 | Direct C++ ABI calls | Compiler-specific C++ object ABI | Adapter required | Generated C++ facades handle selected object calls; there is no Go-side class layout, vtable or member-pointer interpreter |
 | Rust C exports | `extern "C"` | Verified subset | Linux/macOS amd64 and arm64; `no_std` leaf objects, `panic=abort` |
 | Rust native functions | Rust ABI | Not implemented | Use C exports; Rust-specific values and panic unwinding are not adapted |

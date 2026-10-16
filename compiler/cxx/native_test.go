@@ -110,7 +110,27 @@ func generateFunctions(header string) (*cxx.Facade, error) {
 
 func testGeneratedFacade(t *testing.T, direct bool, fixture string, render func(string) (*cxx.Facade, error)) {
 	t.Helper()
-	headerPath, err := filepath.Abs("testdata/counter.hpp")
+	testGeneratedFacadeHeader(t, direct, "testdata/counter.hpp", fixture, render)
+}
+
+func TestNativeGeneratedCgoCallableFacade(t *testing.T) {
+	testGeneratedFacadeHeader(t, false, "testdata/callables.hpp", "testdata/callables_main.go", generateCallables)
+}
+
+func TestNativeGeneratedDirectLLGoCallableFacade(t *testing.T) {
+	if !llgoHost {
+		t.Skip("the direct caller requires an llgo host")
+	}
+	testGeneratedFacadeHeader(t, true, "testdata/callables.hpp", "testdata/callables_main.go", generateCallables)
+}
+
+func generateCallables(header string) (*cxx.Facade, error) {
+	return cxx.Generate(header, cxxexample.CallableClasses())
+}
+
+func testGeneratedFacadeHeader(t *testing.T, direct bool, header, fixture string, render func(string) (*cxx.Facade, error)) {
+	t.Helper()
+	headerPath, err := filepath.Abs(header)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -28,7 +28,8 @@ type Constructor struct {
 	FunctionArgs []FunctionArg
 }
 
-// Method selects an exact C++ member signature. Const
+// Method selects an exact C++ member signature. Name accepts an identifier or
+// "operator()" for named callable types; the latter cannot be Static in C++17. Const
 // selects a const-qualified member; Static omits the receiver. A non-void result
 // adds an output pointer after the arguments. ObjectArgs/ObjectResult replace
 // pointer transports with native class types. Value results require an initially
@@ -152,7 +153,8 @@ return DYLIB_CXX_SUCCESS;
 			}
 		}
 		for _, method := range class.Methods {
-			if !identifier(method.Name) || method.Const && method.Static {
+			callOperator := method.Name == "operator()"
+			if (!identifier(method.Name) && !callOperator) || method.Static && (method.Const || callOperator) {
 				return nil, fmt.Errorf("cxx: invalid method %q or static/const combination", method.Name)
 			}
 			if err := methodSignature(method.Signature); err != nil {
