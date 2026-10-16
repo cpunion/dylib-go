@@ -2,12 +2,37 @@
 #include <stdint.h>
 
 namespace example {
+class Token {
+    int32_t value;
+public:
+    explicit Token(int32_t v) : value(v) {}
+    Token(const Token &) = delete;
+    Token(Token &&) = delete;
+    static Token make(int32_t v) { return Token(v); }
+    static int32_t take(Token) { return 42; }
+    int32_t read() const { return value; }
+};
+class StaticOnly {
+    ~StaticOnly() = default;
+public:
+    static int32_t answer() { return 42; }
+};
+class UnstableValue {
+public:
+    ~UnstableValue() noexcept(false) { throw 99; }
+    static int32_t take(UnstableValue) { return 42; }
+    static UnstableValue make() { return UnstableValue(); }
+};
 class Counter {
     inline static int32_t count = 0;
     int32_t value;
 public:
     explicit Counter(int32_t initial) : value(initial) {
         if (initial < 0) throw initial;
+        ++count;
+    }
+    Counter(const Counter &other) : value(other.value) {
+        if (value == 13) throw value;
         ++count;
     }
     virtual ~Counter() noexcept { --count; }
@@ -31,7 +56,28 @@ public:
     static int64_t signed64(int64_t x) { return x; }
     static uint64_t unsigned64(uint64_t x) { return x; }
     static float floating32(float x) { return x; }
+    int32_t sum(const Counter &other) const { return value + other.value; }
+    int32_t copied(Counter other) const {
+        auto result = value + other.value;
+        other.reset(0);
+        return result;
+    }
+    int32_t mutate(Counter &other, int32_t delta) { return other.add(delta); }
+    Counter clone() const { return Counter(*this); }
+    Counter &self() { return *this; }
+    const Counter &const_self() const { return *this; }
+    static Counter *pointer(Counter *other) { return other; }
+    static const Counter *const_pointer(const Counter *other) { return other; }
+    int32_t mixed(int32_t delta, const Counter &left, const Counter *right) const {
+        return value + delta + left.value + (right ? right->value : 0);
+    }
+    static int32_t nullable(const Counter *other) { return other ? other->value : 42; }
+    // Reference results must use the object's address, not this overload.
+    Counter *operator&() { return nullptr; }
+    const Counter *operator&() const { return nullptr; }
 };
+
+using ReadOnlyCounter = const Counter;
 
 // Counter is a secondary base: the factory supplies its correctly adjusted
 // view. Go never computes a base offset or interprets a virtual/member pointer.

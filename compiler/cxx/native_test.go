@@ -74,12 +74,31 @@ func TestNativeGeneratedDirectLLGoClassFacade(t *testing.T) {
 }
 
 func testGeneratedClassFacade(t *testing.T, direct bool) {
+	testGeneratedFacade(t, direct, "testdata/cgo_main.go", cxxexample.Generate)
+}
+
+func TestNativeGeneratedCgoObjectFacade(t *testing.T) {
+	testGeneratedFacade(t, false, "testdata/objects_main.go", generateObjects)
+}
+
+func TestNativeGeneratedDirectLLGoObjectFacade(t *testing.T) {
+	if !llgoHost {
+		t.Skip("the direct caller requires an llgo host")
+	}
+	testGeneratedFacade(t, true, "testdata/objects_main.go", generateObjects)
+}
+
+func generateObjects(header string) (*cxx.Facade, error) {
+	return cxx.Generate(header, cxxexample.ObjectClasses())
+}
+
+func testGeneratedFacade(t *testing.T, direct bool, fixture string, render func(string) (*cxx.Facade, error)) {
 	t.Helper()
 	headerPath, err := filepath.Abs("testdata/counter.hpp")
 	if err != nil {
 		t.Fatal(err)
 	}
-	facade, err := cxxexample.Generate(filepath.ToSlash(headerPath))
+	facade, err := render(filepath.ToSlash(headerPath))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +113,7 @@ func testGeneratedClassFacade(t *testing.T, direct bool) {
 	}
 	dir := t.TempDir()
 	write(t, filepath.Join(dir, "bindings.go"), bindings)
-	main, err := os.ReadFile("testdata/cgo_main.go")
+	main, err := os.ReadFile(fixture)
 	if err != nil {
 		t.Fatal(err)
 	}
