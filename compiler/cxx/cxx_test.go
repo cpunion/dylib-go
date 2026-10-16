@@ -36,7 +36,7 @@ func classes() []cxx.Class {
 		m.Static = true
 		methods = append(methods, m)
 	}
-	return append([]cxx.Class{
+	base := append([]cxx.Class{
 		{Name: "example::Counter", Delete: "counter_delete", Constructors: []cxx.Constructor{{Symbol: "counter_new", Args: []abi.Type{abi.I32}}}, Methods: methods},
 		{Name: "example::ThrowingDestructor", Delete: "throwing_delete", Constructors: []cxx.Constructor{{Symbol: "throwing_new"}}},
 		{Name: "example::NullAllocation", Delete: "null_delete", Constructors: []cxx.Constructor{{Symbol: "null_new"}}},
@@ -44,6 +44,7 @@ func classes() []cxx.Class {
 		{Name: "example::Diamond", Delete: "diamond_delete", Constructors: []cxx.Constructor{{Symbol: "diamond_new", Args: []abi.Type{abi.I32}}}, Bases: []cxx.Base{{Name: "example::Counter", Symbol: "diamond_counter"}, {Name: "example::VirtualLeft", Symbol: "diamond_left"}}},
 		{Name: "example::VirtualLeft", Bases: []cxx.Base{{Name: "example::Counter", Symbol: "left_counter"}}},
 	}, cxxexample.ObjectClasses()...)
+	return append(base, cxxexample.FunctionClasses()...)
 }
 
 func tool(t *testing.T, name string) string {

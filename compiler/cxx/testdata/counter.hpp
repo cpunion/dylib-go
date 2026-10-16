@@ -79,6 +79,34 @@ public:
 
 using ReadOnlyCounter = const Counter;
 
+class CallbackBox {
+public:
+    using Adder = int32_t (*)(int32_t, int32_t);
+private:
+    Adder callback;
+    static int32_t add(int32_t a, int32_t b) { return a + b; }
+public:
+    explicit CallbackBox(Adder entry) : callback(entry) {
+        if (entry && entry(0, 0) < 0) throw 99;
+    }
+    static Adder factory(bool fail) { if (fail) throw 99; return add; }
+    static Adder empty() { return nullptr; }
+    int32_t invoke(int32_t a, int32_t b) const { return apply(callback, a, b); }
+    static int32_t apply(Adder entry, int32_t a, int32_t b) {
+        return entry ? entry(a, b) : -1;
+    }
+    Adder exchange(Adder entry) { auto previous = callback; callback = entry; return previous; }
+    int32_t mixed(int32_t delta, const Counter &other, Adder left, Adder right) const {
+        return other.add(double(delta)) + apply(left, 5, 5) + apply(right, 5, 5);
+    }
+    static double wide(double (*entry)(int8_t, float, uint64_t), int8_t a, float b, uint64_t c) {
+        return entry(a, b, c);
+    }
+    static void notify(void (*entry)(int32_t, void *), int32_t value, void *address) { entry(value, address); }
+    static void *echo(void *(*entry)(void *), void *address) { return entry(address); }
+    int32_t shutdown() { auto result = apply(callback, 20, 20); callback = nullptr; return result; }
+};
+
 // Counter is a secondary base: the factory supplies its correctly adjusted
 // view. Go never computes a base offset or interprets a virtual/member pointer.
 class Prefix {

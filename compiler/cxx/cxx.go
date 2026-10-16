@@ -19,12 +19,13 @@ const (
 	Exception       int32 = 2
 )
 
-// Constructor selects C argument transports and optional native object types
+// Constructor selects C argument transports and optional native object/function types
 // used for C++ overload resolution. The appended void** slot must be null.
 type Constructor struct {
-	Symbol     string
-	Args       []abi.Type
-	ObjectArgs []ObjectArg
+	Symbol       string
+	Args         []abi.Type
+	ObjectArgs   []ObjectArg
+	FunctionArgs []FunctionArg
 }
 
 // Method selects an exact C++ member signature. Const
@@ -32,14 +33,19 @@ type Constructor struct {
 // adds an output pointer after the arguments. ObjectArgs/ObjectResult replace
 // pointer transports with native class types. Value results require an initially
 // null output slot and a noexcept destructor, and allocate a new owned object.
-// Pointer/reference results borrow the native API's lifetime. Variadics and
+// Pointer/reference results borrow the native API's lifetime. FunctionArgs and
+// FunctionResult select exact fixed native function pointers using opaque address
+// transports. A FunctionResult is borrowed and cannot also be an ObjectResult;
+// keep its provider alive while using it. Variadics and
 // ordinary aggregate transports remain unsupported.
 type Method struct {
-	Name, Symbol  string
-	Signature     abi.Signature
-	Const, Static bool
-	ObjectArgs    []ObjectArg
-	ObjectResult  *ObjectType
+	Name, Symbol   string
+	Signature      abi.Signature
+	Const, Static  bool
+	ObjectArgs     []ObjectArg
+	ObjectResult   *ObjectType
+	FunctionArgs   []FunctionArg
+	FunctionResult *abi.Signature
 }
 
 // Base selects a borrowed view of a public, unambiguous C++ base subobject.
@@ -127,7 +133,7 @@ func Generate(header string, classes []Class) (*Facade, error) {
 			return nil, fmt.Errorf("cxx: invalid C++ type name %q", class.Name)
 		}
 		for _, constructor := range class.Constructors {
-			parameters, _, args, checks, err := objectArguments(constructor.Args, constructor.ObjectArgs)
+			parameters, _, args, checks, err := nativeArguments(constructor.Args, constructor.ObjectArgs, constructor.FunctionArgs)
 			if err != nil {
 				return nil, fmt.Errorf("cxx: constructor %s: %w", constructor.Symbol, err)
 			}
@@ -152,7 +158,7 @@ return DYLIB_CXX_SUCCESS;
 			if err := methodSignature(method.Signature); err != nil {
 				return nil, fmt.Errorf("cxx: method %s: %w", method.Name, err)
 			}
-			parameters, types, args, checks, err := objectArguments(method.Signature.Args, method.ObjectArgs)
+			parameters, types, args, checks, err := nativeArguments(method.Signature.Args, method.ObjectArgs, method.FunctionArgs)
 			if err != nil {
 				return nil, fmt.Errorf("cxx: method %s: %w", method.Name, err)
 			}
@@ -163,6 +169,17 @@ return DYLIB_CXX_SUCCESS;
 			returns := method.Signature.Result != abi.Void
 			kind, _ := cType(method.Signature.Result)
 			nativeResult := kind
+			if signature := method.FunctionResult; signature != nil {
+				if method.Signature.Result != abi.Pointer || method.ObjectResult != nil {
+					return nil, fmt.Errorf("cxx: method %s: function result requires an exclusive pointer transport", method.Name)
+				}
+				alias, err := functionAlias(*signature, "dylib_function_result")
+				if err != nil {
+					return nil, fmt.Errorf("cxx: method %s: %w", method.Name, err)
+				}
+				checks += alias
+				nativeResult = "dylib_function_result"
+			}
 			owned := method.ObjectResult != nil && method.ObjectResult.Kind == ObjectValue
 			if object := method.ObjectResult; object != nil {
 				if method.Signature.Result != abi.Pointer {
@@ -205,6 +222,8 @@ return DYLIB_CXX_SUCCESS;
 			}
 			fmt.Fprintf(&body, "auto entry = static_cast<entry_type>(&%s::%s);\n", class.Name, method.Name)
 			switch object := method.ObjectResult; {
+			case method.FunctionResult != nil:
+				fmt.Fprintf(&body, "*output = reinterpret_cast<void *>(%s);\n", call)
 			case owned:
 				fmt.Fprintf(&body, "auto object = new %s(%s);\nif (!object) return DYLIB_CXX_EXCEPTION;\n*output = const_cast<void *>(static_cast<const volatile void *>(object));\n", object.Name, call)
 			case object != nil && object.Kind == ObjectReference:
