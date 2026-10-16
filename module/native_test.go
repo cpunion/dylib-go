@@ -85,7 +85,7 @@ func produce(t *testing.T, dir, name, code, kind, optimization string) string {
 	}
 	if kind == "archive" {
 		archive := filepath.Join(dir, name+".a")
-		if data, err := exec.Command(nativeTool(t, "llvm-ar"), "rcs", archive, output).CombinedOutput(); err != nil {
+		if data, err := exec.Command(nativeTool(t, "ar"), "rcs", archive, output).CombinedOutput(); err != nil {
 			t.Fatalf("module archive: %v\n%s", err, data)
 		}
 		output = archive
@@ -122,7 +122,7 @@ func TestNativeModuleGraphCalls(t *testing.T) {
 				provider := produce(t, dir, "provider", `API int module_bias=2; API int module_add(int a,int b){return a+b;}`, kind, optimization)
 				if kind == "archive" {
 					unused := produce(t, dir, "unused", `extern int absent(int,int); __attribute__((constructor)) static void bad(void){absent(0,0);} int unused(int a,int b){return absent(a,b);}`, "object", optimization)
-					if data, err := exec.Command(nativeTool(t, "llvm-ar"), "rcs", provider, unused).CombinedOutput(); err != nil {
+					if data, err := exec.Command(nativeTool(t, "ar"), "rcs", provider, unused).CombinedOutput(); err != nil {
 						t.Fatalf("unused archive member: %v\n%s", err, data)
 					}
 				}
