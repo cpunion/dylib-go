@@ -58,7 +58,7 @@ func valueDestructor(name, alias string) string {
 	return fmt.Sprintf("using %s = %s;\nstatic_assert(noexcept(static_cast<%s *>(nullptr)->~%s()), \"class values require noexcept destruction\");\n", alias, name, alias, alias)
 }
 
-func objectArguments(args []abi.Type, objects []ObjectArg) (parameters []string, types, values, checks string, err error) {
+func nativeArguments(args []abi.Type, objects []ObjectArg, functions []FunctionArg) (parameters []string, types, values, checks string, err error) {
 	parameters, _, _, err = arguments(args)
 	if err != nil {
 		return
@@ -94,6 +94,23 @@ func objectArguments(args []abi.Type, objects []ObjectArg) (parameters []string,
 			validation.WriteString(valueDestructor(native.Name, fmt.Sprintf("dylib_value_%d", i)))
 			names[i] = native.Name + "(" + names[i] + ")"
 		}
+	}
+	for _, function := range functions {
+		i := function.Index
+		if i < 0 || i >= len(args) || args[i] != abi.Pointer || seen[i] {
+			err = fmt.Errorf("invalid or duplicate native function argument %d: expected an exclusive pointer slot", i)
+			return
+		}
+		seen[i] = true
+		alias := fmt.Sprintf("dylib_function_%d", i)
+		var declaration string
+		declaration, err = functionAlias(function.Signature, alias)
+		if err != nil {
+			return
+		}
+		validation.WriteString(declaration)
+		kinds[i] = alias
+		names[i] = fmt.Sprintf("reinterpret_cast<%s>(p%d)", alias, i)
 	}
 	types, values, checks = strings.Join(kinds, ", "), strings.Join(names, ", "), validation.String()
 	return

@@ -33,6 +33,8 @@ and ABI. This package does not discover classes, demangle symbols, or parse C++.
 | `Method.Static` | An exact static function pointer; no receiver argument |
 | `ObjectArgs` on a constructor/method | Pointer transports converted to selected native class pointers, references or copied values |
 | `Method.ObjectResult` | A pointer transport carrying a borrowed pointer/reference, or a newly allocated owned value |
+| `FunctionArgs` on a constructor/method | Pointer transports converted to exact fixed native function pointers |
+| `Method.FunctionResult` | A pointer transport carrying a borrowed native function pointer |
 | `Base{Name, Symbol}` in `Class.Bases` | `void *handle, void **output`; a borrowed public base view |
 | Optional `Class.Delete` | A `void **handle` slot consumed and cleared before native `delete`; omit for borrowed/static-only selections |
 
@@ -124,6 +126,35 @@ its provider, and stop/join any asynchronous native users before cleanup. A
 explicit destruction operation. `abi.NativeValue` owns a handle slot's bytes,
 not the C++ object whose address it stores. See [registration ownership](registrations.md).
 
+## Native function pointers and Go callbacks
+
+The executable [function manifest](../examples/cxx/functions.go) uses
+`FunctionArg{Index, Signature}` on constructors/methods and
+`Method.FunctionResult` to select exact native function-pointer types. Each
+selected slot uses `abi.Pointer` as its C transport. Function/object selections
+cannot overlap, and an output cannot select both result forms. Signatures accept
+fixed scalar/opaque-address default/cdecl arguments and results, including void
+results; the native compiler rejects mismatched callback prototypes. Null
+function pointers pass through, so their validity follows the original C++ API.
+Failed borrowed function results clear the output slot.
+
+Transport uses function/object pointer conversions supported by the qualified
+native compilers and targets. Returned functions borrow their provider's lifetime;
+keep its symbol/function lease until the final call. A Go function value is not a
+native entry: use a generated C entry or `abi.NewCallback` with the selected
+signature. Dynamic Go callbacks require the optional libffi backend. The generated
+cgo/direct llgo transport itself needs no libffi when using existing native entries.
+
+Retained callbacks need callback and provider leases for their entire native
+lifetime. `Registration` can couple those leases, handle storage, and native
+unregister/join or destruction. The [executed dynamic test](../compiler/cxx/function_dynamic_test.go)
+constructs a C++ object retaining a captured Go callback, reenters its C++ method,
+and unregisters/destroys it while session, storage, and callback close are waiting.
+Callbacks return Go errors through `Callback.Err` with a zero native return;
+these are distinct from caught C++ exceptions. Do not unwind a Go panic or C++
+exception across a C callback entry. This does not construct `std::function`,
+capture a C++ lambda, or infer native callback ownership or threading rules.
+
 ## Coverage and remaining work
 
 Go and llgo CI compile C declarations and C++ source for all eight qualified
@@ -133,12 +164,14 @@ and optional dynamic calls cover scalar widths,
 const overloads, void results, native addresses, generated secondary/virtual base
 views, composed diamond conversions, class copies/references/pointers, noncopyable
 value results, copy exceptions, overloaded `operator&`, private-destructor static
-classes, virtual dispatch,
+classes, native function factories/arguments/returns, retained captured callbacks,
+nested C++/Go reentry during retirement, void/native-address/mixed-width callback
+signatures, virtual dispatch,
 constructor/method exceptions, throwing destruction, cleared outputs and nulls.
 Linux 386 requires C++ multilib development files in addition to i386 libffi.
 `DYLIB_CXX` selects the Clang-compatible C++ test producer executable.
 
-Arbitrary non-class typed pointers, managed C++ callbacks,
+Arbitrary non-class typed pointers, C++ lambda/`std::function` adapters,
 ref-qualified/volatile members, variadics, inheritance discovery,
 downcasts/crosscasts and C++ header discovery remain outside this manifest. Raw C++
 runtime/exception loading is unqualified; use complete libraries for these

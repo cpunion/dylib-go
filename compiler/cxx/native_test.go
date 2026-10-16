@@ -92,6 +92,22 @@ func generateObjects(header string) (*cxx.Facade, error) {
 	return cxx.Generate(header, cxxexample.ObjectClasses())
 }
 
+func TestNativeGeneratedCgoFunctionFacade(t *testing.T) {
+	testGeneratedFacade(t, false, "testdata/functions_main.go", generateFunctions)
+}
+
+func TestNativeGeneratedDirectLLGoFunctionFacade(t *testing.T) {
+	if !llgoHost {
+		t.Skip("the direct caller requires an llgo host")
+	}
+	testGeneratedFacade(t, true, "testdata/functions_main.go", generateFunctions)
+}
+
+func generateFunctions(header string) (*cxx.Facade, error) {
+	classes := append(cxxexample.FunctionClasses(), cxxexample.ObjectClasses()...)
+	return cxx.Generate(header, classes)
+}
+
 func testGeneratedFacade(t *testing.T, direct bool, fixture string, render func(string) (*cxx.Facade, error)) {
 	t.Helper()
 	headerPath, err := filepath.Abs("testdata/counter.hpp")
