@@ -31,18 +31,21 @@ func (im *image) registerDwarfFrames(providerName string, frames []uintptr) erro
 }
 
 type frameCIE struct {
-	encoding  byte
-	augmented bool
-	lsda      byte
+	encoding    byte
+	augmented   bool
+	lsda        byte
+	personality bool
 }
 
 type framePolicy struct {
 	pcRelative bool
 	language   bool
 	fixup      func(uint64, byte) error
+	lsdaFixup  func(uint64, byte) error
+	record     func(start, length uint64, fde uintptr, personality bool) error
 }
 
-// Keep the existing C-only contract for Mach-O and its implicit-reference fixups.
+// Keep a C-only validator for metadata callers that reject language augmentation.
 func (im *image) validateDWARFFrames(b []byte, imageOffset uint64, pcRelative bool, fixup func(uint64, byte) error) ([]uintptr, error) {
 	return im.validateFrameRecords(b, imageOffset, framePolicy{pcRelative: pcRelative, fixup: fixup})
 }
@@ -154,6 +157,7 @@ func (im *image) validateFrameRecords(b []byte, imageOffset uint64, policy frame
 				if seen['L'] && !seen['P'] {
 					return nil, fmt.Errorf("LSDA requires a CIE personality")
 				}
+				cie.personality = seen['P']
 			}
 			if _, err := frameEncodingSize(cie.encoding, im.pointerSize); err != nil {
 				return nil, err
@@ -197,6 +201,11 @@ func (im *image) validateFrameRecords(b []byte, imageOffset uint64, policy frame
 				dataOffset := imageOffset + uint64(end-len(r.b))
 				r.b = r.b[int(n):]
 				if cie.lsda != 0xff {
+					if policy.lsdaFixup != nil {
+						if err := policy.lsdaFixup(dataOffset-imageOffset, cie.lsda); err != nil {
+							return nil, err
+						}
+					}
 					pointer, err := im.framePointer(&data, cie.lsda, dataOffset)
 					if err != nil {
 						return nil, err
@@ -211,6 +220,11 @@ func (im *image) validateFrameRecords(b []byte, imageOffset uint64, policy frame
 			}
 			if err := r.cfi(); err != nil {
 				return nil, err
+			}
+			if policy.record != nil {
+				if err := policy.record(uint64(start), uint64(length), im.base+uintptr(imageOffset)+uintptr(offset), cie.personality); err != nil {
+					return nil, err
+				}
 			}
 			fdes = append(fdes, im.base+uintptr(imageOffset)+uintptr(offset))
 		}

@@ -46,14 +46,14 @@ func TestNativePOSIXFrameRegistration(t *testing.T) {
 		call(t, s, "unwind_root", 20, 22, 42)
 		call(t, observer, "has_saved_frame", 0, 0, 1)
 		owned := s.image.unwind
-		if owned == nil || !owned.registered || len(owned.frames) == 0 || owned.provider == 0 {
+		if owned == nil || !owned.registered || len(owned.frames) == 0 && owned.dynamic == 0 || owned.provider == 0 {
 			t.Fatal("unwind registration has no native owner")
 		}
 		if err := s.Close(); err != nil {
 			t.Fatal(err)
 		}
 		call(t, observer, "has_saved_frame", 0, 0, 0)
-		if owned.registered || len(owned.frames) != 0 || owned.provider != 0 {
+		if owned.registered || len(owned.frames) != 0 || owned.dynamic != 0 || owned.provider != 0 {
 			t.Fatal("registration survived Close")
 		}
 	}
@@ -143,7 +143,7 @@ func TestNativePOSIXFrameRegistration(t *testing.T) {
 	if err := s.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if owned.registered || len(owned.frames) != 0 || owned.provider != 0 {
+	if owned.registered || len(owned.frames) != 0 || owned.dynamic != 0 || owned.provider != 0 {
 		t.Fatal("failed image retained registration")
 	}
 	expectEvents(t, read, 1, 2, 7, 8)

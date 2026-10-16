@@ -29,8 +29,8 @@ type Options struct {
 	ProcessSymbols bool
 	// RegisterUnwind registers supported raw-image runtime function tables.
 	// Supports Windows/macOS amd64/arm64 and Linux amd64/arm64/386 C frames.
-	// Linux also supports the documented libgcc C++ personality/LSDA subset.
-	// Other language handlers are rejected. Exceptions must remain inside
+	// Linux/macOS also support the documented native C++ DWARF subset.
+	// Windows language handlers remain unsupported. Exceptions must remain inside
 	// compatible native code and cannot cross Go frames.
 	RegisterUnwind bool
 	// LibraryPaths searches these directories before the importing file's

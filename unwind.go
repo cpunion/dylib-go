@@ -17,6 +17,7 @@ type runtimeFunctions struct {
 	frames     []uintptr // POSIX section/FDE addresses registered with one provider.
 	provider   uintptr
 	deregister uintptr
+	dynamic    uintptr // Darwin native range lookup, removed before frames/storage.
 }
 
 func elfUnwindSection(name string) bool {
@@ -33,7 +34,7 @@ func coffPdataSection(s *section) bool {
 
 func discardUnwind(o *object) {
 	if o != nil && o.info.Format == "Mach-O" {
-		discardUnwindSections(o, func(s *section) bool { return s.name == "__eh_frame" })
+		discardUnwindSections(o, func(s *section) bool { return s.name == "__eh_frame" || lsdaSection(o.info.Format, s.name) })
 		return
 	}
 	if o != nil && o.info.Format == "ELF" {
@@ -114,6 +115,12 @@ func (im *image) registerUnwind() error {
 func (u *runtimeFunctions) close() error {
 	if u == nil {
 		return nil
+	}
+	if u.dynamic != 0 {
+		if err := native.UnregisterMachODWARF(u.dynamic, u.deregister); err != nil {
+			return err
+		}
+		u.dynamic = 0
 	}
 	for i := len(u.frames) - 1; i >= 0; i-- {
 		native.CallPointer(u.deregister, u.frames[i])

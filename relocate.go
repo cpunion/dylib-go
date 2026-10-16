@@ -476,7 +476,9 @@ func (im *image) relocMachO(o *object, r relocation, b []byte, s, p uintptr) err
 			if e != nil {
 				return e
 			}
-			return signed32(b, int64(g)+r.addend+int64(int32(ins))-int64(p))
+			// ARM64 POINTER_TO_GOT has no embedded addend. In particular,
+			// assembler CIE personality fields can contain a placeholder.
+			return signed32(b, int64(g)+r.addend-int64(p))
 		}
 	}
 	return fmt.Errorf("unsupported %s Mach-O relocation %d", o.info.Arch, r.typ)
