@@ -19,22 +19,27 @@ const (
 	Exception       int32 = 2
 )
 
-// Constructor selects a C export and the argument types used for C++ overload
-// resolution. The export appends a void** output slot, which must initially be null.
+// Constructor selects C argument transports and optional native object types
+// used for C++ overload resolution. The appended void** slot must be null.
 type Constructor struct {
-	Symbol string
-	Args   []abi.Type
+	Symbol     string
+	Args       []abi.Type
+	ObjectArgs []ObjectArg
 }
 
-// Method selects an exact scalar/opaque-pointer C++ member signature. Const
+// Method selects an exact C++ member signature. Const
 // selects a const-qualified member; Static omits the receiver. A non-void result
-// adds an output pointer after the arguments. Variadics and aggregate types are
-// unsupported. Returned native pointers are borrowed unless the native API says
-// otherwise; generation does not infer ownership.
+// adds an output pointer after the arguments. ObjectArgs/ObjectResult replace
+// pointer transports with native class types. Value results require an initially
+// null output slot and a noexcept destructor, and allocate a new owned object.
+// Pointer/reference results borrow the native API's lifetime. Variadics and
+// ordinary aggregate transports remain unsupported.
 type Method struct {
 	Name, Symbol  string
 	Signature     abi.Signature
 	Const, Static bool
+	ObjectArgs    []ObjectArg
+	ObjectResult  *ObjectType
 }
 
 // Base selects a borrowed view of a public, unambiguous C++ base subobject.
@@ -46,9 +51,10 @@ type Base struct {
 }
 
 // Class names an accessible C++ type, including namespace-qualified aliases.
-// Delete names the C export that consumes and clears a void** handle slot before
+// Optional Delete names the export that clears a void** handle slot before
 // invoking delete. Borrowed base views must not be deleted unless the native
-// contract permits it (including a virtual destructor when required).
+// contract permits it (including a virtual destructor when required). Omit Delete
+// for borrowed/static-only selections; owned results still need native cleanup.
 type Class struct {
 	Name         string
 	Delete       string
@@ -121,19 +127,20 @@ func Generate(header string, classes []Class) (*Facade, error) {
 			return nil, fmt.Errorf("cxx: invalid C++ type name %q", class.Name)
 		}
 		for _, constructor := range class.Constructors {
-			parameters, _, args, err := arguments(constructor.Args)
+			parameters, _, args, checks, err := objectArguments(constructor.Args, constructor.ObjectArgs)
 			if err != nil {
 				return nil, fmt.Errorf("cxx: constructor %s: %w", constructor.Symbol, err)
 			}
 			parameters = append(parameters, "void **output")
 			body := fmt.Sprintf(`if (!output || *output) return DYLIB_CXX_INVALID_ARGUMENT;
+%s
 try {
 auto object = new %s(%s);
 if (!object) return DYLIB_CXX_EXCEPTION;
-*output = object;
+*output = const_cast<void *>(static_cast<const volatile void *>(object));
 return DYLIB_CXX_SUCCESS;
 } catch (...) { return DYLIB_CXX_EXCEPTION; }
-`, class.Name, args)
+`, checks, class.Name, args)
 			if err := emit(constructor.Symbol, parameters, body); err != nil {
 				return nil, err
 			}
@@ -145,30 +152,51 @@ return DYLIB_CXX_SUCCESS;
 			if err := methodSignature(method.Signature); err != nil {
 				return nil, fmt.Errorf("cxx: method %s: %w", method.Name, err)
 			}
-			parameters, types, args, _ := arguments(method.Signature.Args)
+			parameters, types, args, checks, err := objectArguments(method.Signature.Args, method.ObjectArgs)
+			if err != nil {
+				return nil, fmt.Errorf("cxx: method %s: %w", method.Name, err)
+			}
 			var body bytes.Buffer
 			if !method.Static {
 				parameters = append([]string{"void *handle"}, parameters...)
 			}
 			returns := method.Signature.Result != abi.Void
 			kind, _ := cType(method.Signature.Result)
+			nativeResult := kind
+			owned := method.ObjectResult != nil && method.ObjectResult.Kind == ObjectValue
+			if object := method.ObjectResult; object != nil {
+				if method.Signature.Result != abi.Pointer {
+					return nil, fmt.Errorf("cxx: method %s: native object result requires a pointer transport", method.Name)
+				}
+				nativeResult, err = object.native()
+				if err != nil {
+					return nil, fmt.Errorf("cxx: method %s: %w", method.Name, err)
+				}
+				if owned {
+					checks += valueDestructor(object.Name, "dylib_result_type")
+				}
+			}
 			if returns {
 				parameters = append(parameters, kind+" *output")
-				fmt.Fprint(&body, "if (!output) return DYLIB_CXX_INVALID_ARGUMENT;\n*output = {};\n")
+				if owned {
+					fmt.Fprint(&body, "if (!output || *output) return DYLIB_CXX_INVALID_ARGUMENT;\n")
+				} else {
+					fmt.Fprint(&body, "if (!output) return DYLIB_CXX_INVALID_ARGUMENT;\n*output = {};\n")
+				}
 			}
 			if !method.Static {
 				fmt.Fprint(&body, "if (!handle) return DYLIB_CXX_INVALID_ARGUMENT;\n")
 			}
-			fmt.Fprint(&body, "try {\n")
+			fmt.Fprint(&body, checks, "try {\n")
 			call := "entry(" + args + ")"
 			if method.Static {
-				fmt.Fprintf(&body, "using entry_type = %s (*)(%s);\n", kind, types)
+				fmt.Fprintf(&body, "using entry_type = %s (*)(%s);\n", nativeResult, types)
 			} else {
 				qualifier := ""
 				if method.Const {
 					qualifier = " const"
 				}
-				fmt.Fprintf(&body, "using entry_type = %s (%s::*)(%s)%s;\n", kind, class.Name, types, qualifier)
+				fmt.Fprintf(&body, "using entry_type = %s (%s::*)(%s)%s;\n", nativeResult, class.Name, types, qualifier)
 				receiver := class.Name
 				if method.Const {
 					receiver = "const " + receiver
@@ -176,10 +204,22 @@ return DYLIB_CXX_SUCCESS;
 				call = "(static_cast<" + receiver + " *>(handle)->*entry)(" + args + ")"
 			}
 			fmt.Fprintf(&body, "auto entry = static_cast<entry_type>(&%s::%s);\n", class.Name, method.Name)
-			if returns {
-				fmt.Fprint(&body, "*output = ")
+			switch object := method.ObjectResult; {
+			case owned:
+				fmt.Fprintf(&body, "auto object = new %s(%s);\nif (!object) return DYLIB_CXX_EXCEPTION;\n*output = const_cast<void *>(static_cast<const volatile void *>(object));\n", object.Name, call)
+			case object != nil && object.Kind == ObjectReference:
+				// A byte reference bypasses overloaded operator& without a C++
+				// standard-library header or compiler-specific intrinsic.
+				fmt.Fprintf(&body, "auto &view = %s;\n*output = const_cast<char *>(&reinterpret_cast<const volatile char &>(view));\n", call)
+			case object != nil:
+				fmt.Fprintf(&body, "*output = const_cast<void *>(static_cast<const volatile void *>(%s));\n", call)
+			default:
+				if returns {
+					fmt.Fprint(&body, "*output = ")
+				}
+				fmt.Fprintf(&body, "%s;\n", call)
 			}
-			fmt.Fprintf(&body, "%s;\nreturn DYLIB_CXX_SUCCESS;\n} catch (...) { return DYLIB_CXX_EXCEPTION; }\n", call)
+			fmt.Fprint(&body, "return DYLIB_CXX_SUCCESS;\n} catch (...) { return DYLIB_CXX_EXCEPTION; }\n")
 			if err := emit(method.Symbol, parameters, body.String()); err != nil {
 				return nil, err
 			}
@@ -202,6 +242,9 @@ return DYLIB_CXX_SUCCESS;
 				return nil, err
 			}
 		}
+		if class.Delete == "" {
+			continue
+		}
 		body := fmt.Sprintf(`if (!handle) return DYLIB_CXX_INVALID_ARGUMENT;
 auto object = static_cast<%s *>(*handle);
 *handle = nullptr;
@@ -214,6 +257,9 @@ return DYLIB_CXX_SUCCESS;
 		if err := emit(class.Delete, []string{"void **handle"}, body); err != nil {
 			return nil, err
 		}
+	}
+	if len(result.Functions) == 0 {
+		return nil, fmt.Errorf("cxx: select at least one C export")
 	}
 	guard := fmt.Sprintf("DYLIB_GO_CXX_FACADE_%X", sha256.Sum256(declarations.Bytes()))
 	var c bytes.Buffer

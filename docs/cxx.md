@@ -31,8 +31,10 @@ and ABI. This package does not discover classes, demangle symbols, or parse C++.
 | `Method{Name, Symbol, Signature}` | `void *handle`, fixed C arguments, and a result pointer for non-void results |
 | `Method.Const` | An exact const-qualified member pointer |
 | `Method.Static` | An exact static function pointer; no receiver argument |
+| `ObjectArgs` on a constructor/method | Pointer transports converted to selected native class pointers, references or copied values |
+| `Method.ObjectResult` | A pointer transport carrying a borrowed pointer/reference, or a newly allocated owned value |
 | `Base{Name, Symbol}` in `Class.Bases` | `void *handle, void **output`; a borrowed public base view |
-| `Class.Delete` | A `void **handle` slot consumed and cleared before native `delete` |
+| Optional `Class.Delete` | A `void **handle` slot consumed and cleared before native `delete`; omit for borrowed/static-only selections |
 
 All C exports return `int32_t`, use fixed cdecl on Windows 386, and have explicit
 export visibility. C++ definitions are `noexcept`, with catch handlers converting
@@ -72,7 +74,7 @@ ownership contract, including an appropriate virtual destructor.
 | Status | Meaning |
 | --- | --- |
 | `cxx.Success` / `DYLIB_CXX_SUCCESS` (0) | Operation completed |
-| `cxx.InvalidArgument` / `DYLIB_CXX_INVALID_ARGUMENT` (1) | Null receiver/output slot or an already occupied constructor output slot |
+| `cxx.InvalidArgument` / `DYLIB_CXX_INVALID_ARGUMENT` (1) | Null receiver/output slot or an already occupied constructor/value-result output slot |
 | `cxx.Exception` / `DYLIB_CXX_EXCEPTION` (2) | A native C++ exception was caught, or a custom allocation returned null |
 
 Non-void method outputs are zeroed before checking the receiver or invoking C++.
@@ -82,6 +84,37 @@ Delete clears its slot before invoking the destructor, including a destructor
 that throws; deleting an empty slot is inert. A null slot address is invalid.
 These rules do not roll back mutations a native method performed before throwing.
 Exceptions from `noexcept` violations still terminate under the C++ contract.
+
+## Class arguments and results
+
+The executable [object manifest](../examples/cxx/objects.go) uses `ObjectArg` to
+select a zero-based `abi.Pointer` argument and its `ObjectType{Name, Kind, Const}`.
+`ObjectPointer` accepts null. `ObjectReference` requires a non-null object address;
+`Const` selects a const pointer/reference in the exact native signature.
+`ObjectValue` copies the native object inside C++, with no Go layout or byte copy.
+Constructors apply normal overload resolution; a value selection supplies an
+explicit native temporary. Methods still use an exact member/function pointer.
+
+`ObjectResult` requires `abi.Pointer` as the C result transport. Pointer/reference
+results borrow the native API's lifetime; reference addresses bypass overloaded
+`operator&`. Failed borrowed results clear the output slot. Native const results
+retain an exact const signature, but the opaque Go address cannot enforce read-only
+access. Receivers and argument addresses must already have their selected native
+type; the facade does not perform RTTI checks or infer base offsets.
+
+A value result allocates a separate native owner. Its output slot must initially
+be null; occupied slots are preserved and return `InvalidArgument`. Allocation,
+copy and method exceptions return `Exception` without publishing an owner.
+Value arguments/results require accessible `noexcept` destructors: a throwing
+temporary destructor could otherwise invalidate publication and cleanup. Copy
+constructors may throw. C++17 prvalue results also support noncopyable/nonmovable
+classes through guaranteed copy elision. Destroy each returned owner using its
+native type before releasing the provider; an address slot does not own its object.
+
+Delete exports are optional, allowing static-only classes with private destructors
+and borrowed receivers. Omitting an export does not infer an alternative cleanup
+operation for constructor/value results. Supply that native ownership contract
+explicitly. A manifest must select at least one C export.
 
 Objects and returned native addresses remain caller-owned. Pointer results are
 borrowed unless the original API supplies an ownership contract. Retain code
@@ -98,13 +131,15 @@ targets. Native jobs execute unoptimized/optimized libraries: a freshly generate
 cgo caller runs without libffi, llgo also executes its direct generated caller,
 and optional dynamic calls cover scalar widths,
 const overloads, void results, native addresses, generated secondary/virtual base
-views, composed diamond conversions, virtual dispatch,
+views, composed diamond conversions, class copies/references/pointers, noncopyable
+value results, copy exceptions, overloaded `operator&`, private-destructor static
+classes, virtual dispatch,
 constructor/method exceptions, throwing destruction, cleared outputs and nulls.
 Linux 386 requires C++ multilib development files in addition to i386 libffi.
 `DYLIB_CXX` selects the Clang-compatible C++ test producer executable.
 
-Reference/value class parameters or results, arbitrary typed pointers, managed
-C++ callbacks, ref-qualified/volatile members, variadics, inheritance discovery,
+Arbitrary non-class typed pointers, managed C++ callbacks,
+ref-qualified/volatile members, variadics, inheritance discovery,
 downcasts/crosscasts and C++ header discovery remain outside this manifest. Raw C++
 runtime/exception loading is unqualified; use complete libraries for these
 facades. The generator complements llcppg and ABIBridge while keeping C++ ABI
