@@ -123,7 +123,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Higher-order/multiple-indirection function pointers, recursive prototype snapshots and generated cgo/llgo factories, consumers and pointer slots.
 - [x] Callback record fields and multidimensional entry arrays with cloned prototypes, native-address cgo/llgo records, nested arrays and retained Go callback registrations.
 - [x] Explicit C++17 scalar/native-address class manifests generating constructors, ordinary/const/static members and consuming destruction; exact member-pointer calls, secondary-base native virtual dispatch, exception status codes and Go/llgo C bindings without libffi.
-- [ ] C++ class values/references, typed native pointers/callbacks, declaration discovery and automatic inheritance/base-view generation.
+- [x] Compiler-generated selected public base views, including multiple/virtual inheritance and shared diamond bases, with borrowed ownership, cleared outputs and rejected private/ambiguous/downcast conversions.
+- [ ] C++ class values/references, typed native pointers/callbacks, declaration discovery and automatic inheritance discovery.
 - [x] Explicit retained session-to-session function/data symbol providers, transitive code leases and cleanup ordering without libffi.
 - [ ] Automatic provider discovery, dependency manifests, and version contracts.
 - [x] Owned native scalar/record/array storage with stable address leases, C-retained pointer tests and explicit retirement.

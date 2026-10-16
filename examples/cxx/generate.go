@@ -6,7 +6,7 @@ import (
 	"github.com/cpunion/dylib-go/compiler/cxx"
 )
 
-// Generate selects constructor, member and destruction exports. Compile the
+// Generate selects constructor, member, base-view and destruction exports. Compile the
 // returned CXXSource with the class's own C++17 toolchain/runtime. Its CHeader
 // can use compiler/clang.Parse and CgoSource for Go/llgo without libffi.
 func Generate(header string) (*cxx.Facade, error) {
@@ -20,5 +20,9 @@ func Generate(header string) (*cxx.Facade, error) {
 			Name: "add", Symbol: "counter_add",
 			Signature: abi.Signature{Result: abi.I32, Args: []abi.Type{abi.I32}},
 		}},
+	}, {
+		Name: "example::Derived", Delete: "derived_delete",
+		Constructors: []cxx.Constructor{{Symbol: "derived_new", Args: []abi.Type{abi.I32}}},
+		Bases:        []cxx.Base{{Name: "example::Counter", Symbol: "derived_counter"}},
 	}})
 }
