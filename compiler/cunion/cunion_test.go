@@ -19,6 +19,11 @@ import (
 func functions() []cunion.Function {
 	i := cunion.Value{Type: abi.I32, Union: "union Number", Member: "i"}
 	result := append(example.Functions(), []cunion.Function{
+		{Name: "pair_make", Symbol: "union_pair_make", Args: []cunion.Value{{Type: abi.I32}, {Type: abi.I32}}, Result: cunion.Value{Type: abi.Struct, Record: "struct Pair"}},
+		{Name: "bundle_make", Symbol: "union_bundle_make", Args: []cunion.Value{{Type: abi.I32}, {Type: abi.I32}}, Result: cunion.Value{Type: abi.Struct, Record: "struct Bundle"}},
+		{Name: "record_bundle_echo", Symbol: "union_bundle", Args: []cunion.Value{{Type: abi.Struct, Record: "struct Bundle", Union: "union Records", Member: "bundle"}}, Result: cunion.Value{Type: abi.Struct, Record: "struct Bundle", Union: "union Records", Member: "bundle"}},
+		{Name: "hfa_make", Symbol: "union_hfa_make", Args: []cunion.Value{{Type: abi.F64}, {Type: abi.F64}}, Result: cunion.Value{Type: abi.Struct, Record: "struct HFA"}},
+		{Name: "record_hfa_echo", Symbol: "union_hfa", Args: []cunion.Value{{Type: abi.Struct, Record: "struct HFA", Union: "union Records", Member: "hfa"}}, Result: cunion.Value{Type: abi.Struct, Record: "struct HFA", Union: "union Records", Member: "hfa"}},
 		{Name: "store_number", Symbol: "union_store", Args: []cunion.Value{i}},
 		{Name: "stored_number", Symbol: "union_stored", Result: cunion.Value{Type: abi.I32}},
 		{Name: "read_number", Symbol: "union_read", Args: []cunion.Value{i}, Result: cunion.Value{Type: abi.I32}},
@@ -120,7 +125,11 @@ func TestUnionFacadesAcrossTargets(t *testing.T) {
 }
 func TestUnionManifestValidation(t *testing.T) {
 	valid := functions()[0]
-	tests := map[string]func(*cunion.Function){"native_name": func(f *cunion.Function) { f.Name = "x()" }, "export_name": func(f *cunion.Function) { f.Symbol = "a-b" }, "keyword": func(f *cunion.Function) { f.Symbol = "return" }, "member_name": func(f *cunion.Function) { f.Result.Member = "i;" }, "union_name": func(f *cunion.Function) { f.Result.Union = "struct Number" }, "member_without_union": func(f *cunion.Function) { f.Result.Union = "" }, "void_union": func(f *cunion.Function) { f.Result.Type = abi.Void }, "aggregate": func(f *cunion.Function) { f.Result.Type = abi.Struct }, "void_argument": func(f *cunion.Function) { f.Args = []cunion.Value{{}} }, "argument_limit": func(f *cunion.Function) { f.Args = make([]cunion.Value, 65) }, "native_collision": func(f *cunion.Function) { f.Symbol = f.Name }}
+	tests := map[string]func(*cunion.Function){"native_name": func(f *cunion.Function) { f.Name = "x()" }, "export_name": func(f *cunion.Function) { f.Symbol = "a-b" }, "keyword": func(f *cunion.Function) { f.Symbol = "return" }, "member_name": func(f *cunion.Function) { f.Result.Member = "i;" }, "union_name": func(f *cunion.Function) { f.Result.Union = "struct Number" }, "member_without_union": func(f *cunion.Function) { f.Result.Union = "" }, "void_union": func(f *cunion.Function) { f.Result.Type = abi.Void }, "aggregate": func(f *cunion.Function) { f.Result.Type = abi.Struct }, "void_argument": func(f *cunion.Function) { f.Args = []cunion.Value{{}} }, "argument_limit": func(f *cunion.Function) { f.Args = make([]cunion.Value, 65) }, "record_on_scalar": func(f *cunion.Function) { f.Result.Record = "struct Pair" },
+		"record_keyword":   func(f *cunion.Function) { f.Result.Type = abi.Struct; f.Result.Record = "struct return" },
+		"record_union_tag": func(f *cunion.Function) { f.Result.Type = abi.Struct; f.Result.Record = "union Number" },
+		"record_path":      func(f *cunion.Function) { f.Result.Type = abi.Struct; f.Result.Record = "struct Pair*" },
+		"native_collision": func(f *cunion.Function) { f.Symbol = f.Name }}
 	for name, patch := range tests {
 		t.Run(name, func(t *testing.T) {
 			f := valid
@@ -189,5 +198,41 @@ func TestUnionSourceBudget(t *testing.T) {
 	}
 	if _, err := cunion.Generate("values.h", functions); err == nil || !strings.Contains(err.Error(), "1 MiB") {
 		t.Fatal("source budget", err)
+	}
+}
+
+func TestUnionCompilerRejectsRecordContracts(t *testing.T) {
+	for _, tc := range []struct{ name, record, member, message string }{
+		{"wrong_record", "struct Other", "pair", "incompatible union member transport"},
+		{"union_alias", "Inner", "inner", "record transport must name a struct"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			h := filepath.Join(dir, "input.h")
+			write(t, h, []byte("#include <stdint.h>\nstruct Pair{int32_t a,b;};struct Other{int32_t a,b;};typedef union{int32_t i;} Inner;union Values{struct Pair pair;Inner inner;};union Values target(union Values);\n"))
+			value := cunion.Value{Type: abi.Struct, Record: tc.record, Union: "union Values", Member: tc.member}
+			facade, err := cunion.Generate(filepath.ToSlash(h), []cunion.Function{{Name: "target", Symbol: "bridge", Args: []cunion.Value{value}, Result: value}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			src := filepath.Join(dir, "facade.c")
+			write(t, src, facade.CSource)
+			out, err := exec.Command(clangTool(t), "-std=c17", "-c", src, "-o", filepath.Join(dir, "facade.o")).CombinedOutput()
+			if err == nil || !strings.Contains(string(out), tc.message) {
+				t.Fatalf("record contract: %v\n%s", err, out)
+			}
+		})
+	}
+}
+
+func TestUnionScalarHeaderDoesNotRequireNativeHeader(t *testing.T) {
+	facade, err := cunion.Generate("missing-native-header.h", functions()[:2])
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "facade.h")
+	write(t, path, facade.CHeader)
+	if _, err := clang.Parse(context.Background(), path, clang.Options{Compiler: clangTool(t), Flags: []string{"-ffreestanding"}, Functions: facade.Functions}); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -102,7 +102,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Compiler-evaluated omitted GNU alignment and type-based `_Alignas` members, including record/typedef/array alignment types, nested records, packed fields, named bitfields and native Go/llgo calls.
 - [x] Compiler-qualified named/typedef enums with integer/Boolean transports, packed/short and fixed underlying types, record/array/callback fields, native factories and variadic prefixes through dynamic, cgo and direct llgo adapters.
 - [x] Explicit scalar/native-pointer member views of native C union arguments/results through C17 facades, exact compiler contract checks, small/large/packed/aligned unions and Go/llgo object/archive/library calls.
-- [ ] Aggregate/nested union member views and remaining packing/alignment forms through validated compiler adapters, including small GNU AMD64 interior gaps mixed with original unnamed nonzero bitfields.
+- [x] Ordinary struct union member views with nested records, multidimensional arrays, floating/pointer fields, exact compiler type checks and Go/llgo object/archive/library execution.
+- [ ] Bare array/union member views, nested member paths and remaining packing/alignment forms through validated compiler adapters, including small GNU AMD64 interior gaps mixed with original unnamed nonzero bitfields.
 - [x] Dynamic argument counts for scalar/aggregate calls, variadic shapes, and callbacks; reproducible call/allocation benchmarks.
 - [x] Session-owned logical-signature CIF reuse, aggregate layout deduplication, and lazy typed pointee layout caches with rollback.
 - [x] Indexed signature lookup and canonical omitted/explicit scalar metadata, preserving logical type distinctions.

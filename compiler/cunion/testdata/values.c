@@ -26,3 +26,10 @@ void *memset(void *destination, int value, size_t size) {
     for (size_t i = 0; i < size; ++i) out[i] = (unsigned char)value;
     return destination;
 }
+struct Pair pair_make(int32_t a, int32_t b) { struct Pair p = {a,b}; return p; }
+union Records record_pair_add(union Records value, struct Pair add) { value.pair.a+=add.a; value.pair.b+=add.b; return value; }
+struct Bundle bundle_make(int32_t a, int32_t b) { struct Bundle v = {{a,b}, {{a,b},{b,a}}, {20.5,21.5}, &stored}; return v; }
+union Records record_bundle_echo(union Records value) { return value; }
+
+struct HFA hfa_make(double a,double b) { struct HFA v={{a,b}}; return v; }
+union Records record_hfa_echo(union Records value) { return value; }

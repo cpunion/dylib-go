@@ -7,6 +7,7 @@ import (
 	dylib "github.com/cpunion/dylib-go"
 	"github.com/cpunion/dylib-go/abi"
 	"math"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -44,7 +45,7 @@ func TestNativeDynamicUnionFacade(t *testing.T) {
 					call := func(t *testing.T, name string, want abi.Value, args ...abi.Value) {
 						t.Helper()
 						got, err := entries[name].Call(args...)
-						if err != nil || got != want {
+						if err != nil || !reflect.DeepEqual(got, want) {
 							t.Fatalf("%s: %v, %v; want %v", name, got, err, want)
 						}
 					}
@@ -70,6 +71,31 @@ func TestNativeDynamicUnionFacade(t *testing.T) {
 					}
 					call(t, "union_pointer", address, address)
 					call(t, "union_pointer_read", abi.Int32(42), address)
+					t.Run("record_views", func(t *testing.T) {
+						pair, err := entries["union_pair_make"].Call(abi.Int32(20), abi.Int32(22))
+						if err != nil {
+							t.Fatal(err)
+						}
+						zero, err := entries["union_pair_make"].Call(abi.Int32(0), abi.Int32(0))
+						if err != nil {
+							t.Fatal(err)
+						}
+						call(t, "union_pair", pair, pair, zero)
+						bundle, err := entries["union_bundle_make"].Call(abi.Int32(20), abi.Int32(22))
+						if err != nil {
+							t.Fatal(err)
+						}
+						call(t, "union_bundle", bundle, bundle)
+						hfa, err := entries["union_hfa_make"].Call(abi.Float64(20.5), abi.Float64(21.5))
+						if err != nil {
+							t.Fatal(err)
+						}
+						call(t, "union_hfa", hfa, hfa)
+						fields := bundle.Aggregate.Fields
+						if fields[0].Aggregate.Fields[0] != abi.Int32(20) || fields[1].Aggregate.Fields[1].Aggregate.Fields[0] != abi.Int32(22) || fields[2].Aggregate.Fields[1] != abi.Float64(21.5) || fields[3] != address {
+							t.Fatal("nested record factory", bundle)
+						}
+					})
 					// A pointer projection remains borrowed from this provider. A retained code
 					// entry keeps the native global alive while the session retires.
 					lease, err := entries["union_pointer_read"].Acquire()

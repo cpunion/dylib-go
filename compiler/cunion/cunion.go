@@ -1,4 +1,4 @@
-// Package cunion generates C17 facades for explicit scalar views of union values.
+// Package cunion generates C17 facades for explicit member views of union values.
 // The native compiler supplies union layout and the function calling convention.
 // A selected member is a caller contract, never inferred from object bytes.
 package cunion
@@ -12,19 +12,21 @@ import (
 	"github.com/cpunion/dylib-go/abi"
 )
 
-// Value selects a scalar/native-address transport. Union optionally names a C
-// union tag ("union Number") or typedef, and Member selects its active member.
+// Value selects a scalar, native-address or named struct transport.
+// Union optionally names a C union tag ("union Number") or typedef, and Member selects its active member.
 // Input unions are zero-initialized before assigning Member. Result Member must
 // be valid for the native result. Pointer addresses and pointees remain borrowed.
-// Void is allowed only for an ordinary result. Aggregates, bitfields, variadics
+// Record names an ordinary C struct or typedef when Type is abi.Struct.
+// Void is allowed only for an ordinary result. Array views, bitfields, variadics
 // and other calling conventions require a different compiled adapter.
 type Value struct {
 	Type          abi.Type
 	Union, Member string
+	Record        string
 }
 
 // Function selects an exact native C prototype and a distinct exported facade.
-// Name and Symbol are C identifiers. Args and Result describe scalar transports
+// Name and Symbol are C identifiers. Args and Result describe C transports
 // and the explicitly selected union members used at the native call boundary.
 type Function struct {
 	Name, Symbol string
@@ -35,6 +37,8 @@ type Function struct {
 // Facade contains independent C17 source/header buffers and ordered export names.
 // Compile CSource against the original header with the library's target/flags.
 // Parse CHeader with compiler/clang to generate dynamic, cgo or direct llgo calls.
+// Struct transports include the original header so the compiler can describe
+// their fields; scalar-only CHeader output remains independent of that header.
 type Facade struct {
 	CHeader, CSource []byte
 	Functions        []string
@@ -60,6 +64,7 @@ func Generate(header string, functions []Function) (*Facade, error) {
 		seen[f.Symbol], native[f.Name] = true, true
 	}
 	var declarations, definitions bytes.Buffer
+	needsHeader := false
 	result := &Facade{}
 	for _, f := range functions {
 		if native[f.Symbol] {
@@ -70,6 +75,9 @@ func Generate(header string, functions []Function) (*Facade, error) {
 		r, err := transport(f.Result, true)
 		if err != nil {
 			return nil, fmt.Errorf("cunion: %s result: %w", f.Symbol, err)
+		}
+		if f.Result.Record != "" {
+			needsHeader = true
 		}
 		nativeResult := r
 		if f.Result.Union != "" {
@@ -82,6 +90,10 @@ func Generate(header string, functions []Function) (*Facade, error) {
 			if err != nil {
 				return nil, fmt.Errorf("cunion: %s argument %d: %w", f.Symbol, i+1, err)
 			}
+			if v.Record != "" {
+				needsHeader = true
+				writeRecordCheck(&checks, v.Record)
+			}
 			params = append(params, fmt.Sprintf("%s %sa%d", kind, prefix, i))
 			if v.Union == "" {
 				types = append(types, kind)
@@ -92,6 +104,9 @@ func Generate(header string, functions []Function) (*Facade, error) {
 			args = append(args, fmt.Sprintf("%sv%d", prefix, i))
 			writeChecks(&checks, v, kind)
 			fmt.Fprintf(&body, "%s %sv%d = {0};\n%sv%d.%s = %sa%d;\n", v.Union, prefix, i, prefix, i, v.Member, prefix, i)
+		}
+		if f.Result.Record != "" {
+			writeRecordCheck(&checks, f.Result.Record)
 		}
 		if f.Result.Union != "" {
 			writeChecks(&checks, f.Result, r)
@@ -123,8 +138,12 @@ func Generate(header string, functions []Function) (*Facade, error) {
 	digest := sha256.Sum256(declarations.Bytes())
 	guard := fmt.Sprintf("DYLIB_GO_CUNION_%X", digest[:8])
 	api := "#if defined(_WIN32)\n#define DYLIB_GO_CUNION_API __declspec(dllexport) __cdecl\n#else\n#define DYLIB_GO_CUNION_API __attribute__((visibility(\"default\")))\n#endif\n"
-	result.CHeader = []byte(fmt.Sprintf("#ifndef %s\n#define %s\n#include <stdint.h>\n#include <stdbool.h>\n%s#ifdef __cplusplus\nextern \"C\" {\n#endif\n%s#ifdef __cplusplus\n}\n#endif\n#endif\n", guard, guard, api, declarations.String()))
-	result.CSource = []byte(fmt.Sprintf("#include \"%s\"\n%s\n%s", header, result.CHeader, definitions.String()))
+	headerInclude, sourceInclude := "", fmt.Sprintf("#include \"%s\"\n", header)
+	if needsHeader {
+		headerInclude, sourceInclude = sourceInclude, ""
+	}
+	result.CHeader = []byte(fmt.Sprintf("#ifndef %s\n#define %s\n#include <stdint.h>\n#include <stdbool.h>\n%s%s#ifdef __cplusplus\nextern \"C\" {\n#endif\n%s#ifdef __cplusplus\n}\n#endif\n#endif\n", guard, guard, headerInclude, api, declarations.String()))
+	result.CSource = []byte(fmt.Sprintf("%s%s\n%s", sourceInclude, result.CHeader, definitions.String()))
 	if len(result.CSource) > 1<<20 {
 		return nil, fmt.Errorf("cunion: generated source exceeds 1 MiB")
 	}
@@ -132,14 +151,27 @@ func Generate(header string, functions []Function) (*Facade, error) {
 }
 
 func writeChecks(out *bytes.Buffer, v Value, kind string) {
-	fmt.Fprintf(out, "_Static_assert(__builtin_classify_type(*(%s *)0) == 13, \"cunion: selected type must be a union\");\n_Static_assert(_Generic(((%s *)0)->%s, %s: 1, default: 0), \"cunion: incompatible union member transport\");\n_Static_assert(sizeof(((%s *)0)->%s) == sizeof(%s), \"cunion: member requires full scalar storage\");\n", v.Union, v.Union, v.Member, kind, v.Union, v.Member, kind)
+	fmt.Fprintf(out, "_Static_assert(__builtin_classify_type(*(%s *)0) == 13, \"cunion: selected type must be a union\");\n_Static_assert(_Generic(((%s *)0)->%s, %s: 1, default: 0), \"cunion: incompatible union member transport\");\n_Static_assert(sizeof(((%s *)0)->%s) == sizeof(%s), \"cunion: member requires full member storage\");\n", v.Union, v.Union, v.Member, kind, v.Union, v.Member, kind)
+}
+
+func writeRecordCheck(out *bytes.Buffer, name string) {
+	fmt.Fprintf(out, "_Static_assert(__builtin_classify_type(*(%s *)0) == 12, \"cunion: record transport must name a struct\");\n", name)
 }
 
 func transport(v Value, result bool) (string, error) {
+	if v.Type == abi.Struct {
+		if !recordName(v.Record) {
+			return "", fmt.Errorf("struct transport requires a C record name")
+		}
+	} else if v.Record != "" {
+		return "", fmt.Errorf("record name requires a struct transport")
+	}
 	if v.Union == "" && v.Member != "" || v.Union != "" && (!unionName(v.Union) || !identifier(v.Member) || v.Type == abi.Void) {
 		return "", fmt.Errorf("invalid union/member selection")
 	}
 	switch v.Type {
+	case abi.Struct:
+		return v.Record, nil
 	case abi.Void:
 		if result {
 			return "void", nil
@@ -169,10 +201,11 @@ func transport(v Value, result bool) (string, error) {
 	case abi.Pointer:
 		return "void *", nil
 	}
-	return "", fmt.Errorf("expected a scalar/native-address transport")
+	return "", fmt.Errorf("expected a scalar/native-address or named struct transport")
 }
 
-func unionName(s string) bool { return identifier(strings.TrimPrefix(s, "union ")) }
+func recordName(s string) bool { return identifier(strings.TrimPrefix(s, "struct ")) }
+func unionName(s string) bool  { return identifier(strings.TrimPrefix(s, "union ")) }
 func identifier(s string) bool {
 	if s == "" || len(s) > 256 {
 		return false
