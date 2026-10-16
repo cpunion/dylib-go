@@ -1,7 +1,8 @@
 # Raw frame registration and native exceptions
 
 `Options{RegisterUnwind: true}` enables raw C frame registration on Windows
-amd64/arm64, macOS amd64/arm64 and Linux amd64/arm64/386. Compile C fixtures
+amd64/arm64, macOS amd64/arm64 and Linux amd64/arm64/386. The documented Linux/macOS DWARF paths also support
+native C++ exceptions. Compile C fixtures
 with `-funwind-tables`
 so the compiler emits `.pdata/.xdata` or `.eh_frame`. Complete OS libraries
 continue to use their OS-managed unwind registration.
@@ -11,7 +12,7 @@ continue to use their OS-managed unwind registration.
 | Windows amd64 | 12-byte `.pdata` records and version 1 `.xdata`, including the chained C records below, without language handlers |
 | Windows arm64 | 8-byte `.pdata`; packed function/fragment records, or version 0 full/extended `.xdata`, without language handlers |
 | Linux amd64/arm64/386 | ELF `.eh_frame` and `.eh_frame.*`, DWARF32 CIE versions 1/3, C and the C++ personality/LSDA subset below; libgcc_s required |
-| macOS amd64/arm64 | Mach-O `__eh_frame`, PC-relative DWARF32 C records, individually registered with system libunwind |
+| macOS amd64/arm64 | Mach-O `__eh_frame`, PC-relative DWARF32 C/C++ records with the personality/LSDA subset below, individually registered with system libunwind |
 | Windows 386 | Raw registration remains pending; requesting it for a raw image returns an error |
 
 ## Windows
@@ -128,8 +129,11 @@ The Mach-O path retains `__eh_frame` records and reuses the Go DWARF validator.
 It requires PC-relative FDE addressing. Explicit SUBTRACTOR/UNSIGNED pairs use
 the normal linker. Some x86-64 assembler records have no relocations: before
 W^X protection, Go maps their original text addresses to the image's section
-layout and rewrites the relative field in private native storage. Staged input
-bytes remain intact for retries.
+layout and rewrites the relative field in private native storage. The same
+rebasing maps implicit FDE LSDA references to their original read-only
+`__gcc_except_tab` section. References must identify exactly one retained
+section; null LSDA values remain null. Explicit compiler relocations are not
+rebased twice. Staged input bytes remain intact for retries.
 
 Each FDE is registered separately with `__register_frame` from a retained
 `/usr/lib/system/libunwind.dylib` handle. macOS does not receive libgcc's
@@ -143,8 +147,26 @@ compact-only functions remain pending; ordinary macOS C output can omit
 DWARF when compact encoding suffices. The test fixture adds a harmless
 `.cfi_escape 0x00` no-op to force real DWARF output on older compilers while
 preserving the C stack layout. Consumers must arrange DWARF for the raw frames
-they need to traverse. C++ personality/LSDA, signal frames, expression CFI,
-and arm64e pointer-authentication variants remain outside this subset.
+they need to traverse. The C++ tests use `-femit-dwarf-unwind=always` and a CFI
+no-op in each traversed frame to force DWARF on both targets, including older
+Apple ARM64 compilers that still emit compact-only output with that flag.
+Signal frames, expression CFI and arm64e authentication remain unsupported.
+
+C++ uses the same bounded `z`/`P`/`L`/`R` parser as Linux, with PC-relative FDE
+ranges, read-only backed `__gcc_except_tab` LSDA storage and image-owned
+personality indirection cells/GOT slots. ARM64 `POINTER_TO_GOT` replaces the
+assembler's placeholder word; that relocation has no embedded addend.
+Registration retains the system libunwind provider; explicitly loaded native
+libraries retain compatible libc++/libc++abi dependencies. Personality/type
+semantics remain the native runtime's responsibility.
+
+Both macOS architectures execute object, reversed-object and archive C++
+throw/catch/rethrow, int/double matching, RAII counts, shared-library throws,
+missing-root retry, retained calls during retirement and FDE lookup before/after
+close at `-O0`/`-O2`, with Go and llgo. Pure Go tests relocate real output for
+both architectures, repeat from unchanged staged bytes, and reject invalid
+LSDA storage and personality pointer cells. As on Linux, exceptions cannot
+cross Go frames or callbacks. Compact-only functions need additional work.
 
 Existing macOS amd64/arm64 Go and llgo jobs execute object/archive traversal,
 FDE lookup before/after close, default loading, validation retry and failed
@@ -155,14 +177,14 @@ that no dynamic FDE is registered rather than requiring traversal to fail.
 
 ## Defaults and scope
 
-The option defaults to false. Default loading discards COFF, ELF and Mach-O DWARF unwind
-sections and their relocations/dependencies as before. With registration enabled,
-unsupported versions, unsupported language handlers, chained records, CIE
-augmentations and invalid metadata fail before initialization. Leaf functions
+The option defaults to false. Default loading discards COFF, ELF and Mach-O DWARF/LSDA
+sections and their relocation dependencies. With registration enabled, unsupported
+CIE/CFI encodings, platform table forms and invalid referenced storage fail
+before initialization. Leaf functions
 can legitimately have no table entries.
 
-This extension supports native C frame lookup/stack traversal and the Linux
-C++ subset above. Windows/macOS language handlers, general RTTI/runtime
+This extension supports native C frame lookup/stack traversal and the Linux/macOS
+C++ DWARF subsets above. Windows language handlers, general RTTI/runtime
 adapters, Windows 386 SEH, other POSIX unwind
 providers, and Mach-O compact unwind require further work. Native exceptions must remain
 within compatible native runtime boundaries; callers must retire raw native
@@ -197,4 +219,4 @@ Linux references: [GCC frame registration](https://github.com/gcc-mirror/gcc/blo
 
 C++ metadata references: [LSB `.eh_frame` augmentations](https://refspecs.linuxfoundation.org/LSB_5.0.0/LSB-Core-generic/LSB-Core-generic/ehframechpt.html), [GCC encoded pointers](https://github.com/gcc-mirror/gcc/blob/releases/gcc-14.2.0/libgcc/unwind-pe.h), and [Itanium exception ABI](https://itanium-cxx-abi.github.io/cxx-abi/abi-eh.html).
 
-macOS references: [Apple unwind interface](https://github.com/apple-oss-distributions/libunwind/blob/main/libunwind/include/unwind.h), [LLVM FDE registration](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/libunwind/src/libunwind.cpp), and [LLVM Mach-O definitions](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/include/llvm/BinaryFormat/MachO.h).
+macOS references: [Apple unwind interface](https://github.com/apple-oss-distributions/libunwind/blob/main/libunwind/include/unwind.h), [LLVM FDE registration](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/libunwind/src/libunwind.cpp), and [LLVM Mach-O definitions](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/include/llvm/BinaryFormat/MachO.h), [Apple FDE LSDA parsing](https://github.com/apple-oss-distributions/libunwind/blob/main/libunwind/src/DwarfParser.hpp), and [LLVM ARM64 relocation addends](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/lld/MachO/Arch/ARM64Common.cpp).

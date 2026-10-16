@@ -15,7 +15,7 @@ func (im *image) registerMachOUnwind() error {
 			if s.exec || s.write {
 				return fmt.Errorf("%s: invalid Mach-O frame storage", o.info.Name)
 			}
-			fdes, err := im.validateDWARFFrames(im.mem[s.offset:s.offset+s.size], s.offset, true, nil)
+			fdes, err := im.validateFrameRecords(im.mem[s.offset:s.offset+s.size], s.offset, framePolicy{pcRelative: true, language: true})
 			if err != nil {
 				return fmt.Errorf("%s: __eh_frame: %w", o.info.Name, err)
 			}
@@ -28,7 +28,7 @@ func (im *image) registerMachOUnwind() error {
 	return im.registerDwarfFrames("/usr/lib/system/libunwind.dylib", frames)
 }
 
-// Mach-O assemblers may resolve FDE PC references inside the input object,
+// Mach-O assemblers may resolve FDE PC/LSDA references inside the input object,
 // without emitting relocations (notably x86-64). Separate image pages change
 // the distance between text and metadata; rebase only these implicit fields.
 func (im *image) rebaseMachODWARF() error {
@@ -46,35 +46,55 @@ func (im *image) rebaseMachODWARF() error {
 					relocated[r.offset] = true
 				}
 			}
-			fixup := func(offset uint64, encoding byte) error {
+			fixup := func(offset uint64, encoding byte, lsda bool) error {
 				if relocated[offset] {
 					return nil
+				}
+				if encoding&0xf0 != 0x10 {
+					return fmt.Errorf("implicit Mach-O frame references require direct PC-relative addressing")
 				}
 				reader := frameReader{b: im.mem[s.offset+offset : s.offset+s.size]}
 				value, err := reader.encoded(encoding, im.pointerSize)
 				if err != nil {
 					return err
 				}
+				if lsda && value == 0 {
+					return nil
+				}
 				original := int64(s.original+offset) + value
-				for _, text := range o.sections {
-					if text == nil || !text.exec || original < 0 || uint64(original) < text.original || uint64(original)-text.original >= text.size {
+				var selected *section
+				for _, target := range o.sections {
+					if target == nil || original < 0 || uint64(original) < target.original || uint64(original)-target.original >= target.size {
 						continue
 					}
-					delta := int64(text.offset+uint64(original)-text.original) - int64(s.offset+offset)
-					width, err := frameEncodingSize(encoding, im.pointerSize)
-					if err != nil {
-						return err
+					if lsda && (!lsdaSection(o.info.Format, target.name) || target.exec || target.write) || !lsda && !target.exec {
+						continue
 					}
-					b := im.mem[s.offset+offset : s.offset+offset+uint64(width)]
-					if width == 8 {
-						binary.LittleEndian.PutUint64(b, uint64(delta))
-						return nil
+					if selected != nil {
+						return fmt.Errorf("ambiguous implicit Mach-O frame reference")
 					}
-					return signed32(b, delta)
+					selected = target
 				}
-				return fmt.Errorf("implicit Mach-O FDE address is outside input text")
+				if selected == nil {
+					return fmt.Errorf("implicit Mach-O frame reference is outside input text/LSDA")
+				}
+				delta := int64(selected.offset+uint64(original)-selected.original) - int64(s.offset+offset)
+				width, err := frameEncodingSize(encoding, im.pointerSize)
+				if err != nil {
+					return err
+				}
+				b := im.mem[s.offset+offset : s.offset+offset+uint64(width)]
+				if width == 8 {
+					binary.LittleEndian.PutUint64(b, uint64(delta))
+					return nil
+				}
+				return signed32(b, delta)
 			}
-			if _, err := im.validateDWARFFrames(im.mem[s.offset:s.offset+s.size], s.offset, true, fixup); err != nil {
+			policy := framePolicy{pcRelative: true, language: true,
+				fixup:     func(offset uint64, encoding byte) error { return fixup(offset, encoding, false) },
+				lsdaFixup: func(offset uint64, encoding byte) error { return fixup(offset, encoding, true) },
+			}
+			if _, err := im.validateFrameRecords(im.mem[s.offset:s.offset+s.size], s.offset, policy); err != nil {
 				return fmt.Errorf("%s: __eh_frame: %w", o.info.Name, err)
 			}
 		}

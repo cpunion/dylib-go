@@ -1,13 +1,17 @@
+#include "unwind_cxx_dwarf.h"
+
 extern "C" int cxx_throw(int, int);
 extern "C" int cxx_host_throw(int, int);
 extern "C" void cxx_event(int);
 extern "C" void cxx_save(void *);
 struct OuterGuard { ~OuterGuard() { cxx_event(10); } };
 static __attribute__((noinline)) int relay(int a, int b) {
+    DYLIB_CXX_DWARF();
     try { return cxx_throw(a, b); }
     catch (int value) { cxx_event(100); throw; }
 }
 extern "C" int cxx_catch(int a, int b) {
+    DYLIB_CXX_DWARF();
     cxx_save(reinterpret_cast<void *>(&cxx_catch));
     OuterGuard guard;
     try {

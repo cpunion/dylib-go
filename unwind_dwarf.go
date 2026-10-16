@@ -40,9 +40,10 @@ type framePolicy struct {
 	pcRelative bool
 	language   bool
 	fixup      func(uint64, byte) error
+	lsdaFixup  func(uint64, byte) error
 }
 
-// Keep the existing C-only contract for Mach-O and its implicit-reference fixups.
+// Keep a C-only validator for metadata callers that reject language augmentation.
 func (im *image) validateDWARFFrames(b []byte, imageOffset uint64, pcRelative bool, fixup func(uint64, byte) error) ([]uintptr, error) {
 	return im.validateFrameRecords(b, imageOffset, framePolicy{pcRelative: pcRelative, fixup: fixup})
 }
@@ -197,6 +198,11 @@ func (im *image) validateFrameRecords(b []byte, imageOffset uint64, policy frame
 				dataOffset := imageOffset + uint64(end-len(r.b))
 				r.b = r.b[int(n):]
 				if cie.lsda != 0xff {
+					if policy.lsdaFixup != nil {
+						if err := policy.lsdaFixup(dataOffset-imageOffset, cie.lsda); err != nil {
+							return nil, err
+						}
+					}
 					pointer, err := im.framePointer(&data, cie.lsda, dataOffset)
 					if err != nil {
 						return nil, err

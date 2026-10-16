@@ -5,8 +5,8 @@ import (
 	"fmt"
 )
 
-// Decode fixed absolute/PC-relative personality and LSDA pointers. libgcc treats
-// encoded zero as null before applying the base or following an indirection.
+// Decode fixed absolute/PC-relative personality and LSDA pointers. libgcc and
+// Apple's FDE parser treat encoded zero LSDA as null before bases/indirection.
 // Only image-owned data/GOT cells are dereferenced; the final personality may
 // belong to an explicitly retained native runtime provider.
 func (im *image) framePointer(r *frameReader, encoding byte, imageOffset uint64) (uint64, error) {
@@ -45,10 +45,14 @@ func (im *image) frameLSDA(pointer uint64) bool {
 	offset := pointer - uint64(im.base)
 	for _, object := range im.objects {
 		for _, section := range object.sections {
-			if section != nil && elfLSDASection(section.name) && !section.exec && !section.write && uint64(len(section.data)) == section.size && offset >= section.offset && offset-section.offset < section.size {
+			if section != nil && lsdaSection(object.info.Format, section.name) && !section.exec && !section.write && uint64(len(section.data)) == section.size && offset >= section.offset && offset-section.offset < section.size {
 				return true
 			}
 		}
 	}
 	return false
+}
+
+func lsdaSection(format, name string) bool {
+	return format == "ELF" && elfLSDASection(name) || format == "Mach-O" && name == "__gcc_except_tab"
 }

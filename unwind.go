@@ -33,7 +33,7 @@ func coffPdataSection(s *section) bool {
 
 func discardUnwind(o *object) {
 	if o != nil && o.info.Format == "Mach-O" {
-		discardUnwindSections(o, func(s *section) bool { return s.name == "__eh_frame" })
+		discardUnwindSections(o, func(s *section) bool { return s.name == "__eh_frame" || lsdaSection(o.info.Format, s.name) })
 		return
 	}
 	if o != nil && o.info.Format == "ELF" {

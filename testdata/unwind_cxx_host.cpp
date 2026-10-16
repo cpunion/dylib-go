@@ -1,7 +1,9 @@
 #include <unwind.h>
 
+#if !defined(__APPLE__)
 struct dwarf_eh_bases { void *text, *data, *function; };
 extern "C" const void *_Unwind_Find_FDE(const void *, dwarf_eh_bases *);
+#endif
 static void *saved;
 static int events;
 extern "C" void cxx_event(int value) { events += value; }
