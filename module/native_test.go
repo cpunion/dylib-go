@@ -22,10 +22,14 @@ import (
 const exportMacro = `
 #if defined(_WIN32)
 #define API __declspec(dllexport)
+#define IMPORT __declspec(dllimport)
 #else
 #define API __attribute__((visibility("default")))
+#define IMPORT
 #endif
 `
+
+const consumerCode = `IMPORT extern int remote_add(int,int); IMPORT extern int remote_bias; API int module_run(int a,int b){return remote_add(a,b)+remote_bias;}`
 
 func nativeTool(t *testing.T, name string) string {
 	t.Helper()
@@ -126,7 +130,7 @@ func TestNativeModuleGraphCalls(t *testing.T) {
 						t.Fatalf("unused archive member: %v\n%s", err, data)
 					}
 				}
-				consumer := produce(t, dir, "consumer", `extern int remote_add(int,int); extern int remote_bias; API int module_run(int a,int b){return remote_add(a,b)+remote_bias;}`, "object", optimization)
+				consumer := produce(t, dir, "consumer", consumerCode, "object", optimization)
 				manifest := example.Manifest(filepath.Base(provider), filepath.Base(consumer))
 				second := manifest.Modules[0]
 				second.Name = "second"

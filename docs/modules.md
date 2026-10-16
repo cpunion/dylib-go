@@ -53,6 +53,11 @@ rebasing their `LibraryPaths`; file paths alone use the manifest base directory.
 Absolute input paths remain absolute. Keep the manifest/options stable during
 `Open`.
 
+Windows consumer declarations use `__declspec(dllimport)` for retained imports,
+including data. The core binds these through session-owned IAT slots, allowing
+providers outside the reach of a direct PC-relative data reference. The same
+declaration works with object, archive and DLL providers.
+
 ## Lifetime and failure
 
 The graph owns its sessions. Borrow them for `Resolve`, `Bind`, or application
