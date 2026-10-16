@@ -7,8 +7,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"unsafe"
 
 	examplecall "github.com/cpunion/dylib-go/examples/call"
+	"github.com/cpunion/dylib-go/internal/native"
 )
 
 func testNativeCXXExceptions(t *testing.T) {
@@ -89,6 +91,13 @@ func testNativeCXXExceptions(t *testing.T) {
 									}
 								}
 								t.Logf("CXX diagnostic GOT base=%x data=%x personality=%x int=%x double=%x", im.base+uintptr(im.gotStart), im.mem[im.gotStart:im.gotNext], session.external("__gxx_personality_v0"), session.external("_ZTIi"), session.external("_ZTId"))
+								for _, name := range []string{"unw_set_reg", "_Unwind_SetIP", "_Unwind_SetGR"} {
+									address := native.Lookup(im.unwind.provider, name)
+									if address != 0 {
+										length := min(uintptr(2048), 4096-(address&4095))
+										t.Logf("CXX diagnostic system %s base=%x data=%x", name, address, unsafe.Slice((*byte)(unsafe.Pointer(address)), int(length)))
+									}
+								}
 							}
 							call(t, observer, "cxx_events", 1, 0, 0)
 							call(t, session, "cxx_catch", test.a, test.b, 42)
