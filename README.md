@@ -191,6 +191,8 @@ The optional [`module`](module) package loads versioned dependency manifests.
 It validates provider versions and declared exports, loads selected dependency
 graphs, retains imported code/data, and closes consumers before providers. See
 the [executed manifest](examples/modules/manifest.go) and [module guide](docs/modules.md).
+`module.Manager` supports [replacement with explicit state migration](docs/replacement.md),
+retaining old scopes and code leases while new calls use the replacement.
 
 ## Dynamic signatures
 
@@ -736,7 +738,7 @@ The former experimental `BindInt32`, `CallInt32`, and `Int32Func` APIs have been
 | `abi/signature/` | Pure Go declaration, typed-invocation, and typed literal parsing |
 | `compiler/clang/` | Optional validated C prototypes, dynamic descriptors and direct llgo adapter generation |
 | `compiler/cxx/` | Go-rendered C++17 class facades with fixed C entry points and exception status codes |
-| `module/` | Go-only versioned dependency manifests and retained session graphs |
+| `module/` | Go-only versioned dependency graphs, explicit migration and managed replacement |
 | `internal/native/` | OS memory, instruction cache, and shared-library operations |
 | `examples/call/` | Fixed-signature adapter used only by the CLI and tests |
 | `examples/cgo/`, `examples/llgo/`, `examples/bind/`, `examples/callback/` | Executable README examples |

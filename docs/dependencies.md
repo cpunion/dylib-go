@@ -38,9 +38,11 @@ close releases each acquired lease once.
 The core API uses Go ownership and does not require libffi. Call signatures,
 mutable native data synchronization, retained callback registrations, TLS and
 language runtime requirements remain caller responsibilities. Dependency
-discovery, version negotiation and module replacement are separate work. The
+discovery and version negotiation are separate work. The
 optional [`module` package](modules.md) adds explicit manifests, exact declared
 versions, graph planning and ordered cleanup using this same ownership mechanism.
+Its [manager](replacement.md) supports explicit state migration and replacement
+while retaining old scopes and code leases.
 
 The [library example](../examples/dependencies/main.go) imports a C function and
 global variable from a provider object. Run it with
