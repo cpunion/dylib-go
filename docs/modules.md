@@ -83,5 +83,6 @@ preflight, and concurrent graph close while an external observer lease remains
 callable. These execute on all eight Go targets and six llgo targets. No new
 execution platform or object format is introduced by this package.
 
-Filesystem/provider discovery, version negotiation, module replacement and state
-migration remain separate work.
+`module.Manager` adds [explicit replacement and state migration](replacement.md),
+preserving old scopes and code leases until retirement. Filesystem/provider
+discovery and version negotiation remain separate work.
