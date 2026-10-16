@@ -249,7 +249,7 @@ func main() {
 
 ```
 
-Supported scalar types are signed/unsigned 8/16/32/64-bit integers, C `bool`, `f32/f64`, and pointers. Ordinary C structs support arguments, results, nesting, pointer fields, and fixed-length array members through `abi.TypeDesc`. Use `abi.StructValue` for fields, `abi.ArrayValue` for array elements, `abi.AddressOf` for temporary native copies, and `abi.Ptr` for caller-managed native addresses. Temporary mutations are copied back; native code must not retain those pointers. Layout and register classification come from libffi. Calls allow `void` results and allocate argument storage for the concrete signature length. Native ABI limits and available memory still bound call size. The dynamic backend does not support unions, packed/aligned structs, bitfields, C++ `this` adjustment, or Swift calling conventions. Explicit packed/aligned records and bitfields can use the generated C bridges described below.
+Supported scalar types are signed/unsigned 8/16/32/64-bit integers, C `bool`, `f32/f64`, and pointers. Ordinary C structs support arguments, results, nesting, pointer fields, and fixed-length array members through `abi.TypeDesc`. Use `abi.StructValue` for fields, `abi.ArrayValue` for array elements, `abi.AddressOf` for temporary native copies, and `abi.Ptr` for caller-managed native addresses. Temporary mutations are copied back; native code must not retain those pointers. Layout and register classification come from libffi. Calls allow `void` results and allocate argument storage for the concrete signature length. Native ABI limits and available memory still bound call size. The dynamic backend does not support unions, packed/aligned structs, bitfields, C++ `this` adjustment, or Swift calling conventions. Explicit packed/aligned records and bitfields can use the generated C bridges described below; selected union member views use `compiler/cunion`.
 
 Arrays use `TypeDesc{Type: abi.Array, Len: N, Elem: &element}` and may appear inside structs or behind pointers, including multidimensional arrays and arrays of structs or pointers. C array parameters decay to pointers; bare array arguments/results are rejected. The [array library example](examples/arrays/main.go) constructs an array member and calls a C function; `examples/run.sh go library` and `examples/run.sh llgo library` execute it in CI. See [array types and limits](docs/arrays.md).
 
@@ -553,6 +553,38 @@ Clang `-O0` and `-O2` builds. See the [direct binding contracts](docs/clang.md#d
 
 This complements [llcppg](https://github.com/goplus/llcppg)'s static bindings.
 
+## C union member facades
+
+`compiler/cunion` generates C17 exports for explicitly selected scalar or native-pointer members of union arguments/results. The C compiler handles the native union ABI; the exported facade works with generated cgo/direct llgo bindings or dynamic `Bind`. The selected result member is a caller contract. See [union interfaces and limits](docs/unions.md).
+
+<!-- embedme examples/cunion/manifest.go -->
+
+```go
+// Package cunion demonstrates selected C union members through compiled facades.
+package cunion
+
+import (
+	"github.com/cpunion/dylib-go/abi"
+	"github.com/cpunion/dylib-go/compiler/cunion"
+)
+
+// Functions selects active members; the C compiler handles the actual union ABI.
+func Functions() []cunion.Function {
+	integer := cunion.Value{Type: abi.I32, Union: "union Number", Member: "i"}
+	double := cunion.Value{Type: abi.F64, Union: "union Number", Member: "d"}
+	return []cunion.Function{
+		{Name: "number_add", Symbol: "union_add", Args: []cunion.Value{integer, integer}, Result: integer},
+		{Name: "target", Symbol: "union_double", Args: []cunion.Value{double}, Result: double},
+	}
+}
+
+// Generate renders the selected members as C17 exports.
+func Generate(header string) (*cunion.Facade, error) {
+	return cunion.Generate(header, Functions())
+}
+
+```
+
 ## Dynamic C callbacks
 
 `abi.NewCallback` turns an explicit fixed C signature and a Go handler into a native function pointer through libffi. It supports the same scalars, pointers, and ordinary struct values as dynamic calls. This complete [callback example](examples/callback/main.go) captures a Go value, passes its entry to a C function, and prints 42. CI executes it with Go on eight targets and llgo on six targets:
@@ -701,6 +733,7 @@ Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cde
 | Language / interface | Calling convention / ABI | Current support | Verified coverage / limits |
 | --- | --- | --- | --- |
 | C | Host default C ABI | Supported subset | Eight Go targets; six llgo targets. Scalars, pointers, ordinary structs, struct pointers and concrete variadic shapes; explicit packed/aligned records and bitfields through compiled C bridges |
+| C union values | Explicit scalar/native-pointer member facades | Supported subset | `compiler/cunion` + matching C17 compiler; objects, archives and libraries; generated cgo/direct llgo or dynamic binding |
 | C with x86 conventions | Windows 386 stdcall / fastcall | Supported subset | Explicit `Convention` or generated `CgoSource`; fixed calls and native function pointers, exact decorated symbols; tested with C fixtures |
 | C callbacks into Go / llgo | Fixed host C ABI; Windows 386 stdcall / fastcall | Supported subset | Scalars, pointers, ordinary struct values, captures, explicit leases, and C-created threads; no variadic callbacks |
 | C with other conventions | vectorcall and other non-default ABIs | Not implemented | Use a compiled adapter matching the convention |

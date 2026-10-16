@@ -1,0 +1,121 @@
+//go:build libffi && cgo && (linux || darwin || windows)
+
+package cunion_test
+
+import (
+	"errors"
+	dylib "github.com/cpunion/dylib-go"
+	"github.com/cpunion/dylib-go/abi"
+	"math"
+	"strings"
+	"testing"
+	"time"
+)
+
+func TestNativeDynamicUnionFacade(t *testing.T) {
+	facade, src, metadata := render(t)
+	for _, opt := range []string{"-O0", "-O2"} {
+		t.Run(opt, func(t *testing.T) {
+			for kind, path := range producer(t, src, opt) {
+				t.Run(kind, func(t *testing.T) {
+					session := dylib.New(dylib.Options{})
+					t.Cleanup(func() {
+						if err := session.Close(); err != nil {
+							t.Error(err)
+						}
+					})
+					for _, file := range strings.Split(path, "\n") {
+						if err := session.Load(file); err != nil {
+							t.Fatal(err)
+						}
+					}
+					entries := map[string]*dylib.Function{}
+					for _, name := range facade.Functions {
+						d, err := metadata.ForHost(name)
+						if err != nil {
+							t.Fatal(err)
+						}
+						entry, err := session.Bind(d.Symbol, d.Signature)
+						if err != nil {
+							t.Fatal(err)
+						}
+						entries[name] = entry
+					}
+					call := func(name string, want abi.Value, args ...abi.Value) {
+						t.Helper()
+						got, err := entries[name].Call(args...)
+						if err != nil || got != want {
+							t.Fatalf("%s: %v, %v; want %v", name, got, err, want)
+						}
+					}
+					call("union_add", abi.Int32(42), abi.Int32(20), abi.Int32(22))
+					for _, test := range []struct {
+						name  string
+						value abi.Value
+					}{
+						{"i8", abi.Int8(-128)}, {"u8", abi.Uint8(255)}, {"i16", abi.Int16(-32768)}, {"u16", abi.Uint16(65535)}, {"i32", abi.Int32(-2147483648)}, {"u32", abi.Uint32(4294967295)}, {"i64", abi.Int64(-9223372036854775808)}, {"u64", abi.Uint64(18446744073709551615)}, {"f32", abi.Float32(-42.5)}, {"double", abi.Float64(42.5)}, {"double", abi.Float64(math.Float64frombits(0x7ff8000000000042))}, {"double", abi.Float64(math.Copysign(0, -1))}, {"bool", abi.Boolean(true)}, {"bool", abi.Boolean(false)}, {"pointer", abi.Ptr(0)},
+					} {
+						t.Run(test.name, func(t *testing.T) { call("union_"+test.name, test.value, test.value) })
+					}
+					call("union_small", abi.Float32(42), abi.Float32(20), abi.Float32(22))
+					call("union_large", abi.Int32(42), abi.Int32(20), abi.Int32(22))
+					call("union_packed", abi.Float64(42), abi.Float64(20.5), abi.Float64(21.5))
+					call("union_aligned", abi.Int32(42), abi.Int32(20), abi.Int32(22))
+					call("union_store", abi.Value{Type: abi.Void}, abi.Int32(42))
+					call("union_stored", abi.Int32(42))
+					call("union_read", abi.Int32(42), abi.Int32(42))
+					address, err := entries["union_address"].Call()
+					if err != nil || address.Type != abi.Pointer || address.Bits == 0 {
+						t.Fatal(address, err)
+					}
+					call("union_pointer", address, address)
+					call("union_pointer_read", abi.Int32(42), address)
+					// A pointer projection remains borrowed from this provider. A retained code
+					// entry keeps the native global alive while the session retires.
+					lease, err := entries["union_pointer_read"].Acquire()
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					t.Cleanup(func() { lease.Close() })
+					closed := make(chan error, 1)
+					go func() { closed <- session.Close() }()
+					deadline := time.Now().Add(5 * time.Second)
+					for {
+						if _, err := session.Resolve("union_pointer_read"); errors.Is(err, dylib.ErrClosed) {
+							break
+						}
+						if time.Now().After(deadline) {
+							t.Fatal("provider did not retire")
+						}
+						time.Sleep(time.Millisecond)
+					}
+					select {
+					case err := <-closed:
+						t.Fatal("pointer provider closed before lease release", err)
+					default:
+					}
+					got, err := lease.Call(address)
+					if err != nil || got != abi.Int32(42) {
+						t.Fatal("retiring pointer view", got, err)
+					}
+					if _, err := entries["union_pointer_read"].Call(address); !errors.Is(err, dylib.ErrClosed) {
+						t.Fatal("closed provider", err)
+					}
+					if err := lease.Close(); err != nil {
+						t.Fatal(err)
+					}
+					select {
+					case err := <-closed:
+						if err != nil {
+							t.Fatal(err)
+						}
+					case <-time.After(5 * time.Second):
+						t.Fatal("provider did not close")
+					}
+
+				})
+			}
+		})
+	}
+}
