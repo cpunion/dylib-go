@@ -40,6 +40,13 @@ func testNativeCXXExceptions(t *testing.T) {
 			for _, kind := range []string{"throw", "catch"} {
 				path := filepath.Join(dir, kind+".o")
 				command(t, cpp, append(append([]string(nil), flags...), "-c", "testdata/unwind_cxx_"+kind+".cpp", "-o", path)...)
+				if runtime.GOOS == "darwin" {
+					data, err := os.ReadFile(path)
+					if err != nil {
+						t.Fatal(err)
+					}
+					t.Logf("CXX diagnostic object %s: %x", kind, data)
+				}
 				objects = append(objects, path)
 			}
 			observer := New(Options{})
@@ -69,6 +76,20 @@ func testNativeCXXExceptions(t *testing.T) {
 						{"integer_rethrow", 20, 22, 111}, {"double", -20, 62, 11}, {"library_throw", 99, 0, 10},
 					} {
 						t.Run(test.name, func(t *testing.T) {
+							if runtime.GOOS == "darwin" && session.image == nil {
+								if err := session.Link("cxx_catch"); err != nil {
+									t.Fatal(err)
+								}
+								im := session.image
+								for _, object := range im.objects {
+									for _, section := range object.sections {
+										if section != nil {
+											t.Logf("CXX diagnostic section %s base=%x original=%x size=%x data=%x", section.name, im.base+uintptr(section.offset), section.original, section.size, im.mem[section.offset:section.offset+section.size])
+										}
+									}
+								}
+								t.Logf("CXX diagnostic GOT base=%x data=%x personality=%x int=%x double=%x", im.base+uintptr(im.gotStart), im.mem[im.gotStart:im.gotNext], session.external("__gxx_personality_v0"), session.external("_ZTIi"), session.external("_ZTId"))
+							}
 							call(t, observer, "cxx_events", 1, 0, 0)
 							call(t, session, "cxx_catch", test.a, test.b, 42)
 							call(t, observer, "cxx_events", 1, 0, test.events)
