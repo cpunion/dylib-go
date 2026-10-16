@@ -1,4 +1,4 @@
-# Raw C frame registration
+# Raw frame registration and native exceptions
 
 `Options{RegisterUnwind: true}` enables raw C frame registration on Windows
 amd64/arm64, macOS amd64/arm64 and Linux amd64/arm64/386. Compile C fixtures
@@ -10,7 +10,7 @@ continue to use their OS-managed unwind registration.
 | --- | --- |
 | Windows amd64 | 12-byte `.pdata` records and version 1 `.xdata`, including the chained C records below, without language handlers |
 | Windows arm64 | 8-byte `.pdata`; packed function/fragment records, or version 0 full/extended `.xdata`, without language handlers |
-| Linux amd64/arm64/386 | ELF `.eh_frame` and `.eh_frame.*`, DWARF32 CIE versions 1/3, ordinary C augmentation, and the CFI subset below; libgcc_s required |
+| Linux amd64/arm64/386 | ELF `.eh_frame` and `.eh_frame.*`, DWARF32 CIE versions 1/3, C and the C++ personality/LSDA subset below; libgcc_s required |
 | macOS amd64/arm64 | Mach-O `__eh_frame`, PC-relative DWARF32 C records, individually registered with system libunwind |
 | Windows 386 | Raw registration remains pending; requesting it for a raw image returns an error |
 
@@ -59,15 +59,36 @@ deletion fails, native storage is retained and an error is returned.
 Go validates relocated `.eh_frame` records, preceding CIE references, encoded
 function ranges inside executable sections, augmentation boundaries, LEB128
 operands, and CFI operand storage before invoking a native unwinder. Accepted
-CIE augmentations are empty or `zR`. Address fields can use native pointers or
-4/8-byte fixed signed/unsigned values, absolute or PC-relative. Indirect,
-text/data-relative and variable-length address encodings are rejected.
+CIE augmentations are empty or start with `z`, followed by distinct `P`, `L`
+and/or `R` fields. `L` requires `P`. Go checks each augmentation's declared
+length, consumes its fields exactly, and rejects unknown or repeated fields.
+Address fields can use native pointers or 4/8-byte fixed signed/unsigned values,
+absolute or PC-relative. Personality and LSDA pointers may additionally use
+indirection through an image-owned data cell or allocated GOT slot. Encoded
+zero remains null before applying a base or dereferencing a slot, following
+libgcc. FDE code ranges cannot use indirection. Text/data-relative and
+variable-length address encodings are rejected.
 
 The initial CFI subset includes advance-location, offset/restore, undefined,
 same-value, register, remember/restore state, CFA register/offset, signed
 variants, value-offset and GNU argument-size instructions. Expressions,
-`set_loc`, language personalities/LSDA and target-specific instructions remain
+`set_loc` and target-specific instructions remain
 unsupported. Structural validation does not verify CFI against machine code.
+
+With `RegisterUnwind` enabled, the linker retains read-only
+`.gcc_except_table`/`.gcc_except_table.*` sections and their relocation
+dependencies. Non-null FDE LSDA pointers must reference these backed,
+non-executable sections. A personality must be non-null and executable if
+inside the raw image; external personalities come from explicitly supplied
+runtime dependencies. The native personality interprets the trusted LSDA
+contents and type information. This loader does not validate the C++ type
+system, action tables, or compatibility between separately supplied runtimes.
+
+ELF COMDAT selection also removes FDEs whose initial-PC relocation names
+discarded code. It remaps retained records, CIE back-references, relocation
+offsets and zero-size frame symbols in a private snapshot. Non-frame references
+into a rewritten frame section and sized frame symbols are rejected. Failed
+links and retries leave staged input bytes unchanged.
 
 Each selected object's read-only frame section gets four additional zero bytes
 in its private mapping. This terminates libgcc's section scan even when the
@@ -84,8 +105,22 @@ through two raw C frames in objects and archives. A separately retained library
 queries `_Unwind_Find_FDE` before and after close. Tests also cover default
 loading, validation retry and failed integer-initializer ownership. Pure Go
 jobs inspect real ELF32/ELF64 compiler output and reject malformed records.
-This backend covers C stack traversal with libgcc; it does not establish C++
-exception support or compatibility with a separately selected LLVM unwinder.
+The same jobs execute C++ `throw`, typed `catch`, rethrow and RAII cleanup
+across two raw objects, reversed object order and lazy archives at `-O0` and
+`-O2`. They also catch a throw from an explicitly loaded shared library,
+check destructor counts, retry a missing root, and execute through a retained
+code lease during session retirement. FDE lookup succeeds until the lease is
+released and fails after close. Default loading still discards exception data.
+Pure Go tests inspect C++ output for all three ELF targets and reject malformed
+augmentation, pointer, LSDA storage and COMDAT frame cases.
+
+These tests use Clang C++17 with `-fPIC -fexceptions -stdlib=libstdc++
+-rtlib=libgcc -unwindlib=libgcc` and an explicitly loaded runtime-linked native
+library. A call must catch its exceptions in compatible native code before
+returning to Go or llgo. Unwinding through Go frames or Go callbacks, C++ TLS,
+arbitrary language runtimes, and a separately selected LLVM unwinder are not
+qualified. Supplying an exception-enabled object does not discover or adapt
+its runtime automatically.
 
 ## macOS
 
@@ -122,12 +157,13 @@ that no dynamic FDE is registered rather than requiring traversal to fail.
 
 The option defaults to false. Default loading discards COFF, ELF and Mach-O DWARF unwind
 sections and their relocations/dependencies as before. With registration enabled,
-unsupported versions, language handlers, unsupported chained records, CIE
+unsupported versions, unsupported language handlers, chained records, CIE
 augmentations and invalid metadata fail before initialization. Leaf functions
 can legitimately have no table entries.
 
-This extension supports native C frame lookup and stack traversal. C++/SEH
-language handlers, RTTI/runtime adapters, Windows 386 SEH, other POSIX unwind
+This extension supports native C frame lookup/stack traversal and the Linux
+C++ subset above. Windows/macOS language handlers, general RTTI/runtime
+adapters, Windows 386 SEH, other POSIX unwind
 providers, and Mach-O compact unwind require further work. Native exceptions must remain
 within compatible native runtime boundaries; callers must retire raw native
 activity before closing a session.
@@ -158,5 +194,7 @@ References: [Microsoft x64 unwind format](https://learn.microsoft.com/en-us/cpp/
 and [runtime table deletion](https://learn.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-rtldeletefunctiontable).
 
 Linux references: [GCC frame registration](https://github.com/gcc-mirror/gcc/blob/releases/gcc-15/libgcc/unwind-dw2-fde.c), [GCC unwinder](https://github.com/gcc-mirror/gcc/blob/releases/gcc-15/libgcc/unwind-dw2.c), and [LLVM registration contracts](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/lib/ExecutionEngine/Orc/TargetProcess/RegisterEHFrames.cpp).
+
+C++ metadata references: [LSB `.eh_frame` augmentations](https://refspecs.linuxfoundation.org/LSB_5.0.0/LSB-Core-generic/LSB-Core-generic/ehframechpt.html), [GCC encoded pointers](https://github.com/gcc-mirror/gcc/blob/releases/gcc-14.2.0/libgcc/unwind-pe.h), and [Itanium exception ABI](https://itanium-cxx-abi.github.io/cxx-abi/abi-eh.html).
 
 macOS references: [Apple unwind interface](https://github.com/apple-oss-distributions/libunwind/blob/main/libunwind/include/unwind.h), [LLVM FDE registration](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/libunwind/src/libunwind.cpp), and [LLVM Mach-O definitions](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/include/llvm/BinaryFormat/MachO.h).
