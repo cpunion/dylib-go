@@ -21,7 +21,9 @@ Write `Facade.CHeader` and pass its path and `Facade.Functions` to
 Use a forward-slash include path; quoted paths with spaces are accepted. Include
 directories, defines, ABI flags and runtime linkage belong to the producer's
 compiler. The original header and any linked C++ library must match that compiler
-and ABI. This package does not discover classes, demangle symbols, or parse C++.
+and ABI. Generation does not discover class/member declarations or demangle
+symbols. Optional compiler queries can discover base relations among selected
+type names, as described below.
 
 ## Manifest and C boundary
 
@@ -71,6 +73,35 @@ A view neither allocates nor retains an object and expires when its owner is
 destroyed. Destroy the original owner once; do not independently delete its
 borrowed views. Deleting through a base instead requires a separate native
 ownership contract, including an appropriate virtual destructor.
+
+## Compiler-discovered base relations
+
+`DiscoverBases(ctx, header, names, DiscoveryOptions)` returns ordered
+`BaseRelation{Derived, Base}` entries among explicitly selected type names.
+The [executed example](../examples/cxx/discover.go) assigns C export names and
+adds these entries to each derived `Class.Bases`. Selected constructors, members
+and destruction remain an application manifest. The existing generator then
+emits the same compiler-adjusted base conversions as a manually selected view.
+
+The optional Clang-compatible C++ compiler evaluates class identity, inheritance
+and pointer convertibility. Results include public unambiguous transitive and
+virtual bases. Private/protected and ambiguous conversions are excluded, as are
+canonical self aliases. Accessible aliases to template specializations work
+without parsing template expressions in Go. Selected names must denote complete
+non-cv class types; scalar/pointer/cv aliases, incomplete or inaccessible types
+return errors. No Go base offsets, vtable interpretation or runtime RTTI are used.
+
+`DiscoveryOptions.Compiler` defaults to `clang++`. `Target` defaults to that
+compiler's target, independently of the Go process architecture. Match `Target`
+and preprocessing `Flags` to the facade producer, especially when headers select
+inheritance conditionally. Relative includes retain the original header path.
+The query does not establish that a resulting native library matches the host ABI.
+
+Queries accept 1–32 distinct qualified names of at most 256 bytes each. The header,
+generated query and returned AST have 16 MiB, 1 MiB and 32 MiB limits; compiler
+diagnostics are bounded. The supplied context cancels the compiler process. Any
+validation, compiler or metadata failure returns no relations. This is selected
+type inspection, with no automatic class/member/header discovery.
 
 ## Status and ownership
 
@@ -246,7 +277,7 @@ Linux 386 requires C++ multilib development files in addition to i386 libffi.
 `DYLIB_CXX` selects the Clang-compatible C++ test producer executable.
 
 Automatic lambda/declaration discovery,
-ref-qualified/volatile members, variadics, inheritance discovery,
+ref-qualified/volatile members, variadics, inheritance discovery beyond selected types,
 downcasts/crosscasts and C++ header discovery remain outside this manifest. These
 facade tests use complete libraries. Raw C++ DWARF exceptions have a separately
 qualified Linux/macOS subset; see [unwind scope](unwind.md). The generator

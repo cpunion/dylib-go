@@ -688,6 +688,12 @@ copies, move-only captures and retained Go callbacks. The
 void, enum, array, union and multi-level pointees through opaque addresses. See
 [C++ types, status codes and ownership](docs/cxx.md).
 
+Optional `cxx.DiscoverBases` asks Clang for public, unambiguous base relations
+among explicitly selected type names, including transitive/virtual bases and
+aliases. The [executed discovery example](examples/cxx/discover.go) assigns export
+names and feeds these relations into the existing facade generator. Class/member
+selection and ownership remain explicit.
+
 ## Language interfaces and calling conventions
 
 Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cdecl and Windows 386 stdcall/fastcall selection. Language C exports and native language ABIs have different support levels:

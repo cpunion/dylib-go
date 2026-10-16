@@ -13,6 +13,7 @@ import (
 	"strconv"
 
 	"github.com/cpunion/dylib-go/abi"
+	"github.com/cpunion/dylib-go/compiler/internal/clangcmd"
 )
 
 // Options selects a C compiler, target, preprocessing flags and explicit names.
@@ -120,7 +121,7 @@ func (d Declaration) WithTail(types ...abi.Type) (Declaration, error) {
 
 const maxHeaderSize = 16 << 20
 const maxASTSize = 32 << 20
-const maxDiagnostics = 32 << 10
+const maxDiagnostics = clangcmd.DiagnosticsLimit
 const maxFunctions = 256
 
 // Parse asks Clang to preprocess a C17 header and evaluate primitive size probes.
