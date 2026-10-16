@@ -45,6 +45,16 @@ func shared(t *testing.T, source, optimization string) string {
 	if runtime.GOOS != "windows" {
 		args = append(args, "-fPIC")
 	}
+	args = append(args, cppTargetFlags()...)
+	args = append(args, source, "-o", library)
+	if output, err := exec.Command(cppTool(t), args...).CombinedOutput(); err != nil {
+		t.Fatalf("C++ shared producer: %v\n%s", err, output)
+	}
+	return library
+}
+
+func cppTargetFlags() []string {
+	var args []string
 	if runtime.GOARCH == "386" {
 		if runtime.GOOS == "linux" {
 			args = append(args, "-m32")
@@ -55,11 +65,7 @@ func shared(t *testing.T, source, optimization string) string {
 			}
 		}
 	}
-	args = append(args, source, "-o", library)
-	if output, err := exec.Command(cppTool(t), args...).CombinedOutput(); err != nil {
-		t.Fatalf("C++ shared producer: %v\n%s", err, output)
-	}
-	return library
+	return args
 }
 
 func TestNativeGeneratedCgoClassFacade(t *testing.T) {
@@ -141,6 +147,25 @@ func TestNativeGeneratedDirectLLGoPointerFacade(t *testing.T) {
 
 func generatePointers(header string) (*cxx.Facade, error) {
 	return cxx.Generate(header, cxxexample.NativePointerClasses())
+}
+
+func TestNativeGeneratedCgoDiscoveredBaseFacade(t *testing.T) {
+	testDiscoveredBaseFacade(t, false)
+}
+
+func TestNativeGeneratedDirectLLGoDiscoveredBaseFacade(t *testing.T) {
+	if !llgoHost {
+		t.Skip("the direct caller requires an llgo host")
+	}
+	testDiscoveredBaseFacade(t, true)
+}
+
+func testDiscoveredBaseFacade(t *testing.T, direct bool) {
+	t.Helper()
+	render := func(header string) (*cxx.Facade, error) {
+		return cxxexample.Discover(context.Background(), header, cxx.DiscoveryOptions{Compiler: cppTool(t), Flags: cppTargetFlags()})
+	}
+	testGeneratedFacadeHeader(t, direct, "testdata/bases.hpp", "testdata/discovered_main.go", render)
 }
 
 func testGeneratedFacadeHeader(t *testing.T, direct bool, header, fixture string, render func(string) (*cxx.Facade, error)) {

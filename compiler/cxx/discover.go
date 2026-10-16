@@ -1,0 +1,189 @@
+package cxx
+
+import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
+	"github.com/cpunion/dylib-go/compiler/internal/clangcmd"
+)
+
+// DiscoveryOptions selects an optional Clang-compatible C++ compiler. Target
+// defaults to that compiler's target, independently of Go's host architecture.
+// Target and preprocessing Flags must match the native facade producer.
+type DiscoveryOptions struct {
+	Compiler string // Executable path/name, default clang++; never a shell command.
+	Target   string
+	Flags    []string
+}
+
+// BaseRelation names a public, unambiguous base conversion among selected types.
+// It includes transitive and virtual bases. Canonical self aliases are excluded.
+// Assign an export Symbol when adding Base to the derived Class.Bases manifest;
+// Generate delegates all native pointer adjustments to the C++ compiler.
+type BaseRelation struct {
+	Derived, Base string
+}
+
+const (
+	maxDiscoveryTypes  = 32
+	maxDiscoveryName   = 256
+	maxDiscoveryHeader = 16 << 20
+	maxDiscoverySource = 1 << 20
+	maxDiscoveryAST    = 32 << 20
+)
+
+// DiscoverBases queries inheritance among 1-32 explicit accessible C++ type
+// names/aliases, each at most 256 bytes. Names must select complete non-cv class
+// types. The optional external compiler reads the header at its original path,
+// preserving relative includes and preprocessing flags. This neither discovers
+// declarations nor infers class layouts, runtime ownership or export names.
+// Results follow the requested derived/base order. Failures return no results.
+func DiscoverBases(ctx context.Context, header string, names []string, opts DiscoveryOptions) ([]BaseRelation, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("cxx: nil context")
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	names = append([]string(nil), names...)
+	if len(names) == 0 || len(names) > maxDiscoveryTypes {
+		return nil, fmt.Errorf("cxx: select 1-%d explicit class names", maxDiscoveryTypes)
+	}
+	seen := make(map[string]bool)
+	for _, name := range names {
+		if len(name) > maxDiscoveryName || !qualifiedName(name) || seen[name] {
+			return nil, fmt.Errorf("cxx: invalid or duplicate class name %q", name)
+		}
+		seen[name] = true
+	}
+	header, err := filepath.Abs(header)
+	if err != nil {
+		return nil, err
+	}
+	stat, err := os.Stat(header)
+	if err != nil {
+		return nil, err
+	}
+	if !stat.Mode().IsRegular() || stat.Size() > maxDiscoveryHeader {
+		return nil, fmt.Errorf("cxx: expected a regular header of at most %d bytes", maxDiscoveryHeader)
+	}
+	compiler := opts.Compiler
+	if compiler == "" {
+		compiler = "clang++"
+	}
+	compiler, err = exec.LookPath(compiler)
+	if err != nil {
+		return nil, err
+	}
+	source, namespace, probes, err := baseProbes(names)
+	if err != nil {
+		return nil, err
+	}
+	args := append([]string(nil), opts.Flags...)
+	if opts.Target != "" {
+		args = append(args, "--target="+opts.Target)
+	}
+	args = append(args, "-x", "c++", "-std=c++17", "-include", header, "-Xclang", "-ast-dump=json", "-Xclang", "-ast-dump-filter="+namespace, "-fsyntax-only", "-")
+	data, err := clangcmd.Run(ctx, compiler, args, source, maxDiscoveryAST, false)
+	if err != nil {
+		return nil, fmt.Errorf("cxx: %w", err)
+	}
+	return decodeBases(data, namespace, names, probes)
+}
+
+type baseProbe struct {
+	name    string
+	derived int
+	base    int // -1 selects class validity, rather than a base relation.
+}
+
+func baseProbes(names []string) (source, namespace string, probes []baseProbe, err error) {
+	hash := sha256.Sum256([]byte(strings.Join(names, "\x00")))
+	namespace = fmt.Sprintf("dylib_go_base_query_%x", hash[:8])
+	var body strings.Builder
+	fmt.Fprintf(&body, "namespace %s {\ntemplate<bool> struct Answer {};\n", namespace)
+	for i, name := range names {
+		name = "::" + name
+		alias := fmt.Sprintf("valid_%d", i)
+		fmt.Fprintf(&body, "using %s = Answer<__is_class(%s) && __is_convertible_to(%s *, void *) && (sizeof(%s) > 0)>;\n", alias, name, name, name)
+		probes = append(probes, baseProbe{alias, i, -1})
+	}
+	for i, derived := range names {
+		derived = "::" + derived
+		for j, base := range names {
+			base = "::" + base
+			if i == j {
+				continue
+			}
+			alias := fmt.Sprintf("pair_%d_%d", i, j)
+			fmt.Fprintf(&body, "using %s = Answer<!__is_same(%s, %s) && __is_base_of(%s, %s) && __is_convertible_to(%s *, %s *)>;\n", alias, derived, base, base, derived, derived, base)
+			probes = append(probes, baseProbe{alias, i, j})
+		}
+	}
+	body.WriteString("}\n")
+	if body.Len() > maxDiscoverySource {
+		return "", "", nil, fmt.Errorf("cxx: base probes exceed source budget")
+	}
+	return body.String(), namespace, probes, nil
+}
+
+func decodeBases(data []byte, namespace string, names []string, probes []baseProbe) ([]BaseRelation, error) {
+	var ast struct {
+		Kind, Name string
+		Inner      []struct {
+			Kind, Name string
+			Type       struct{ DesugaredQualType string }
+		}
+	}
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	if err := decoder.Decode(&ast); err != nil {
+		return nil, fmt.Errorf("cxx: invalid inheritance AST: %w", err)
+	}
+	var trailing any
+	if err := decoder.Decode(&trailing); err != io.EOF || ast.Kind != "NamespaceDecl" || ast.Name != namespace {
+		return nil, fmt.Errorf("cxx: unexpected inheritance AST root or trailing data")
+	}
+	values := make(map[string]bool)
+	for _, node := range ast.Inner {
+		if node.Kind != "TypeAliasDecl" {
+			continue
+		}
+		if _, duplicate := values[node.Name]; duplicate {
+			return nil, fmt.Errorf("cxx: duplicate inheritance probe %q", node.Name)
+		}
+		switch node.Type.DesugaredQualType {
+		case namespace + "::Answer<true>":
+			values[node.Name] = true
+		case namespace + "::Answer<false>":
+			values[node.Name] = false
+		default:
+			return nil, fmt.Errorf("cxx: unrecognized inheritance probe %q", node.Name)
+		}
+	}
+	if len(values) != len(probes) {
+		return nil, fmt.Errorf("cxx: unexpected inheritance probe count")
+	}
+	var result []BaseRelation
+	for _, probe := range probes {
+		value, exists := values[probe.name]
+		if !exists {
+			return nil, fmt.Errorf("cxx: missing inheritance probe %q", probe.name)
+		}
+		if probe.base < 0 {
+			if !value {
+				return nil, fmt.Errorf("cxx: %s must name a complete non-cv class type", names[probe.derived])
+			}
+		} else if value {
+			result = append(result, BaseRelation{Derived: names[probe.derived], Base: names[probe.base]})
+		}
+	}
+	return result, nil
+}
