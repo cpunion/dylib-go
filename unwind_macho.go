@@ -10,7 +10,7 @@ import (
 
 func (im *image) registerMachOUnwind() error {
 	var frames []uintptr
-	var ranges [][4]uintptr
+	var ranges []machoUnwindRange
 	needsHeader := false
 	for _, o := range im.objects {
 		for sectionIndex, s := range o.sections {
@@ -50,7 +50,7 @@ func (im *image) registerMachOUnwind() error {
 				if len(ranges) == 65536 {
 					return fmt.Errorf("too many dynamic Mach-O frame ranges")
 				}
-				ranges = append(ranges, [4]uintptr{uintptr(start), uintptr(start + length), im.base + uintptr(s.offset), uintptr(s.size)})
+				ranges = append(ranges, machoUnwindRange{start: uintptr(start), end: uintptr(start + length), dwarf: im.base + uintptr(s.offset), size: uintptr(s.size), personality: personality})
 				needsHeader = needsHeader || personality
 				return nil
 			}}
@@ -65,16 +65,30 @@ func (im *image) registerMachOUnwind() error {
 			}
 		}
 	}
-	if len(frames) == 0 {
+	var compactErr error
+	ranges, compactErr = im.machOCompactRanges(ranges)
+	if compactErr != nil {
+		return compactErr
+	}
+	if im.machoHeader {
+		if err := native.Protect(im.mem[:im.page], false, false); err != nil {
+			return err
+		}
+		if err := native.Protect(im.mem[im.compactStart:im.compactStart+im.compactSize], false, false); err != nil {
+			return err
+		}
+	}
+	if len(ranges) == 0 {
 		return nil
 	}
-	sort.Slice(ranges, func(i, j int) bool { return ranges[i][0] < ranges[j][0] })
+	sort.Slice(ranges, func(i, j int) bool { return ranges[i].start < ranges[j].start })
 	var entries []uintptr
 	for index, r := range ranges {
-		if index != 0 && r[0] < ranges[index-1][1] {
+		if index != 0 && r.start < ranges[index-1].end {
 			return fmt.Errorf("overlapping dynamic Mach-O frame ranges")
 		}
-		entries = append(entries, r[:]...)
+		entries = append(entries, r.start, r.end, r.dwarf, r.size, r.compact, r.compactSize)
+		needsHeader = needsHeader || r.compact != 0
 	}
 	if err := im.registerDwarfFrames("/usr/lib/system/libunwind.dylib", nil); err != nil {
 		return err
@@ -84,7 +98,7 @@ func (im *image) registerMachOUnwind() error {
 	remove := native.Lookup(u.provider, "__unw_remove_find_dynamic_unwind_sections")
 	if add == 0 || remove == 0 {
 		if needsHeader {
-			return fmt.Errorf("native C++ exceptions require dynamic Mach-O unwind lookup")
+			return fmt.Errorf("native language exceptions and compact frames require dynamic Mach-O unwind lookup")
 		}
 		register := native.Lookup(u.provider, "__register_frame")
 		for _, frame := range frames {
@@ -94,7 +108,11 @@ func (im *image) registerMachOUnwind() error {
 		return nil // Preserve C frame lookup on older providers without this SPI.
 	}
 	var err error
-	u.dynamic, err = native.RegisterMachODWARF(add, remove, entries)
+	header := uintptr(0)
+	if im.machoHeader {
+		header = im.base
+	}
+	u.dynamic, err = native.RegisterMachOUnwind(add, remove, header, entries)
 	return err
 }
 

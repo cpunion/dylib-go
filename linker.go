@@ -649,6 +649,8 @@ type image struct {
 	unwind                                 *runtimeFunctions
 	unwindProxyStart, unwindProxySize      uint64
 	unwindProxyUsed                        uint64
+	machoHeader                            bool
+	compactStart, compactSize, compactUsed uint64
 	startup                                []startupGroup
 	initialized                            bool
 }
@@ -673,6 +675,14 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 		im.pointerSize = uint64(objs[0].info.Bits / 8)
 	}
 	var size, count uint64
+	compactCount, err := im.machOCompactCount()
+	if err != nil {
+		return nil, err
+	}
+	if compactCount != 0 {
+		im.machoHeader = true
+		size = im.page // Native Mach header precedes all code/data for 32-bit RVAs.
+	}
 	for _, o := range objs {
 		count += uint64(len(o.relocs))
 		for _, v := range o.symbols {
@@ -699,6 +709,11 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	}
 	if size, err = im.layoutWindowsUnwindProxies(size); err != nil {
 		return nil, err
+	}
+	if compactCount != 0 {
+		im.compactStart = size
+		im.compactSize = alignUp(compactCount*80, im.page)
+		size += im.compactSize
 	}
 	// Merge tentative/common definitions by maximum size and alignment.
 	type commonSize struct{ size, align uint64 }

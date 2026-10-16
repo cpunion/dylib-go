@@ -1,7 +1,7 @@
 # Raw frame registration and native exceptions
 
 `Options{RegisterUnwind: true}` enables raw C frame registration on Windows
-amd64/arm64, macOS amd64/arm64 and Linux amd64/arm64/386. The documented Linux/macOS DWARF paths also support
+amd64/arm64, macOS amd64/arm64 and Linux amd64/arm64/386. The documented Linux DWARF and macOS DWARF/compact paths also support
 native C++ exceptions. Compile C fixtures
 with `-funwind-tables`
 so the compiler emits `.pdata/.xdata` or `.eh_frame`. Complete OS libraries
@@ -12,7 +12,7 @@ continue to use their OS-managed unwind registration.
 | Windows amd64 | 12-byte `.pdata` records and version 1 `.xdata`, including the chained C records below, without language handlers |
 | Windows arm64 | 8-byte `.pdata`; packed function/fragment records, or version 0 full/extended `.xdata`, without language handlers |
 | Linux amd64/arm64/386 | ELF `.eh_frame` and `.eh_frame.*`, DWARF32 CIE versions 1/3, C and the C++ personality/LSDA subset below; libgcc_s required |
-| macOS amd64/arm64 | Mach-O `__eh_frame`, PC-relative DWARF32 C/C++ records with the personality/LSDA subset below, system libunwind dynamic lookup with native header ownership |
+| macOS amd64/arm64 | Mach-O `__eh_frame` and `__compact_unwind`, validated DWARF32/compact C/C++ records with the personality/LSDA subset below, system libunwind dynamic lookup with native header ownership |
 | Windows 386 | Raw registration remains pending; requesting it for a raw image returns an error |
 
 ## Windows
@@ -137,8 +137,8 @@ rebased twice. Staged input bytes remain intact for retries.
 
 Registration retains one `/usr/lib/system/libunwind.dylib` handle and uses its
 `__unw_add_find_dynamic_unwind_sections` / `__unw_remove_find_dynamic_unwind_sections`
-SPI when available. Go validates/sorts exact FDE ranges and associates each with
-its DWARF section. A small native callback copies those ranges into owned native
+SPI when available. Go validates/sorts exact code ranges and associates each with
+its DWARF or compact section. A small native callback copies those ranges into owned native
 storage and returns a baseline Mach-O header plus the matching section; it never
 calls Go or retains Go heap storage. Older ARM64 system unwinders inspect the
 header's CPU subtype when a personality installs a landing-pad IP, so FDE
@@ -152,19 +152,35 @@ storage before releasing the provider/image. Native removal errors retain the
 owner's storage. This cache-key invalidation follows Darwin's `removeAllIn`
 registration contract; it is not the GNU libgcc section-scanning interface.
 Older providers without the lookup SPI keep the existing per-FDE C registration
-path; exception-enabled frames require the lookup extension and fail before
+path; exception-enabled or compact frames require the lookup extension and fail before
 initialization if it is missing.
 The metadata-only `S_COALESCED` type of `__eh_frame` is accepted without
 extending general Mach-O symbol/section coalescing.
 
-Only emitted DWARF records are registered. Compact unwind conversion and
-compact-only functions remain pending; ordinary macOS C output can omit
-DWARF when compact encoding suffices. The test fixture adds a harmless
-`.cfi_escape 0x00` no-op to force real DWARF output on older compilers while
-preserving the C stack layout. Consumers must arrange DWARF for the raw frames
-they need to traverse. The C++ tests use `-femit-dwarf-unwind=always` and a CFI
-no-op in each traversed frame to force DWARF on both targets, including older
-Apple ARM64 compilers that still emit compact-only output with that flag.
+Raw Mach-O also accepts retained `__compact_unwind` records. Go validates their
+function ranges, native ownership, LSDA storage and saved-register encodings, then
+builds regular `__unwind_info` pages in read-only native image storage. A baseline
+Mach-O header occupies a separate read-only page before code/data, keeping function,
+LSDA and personality-cell relative addresses within the image's 64 MiB limit.
+The native finder returns the appropriate compact or DWARF section for each range.
+It performs no Go callback or allocation.
+
+Supported compact modes are x86-64 RBP frames, immediate/indirect stack frames,
+and ARM64 frame/frameless encodings. Indirect x86-64 stack sizes must address a
+bounded `subq` immediate inside the function. Apple stack-probe output with a stale
+compact instruction offset uses a complete matching DWARF FDE instead; missing
+personality or incomplete fallback coverage is rejected. Source DWARF modes require a retained
+matching FDE; the finder returns its original section directly. Compact language
+entries take precedence over redundant DWARF emitted by x86-64 Clang. Ordinary C
+frames retain existing DWARF lookup when present. Losing weak definitions' local
+compact records are excluded,
+including when their function addresses use section-relative relocations.
+
+The explicit DWARF fixtures still use `-femit-dwarf-unwind=always` and a harmless
+CFI no-op for older compilers. Separate default, omitted-frame-pointer and large-stack
+C++ fixtures disable that no-op and assert that compact tables were actually used.
+The large-stack cases cover both immediate stack allocation (`-fno-stack-check`)
+and the compiler default, including Apple stack probes with DWARF fallback.
 Signal frames, expression CFI and arm64e authentication remain unsupported.
 
 C++ uses the same bounded `z`/`P`/`L`/`R` parser as Linux, with PC-relative FDE
@@ -184,7 +200,8 @@ LSDA storage and personality pointer cells. Native tests also keep ten images
 live, retire siblings without losing the survivor, and exhaust the real finder
 slots before retrying a failed link. ARM64 FDEs for weak definitions selected
 from another object are excluded from registration. As on Linux, exceptions cannot
-cross Go frames or callbacks. Compact-only functions need additional work.
+cross Go frames or callbacks. Compact variants also query native procedure metadata
+before/after close and exercise registration failure, retry and owner retirement.
 
 Existing macOS amd64/arm64 Go and llgo jobs execute object/archive traversal,
 FDE lookup before/after close, default loading, validation retry and failed
@@ -195,16 +212,16 @@ that no dynamic FDE is registered rather than requiring traversal to fail.
 
 ## Defaults and scope
 
-The option defaults to false. Default loading discards COFF, ELF and Mach-O DWARF/LSDA
+The option defaults to false. Default loading discards COFF, ELF and Mach-O DWARF/compact/LSDA
 sections and their relocation dependencies. With registration enabled, unsupported
 CIE/CFI encodings, platform table forms and invalid referenced storage fail
 before initialization. Leaf functions
 can legitimately have no table entries.
 
 This extension supports native C frame lookup/stack traversal and the Linux/macOS
-C++ DWARF subsets above. Windows language handlers, general RTTI/runtime
+C++ DWARF/compact subsets above. Windows language handlers, general RTTI/runtime
 adapters, Windows 386 SEH, other POSIX unwind
-providers, and Mach-O compact unwind require further work. Native exceptions must remain
+providers and additional unwind forms require further work. Native exceptions must remain
 within compatible native runtime boundaries; callers must retire raw native
 activity before closing a session.
 

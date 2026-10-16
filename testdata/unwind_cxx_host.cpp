@@ -1,4 +1,7 @@
 #include <unwind.h>
+#if defined(__APPLE__) && defined(DYLIB_CXX_COMPACT)
+#include <libunwind.h>
+#endif
 
 #if !defined(__APPLE__)
 struct dwarf_eh_bases { void *text, *data, *function; };
@@ -14,8 +17,18 @@ extern "C" int cxx_events(int reset, int) {
     return result;
 }
 extern "C" int cxx_has_frame(int, int) {
+#if defined(__APPLE__) && defined(DYLIB_CXX_COMPACT)
+    if (!saved) return 0;
+    unw_context_t context;
+    unw_cursor_t cursor;
+    unw_proc_info_t info;
+    return unw_getcontext(&context) == 0 && unw_init_local(&cursor, &context) == 0 &&
+           unw_set_reg(&cursor, UNW_REG_IP, reinterpret_cast<unw_word_t>(saved)) == 0 &&
+           unw_get_proc_info(&cursor, &info) == 0;
+#else
     dwarf_eh_bases bases;
     return saved && _Unwind_Find_FDE(saved, &bases) != nullptr;
+#endif
 }
 extern "C" int cxx_host_throw(int a, int b) {
     if (a >= 0) throw a + b;

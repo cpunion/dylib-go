@@ -4,7 +4,7 @@ package native
 
 import "fmt"
 
-func RegisterMachODWARF(uintptr, uintptr, []uintptr) (uintptr, error) {
+func RegisterMachOUnwind(uintptr, uintptr, uintptr, []uintptr) (uintptr, error) {
 	return 0, fmt.Errorf("dynamic Mach-O unwind lookup requires native macOS")
 }
 
