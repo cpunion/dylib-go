@@ -3,6 +3,7 @@
 package dylib
 
 import (
+	"encoding/binary"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -88,6 +89,16 @@ func testNativeCXXExceptionsMode(t *testing.T, compact bool, extra ...string) {
 					call(t, observer, "cxx_has_frame", 0, 0, 1)
 					if compact && session.image.compactUsed == 0 {
 						t.Fatal("default native C++ input did not use compact unwind")
+					}
+					if compact && runtime.GOARCH == "amd64" && strings.Contains(strings.Join(extra, " "), "-fno-stack-check") {
+						indirect := false
+						for offset := uint64(0); offset < session.image.compactUsed; offset += 80 {
+							encoding := binary.LittleEndian.Uint32(session.image.mem[session.image.compactStart+offset+68:])
+							indirect = indirect || encoding&0x0f000000 == 0x03000000
+						}
+						if !indirect {
+							t.Fatal("large-stack native call did not use indirect compact encoding")
+						}
 					}
 					// Native exceptions and frame registration remain valid while a
 					// retained entry finishes work during session retirement.

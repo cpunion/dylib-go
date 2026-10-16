@@ -37,7 +37,7 @@ func TestMachOCompactCompilerRecords(t *testing.T) {
 						flags = append(flags, "-fomit-frame-pointer")
 					}
 					if mode == "large_stack" {
-						flags = append(flags, "-DDYLIB_CXX_LARGE_STACK")
+						flags = append(flags, "-DDYLIB_CXX_LARGE_STACK", "-fno-stack-check")
 					}
 					path := compile(t, "testdata/unwind_compact.cpp", filepath.Join(t.TempDir(), "compact.o"), flags...)
 					data, err := readFile(path)
@@ -97,8 +97,21 @@ func TestMachOCompactCompilerRecords(t *testing.T) {
 							t.Fatal(err)
 						}
 					}
-					if ranges, err := im.machOCompactRanges(dwarf); err != nil || len(ranges) == 0 {
+					ranges, err := im.machOCompactRanges(dwarf)
+					if err != nil || len(ranges) == 0 {
 						t.Fatal(ranges, err)
+					}
+					if triple == "x86_64-apple-macosx11" && mode == "large_stack" {
+						indirect := false
+						for _, r := range ranges {
+							if r.compact != 0 {
+								encoding := binary.LittleEndian.Uint32(im.mem[r.compact-im.base+68:])
+								indirect = indirect || encoding&0x0f000000 == 0x03000000
+							}
+						}
+						if !indirect {
+							t.Fatal("compiler large stack did not use indirect compact encoding")
+						}
 					}
 					if !bytes.Equal(original, compact.data) {
 						t.Fatal("compiler compact source changed")
@@ -250,6 +263,39 @@ func TestMachOCompactIndirectStackInstruction(t *testing.T) {
 			_, err := im.machOCompactRanges(nil)
 			if (err == nil) != (name == "valid") {
 				t.Fatal(name, err)
+			}
+		})
+	}
+}
+
+func TestMachOCompactStackProbeFallback(t *testing.T) {
+	for _, name := range []string{"complete", "missing_personality", "short_range", "no_frame"} {
+		t.Run(name, func(t *testing.T) {
+			im := compactTestImage()
+			im.objects[0].info.Arch = "amd64"
+			binary.LittleEndian.PutUint32(im.mem[8204:], 0x43044400)
+			// Apple Clang's probe replaces subq $8192 with movl/call/subq,
+			// but its compact record still points at immediate offset 4.
+			copy(im.mem[4096:], []byte{0x53, 0xb8, 0, 0x20, 0, 0, 0xe8, 0, 0, 0, 0, 0x48, 0x29, 0xc4})
+			dwarf := machoUnwindRange{start: im.base + 4096, end: im.base + 4160, dwarf: im.base + 10000, size: 80, personality: true}
+			frames := []machoUnwindRange{dwarf}
+			switch name {
+			case "missing_personality":
+				frames[0].personality = false
+			case "short_range":
+				frames[0].end--
+			case "no_frame":
+				frames = nil
+			}
+			ranges, err := im.machOCompactRanges(frames)
+			if name != "complete" {
+				if err == nil {
+					t.Fatal("incomplete fallback accepted")
+				}
+				return
+			}
+			if err != nil || len(ranges) != 1 || ranges[0] != dwarf || im.compactUsed != 0 {
+				t.Fatal("stack probe did not retain validated DWARF", ranges, err)
 			}
 		})
 	}

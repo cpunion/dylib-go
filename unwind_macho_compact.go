@@ -149,15 +149,22 @@ func (im *image) machOCompactRanges(dwarf []machoUnwindRange) ([]machoUnwindRang
 				}
 				if o.info.Arch == "amd64" && mode == 0x03000000 {
 					instruction := uint64(encoding>>16) & 255
-					if instruction < 3 || instruction+4 > length {
-						return nil, fmt.Errorf("compact stack-size instruction exceeds its function")
+					valid := instruction >= 3 && instruction+4 <= length
+					if valid {
+						codeOffset := start - uint64(im.base) + instruction
+						code := im.mem[codeOffset-3 : codeOffset+4]
+						allocation := uint64(le.Uint32(code[3:]))
+						stack := allocation + uint64(encoding>>13&7)*8
+						valid = code[0] == 0x48 && code[1] == 0x81 && code[2] == 0xec && allocation <= 0x7fffffff && stack >= uint64((encoding>>10&7)+1)*8
 					}
-					codeOffset := start - uint64(im.base) + instruction
-					code := im.mem[codeOffset-3 : codeOffset+4]
-					allocation := uint64(le.Uint32(code[3:]))
-					stack := allocation + uint64(encoding>>13&7)*8
-					if code[0] != 0x48 || code[1] != 0x81 || code[2] != 0xec || allocation > 0x7fffffff || stack < uint64((encoding>>10&7)+1)*8 {
-						return nil, fmt.Errorf("invalid compact indirect stack-size instruction")
+					if !valid {
+						// Apple stack probes can replace the subq immediate while
+						// leaving the original compact encoding. Never expose its
+						// stale instruction offset; use complete matching DWARF.
+						if hasDwarf && r.end >= uintptr(start+length) && (personality == 0 || r.personality) {
+							continue
+						}
+						return nil, fmt.Errorf("invalid compact indirect stack-size instruction without complete DWARF fallback")
 					}
 				}
 				if hasDwarf && personality == 0 {

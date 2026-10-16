@@ -167,7 +167,9 @@ It performs no Go callback or allocation.
 
 Supported compact modes are x86-64 RBP frames, immediate/indirect stack frames,
 and ARM64 frame/frameless encodings. Indirect x86-64 stack sizes must address a
-bounded `subq` immediate inside the function. Source DWARF modes require a retained
+bounded `subq` immediate inside the function. Apple stack-probe output with a stale
+compact instruction offset uses a complete matching DWARF FDE instead; missing
+personality or incomplete fallback coverage is rejected. Source DWARF modes require a retained
 matching FDE; the finder returns its original section directly. Compact language
 entries take precedence over redundant DWARF emitted by x86-64 Clang. Ordinary C
 frames retain existing DWARF lookup when present. Losing weak definitions' local
@@ -177,6 +179,8 @@ including when their function addresses use section-relative relocations.
 The explicit DWARF fixtures still use `-femit-dwarf-unwind=always` and a harmless
 CFI no-op for older compilers. Separate default, omitted-frame-pointer and large-stack
 C++ fixtures disable that no-op and assert that compact tables were actually used.
+The large-stack cases cover both immediate stack allocation (`-fno-stack-check`)
+and the compiler default, including Apple stack probes with DWARF fallback.
 Signal frames, expression CFI and arm64e authentication remain unsupported.
 
 C++ uses the same bounded `z`/`P`/`L`/`R` parser as Linux, with PC-relative FDE

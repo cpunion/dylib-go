@@ -13,5 +13,9 @@ func TestNativeMachOCompactFramelessCXXExceptions(t *testing.T) {
 }
 
 func TestNativeMachOCompactLargeStackCXXExceptions(t *testing.T) {
+	testNativeCXXExceptionsMode(t, true, "-fomit-frame-pointer", "-DDYLIB_CXX_LARGE_STACK", "-fno-stack-check")
+}
+
+func TestNativeMachOCompactDefaultLargeStackCXXExceptions(t *testing.T) {
 	testNativeCXXExceptionsMode(t, true, "-fomit-frame-pointer", "-DDYLIB_CXX_LARGE_STACK")
 }
