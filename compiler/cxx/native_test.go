@@ -128,6 +128,21 @@ func generateCallables(header string) (*cxx.Facade, error) {
 	return cxx.Generate(header, cxxexample.CallableClasses())
 }
 
+func TestNativeGeneratedCgoPointerFacade(t *testing.T) {
+	testGeneratedFacadeHeader(t, false, "testdata/pointers.hpp", "testdata/pointers_main.go", generatePointers)
+}
+
+func TestNativeGeneratedDirectLLGoPointerFacade(t *testing.T) {
+	if !llgoHost {
+		t.Skip("the direct caller requires an llgo host")
+	}
+	testGeneratedFacadeHeader(t, true, "testdata/pointers.hpp", "testdata/pointers_main.go", generatePointers)
+}
+
+func generatePointers(header string) (*cxx.Facade, error) {
+	return cxx.Generate(header, cxxexample.NativePointerClasses())
+}
+
 func testGeneratedFacadeHeader(t *testing.T, direct bool, header, fixture string, render func(string) (*cxx.Facade, error)) {
 	t.Helper()
 	headerPath, err := filepath.Abs(header)

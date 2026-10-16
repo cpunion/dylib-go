@@ -32,7 +32,7 @@ and ABI. This package does not discover classes, demangle symbols, or parse C++.
 | `Method.Const` | An exact const-qualified member pointer |
 | `Method.Static` | An exact static function pointer; no receiver argument |
 | `Method{Name: "operator()"}` | An exact call operator on a named callable type; `Const` selects a const call operator |
-| `ObjectArgs` on a constructor/method | Pointer transports converted to selected native class pointers, references or copied values |
+| `ObjectArgs` on a constructor/method | Pointer transports converted to selected named native pointers, class references or copied values |
 | `Method.ObjectResult` | A pointer transport carrying a borrowed pointer/reference, or a newly allocated owned value |
 | `FunctionArgs` on a constructor/method | Pointer transports converted to exact fixed native function pointers |
 | `Method.FunctionResult` | A pointer transport carrying a borrowed native function pointer |
@@ -127,6 +127,42 @@ its provider, and stop/join any asynchronous native users before cleanup. A
 explicit destruction operation. `abi.NativeValue` owns a handle slot's bytes,
 not the C++ object whose address it stores. See [registration ownership](registrations.md).
 
+## Named native pointees
+
+`ObjectType{Kind: ObjectPointer}` also selects non-class pointees. The executable
+[native pointer manifest](../examples/cxx/pointers.go) uses the same `ObjectArgs`
+and `ObjectResult` fields for scalar, character, void, enum, fixed-array, union
+and pointer aliases. Define their names in the original header; keyword types
+such as `char` and `void` need named aliases. All C transports remain `void *`.
+The C++ compiler checks exact pointer types in method signatures and performs
+all dereferences, arithmetic and union-member operations.
+
+| Native alias | `Const` | Selected native pointer |
+| --- | --- | --- |
+| `using Number = int32_t` | false / true | `int32_t *` / `const int32_t *` |
+| `using Character = char` | true | `const char *` |
+| `using Opaque = void` | false | `void *` |
+| `using Slot = int32_t *` | false / true | `int32_t **` / `int32_t *const *` |
+| `using Row = int32_t[2]` | false / true | `int32_t (*)[2]` / `const int32_t (*)[2]` |
+| Named enum / union | false / true | Pointer to the named type / its const-qualified type |
+
+`Const` qualifies the **named pointee**; it does not recursively qualify the
+elements of a pointer alias. Names and argument/result pointer levels must match
+the native API. The compiler rejects incompatible element types, removed const
+qualifications and array/pointer-level mismatches. Nulls reach the selected API;
+dereference validity and accepted ranges remain its contract.
+
+No Go pointee layout or union active-member representation is inferred. This
+does not add by-value union support to dynamic `Session.Bind`; native code owns
+the union in the executed fixture. Pointer returns are borrowed unless the
+original API defines ownership. Retain a provider lease for static native data,
+and retain any separate storage owner for externally allocated data. Const
+addresses remain opaque to Go and do not enforce read-only access. Do not delete
+borrowed scalar/array/union pointers with a class destruction export. The
+[dynamic execution test](../compiler/cxx/pointer_dynamic_test.go) verifies that a
+borrowed native address remains usable through a code lease during session
+retirement, then releases the lease before library cleanup.
+
 ## Native function pointers and Go callbacks
 
 The executable [function manifest](../examples/cxx/functions.go) uses
@@ -197,7 +233,9 @@ cgo caller runs without libffi, llgo also executes its direct generated caller,
 and optional dynamic calls cover scalar widths,
 const overloads, void results, native addresses, generated secondary/virtual base
 views, composed diamond conversions, class copies/references/pointers, noncopyable
-value results, copy exceptions, overloaded `operator&`, private-destructor static
+value results, copy exceptions, named scalar/void/enum/array/union and multi-level
+pointers, native pointer mutation and borrowed provider retirement,
+overloaded `operator&`, private-destructor static
 classes, native function factories/arguments/returns, mutable captured lambdas,
 independent callable copies, move-only captures/destruction, empty `std::function`
 exceptions, native-entry construction, retained captured callbacks,
@@ -207,7 +245,7 @@ constructor/method exceptions, throwing destruction, cleared outputs and nulls.
 Linux 386 requires C++ multilib development files in addition to i386 libffi.
 `DYLIB_CXX` selects the Clang-compatible C++ test producer executable.
 
-Arbitrary non-class typed pointers, automatic lambda/declaration discovery,
+Automatic lambda/declaration discovery,
 ref-qualified/volatile members, variadics, inheritance discovery,
 downcasts/crosscasts and C++ header discovery remain outside this manifest. These
 facade tests use complete libraries. Raw C++ DWARF exceptions have a separately

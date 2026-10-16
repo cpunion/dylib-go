@@ -32,7 +32,7 @@ type Constructor struct {
 // "operator()" for named callable types; the latter cannot be Static in C++17. Const
 // selects a const-qualified member; Static omits the receiver. A non-void result
 // adds an output pointer after the arguments. ObjectArgs/ObjectResult replace
-// pointer transports with native class types. Value results require an initially
+// pointer transports with named native types. Value results require an initially
 // null output slot and a noexcept destructor, and allocate a new owned object.
 // Pointer/reference results borrow the native API's lifetime. FunctionArgs and
 // FunctionResult select exact fixed native function pointers using opaque address
