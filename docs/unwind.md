@@ -1,7 +1,7 @@
 # Raw frame registration and native exceptions
 
 `Options{RegisterUnwind: true}` enables raw C frame registration on Windows
-amd64/arm64, macOS amd64/arm64 and Linux amd64/arm64/386. The documented Linux/macOS DWARF paths also support
+amd64/arm64, macOS amd64/arm64 and Linux amd64/arm64/386. The documented Linux DWARF and macOS DWARF/compact paths also support
 native C++ exceptions. Compile C fixtures
 with `-funwind-tables`
 so the compiler emits `.pdata/.xdata` or `.eh_frame`. Complete OS libraries
@@ -12,7 +12,7 @@ continue to use their OS-managed unwind registration.
 | Windows amd64 | 12-byte `.pdata` records and version 1 `.xdata`, including the chained C records below, without language handlers |
 | Windows arm64 | 8-byte `.pdata`; packed function/fragment records, or version 0 full/extended `.xdata`, without language handlers |
 | Linux amd64/arm64/386 | ELF `.eh_frame` and `.eh_frame.*`, DWARF32 CIE versions 1/3, C and the C++ personality/LSDA subset below; libgcc_s required |
-| macOS amd64/arm64 | Mach-O `__eh_frame`, PC-relative DWARF32 C/C++ records with the personality/LSDA subset below, system libunwind dynamic lookup with native header ownership |
+| macOS amd64/arm64 | Mach-O `__eh_frame` and `__compact_unwind`, validated DWARF32/compact C/C++ records with the personality/LSDA subset below, system libunwind dynamic lookup with native header ownership |
 | Windows 386 | Raw registration remains pending; requesting it for a raw image returns an error |
 
 ## Windows
