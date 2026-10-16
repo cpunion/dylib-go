@@ -31,9 +31,10 @@ func (im *image) registerDwarfFrames(providerName string, frames []uintptr) erro
 }
 
 type frameCIE struct {
-	encoding  byte
-	augmented bool
-	lsda      byte
+	encoding    byte
+	augmented   bool
+	lsda        byte
+	personality bool
 }
 
 type framePolicy struct {
@@ -41,6 +42,7 @@ type framePolicy struct {
 	language   bool
 	fixup      func(uint64, byte) error
 	lsdaFixup  func(uint64, byte) error
+	record     func(start, length uint64, fde uintptr, personality bool) error
 }
 
 // Keep a C-only validator for metadata callers that reject language augmentation.
@@ -155,6 +157,7 @@ func (im *image) validateFrameRecords(b []byte, imageOffset uint64, policy frame
 				if seen['L'] && !seen['P'] {
 					return nil, fmt.Errorf("LSDA requires a CIE personality")
 				}
+				cie.personality = seen['P']
 			}
 			if _, err := frameEncodingSize(cie.encoding, im.pointerSize); err != nil {
 				return nil, err
@@ -217,6 +220,11 @@ func (im *image) validateFrameRecords(b []byte, imageOffset uint64, policy frame
 			}
 			if err := r.cfi(); err != nil {
 				return nil, err
+			}
+			if policy.record != nil {
+				if err := policy.record(uint64(start), uint64(length), im.base+uintptr(imageOffset)+uintptr(offset), cie.personality); err != nil {
+					return nil, err
+				}
 			}
 			fdes = append(fdes, im.base+uintptr(imageOffset)+uintptr(offset))
 		}

@@ -12,7 +12,8 @@ static __attribute__((noinline)) int relay(int a, int b) {
 }
 extern "C" int cxx_catch(int a, int b) {
     DYLIB_CXX_DWARF();
-    cxx_save(reinterpret_cast<void *>(&cxx_catch));
+    // Query an instruction inside the frame, avoiding entry/return boundaries.
+    cxx_save(reinterpret_cast<char *>(&cxx_catch) + 4);
     OuterGuard guard;
     try {
         if (a == 99) return cxx_host_throw(20, 22);

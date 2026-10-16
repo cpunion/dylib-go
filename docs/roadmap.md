@@ -69,7 +69,7 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Windows AMD64 version 1 disjoint chained C unwind records, shared primaries, multi-level integer saves, validation retry and native Go/llgo stack traversal.
 - [x] Windows AMD64 nested overlapping chains, disjoint registration intervals and read-only resumed-parent proxies, with partial-prolog and register/stack restoration tests.
 - [x] Linux amd64/arm64/386 libgcc C++ personality/LSDA, native throw/catch/rethrow, RAII, COMDAT FDE pruning, retirement and object/archive retry tests.
-- [x] macOS amd64/arm64 C++ DWARF personality/LSDA with system libunwind, explicit/implicit LSDA rebasing, native exception calls and retirement.
+- [x] macOS amd64/arm64 C++ DWARF personality/LSDA with system libunwind, explicit/implicit LSDA rebasing, native exception calls, native header/callback/cache ownership, registry-failure retry and retirement.
 - [ ] Windows language handlers and newer unwind versions, Mach-O compact unwind, and additional POSIX unwind providers.
 - [x] Concurrent Symbol/Function/CallPlan calls and reentrant callbacks, with retirement before cleanup and no invocation lock across native calls.
 - [x] Scoped reentrant load/link initializers with staged raw symbols, prior OS-library/retained-provider symbols, busy errors for ordinary operations, and concurrent close/failure lifetime guards before publication.

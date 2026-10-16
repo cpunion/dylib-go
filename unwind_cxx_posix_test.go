@@ -6,11 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
-	"unsafe"
 
 	examplecall "github.com/cpunion/dylib-go/examples/call"
-	"github.com/cpunion/dylib-go/internal/native"
 )
 
 func testNativeCXXExceptions(t *testing.T) {
@@ -42,13 +41,6 @@ func testNativeCXXExceptions(t *testing.T) {
 			for _, kind := range []string{"throw", "catch"} {
 				path := filepath.Join(dir, kind+".o")
 				command(t, cpp, append(append([]string(nil), flags...), "-c", "testdata/unwind_cxx_"+kind+".cpp", "-o", path)...)
-				if runtime.GOOS == "darwin" {
-					data, err := os.ReadFile(path)
-					if err != nil {
-						t.Fatal(err)
-					}
-					t.Logf("CXX diagnostic object %s: %x", kind, data)
-				}
 				objects = append(objects, path)
 			}
 			observer := New(Options{})
@@ -78,27 +70,6 @@ func testNativeCXXExceptions(t *testing.T) {
 						{"integer_rethrow", 20, 22, 111}, {"double", -20, 62, 11}, {"library_throw", 99, 0, 10},
 					} {
 						t.Run(test.name, func(t *testing.T) {
-							if runtime.GOOS == "darwin" && session.image == nil {
-								if err := session.Link("cxx_catch"); err != nil {
-									t.Fatal(err)
-								}
-								im := session.image
-								for _, object := range im.objects {
-									for _, section := range object.sections {
-										if section != nil {
-											t.Logf("CXX diagnostic section %s base=%x original=%x size=%x data=%x", section.name, im.base+uintptr(section.offset), section.original, section.size, im.mem[section.offset:section.offset+section.size])
-										}
-									}
-								}
-								t.Logf("CXX diagnostic GOT base=%x data=%x personality=%x int=%x double=%x", im.base+uintptr(im.gotStart), im.mem[im.gotStart:im.gotNext], session.external("__gxx_personality_v0"), session.external("_ZTIi"), session.external("_ZTId"))
-								for _, name := range []string{"unw_set_reg", "_Unwind_SetIP", "_Unwind_SetGR"} {
-									address := native.Lookup(im.unwind.provider, name)
-									if address != 0 {
-										length := min(uintptr(2048), 4096-(address&4095))
-										t.Logf("CXX diagnostic system %s base=%x data=%x", name, address, unsafe.Slice((*byte)(unsafe.Pointer(address)), int(length)))
-									}
-								}
-							}
 							call(t, observer, "cxx_events", 1, 0, 0)
 							call(t, session, "cxx_catch", test.a, test.b, 42)
 							call(t, observer, "cxx_events", 1, 0, test.events)
@@ -137,6 +108,55 @@ func testNativeCXXExceptions(t *testing.T) {
 						t.Fatal(err)
 					}
 					call(t, observer, "cxx_has_frame", 0, 0, 0)
+				})
+			}
+			t.Run("concurrent_images", func(t *testing.T) {
+				owners := make([]*Session, 10) // Exceeds libunwind's finder-slot limit.
+				for index := range owners {
+					owners[index] = New(Options{RegisterUnwind: true})
+					defer owners[index].Close()
+					load(t, owners[index], append([]string{host}, objects...)...)
+					call(t, owners[index], "cxx_catch", 20, 22, 42)
+				}
+				for _, owner := range owners[:9] {
+					if err := owner.Close(); err != nil {
+						t.Fatal(err)
+					}
+				}
+				call(t, owners[9], "cxx_catch", 20, 22, 42)
+				call(t, observer, "cxx_has_frame", 0, 0, 1)
+				if err := owners[9].Close(); err != nil {
+					t.Fatal(err)
+				}
+				call(t, observer, "cxx_has_frame", 0, 0, 0)
+				call(t, observer, "cxx_events", 1, 0, 1221)
+			})
+			if runtime.GOOS == "darwin" {
+				t.Run("registration_failure", func(t *testing.T) {
+					count, err := callInt32(observer, "cxx_unwind_slots", 1, 0)
+					if err != nil || count <= 0 || count > 8 {
+						t.Fatalf("fill native finder slots: %d, %v", count, err)
+					}
+					filled := true
+					defer func() {
+						if filled {
+							call(t, observer, "cxx_unwind_slots", 0, 0, count)
+						}
+					}()
+					session := New(Options{RegisterUnwind: true})
+					defer session.Close()
+					load(t, session, append([]string{host}, objects...)...)
+					if err := session.Link("cxx_catch"); err == nil || !strings.Contains(err.Error(), "dynamic Mach-O unwind registration") {
+						t.Fatalf("exhausted lookup registry: %v", err)
+					}
+					call(t, observer, "cxx_unwind_slots", 0, 0, count)
+					filled = false
+					call(t, session, "cxx_catch", 20, 22, 42)
+					if err := session.Close(); err != nil {
+						t.Fatal(err)
+					}
+					call(t, observer, "cxx_has_frame", 0, 0, 0)
+					call(t, observer, "cxx_events", 1, 0, 111)
 				})
 			}
 			plain := New(Options{})

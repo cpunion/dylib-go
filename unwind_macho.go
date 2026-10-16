@@ -3,29 +3,99 @@ package dylib
 import (
 	"encoding/binary"
 	"fmt"
+	"sort"
+
+	"github.com/cpunion/dylib-go/internal/native"
 )
 
 func (im *image) registerMachOUnwind() error {
 	var frames []uintptr
+	var ranges [][4]uintptr
+	needsHeader := false
 	for _, o := range im.objects {
-		for _, s := range o.sections {
+		for sectionIndex, s := range o.sections {
 			if s == nil || s.name != "__eh_frame" {
 				continue
 			}
 			if s.exec || s.write {
 				return fmt.Errorf("%s: invalid Mach-O frame storage", o.info.Name)
 			}
-			fdes, err := im.validateFrameRecords(im.mem[s.offset:s.offset+s.size], s.offset, framePolicy{pcRelative: true, language: true})
+			// ARM64 FDE relocations can name weak definitions coalesced into
+			// another object. Retain that definition's FDE rather than its losing
+			// copy's CFI. x86-64 implicit references still address retained code.
+			losing := make(map[uintptr]bool)
+			for _, r := range o.relocs {
+				if r.section != sectionIndex || r.offset < 8 || r.pair < 0 {
+					continue
+				}
+				if r.pair >= len(o.symbols) {
+					return fmt.Errorf("invalid Mach-O frame symbol")
+				}
+				symbol := o.symbols[r.pair]
+				if !symbol.global || !symbol.weak {
+					continue
+				}
+				definition, err := im.resolveDefinition(o, r.pair)
+				if err != nil {
+					return err
+				}
+				if definition.o != o || definition.index != r.pair {
+					losing[im.base+uintptr(s.offset+r.offset-8)] = true
+				}
+			}
+			policy := framePolicy{pcRelative: true, language: true, record: func(start, length uint64, fde uintptr, personality bool) error {
+				if losing[fde] {
+					return nil
+				}
+				if len(ranges) == 65536 {
+					return fmt.Errorf("too many dynamic Mach-O frame ranges")
+				}
+				ranges = append(ranges, [4]uintptr{uintptr(start), uintptr(start + length), im.base + uintptr(s.offset), uintptr(s.size)})
+				needsHeader = needsHeader || personality
+				return nil
+			}}
+			fdes, err := im.validateFrameRecords(im.mem[s.offset:s.offset+s.size], s.offset, policy)
 			if err != nil {
 				return fmt.Errorf("%s: __eh_frame: %w", o.info.Name, err)
 			}
-			frames = append(frames, fdes...)
+			for _, fde := range fdes {
+				if !losing[fde] {
+					frames = append(frames, fde)
+				}
+			}
 		}
 	}
 	if len(frames) == 0 {
 		return nil
 	}
-	return im.registerDwarfFrames("/usr/lib/system/libunwind.dylib", frames)
+	sort.Slice(ranges, func(i, j int) bool { return ranges[i][0] < ranges[j][0] })
+	var entries []uintptr
+	for index, r := range ranges {
+		if index != 0 && r[0] < ranges[index-1][1] {
+			return fmt.Errorf("overlapping dynamic Mach-O frame ranges")
+		}
+		entries = append(entries, r[:]...)
+	}
+	if err := im.registerDwarfFrames("/usr/lib/system/libunwind.dylib", nil); err != nil {
+		return err
+	}
+	u := im.unwind
+	add := native.Lookup(u.provider, "__unw_add_find_dynamic_unwind_sections")
+	remove := native.Lookup(u.provider, "__unw_remove_find_dynamic_unwind_sections")
+	if add == 0 || remove == 0 {
+		if needsHeader {
+			return fmt.Errorf("native C++ exceptions require dynamic Mach-O unwind lookup")
+		}
+		register := native.Lookup(u.provider, "__register_frame")
+		for _, frame := range frames {
+			native.CallPointer(register, frame)
+			u.frames = append(u.frames, frame)
+		}
+		return nil // Preserve C frame lookup on older providers without this SPI.
+	}
+	var err error
+	u.dynamic, err = native.RegisterMachODWARF(add, remove, entries)
+	return err
 }
 
 // Mach-O assemblers may resolve FDE PC/LSDA references inside the input object,

@@ -12,7 +12,7 @@ continue to use their OS-managed unwind registration.
 | Windows amd64 | 12-byte `.pdata` records and version 1 `.xdata`, including the chained C records below, without language handlers |
 | Windows arm64 | 8-byte `.pdata`; packed function/fragment records, or version 0 full/extended `.xdata`, without language handlers |
 | Linux amd64/arm64/386 | ELF `.eh_frame` and `.eh_frame.*`, DWARF32 CIE versions 1/3, C and the C++ personality/LSDA subset below; libgcc_s required |
-| macOS amd64/arm64 | Mach-O `__eh_frame`, PC-relative DWARF32 C/C++ records with the personality/LSDA subset below, individually registered with system libunwind |
+| macOS amd64/arm64 | Mach-O `__eh_frame`, PC-relative DWARF32 C/C++ records with the personality/LSDA subset below, system libunwind dynamic lookup with native header ownership |
 | Windows 386 | Raw registration remains pending; requesting it for a raw image returns an error |
 
 ## Windows
@@ -135,10 +135,25 @@ rebasing maps implicit FDE LSDA references to their original read-only
 section; null LSDA values remain null. Explicit compiler relocations are not
 rebased twice. Staged input bytes remain intact for retries.
 
-Each FDE is registered separately with `__register_frame` from a retained
-`/usr/lib/system/libunwind.dylib` handle. macOS does not receive libgcc's
-section-start registration or zero-terminator contract. Deregistration uses
-the same provider, in reverse order after cleanup and before unmapping.
+Registration retains one `/usr/lib/system/libunwind.dylib` handle and uses its
+`__unw_add_find_dynamic_unwind_sections` / `__unw_remove_find_dynamic_unwind_sections`
+SPI when available. Go validates/sorts exact FDE ranges and associates each with
+its DWARF section. A small native callback copies those ranges into owned native
+storage and returns a baseline Mach-O header plus the matching section; it never
+calls Go or retains Go heap storage. Older ARM64 system unwinders inspect the
+header's CPU subtype when a personality installs a landing-pad IP, so FDE
+registration alone is insufficient for C++ exceptions on those systems.
+
+One finder serves all live sessions. Registration/removal never holds the range
+lock while acquiring libunwind's callback lock. Each owner has a distinct header
+and DWARF cache group. Retirement removes its lookup ranges, invalidates its
+Darwin cache group through the retained deregistration entry, then frees native
+storage before releasing the provider/image. Native removal errors retain the
+owner's storage. This cache-key invalidation follows Darwin's `removeAllIn`
+registration contract; it is not the GNU libgcc section-scanning interface.
+Older providers without the lookup SPI keep the existing per-FDE C registration
+path; exception-enabled frames require the lookup extension and fail before
+initialization if it is missing.
 The metadata-only `S_COALESCED` type of `__eh_frame` is accepted without
 extending general Mach-O symbol/section coalescing.
 
@@ -165,7 +180,10 @@ throw/catch/rethrow, int/double matching, RAII counts, shared-library throws,
 missing-root retry, retained calls during retirement and FDE lookup before/after
 close at `-O0`/`-O2`, with Go and llgo. Pure Go tests relocate real output for
 both architectures, repeat from unchanged staged bytes, and reject invalid
-LSDA storage and personality pointer cells. As on Linux, exceptions cannot
+LSDA storage and personality pointer cells. Native tests also keep ten images
+live, retire siblings without losing the survivor, and exhaust the real finder
+slots before retrying a failed link. ARM64 FDEs for weak definitions selected
+from another object are excluded from registration. As on Linux, exceptions cannot
 cross Go frames or callbacks. Compact-only functions need additional work.
 
 Existing macOS amd64/arm64 Go and llgo jobs execute object/archive traversal,
@@ -220,3 +238,5 @@ Linux references: [GCC frame registration](https://github.com/gcc-mirror/gcc/blo
 C++ metadata references: [LSB `.eh_frame` augmentations](https://refspecs.linuxfoundation.org/LSB_5.0.0/LSB-Core-generic/LSB-Core-generic/ehframechpt.html), [GCC encoded pointers](https://github.com/gcc-mirror/gcc/blob/releases/gcc-14.2.0/libgcc/unwind-pe.h), and [Itanium exception ABI](https://itanium-cxx-abi.github.io/cxx-abi/abi-eh.html).
 
 macOS references: [Apple unwind interface](https://github.com/apple-oss-distributions/libunwind/blob/main/libunwind/include/unwind.h), [LLVM FDE registration](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/libunwind/src/libunwind.cpp), and [LLVM Mach-O definitions](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/include/llvm/BinaryFormat/MachO.h), [Apple FDE LSDA parsing](https://github.com/apple-oss-distributions/libunwind/blob/main/libunwind/src/DwarfParser.hpp), and [LLVM ARM64 relocation addends](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/lld/MachO/Arch/ARM64Common.cpp).
+
+Dynamic lookup references: [LLVM Darwin JIT lookup protocol](https://github.com/llvm/llvm-project/commit/0751fc68b976d25dd3041217dad16622cf151cd6), [dynamic lookup SPI](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/libunwind/src/libunwind_ext.h), and [Darwin DWARF cache ownership](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/libunwind/src/libunwind.cpp).
