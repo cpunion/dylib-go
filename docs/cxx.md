@@ -31,6 +31,7 @@ and ABI. This package does not discover classes, demangle symbols, or parse C++.
 | `Method{Name, Symbol, Signature}` | `void *handle`, fixed C arguments, and a result pointer for non-void results |
 | `Method.Const` | An exact const-qualified member pointer |
 | `Method.Static` | An exact static function pointer; no receiver argument |
+| `Method{Name: "operator()"}` | An exact call operator on a named callable type; `Const` selects a const call operator |
 | `ObjectArgs` on a constructor/method | Pointer transports converted to selected native class pointers, references or copied values |
 | `Method.ObjectResult` | A pointer transport carrying a borrowed pointer/reference, or a newly allocated owned value |
 | `FunctionArgs` on a constructor/method | Pointer transports converted to exact fixed native function pointers |
@@ -152,30 +153,66 @@ constructs a C++ object retaining a captured Go callback, reenters its C++ metho
 and unregisters/destroys it while session, storage, and callback close are waiting.
 Callbacks return Go errors through `Callback.Err` with a zero native return;
 these are distinct from caught C++ exceptions. Do not unwind a Go panic or C++
-exception across a C callback entry. This does not construct `std::function`,
-capture a C++ lambda, or infer native callback ownership or threading rules.
+exception across a C callback entry. Native callback ownership and threading rules
+remain explicit.
+
+## Captured lambdas and std::function
+
+The executable [callable manifest](../examples/cxx/callables.go) selects
+`Method{Name: "operator()", Signature: ...}` on named callable types. Define aliases
+in the original header, such as `using Function = std::function<int32_t(int32_t,
+int32_t)>` or `using CapturedAdder = decltype(makeAdder(0))`. Class names remain
+qualified identifiers; arbitrary template expressions and other operator names
+are not accepted. `operator()` cannot be static under the selected C++17 standard.
+The native compiler checks its exact argument/result types and const qualification.
+A mutable lambda requires `Const: false`; `std::function::operator()` is const even
+when its stored target mutates state.
+
+Factories return callable aliases through `ObjectResult{Kind: ObjectValue}`.
+This allocates a native owner without requiring a default constructor. C++17
+prvalue construction supports move-only captures; explicit reference constructors
+can copy copyable closures and `std::function`. Copy semantics follow C++: scalar
+captures are independent, while pointers or shared owners retain their usual
+sharing behavior. The facade does not interpret the capture layout. Empty
+`std::function` calls return `Exception` for `std::bad_function_call` and clear the
+result; null receivers return `InvalidArgument`.
+
+A `FunctionArg` constructor can initialize `std::function` from an existing native
+entry, including an `abi.NewCallback` entry for a captured Go handler. The native
+`std::function` copy does not retain the Go callback or its code provider. Keep
+callback/provider leases until **all** native copies are destroyed. The
+[dynamic callable test](../compiler/cxx/callable_dynamic_test.go) couples these
+resources with `Registration`, invokes the capture during owner retirement, then
+destroys the callable before releasing its leases. It also exercises native
+entries and C++ captures; freshly generated cgo/direct llgo callers execute those
+native cases without libffi. Standard-library callables require the native C++
+SDK/runtime matching their producer.
 
 ## Coverage and remaining work
 
-Go and llgo CI compile C declarations and C++ source for all eight qualified
-targets. Native jobs execute unoptimized/optimized libraries: a freshly generated
+Go and llgo CI compile the base facade's C declarations and C++ source for all
+eight qualified targets. Callable fixtures use the matching host C++ SDK. Native
+jobs execute unoptimized/optimized libraries: a freshly generated
 cgo caller runs without libffi, llgo also executes its direct generated caller,
 and optional dynamic calls cover scalar widths,
 const overloads, void results, native addresses, generated secondary/virtual base
 views, composed diamond conversions, class copies/references/pointers, noncopyable
 value results, copy exceptions, overloaded `operator&`, private-destructor static
-classes, native function factories/arguments/returns, retained captured callbacks,
+classes, native function factories/arguments/returns, mutable captured lambdas,
+independent callable copies, move-only captures/destruction, empty `std::function`
+exceptions, native-entry construction, retained captured callbacks,
 nested C++/Go reentry during retirement, void/native-address/mixed-width callback
 signatures, virtual dispatch,
 constructor/method exceptions, throwing destruction, cleared outputs and nulls.
 Linux 386 requires C++ multilib development files in addition to i386 libffi.
 `DYLIB_CXX` selects the Clang-compatible C++ test producer executable.
 
-Arbitrary non-class typed pointers, C++ lambda/`std::function` adapters,
+Arbitrary non-class typed pointers, automatic lambda/declaration discovery,
 ref-qualified/volatile members, variadics, inheritance discovery,
-downcasts/crosscasts and C++ header discovery remain outside this manifest. Raw C++
-runtime/exception loading is unqualified; use complete libraries for these
-facades. The generator complements llcppg and ABIBridge while keeping C++ ABI
+downcasts/crosscasts and C++ header discovery remain outside this manifest. These
+facade tests use complete libraries. Raw C++ DWARF exceptions have a separately
+qualified Linux/macOS subset; see [unwind scope](unwind.md). The generator
+complements llcppg and ABIBridge while keeping C++ ABI
 details in their native compiler.
 
 References: [C++ member-pointer calls](https://eel.is/c++draft/expr.mptr.oper),
