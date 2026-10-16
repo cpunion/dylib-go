@@ -33,3 +33,22 @@ union Records record_bundle_echo(union Records value) { return value; }
 
 struct HFA hfa_make(double a,double b) { struct HFA v={{a,b}}; return v; }
 union Records record_hfa_echo(union Records value) { return value; }
+union Nested nested_echo(union Nested value) {
+    if (value.payload.before || value.payload.after) {
+        union Nested invalid = {0};
+        invalid.payload.inner.pair.a = -1;
+        return invalid;
+    }
+    return value;
+}
+union Nested nested_add(union Nested value, int32_t add) {
+    if (value.payload.before || value.payload.after || value.payload.inner.pair.b)
+        value.payload.inner.pair.a = -1000;
+    value.payload.inner.pair.a += add;
+    return value;
+}
+union NestedSmall nested_small_add(union NestedSmall value, int32_t add) {
+    if (value.payload.before) value.payload.inner.i = -1000;
+    value.payload.inner.i += add;
+    return value;
+}

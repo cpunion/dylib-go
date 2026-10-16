@@ -13,7 +13,9 @@ import (
 )
 
 // Value selects a scalar, native-address or named struct transport.
-// Union optionally names a C union tag ("union Number") or typedef, and Member selects its active member.
+// Union optionally names a C union tag ("union Number") or typedef, and Member
+// selects its active member or a dot-separated path through nested aggregates.
+// Paths allow at most 16 identifiers and 1024 bytes, without indexes or pointer dereferences.
 // Input unions are zero-initialized before assigning Member. Result Member must
 // be valid for the native result. Pointer addresses and pointees remain borrowed.
 // Record names an ordinary C struct or typedef when Type is abi.Struct.
@@ -166,7 +168,7 @@ func transport(v Value, result bool) (string, error) {
 	} else if v.Record != "" {
 		return "", fmt.Errorf("record name requires a struct transport")
 	}
-	if v.Union == "" && v.Member != "" || v.Union != "" && (!unionName(v.Union) || !identifier(v.Member) || v.Type == abi.Void) {
+	if v.Union == "" && v.Member != "" || v.Union != "" && (!unionName(v.Union) || !memberPath(v.Member) || v.Type == abi.Void) {
 		return "", fmt.Errorf("invalid union/member selection")
 	}
 	switch v.Type {
@@ -206,6 +208,21 @@ func transport(v Value, result bool) (string, error) {
 
 func recordName(s string) bool { return identifier(strings.TrimPrefix(s, "struct ")) }
 func unionName(s string) bool  { return identifier(strings.TrimPrefix(s, "union ")) }
+func memberPath(s string) bool {
+	if len(s) > 1024 {
+		return false
+	}
+	parts := strings.Split(s, ".")
+	if len(parts) > 16 {
+		return false
+	}
+	for _, part := range parts {
+		if !identifier(part) {
+			return false
+		}
+	}
+	return true
+}
 func identifier(s string) bool {
 	if s == "" || len(s) > 256 {
 		return false
