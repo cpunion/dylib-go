@@ -11,6 +11,8 @@ API unsigned VECTOR vector_unsigned(unsigned);
 API _Bool VECTOR vector_bool(_Bool);
 API void VECTOR vector_void(void);
 API int VECTOR vector_zero(void);
+API int VECTOR _vector_add(int, int);
+API int _cdecl_add(int, int);
 API int VECTOR vector_add(int, int);
 API long long VECTOR vector_wide(signed char, unsigned char, short, unsigned short, long long, unsigned long long);
 API double VECTOR vector_mixed(int, float, double, int, float, double, float, double, int);

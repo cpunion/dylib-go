@@ -63,7 +63,7 @@ Run
 | Variadic prototypes | Fixed prefix; `Declaration.WithTail` adds a concrete scalar/pointer tail; `abi.Prepare` applies promotions |
 | C cdecl | All eight qualified native targets |
 | stdcall / fastcall | Windows 386; retain compiler symbol decoration |
-| vectorcall | Fixed Windows amd64/386 `CgoSource` bridges with a supporting C compiler; ordinary record values require amd64 or GNU 386; retain `@@N` decoration |
+| vectorcall | Fixed Windows amd64/386 `CgoSource` bridges with a supporting C compiler; ordinary record values require amd64 or GNU 386; retain `@@N` decoration and identifier-leading underscores |
 | Higher-order and multiply indirect function pointers | Nested argument/result prototypes and 1–8 pointer layers; caller owns code and pointee lifetimes |
 | Function-pointer record fields and fixed arrays | Opaque native address storage with separate field-indexed prototypes; supports typedef/direct pointers, multidimensional arrays, nested record arrays and self-referencing callback signatures |
 | Unions, other attributed records/fields/typedefs, flexible/zero-length arrays, inaccessible anonymous enums, incompatible/overaligned enum integers, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |

@@ -43,7 +43,7 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 Implemented relocation families:
 
 - ELF i386: NONE, 32, PC32, PLT32, GOT32/GOT32X, GOTOFF, GOTPC, SIZE32; implicit REL and explicit RELA addends. GOT slots are 4 bytes; register-relative and baseless memory accesses use the [documented instruction rules](elf.md#i386-got-instruction-forms). Relative/size arithmetic wraps within the 32-bit address space.
-- COFF i386: ABSOLUTE, DIR32, DIR32NB, REL32, SECTION, SECREL. Leading C linker underscores are normalized; stdcall/fastcall decorations remain. Dynamic calls support explicit cdecl, stdcall, and fastcall on Windows 386.
+- COFF i386: ABSOLUTE, DIR32, DIR32NB, REL32, SECTION, SECREL. Leading C linker underscores are normalized; stdcall/fastcall and vectorcall decorations remain. Vectorcall preserves identifier-leading underscores. Dynamic calls support explicit cdecl, stdcall, and fastcall on Windows 386.
 - COFF ARM64: ABSOLUTE, ADDR32/ADDR32NB/ADDR64, BRANCH26, PAGEBASE_REL21, REL21, PAGEOFFSET_12A/12L, BRANCH19/14, REL32, SECTION, SECREL, SECREL_LOW12A/HIGH12A/LOW12L. Conditional branches must fit their architectural displacement.
 
 - ELF x86-64: NONE, 64, PC32, PLT32, GOTPCREL/GOTPCRELX/REX_GOTPCRELX, GOT32/GOT64, GOTOFF64, GOTPC32/GOTPC64, GOTPCREL64, deprecated GOTPLT64, PLTOFF64, 32/32S, PC64, SIZE32/SIZE64. See [GOT and large-code rules](elf.md#amd64-got-offsets-and-large-code-models) and [symbol-size rules](elf.md#symbol-size-relocations).

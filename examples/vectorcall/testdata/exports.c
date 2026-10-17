@@ -10,6 +10,8 @@ unsigned VECTOR vector_unsigned(unsigned x) { return x - 1; }
 _Bool VECTOR vector_bool(_Bool x) { return !x; }
 void VECTOR vector_void(void) { stored = 42; }
 int VECTOR vector_zero(void) { return stored; }
+int VECTOR _vector_add(int a, int b) { return a + b; }
+int _cdecl_add(int a, int b) { return a + b; }
 int VECTOR vector_add(int a, int b) { return a + b; }
 long long VECTOR vector_wide(signed char a, unsigned char b, short c, unsigned short d, long long e, unsigned long long f) {
     return a + b + c + d + e + (long long)f;

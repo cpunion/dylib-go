@@ -45,7 +45,7 @@ func TestNativeGeneratedVectorcall(t *testing.T) {
 	if root := os.Getenv("DYLIB_NATIVE_SYSROOT"); root != "" {
 		flags = append(flags, "--sysroot="+root, "--rtlib=libgcc")
 	}
-	names := []string{"vector_unsigned", "vector_bool", "vector_void", "vector_zero", "vector_add", "vector_wide", "vector_mixed", "vector_pair", "vector_hfa", "vector_large", "vector_pointer", "vector_factory", "vector_forward", "vector_apply", "vector_hfa_factory", "vector_hfa_forward"}
+	names := []string{"_vector_add", "_cdecl_add", "vector_unsigned", "vector_bool", "vector_void", "vector_zero", "vector_add", "vector_wide", "vector_mixed", "vector_pair", "vector_hfa", "vector_large", "vector_pointer", "vector_factory", "vector_forward", "vector_apply", "vector_hfa_factory", "vector_hfa_forward"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: target, Functions: names})
 	if err != nil {
 		t.Fatal(err)

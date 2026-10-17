@@ -16,10 +16,11 @@ func TestVectorcallCgoAcrossWindowsTargets(t *testing.T) {
 	path := headerFile(t, `typedef int (__attribute__((vectorcall)) *Entry)(int,int);
 int __attribute__((vectorcall)) vector_add(int,int);
 Entry factory(void); int apply(Entry,int,int);
-int __vectorcall keyword(int,int);`)
+int __vectorcall keyword(int,int);
+int __vectorcall _under(int,int); int _cdecl_under(int,int);`)
 	for _, target := range []string{"x86_64-pc-windows-msvc", "x86_64-w64-windows-gnu", "i686-pc-windows-msvc", "i686-w64-windows-gnu"} {
 		t.Run(target, func(t *testing.T) {
-			h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Target: target, Functions: []string{"vector_add", "factory", "apply", "keyword"}})
+			h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Target: target, Functions: []string{"vector_add", "factory", "apply", "keyword", "_under", "_cdecl_under"}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -27,7 +28,7 @@ int __vectorcall keyword(int,int);`)
 			if h.Target.Arch == "amd64" {
 				suffix = "@@16"
 			}
-			if h.Functions[0].Signature.Convention != abi.VectorCall || h.Functions[0].Symbol != "vector_add"+suffix || h.Functions[3].Signature.Convention != abi.VectorCall || h.Functions[3].Symbol != "keyword"+suffix {
+			if h.Functions[0].Signature.Convention != abi.VectorCall || h.Functions[0].Symbol != "vector_add"+suffix || h.Functions[3].Signature.Convention != abi.VectorCall || h.Functions[3].Symbol != "keyword"+suffix || h.Functions[4].Symbol != "_under"+suffix || h.Functions[5].Symbol != "_cdecl_under" {
 				t.Fatal("vectorcall metadata/decoration", h.Functions)
 			}
 			if h.Functions[1].FunctionPointers[0].Signature.Convention != abi.VectorCall || h.Functions[2].FunctionPointers[0].Signature.Convention != abi.VectorCall {
@@ -101,7 +102,7 @@ func TestVectorcallTargetAndSignatureValidation(t *testing.T) {
 // Compile every native fixture bridge on each qualified record ABI even when
 // the current host cannot execute Windows code.
 func TestVectorcallNativeFixtureBridges(t *testing.T) {
-	names := []string{"vector_unsigned", "vector_bool", "vector_void", "vector_zero", "vector_add", "vector_wide", "vector_mixed", "vector_pair", "vector_hfa", "vector_large", "vector_pointer", "vector_factory", "vector_forward", "vector_apply", "vector_hfa_factory", "vector_hfa_forward"}
+	names := []string{"_vector_add", "_cdecl_add", "vector_unsigned", "vector_bool", "vector_void", "vector_zero", "vector_add", "vector_wide", "vector_mixed", "vector_pair", "vector_hfa", "vector_large", "vector_pointer", "vector_factory", "vector_forward", "vector_apply", "vector_hfa_factory", "vector_hfa_forward"}
 	for _, target := range []string{"x86_64-pc-windows-msvc", "x86_64-w64-windows-gnu", "i686-w64-windows-gnu"} {
 		t.Run(target, func(t *testing.T) {
 			h, err := Parse(context.Background(), "../../examples/vectorcall/testdata/exports.h", Options{Compiler: compilerTool(t), Target: target, Functions: names})

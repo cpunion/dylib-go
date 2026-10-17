@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/cpunion/dylib-go/abi"
+	"github.com/cpunion/dylib-go/internal/coffname"
 )
 
 const sizeProbe = `enum {
@@ -192,9 +193,11 @@ func decodeFunction(node astNode, target Target, resolver *typeResolver, probe a
 		return Declaration{}, fmt.Errorf("missing compiler symbol spelling")
 	}
 	// Match the existing object parsers' C underscore normalization, retaining
-	// Windows i386 stdcall suffixes and fastcall prefixes.
-	if target.OS == "darwin" || target.OS == "windows" && target.Arch == "386" {
+	// Windows i386 convention decorations and vectorcall identifier prefixes.
+	if target.OS == "darwin" {
 		symbol = strings.TrimPrefix(symbol, "_")
+	} else if target.OS == "windows" && target.Arch == "386" {
+		symbol = coffname.NormalizeI386(symbol)
 	}
 	return Declaration{Name: node.Name, Symbol: symbol, Signature: signature, FunctionPointers: pointers}, nil
 }

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cpunion/dylib-go/internal/coffname"
 	"github.com/cpunion/dylib-go/internal/native"
 )
 
@@ -81,7 +82,7 @@ func parseCOFFImport(name string, b []byte) (*file, error) {
 		o.info.Arch = "arm64"
 	case 0x14c:
 		o.info.Arch, o.info.Bits = "386", 32
-		public = strings.TrimPrefix(public, "_")
+		public = coffname.NormalizeI386(public)
 	default:
 		o.info.Arch = fmt.Sprintf("machine-%x", le.Uint16(b[6:]))
 		o.info.Bits = 0

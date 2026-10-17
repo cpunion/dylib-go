@@ -36,6 +36,10 @@ func main() {
 		}
 		v, e := b.Vector_zero()
 		check(v, e, int32(42))
+		v, e = b.X_vector_add(-20, 62)
+		check(v, e, int32(42))
+		v, e = b.X_cdecl_add(-20, 62)
+		check(v, e, int32(42))
 		v, e = b.Vector_add(-20, 62)
 		check(v, e, int32(42))
 		wide, e := b.Vector_wide(-128, 255, -32768, 65535, -9223372036854775807, 9223372036854742955)
