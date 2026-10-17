@@ -1,6 +1,10 @@
 package moduleexample
 
-import "github.com/cpunion/dylib-go/module"
+import (
+	"context"
+
+	"github.com/cpunion/dylib-go/module"
+)
 
 // Manifest imports both a function and data under consumer-specific names.
 // Paths can name native objects, archives or complete OS libraries. Version
@@ -13,4 +17,10 @@ func Manifest(provider, consumer string) module.Manifest {
 		}},
 		{Name: "math", Version: "math/1", Files: []string{provider}, Exports: []string{"module_add", "module_bias"}},
 	}}
+}
+
+// Discover resolves app/1 and its exact declared providers from *.dylib.json catalogs.
+// It reads metadata only; pass the returned manifest to module.Open to load it.
+func Discover(ctx context.Context, directories ...string) (module.Manifest, error) {
+	return module.Discover(ctx, []module.Requirement{{Name: "app", Version: "app/1"}}, directories...)
 }

@@ -11,6 +11,7 @@ No llgo compiler, libffi or external dependency resolver is required.
 | `Read(reader)` | Decode and validate one JSON document, up to 1 MiB; reject unknown fields and trailing documents |
 | `Open(base, manifest, options)` | Load selected roots and their transitive providers, resolving relative file paths from `base` |
 | `Load(path, options)` | Read a manifest and use its containing directory as the input base |
+| `Discover(ctx, roots, directories...)` | Read provider catalogs from explicit directories and return a complete manifest for exact root versions; no native loading |
 | `Graph.Session(name)` | Borrow one loaded session for normal library calls and adapters |
 | `Graph.Close()` | Retire graph lookup, then close consumers before providers; concurrent closes share the cleanup result |
 
@@ -84,5 +85,45 @@ callable. These execute on all eight Go targets and six llgo targets. No new
 execution platform or object format is introduced by this package.
 
 `module.Manager` adds [explicit replacement and state migration](replacement.md),
-preserving old scopes and code leases until retirement. Filesystem/provider
-discovery and version negotiation remain separate work.
+preserving old scopes and code leases until retirement.
+
+## Provider catalogs
+
+`Discover` scans explicit directories for regular `*.dylib.json` files without
+recursion. A `Catalog` document contains `format` and `modules`, using the same
+module declarations as a manifest. It has no `roots` field: callers select roots
+with `Requirement{Name, Version}`. Imports may refer to providers declared in
+other catalog files or directories. Each native file path is resolved relative
+to its declaring catalog; returned manifest paths are absolute.
+
+All available declarations receive local contract validation. Duplicate
+name/version declarations are ambiguous and fail rather than selecting the first
+directory. Different available versions may coexist, but a selected dependency
+graph must use one exact version per module name. Missing providers, conflicting
+versions, missing exports and reachable dependency cycles fail before loading.
+Unreachable declarations may refer to uninstalled providers; they are omitted
+from the result and their native files are never opened. Invalid local metadata
+still fails discovery even when unused.
+
+Pass the discovered manifest to `Open` to load it, or use it in a replacement
+builder. Discovery itself reads metadata only and does not initialize images,
+infer signatures or negotiate version ranges. Catalogs and native files are not
+snapshotted together: `Open` reads the native files later. Their ABI contracts and
+provenance remain caller-supplied, just as with ordinary manifests.
+
+Discovery supports 1-256 roots, 1-16 explicit directories, at most 4096 directory
+entries, 256 catalog files, 256 module declarations, 4096 native input paths and
+8 MiB total JSON, with the existing 1 MiB per-document limit. Repeated directory
+paths are normalized and scanned once. Filenames are sorted within each
+directory, preserving caller directory/root/import order. Symlink catalog
+files are rejected; symlink directory arguments follow normal OS behavior.
+Cancellation is checked between filesystem operations, reads and graph visits;
+an in-progress OS filesystem operation cannot be interrupted.
+
+The [executed example](../examples/modules/manifest.go) selects `app/1` with
+`Discover`. Native tests place consumers and providers in separate catalog
+directories, select the required version while another version has missing
+native files, and execute object/archive/library graphs at `-O0`/`-O2` with Go
+and llgo. Existing graph retirement and rollback rules apply unchanged.
+Automatic ABI/signature discovery, semantic-version negotiation, system-directory
+search and symbol-triggered compilation remain outside this API.
