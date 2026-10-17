@@ -117,6 +117,24 @@ func main() {
 	if hfaResult.Values[0]+hfaResult.Values[1] != 42 {
 		panic("union HFA member")
 	}
+	v, e = b.Union_nested_add(20, 22)
+	check(v, e, int32(42))
+	v, e = b.Union_nested_small_add(20, 22)
+	check(v, e, int32(42))
+	v, e = b.Union_nested_add(-64, 22)
+	check(v, e, int32(-42))
+	pairResult, e = b.Union_nested_pair(pair)
+	check(pairResult, e, pair)
+	bundleResult, e = b.Union_nested_bundle(bundle)
+	check(bundleResult, e, bundle)
+	hfaResult, e = b.Union_nested_hfa(hfa)
+	check(hfaResult, e, hfa)
+	d, e = b.Union_nested_double(42.5)
+	check(d, e, 42.5)
+	p, e = b.Union_nested_pointer(address)
+	check(p, e, address)
+	p, e = b.Union_nested_pointer(nil)
+	check(p, e, unsafe.Pointer(nil))
 	if err := s.Close(); err != nil {
 		panic(err)
 	}

@@ -30,4 +30,15 @@ union Records record_bundle_echo(union Records value);
 
 struct HFA hfa_make(double a,double b);
 union Records record_hfa_echo(union Records value);
+union Nested {
+    struct { int32_t before; union Records inner; union Number number; int32_t after; } payload;
+    unsigned char storage[256];
+};
+union Nested nested_echo(union Nested value);
+union Nested nested_add(union Nested value, int32_t add);
+union NestedSmall {
+    struct { int32_t before; union { int32_t i; float f; } inner; } payload;
+    double alternative;
+};
+union NestedSmall nested_small_add(union NestedSmall value, int32_t add);
 #endif

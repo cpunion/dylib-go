@@ -19,6 +19,7 @@ import (
 func functions() []cunion.Function {
 	i := cunion.Value{Type: abi.I32, Union: "union Number", Member: "i"}
 	result := append(example.Functions(), []cunion.Function{
+		{Name: "nested_small_add", Symbol: "union_nested_small_add", Args: []cunion.Value{{Type: abi.I32, Union: "union NestedSmall", Member: "payload.inner.i"}, {Type: abi.I32}}, Result: cunion.Value{Type: abi.I32, Union: "union NestedSmall", Member: "payload.inner.i"}},
 		{Name: "pair_make", Symbol: "union_pair_make", Args: []cunion.Value{{Type: abi.I32}, {Type: abi.I32}}, Result: cunion.Value{Type: abi.Struct, Record: "struct Pair"}},
 		{Name: "bundle_make", Symbol: "union_bundle_make", Args: []cunion.Value{{Type: abi.I32}, {Type: abi.I32}}, Result: cunion.Value{Type: abi.Struct, Record: "struct Bundle"}},
 		{Name: "record_bundle_echo", Symbol: "union_bundle", Args: []cunion.Value{{Type: abi.Struct, Record: "struct Bundle", Union: "union Records", Member: "bundle"}}, Result: cunion.Value{Type: abi.Struct, Record: "struct Bundle", Union: "union Records", Member: "bundle"}},
@@ -30,6 +31,19 @@ func functions() []cunion.Function {
 		{Name: "native_address", Symbol: "union_address", Result: cunion.Value{Type: abi.Pointer}},
 		{Name: "read_pointer", Symbol: "union_pointer_read", Args: []cunion.Value{{Type: abi.Pointer, Union: "union Number", Member: "p"}}, Result: cunion.Value{Type: abi.I32}},
 	}...)
+	for _, entry := range []struct {
+		name, member, record string
+		kind                 abi.Type
+	}{
+		{"pair", "payload.inner.pair", "struct Pair", abi.Struct},
+		{"bundle", "payload.inner.bundle", "struct Bundle", abi.Struct},
+		{"hfa", "payload.inner.hfa", "struct HFA", abi.Struct},
+		{"double", "payload.number.d", "", abi.F64},
+		{"pointer", "payload.inner.bundle.pointer", "", abi.Pointer},
+	} {
+		v := cunion.Value{Type: entry.kind, Record: entry.record, Union: "union Nested", Member: entry.member}
+		result = append(result, cunion.Function{Name: "nested_echo", Symbol: "union_nested_" + entry.name, Args: []cunion.Value{v}, Result: v})
+	}
 	for _, entry := range []struct {
 		name, member string
 		kind         abi.Type
@@ -234,5 +248,55 @@ func TestUnionScalarHeaderDoesNotRequireNativeHeader(t *testing.T) {
 	write(t, path, facade.CHeader)
 	if _, err := clang.Parse(context.Background(), path, clang.Options{Compiler: clangTool(t), Flags: []string{"-ffreestanding"}, Functions: facade.Functions}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestUnionMemberPathValidation(t *testing.T) {
+	for _, path := range []string{"", ".a", "a.", "a..b", "a->b", "a[0]", "a b", "a.(b)", "a.return", "a;target()", "a\n.b", strings.Repeat("a.", 16) + "a", strings.Repeat("x", 257), strings.Repeat(strings.Repeat("x", 255)+".", 4) + "a"} {
+		value := cunion.Value{Type: abi.I32, Union: "union Values", Member: path}
+		for _, result := range []bool{false, true} {
+			f := cunion.Function{Name: "target", Symbol: "bridge"}
+			if result {
+				f.Result = value
+			} else {
+				f.Args = []cunion.Value{value}
+			}
+			if _, err := cunion.Generate("values.h", []cunion.Function{f}); err == nil {
+				t.Fatalf("accepted invalid path %q (result=%v)", path, result)
+			}
+		}
+	}
+	for _, path := range []string{"a", "payload.inner.value", strings.Repeat("a.", 15) + "a", strings.Repeat("x", 256), strings.Repeat("x", 256) + "." + strings.Repeat(strings.Repeat("x", 255)+".", 2) + strings.Repeat("x", 255)} {
+		value := cunion.Value{Type: abi.I32, Union: "union Values", Member: path}
+		if _, err := cunion.Generate("values.h", []cunion.Function{{Name: "target", Symbol: "bridge", Args: []cunion.Value{value}, Result: value}}); err != nil {
+			t.Fatalf("valid path %q: %v", path, err)
+		}
+	}
+}
+
+func TestUnionCompilerRejectsMemberPaths(t *testing.T) {
+	for _, tc := range []struct{ name, member, message string }{
+		{"missing_leaf", "inner.missing", "no member named"},
+		{"scalar_intermediate", "inner.value.value", "not a structure or union"},
+		{"pointer_intermediate", "inner.pointer.value", "pointer"},
+		{"wrong_leaf_type", "inner.number", "incompatible union member transport"},
+		{"bitfield_leaf", "inner.bits", "bit-field"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			header := filepath.Join(dir, "input.h")
+			write(t, header, []byte("#include <stdint.h>\nstruct Item{int32_t value;};union Values{struct{int32_t value;double number;struct Item *pointer;signed int bits:3;}inner;};union Values target(union Values);\n"))
+			value := cunion.Value{Type: abi.I32, Union: "union Values", Member: tc.member}
+			facade, err := cunion.Generate(filepath.ToSlash(header), []cunion.Function{{Name: "target", Symbol: "bridge", Args: []cunion.Value{value}, Result: value}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			src := filepath.Join(dir, "facade.c")
+			write(t, src, facade.CSource)
+			out, err := exec.Command(clangTool(t), "-std=c17", "-c", src, "-o", filepath.Join(dir, "facade.o")).CombinedOutput()
+			if err == nil || !strings.Contains(string(out), tc.message) {
+				t.Fatalf("nested member contract: %v\n%s", err, out)
+			}
+		})
 	}
 }

@@ -11,10 +11,12 @@ func Functions() []cunion.Function {
 	integer := cunion.Value{Type: abi.I32, Union: "union Number", Member: "i"}
 	pair := cunion.Value{Type: abi.Struct, Record: "struct Pair", Union: "union Records", Member: "pair"}
 	double := cunion.Value{Type: abi.F64, Union: "union Number", Member: "d"}
+	nested := cunion.Value{Type: abi.I32, Union: "union Nested", Member: "payload.inner.pair.a"}
 	return []cunion.Function{
 		{Name: "number_add", Symbol: "union_add", Args: []cunion.Value{integer, integer}, Result: integer},
 		{Name: "target", Symbol: "union_double", Args: []cunion.Value{double}, Result: double},
 		{Name: "record_pair_add", Symbol: "union_pair", Args: []cunion.Value{pair, {Type: abi.Struct, Record: "struct Pair"}}, Result: pair},
+		{Name: "nested_add", Symbol: "union_nested_add", Args: []cunion.Value{nested, {Type: abi.I32}}, Result: nested},
 	}
 }
 

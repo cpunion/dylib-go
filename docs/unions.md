@@ -15,7 +15,12 @@ export. Every argument/result selects either a scalar/native address, a named
 struct, or the corresponding explicitly selected union member. Argument unions
 are zero-initialized before assigning the selected member. The caller must
 select a valid member for native results; there is no inferred discriminant or
-automatic active-member detection. Pointer views borrow their pointees and
+automatic active-member detection. `Member` also accepts dot-separated paths,
+such as `payload.inner.pair.a`, through nested struct and union fields. The
+selected leaf must exactly match the transport type. The entire input union is
+zero-initialized before assigning that leaf, including neighboring fields.
+Paths permit at most 16 identifiers and 1024 bytes; pointer dereferences,
+array indexing and expressions are rejected. Pointer views borrow their pointees and
 provider lifetime; retain an appropriate code or registration lease when an
 address outlives an ordinary call.
 
@@ -41,8 +46,8 @@ values. The native union may contain other fields, be packed, be explicitly
 aligned or exceed register size; those details remain inside compiled C.
 Ordinary struct views use the existing compiler/clang layout validation and
 backend limits; dynamic/direct llgo calls still reject packed or otherwise
-unrepresentable transport records. Bare array/union member views, nested member
-paths, bitfields, variadic functions and non-default native conventions are not
+unrepresentable transport records. Bare array/union member views, bitfields,
+variadic functions and non-default native conventions are not
 implemented. C exceptions or other runtime unwinding cannot cross the facade.
 
 Generation is pure Go and supports at most 256 exports, 64 arguments per export
@@ -51,7 +56,8 @@ translation units, then execute objects, archives and shared libraries at `-O0`
 and `-O2`. The Go and llgo jobs cover integer boundaries, floating NaN payloads
 and negative zero, Boolean values, borrowed/null pointers,
 small/large/packed/aligned unions, ordinary struct member views with nested
-arrays/pointers, and provider retirement. Cross-target tests compile all eight
+arrays/pointers, nested scalar/struct/pointer leaves at nonzero offsets, zeroed
+neighboring fields, and provider retirement. Cross-target tests compile all eight
 supported native targets, generate cgo bindings for all eight, and qualify
 direct llgo bindings only on amd64/arm64. See [the example
 manifest](../examples/cunion/manifest.go).

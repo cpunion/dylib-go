@@ -81,20 +81,31 @@ func TestNativeDynamicUnionFacade(t *testing.T) {
 							t.Fatal(err)
 						}
 						call(t, "union_pair", pair, pair, zero)
+						call(t, "union_nested_pair", pair, pair)
 						bundle, err := entries["union_bundle_make"].Call(abi.Int32(20), abi.Int32(22))
 						if err != nil {
 							t.Fatal(err)
 						}
 						call(t, "union_bundle", bundle, bundle)
+						call(t, "union_nested_bundle", bundle, bundle)
 						hfa, err := entries["union_hfa_make"].Call(abi.Float64(20.5), abi.Float64(21.5))
 						if err != nil {
 							t.Fatal(err)
 						}
 						call(t, "union_hfa", hfa, hfa)
+						call(t, "union_nested_hfa", hfa, hfa)
 						fields := bundle.Aggregate.Fields
 						if fields[0].Aggregate.Fields[0] != abi.Int32(20) || fields[1].Aggregate.Fields[1].Aggregate.Fields[0] != abi.Int32(22) || fields[2].Aggregate.Fields[1] != abi.Float64(21.5) || fields[3] != address {
 							t.Fatal("nested record factory", bundle)
 						}
+					})
+					t.Run("nested_members", func(t *testing.T) {
+						call(t, "union_nested_add", abi.Int32(42), abi.Int32(20), abi.Int32(22))
+						call(t, "union_nested_add", abi.Int32(-42), abi.Int32(-64), abi.Int32(22))
+						call(t, "union_nested_small_add", abi.Int32(42), abi.Int32(20), abi.Int32(22))
+						call(t, "union_nested_double", abi.Float64(42.5), abi.Float64(42.5))
+						call(t, "union_nested_pointer", address, address)
+						call(t, "union_nested_pointer", abi.Ptr(0), abi.Ptr(0))
 					})
 					// A pointer projection remains borrowed from this provider. A retained code
 					// entry keeps the native global alive while the session retires.
