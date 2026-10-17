@@ -24,3 +24,12 @@ func Manifest(provider, consumer string) module.Manifest {
 func Discover(ctx context.Context, directories ...string) (module.Manifest, error) {
 	return module.Discover(ctx, []module.Requirement{{Name: "app", Version: "app/1"}}, directories...)
 }
+
+// DiscoverCompatible prefers app/2 but accepts app/1, while requiring math/1.
+// The caller declares these ABI contracts; selection does not inspect binaries.
+func DiscoverCompatible(ctx context.Context, directories ...string) (module.Manifest, error) {
+	return module.DiscoverCompatible(ctx, []module.CompatibleRequirement{
+		{Name: "app", Versions: []string{"app/2", "app/1"}},
+		{Name: "math", Versions: []string{"math/1"}},
+	}, directories...)
+}

@@ -21,6 +21,15 @@ import (
 )
 
 func TestNativeDiscoveredModuleGraphCalls(t *testing.T) {
+	nativeDiscoveredModuleGraphCalls(t, false)
+}
+
+func TestNativeCompatibleModuleGraphCalls(t *testing.T) {
+	nativeDiscoveredModuleGraphCalls(t, true)
+}
+
+func nativeDiscoveredModuleGraphCalls(t *testing.T, compatible bool) {
+	t.Helper()
 	for _, kind := range []string{"object", "archive", "library"} {
 		for _, opt := range []string{"-O0", "-O2"} {
 			t.Run(kind+"/"+opt, func(t *testing.T) {
@@ -28,15 +37,45 @@ func TestNativeDiscoveredModuleGraphCalls(t *testing.T) {
 				provider := produce(t, providerDir, "provider", `API int module_bias=2; API int module_add(int a,int b){return a+b;}`, kind, opt)
 				consumer := produce(t, appDir, "consumer", consumerCode, "object", opt)
 				declared := example.Manifest(filepath.Base(provider), filepath.Base(consumer)).Modules
-				writeCatalog(t, appDir, "app", declared[0])
+				apps := []module.Module{declared[0]}
+				if compatible {
+					newer := declared[0]
+					newer.Version = "app/2"
+					newer.Imports = append([]module.Import(nil), newer.Imports...)
+					for i := range newer.Imports {
+						newer.Imports[i].Version = "math/2"
+					}
+					apps = append(apps, newer)
+				}
+				writeCatalog(t, appDir, "app", apps...)
 				unused := declared[1]
 				unused.Version, unused.Files = "math/2", []string{"not-installed.o"}
 				writeCatalog(t, providerDir, "math", declared[1], unused)
-				manifest, err := example.Discover(context.Background(), appDir, providerDir)
+				if compatible {
+					t.Run("native_failure_no_fallback", func(t *testing.T) {
+						preferred, err := module.DiscoverCompatible(context.Background(), []module.CompatibleRequirement{{Name: "app", Versions: []string{"app/2", "app/1"}}}, appDir, providerDir)
+						if err != nil || len(preferred.Modules) != 2 || preferred.Modules[0].Version != "app/2" {
+							t.Fatal("discovery inspected native files", preferred, err)
+						}
+						graph, err := module.Open("", preferred, dylib.Options{})
+						if graph != nil {
+							graph.Close()
+							t.Fatal("native failure loaded a fallback graph")
+						}
+						if !errors.Is(err, os.ErrNotExist) || !strings.Contains(err.Error(), "not-installed.o") {
+							t.Fatal(err)
+						}
+					})
+				}
+				discover := example.Discover
+				if compatible {
+					discover = example.DiscoverCompatible
+				}
+				manifest, err := discover(context.Background(), appDir, providerDir)
 				if err != nil {
 					t.Fatal(err)
 				}
-				if len(manifest.Modules) != 2 {
+				if len(manifest.Modules) != 2 || manifest.Modules[0].Version != "app/1" || manifest.Modules[1].Version != "math/1" {
 					t.Fatal("unreachable provider selected", manifest)
 				}
 				graph, err := module.Open("", manifest, dylib.Options{})
@@ -53,8 +92,10 @@ func TestNativeDiscoveredModuleGraphCalls(t *testing.T) {
 					t.Fatal(err)
 				}
 				lease, read := nativeRead(t, session, "module_run")
-				if got := read(20, 20); got != 42 {
-					t.Fatal(got)
+				for i := int32(0); i < 100; i++ {
+					if got := read(20+i, 20); got != 42+i {
+						t.Fatal(got)
+					}
 				}
 				lease.Close()
 				if err := graph.Close(); err != nil {
