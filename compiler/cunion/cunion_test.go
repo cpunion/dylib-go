@@ -90,6 +90,19 @@ func functions() []cunion.Function {
 		v := cunion.Value{Type: entry.kind, Union: entry.typ, Member: entry.member}
 		result = append(result, cunion.Function{Name: entry.name + "_add", Symbol: "union_" + entry.name, Args: []cunion.Value{v, {Type: entry.kind}}, Result: v})
 	}
+	for _, entry := range []struct {
+		name, union, member string
+		size                int
+	}{
+		{"small", "union RawSmall", "", 8}, {"large", "union RawLarge", "", 128}, {"packed", "union RawPacked", "", 17}, {"aligned", "union RawAligned", "", 32}, {"nested", "union RawNested", "payload.inner", 8},
+	} {
+		v := cunion.Value{Type: abi.Array, Union: entry.union, Member: entry.member, Bytes: entry.size}
+		result = append(result, cunion.Function{Name: "raw_" + entry.name + "_make", Symbol: "union_bytes_" + entry.name + "_make", Args: []cunion.Value{{Type: abi.U32}}, Result: v})
+		if entry.name != "small" {
+			result = append(result, cunion.Function{Name: "raw_" + entry.name + "_echo", Symbol: "union_bytes_" + entry.name, Args: []cunion.Value{v}, Result: v})
+		}
+	}
+
 	return result
 }
 func tool(t *testing.T, name string) string {

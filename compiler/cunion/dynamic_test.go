@@ -50,6 +50,41 @@ func TestNativeDynamicUnionFacade(t *testing.T) {
 						}
 					}
 					call(t, "union_add", abi.Int32(42), abi.Int32(20), abi.Int32(22))
+					t.Run("byte_views", func(t *testing.T) {
+						for _, entry := range []struct {
+							name string
+							size int
+						}{{"small", 8}, {"large", 128}, {"packed", 17}, {"aligned", 32}, {"nested", 8}} {
+							t.Run(entry.name, func(t *testing.T) {
+								values, want := make([]abi.Value, entry.size), make([]abi.Value, entry.size)
+								for i := range values {
+									v := byte((17 + 17*i) % 256)
+									values[i] = abi.Uint8(v)
+									want[i] = abi.Uint8(v ^ 0x5a)
+								}
+								declaration, err := metadata.Lookup("union_bytes_" + entry.name)
+								if err != nil {
+									t.Fatal(err)
+								}
+								desc := declaration.Signature.ReturnType()
+								build := func(elements []abi.Value) abi.Value {
+									t.Helper()
+									array, err := abi.ArrayValue(desc.Fields[0].Type, elements...)
+									if err != nil {
+										t.Fatal(err)
+									}
+									record, err := abi.StructValue(desc, array)
+									if err != nil {
+										t.Fatal(err)
+									}
+									return record
+								}
+								input := build(values)
+								call(t, "union_bytes_"+entry.name+"_make", input, abi.Uint32(17))
+								call(t, "union_bytes_"+entry.name, build(want), input)
+							})
+						}
+					})
 					for _, test := range []struct {
 						name  string
 						value abi.Value

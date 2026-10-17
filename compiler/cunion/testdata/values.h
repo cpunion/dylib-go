@@ -62,4 +62,16 @@ union __attribute__((aligned(32))) AlignedArray { IntPair ints; };
 union AlignedArray aligned_array_echo(union AlignedArray value);
 union NestedArray { struct { int32_t before; union Arrays inner; int32_t after; } payload; };
 union NestedArray nested_array_echo(union NestedArray value);
+union RawSmall { double scalar; unsigned char bytes[8]; };
+union RawLarge { double scalar; unsigned char bytes[128]; };
+union __attribute__((packed)) RawPacked { double scalar; unsigned char bytes[17]; };
+union __attribute__((aligned(32))) RawAligned { double scalar; unsigned char bytes[32]; };
+union RawNested { struct { uint64_t before; union RawSmall inner; uint64_t after; } payload; unsigned char bytes[64]; };
+#define RAW_EXPORTS(name, type) union type raw_##name##_make(uint32_t seed); union type raw_##name##_echo(union type value);
+RAW_EXPORTS(small, RawSmall)
+RAW_EXPORTS(large, RawLarge)
+RAW_EXPORTS(packed, RawPacked)
+RAW_EXPORTS(aligned, RawAligned)
+RAW_EXPORTS(nested, RawNested)
+#undef RAW_EXPORTS
 #endif

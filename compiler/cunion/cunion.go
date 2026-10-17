@@ -1,4 +1,4 @@
-// Package cunion generates C17 facades for explicit member views of union values.
+// Package cunion generates C17 facades for member and byte views of union values.
 // The native compiler supplies union layout and the function calling convention.
 // A selected member is a caller contract, never inferred from object bytes.
 package cunion
@@ -12,7 +12,7 @@ import (
 	"github.com/cpunion/dylib-go/abi"
 )
 
-// Value selects a scalar, native-address, named struct or fixed array transport.
+// Value selects a scalar, native-address, named struct, fixed array or byte transport.
 // Union optionally names a C union tag ("union Number") or typedef, and Member
 // selects its active member or a dot-separated path through nested aggregates.
 // Paths allow at most 16 identifiers and 1024 bytes, without indexes or pointer dereferences.
@@ -21,6 +21,10 @@ import (
 // Record names an ordinary C struct or typedef when Type is abi.Struct.
 // Array names a C array typedef when Type is abi.Array. It requires a union
 // member and uses a generated ordinary struct with a values field for transport.
+// Bytes instead selects 1 to 65536 bytes of a complete union's representation.
+// It requires abi.Array and Union, excludes Record/Array, and allows an empty
+// Member for the root union or a path selecting a nested union. The compiler
+// checks the exact storage size; interpreting the bytes remains caller-owned.
 // Void is allowed only for an ordinary result. Bitfields, variadics
 // and other calling conventions require a different compiled adapter.
 type Value struct {
@@ -28,11 +32,12 @@ type Value struct {
 	Union, Member string
 	Record        string
 	Array         string
+	Bytes         int
 }
 
 // Function selects an exact native C prototype and a distinct exported facade.
 // Name and Symbol are C identifiers. Args and Result describe C transports
-// and the explicitly selected union members used at the native call boundary.
+// and explicit union member/byte views used at the native call boundary.
 type Function struct {
 	Name, Symbol string
 	Args         []Value
@@ -42,8 +47,8 @@ type Function struct {
 // Facade contains independent C17 source/header buffers and ordered export names.
 // Compile CSource against the original header with the library's target/flags.
 // Parse CHeader with compiler/clang to generate dynamic, cgo or direct llgo calls.
-// Struct and array transports include the original header so the compiler can
-// describe their fields; scalar-only output remains independent of that header.
+// Named struct/array transports include the original header to describe their
+// fields; scalar-only and byte-only output remain independent of that header.
 type Facade struct {
 	CHeader, CSource []byte
 	Functions        []string
@@ -80,14 +85,22 @@ func Generate(header string, functions []Function) (*Facade, error) {
 		if v.Type != abi.Array {
 			return kind, nil
 		}
-		if name := arrays[v.Array]; name != "" {
+		key := v.Array
+		if v.Bytes != 0 {
+			key = fmt.Sprintf("bytes:%d", v.Bytes)
+		}
+		if name := arrays[key]; name != "" {
 			return name, nil
 		}
-		digest := sha256.Sum256([]byte(header + "\x00" + v.Array))
+		digest := sha256.Sum256([]byte(header + "\x00" + key))
 		name := fmt.Sprintf("dylib_go_cunion_array_%x", digest[:8])
 		guard := strings.ToUpper(name)
-		fmt.Fprintf(&wrappers, "#ifndef %s\n#define %s\ntypedef struct %s { %s values; } %s;\n#endif\n", guard, guard, name, v.Array, name)
-		arrays[v.Array] = name
+		field := v.Array + " values"
+		if v.Bytes != 0 {
+			field = fmt.Sprintf("uint8_t values[%d]", v.Bytes)
+		}
+		fmt.Fprintf(&wrappers, "#ifndef %s\n#define %s\ntypedef struct %s { %s; } %s;\n#endif\n", guard, guard, name, field, name)
+		arrays[key] = name
 		return name, nil
 	}
 	result := &Facade{}
@@ -125,7 +138,13 @@ func Generate(header string, functions []Function) (*Facade, error) {
 			args = append(args, fmt.Sprintf("%sv%d", prefix, i))
 			writeChecks(&checks, v, kind)
 			fmt.Fprintf(&body, "%s %sv%d = {0};\n", v.Union, prefix, i)
-			if v.Type == abi.Array {
+			if v.Bytes != 0 {
+				if v.Member != "" {
+					// A representation view includes padding; clear neighboring bytes too.
+					fmt.Fprintf(&body, "__builtin_memset(&%sv%d, 0, sizeof(%sv%d));\n", prefix, i, prefix, i)
+				}
+				fmt.Fprintf(&body, "__builtin_memcpy(&%s, &%sa%d.values, sizeof(%sa%d.values));\n", v.selection(fmt.Sprintf("%sv%d", prefix, i)), prefix, i, prefix, i)
+			} else if v.Type == abi.Array {
 				fmt.Fprintf(&body, "__builtin_memcpy(&%sv%d.%s, &%sa%d.values, sizeof(%sa%d.values));\n", prefix, i, v.Member, prefix, i, prefix, i)
 			} else {
 				fmt.Fprintf(&body, "%sv%d.%s = %sa%d;\n", prefix, i, v.Member, prefix, i)
@@ -150,7 +169,9 @@ func Generate(header string, functions []Function) (*Facade, error) {
 		call := prefix + "target(" + strings.Join(args, ", ") + ")"
 		if f.Result.Union != "" {
 			fmt.Fprintf(&definitions, "%s %svalue = %s;\n", nativeResult, prefix, call)
-			if f.Result.Type == abi.Array {
+			if f.Result.Bytes != 0 {
+				fmt.Fprintf(&definitions, "%s %sout = {0};\n__builtin_memcpy(&%sout.values, &%s, sizeof(%sout.values));\nreturn %sout;\n", r, prefix, prefix, f.Result.selection(prefix+"value"), prefix, prefix)
+			} else if f.Result.Type == abi.Array {
 				fmt.Fprintf(&definitions, "%s %sout = {0};\n__builtin_memcpy(&%sout.values, &%svalue.%s, sizeof(%sout.values));\nreturn %sout;\n", r, prefix, prefix, prefix, f.Result.Member, prefix, prefix)
 			} else {
 				fmt.Fprintf(&definitions, "return %svalue.%s;\n", prefix, f.Result.Member)
@@ -183,6 +204,11 @@ func Generate(header string, functions []Function) (*Facade, error) {
 
 func writeChecks(out *bytes.Buffer, v Value, kind string) {
 	fmt.Fprintf(out, "_Static_assert(__builtin_classify_type(*(%s *)0) == 13, \"cunion: selected type must be a union\");\n", v.Union)
+	if v.Bytes != 0 {
+		selected := v.selection(fmt.Sprintf("(*(%s *)0)", v.Union))
+		fmt.Fprintf(out, "_Static_assert(__builtin_classify_type(%s) == 13, \"cunion: byte view must select a union\");\n_Static_assert(sizeof(%s) == %d, \"cunion: byte view requires exact union storage\");\n", selected, selected, v.Bytes)
+		return
+	}
 	if v.Type == abi.Array {
 		kind = v.Array
 		fmt.Fprintf(out, "_Static_assert(__builtin_classify_type(*(%s *)0) == 5 && !__builtin_types_compatible_p(%s, __typeof__((*(%s *)0) + 0)) && sizeof(%s) > 0, \"cunion: array transport must name a nonempty fixed array\");\n", kind, kind, kind, kind)
@@ -193,13 +219,23 @@ func writeChecks(out *bytes.Buffer, v Value, kind string) {
 	fmt.Fprintf(out, "_Static_assert(sizeof(((%s *)0)->%s) == sizeof(%s), \"cunion: member requires full member storage\");\n", v.Union, v.Member, kind)
 }
 
+func (v Value) selection(base string) string {
+	if v.Member != "" {
+		return base + "." + v.Member
+	}
+	return base
+}
+
 func writeRecordCheck(out *bytes.Buffer, name string) {
 	fmt.Fprintf(out, "_Static_assert(__builtin_classify_type(*(%s *)0) == 12, \"cunion: record transport must name a struct\");\n", name)
 }
 
 func transport(v Value, result bool) (string, error) {
+	if v.Bytes != 0 && (v.Bytes < 1 || v.Bytes > 65536 || v.Type != abi.Array || v.Array != "" || v.Record != "" || !unionName(v.Union)) {
+		return "", fmt.Errorf("byte view requires abi.Array, a union and 1 to 65536 bytes without Record/Array")
+	}
 	if v.Type == abi.Array {
-		if !identifier(v.Array) || v.Union == "" {
+		if v.Bytes == 0 && (!identifier(v.Array) || v.Union == "") {
 			return "", fmt.Errorf("array transport requires a C array typedef and union member")
 		}
 	} else if v.Array != "" {
@@ -212,7 +248,7 @@ func transport(v Value, result bool) (string, error) {
 	} else if v.Record != "" {
 		return "", fmt.Errorf("record name requires a struct transport")
 	}
-	if v.Union == "" && v.Member != "" || v.Union != "" && (!unionName(v.Union) || !memberPath(v.Member) || v.Type == abi.Void) {
+	if v.Union == "" && v.Member != "" || v.Union != "" && (!unionName(v.Union) || !(memberPath(v.Member) || v.Bytes != 0 && v.Member == "") || v.Type == abi.Void) {
 		return "", fmt.Errorf("invalid union/member selection")
 	}
 	switch v.Type {
