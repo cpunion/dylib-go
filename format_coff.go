@@ -4,6 +4,8 @@ import (
 	"debug/pe"
 	"fmt"
 	"strings"
+
+	"github.com/cpunion/dylib-go/internal/coffname"
 )
 
 func parseCOFF(name string, b []byte) (*file, error) {
@@ -45,9 +47,9 @@ func parseCOFF(name string, b []byte) (*file, error) {
 			// Normalize the x86 C linker underscore, retaining the import
 			// marker and any stdcall suffix. Calling conventions stay explicit.
 			if strings.HasPrefix(n, "__imp__") {
-				n = "__imp_" + strings.TrimPrefix(n, "__imp__")
+				n = "__imp_" + coffname.NormalizeI386(strings.TrimPrefix(n, "__imp_"))
 			} else {
-				n = strings.TrimPrefix(n, "_")
+				n = coffname.NormalizeI386(n)
 			}
 		}
 		v := symbol{name: n, section: int(s.section), value: uint64(s.value), global: s.class == 2 || s.class == 105, weak: s.class == 105}

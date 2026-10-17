@@ -126,7 +126,7 @@ func TestCallingConventionsAndUnsupportedDeclarations(t *testing.T) {
 		{"long double f(long double);", "unsupported C type"},
 		{"union Pair{int a,b;}; union Pair f(union Pair);", "unsupported C type"},
 		{"enum Kind; enum Kind f(enum Kind);", "unsupported incomplete C enum"},
-		{"int __attribute__((vectorcall)) f(int);", "unsupported function"},
+		{"int __attribute__((regcall)) f(int);", "unsupported function"},
 	} {
 		path := headerFile(t, test.source)
 		if _, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: "i686-pc-windows-msvc", Functions: []string{"f"}}); err == nil || !strings.Contains(err.Error(), test.want) {

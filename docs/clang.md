@@ -63,6 +63,7 @@ Run
 | Variadic prototypes | Fixed prefix; `Declaration.WithTail` adds a concrete scalar/pointer tail; `abi.Prepare` applies promotions |
 | C cdecl | All eight qualified native targets |
 | stdcall / fastcall | Windows 386; retain compiler symbol decoration |
+| vectorcall | Fixed Windows amd64/386 `CgoSource` bridges with a supporting C compiler; ordinary record values require amd64 or GNU 386; retain `@@N` decoration and identifier-leading underscores |
 | Higher-order and multiply indirect function pointers | Nested argument/result prototypes and 1–8 pointer layers; caller owns code and pointee lifetimes |
 | Function-pointer record fields and fixed arrays | Opaque native address storage with separate field-indexed prototypes; supports typedef/direct pointers, multidimensional arrays, nested record arrays and self-referencing callback signatures |
 | Unions, other attributed records/fields/typedefs, flexible/zero-length arrays, inaccessible anonymous enums, incompatible/overaligned enum integers, atomics, long double, extended integers or other conventions | Rejected by this generator; manual adapters remain independent |
@@ -166,7 +167,11 @@ No language runtime, C++ ownership or exception adaptation is inferred.
 bridges in an `import "C"` preamble. It supports cdecl scalars, ordinary/explicitly packed or aligned and bitfield record
 values and opaque native pointer arguments/results on all eight native Go targets and six qualified llgo
 targets, without the optional libffi backend. Fixed Windows 386 stdcall/fastcall
-exports and function-pointer prototypes are supported with Go. A C toolchain is needed when building
+exports and function-pointer prototypes are supported with Go. Fixed Windows amd64/386
+vectorcall exports and native function pointers use the same generated C bridge
+with a supporting compiler such as Clang; Go amd64/386 and llgo amd64 are qualified.
+Ordinary vectorcall record values are supported on amd64 and GNU 386. MSVC 386
+record values require a separate ABI adapter and are rejected. A C toolchain is needed when building
 the generated package; neither Clang nor the original header is required at runtime.
 
 For a variadic export, replace its declaration with the result of
@@ -742,8 +747,10 @@ Boolean values; C restores declared widths before the native call. This avoids
 depending on narrow-parameter extension across the Go/C boundary. Native pointer
 typedefs carry explicit cdecl/stdcall/fastcall attributes on Windows 386,
 independently for each outer/inner prototype. The static cgo bridge keeps the
-ordinary host C convention. Other typed pointees and conventions
-fail generation. Non-cdecl variadic calls and stdcall/fastcall on other targets
+ordinary host C convention. Vectorcall prototypes use a compiler capability guard: an unsupported C compiler
+fails the build instead of ignoring the attribute. Dynamic `Bind`/`ForHost`,
+libffi callbacks and direct `LLGoSource` do not implement vectorcall. Other typed
+pointees and conventions fail generation. Non-cdecl variadic calls and stdcall/fastcall on other targets
 are rejected. Use dynamic
 `Session.Bind` or the direct llgo adapter for those supported interfaces.
 
@@ -760,6 +767,20 @@ Windows 386 CI also executes repeated stdcall/fastcall mixed scalar calls and
 native factory/consumer round trips, including opposite outer/inner conventions.
 It checks fresh decorated symbols against the committed generated bindings and
 runs the convention tests both with and without the libffi build tag.
+
+The [vectorcall runtime tests](../examples/vectorcall/vectorcall_test.go) generate
+a fresh caller without libffi and execute independently compiled objects, archives
+and DLLs at `-O0` and `-O2`. They check repeated narrow/wide integer and floating
+register/stack calls, pointers, ordinary records, HFA and large results, decorated
+exports, independently attributed native factories/consumers and closed sessions.
+For the Windows 386 DLL fixture an explicit MinGW export alias preserves the
+vectorcall identifier underscore; MinGW otherwise strips one from its export
+directive. A real DLL may choose different export names: set `Declaration.Symbol`
+to the actual export before generation when it differs from the object name.
+The C compiler determines the register and stack ABI; LLVM vector types and
+variadic vectorcall signatures are outside this interface. See the
+[Microsoft ABI description](https://learn.microsoft.com/en-us/cpp/cpp/vectorcall)
+and [Clang attribute reference](https://clang.llvm.org/docs/AttributeReference.html#vectorcall).
 
 The [record example](../examples/cgorecords/main.go) runs with
 `examples/run.sh <go|llgo> cgorecords <library>`. Fresh ordinary and packed

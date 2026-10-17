@@ -36,8 +36,9 @@ type Convention uint8
 const (
 	Default Convention = iota
 	CDecl
-	StdCall  // Windows 386 only.
-	FastCall // Windows 386 only.
+	StdCall    // Windows 386 only.
+	FastCall   // Windows 386 only.
+	VectorCall // Fixed Windows amd64/386 calls through compiled C bridges only.
 )
 
 // Signature describes one concrete call shape, including a variadic tail when
@@ -56,7 +57,7 @@ type Signature struct {
 }
 
 func (s Signature) Validate() error {
-	if s.Convention > FastCall {
+	if s.Convention > VectorCall {
 		return fmt.Errorf("invalid calling convention %d", s.Convention)
 	}
 	if s.Variadic {
