@@ -7,8 +7,8 @@ import (
 
 // Long GNU import libraries split an import into an IAT/thunk member, a
 // descriptor member, and a DLL-name member. Follow their RVA relocations,
-// without laying out or executing the native import tables. Only verified
-// import-only members are replaced; other .idata objects remain unsupported.
+// without laying out or executing the native import tables. Verified templates
+// may coexist with ordinary sections; other .idata objects remain unsupported.
 type coffImportGraph struct {
 	defs map[string][]definition
 }
@@ -85,6 +85,13 @@ func (p coffLocation) name(skip uint64) (string, bool) {
 }
 
 func (g coffImportGraph) convert(o *object) (*object, bool) {
+	if converted, ok := g.convertPure(o); ok {
+		return converted, true
+	}
+	return g.convertMixed(o)
+}
+
+func (g coffImportGraph) convertPure(o *object) (*object, bool) {
 	if o.info.Format != "COFF" || len(o.groups) != 0 {
 		return nil, false
 	}
