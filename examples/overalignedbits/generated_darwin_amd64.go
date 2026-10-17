@@ -992,6 +992,253 @@ result.f1 = value.f1;
 result.f2 = value.f2;
 return result;
 }
+#pragma pack(push,2)
+typedef struct __attribute__((aligned(2))) {
+struct __attribute__((aligned(4))) {
+uint32_t :1;
+int8_t f0;
+};
+unsigned char :0;
+unsigned char :0;
+float f1;
+} dylib_go_42696e64696e6773_record23;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record23_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record23);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record23);
+case 2:return offsetof(dylib_go_42696e64696e6773_record23,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record23,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+float f1;
+} dylib_go_42696e64696e6773_record23_transport;
+static dylib_go_42696e64696e6773_record23 dylib_go_42696e64696e6773_record23_from_transport(dylib_go_42696e64696e6773_record23_transport value) {
+dylib_go_42696e64696e6773_record23 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record23_transport dylib_go_42696e64696e6773_record23_to_transport(dylib_go_42696e64696e6773_record23 value) {
+dylib_go_42696e64696e6773_record23_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+#pragma pack(push,2)
+typedef struct __attribute__((aligned(2))) {
+struct __attribute__((aligned(8))) {
+uint32_t f0:3;
+uint32_t :5;
+};
+unsigned char :0;
+unsigned char :0;
+double f1;
+} dylib_go_42696e64696e6773_record24;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record24_mask(int32_t field,uint64_t byte) {
+volatile dylib_go_42696e64696e6773_record24 value;
+volatile unsigned char *data = (volatile unsigned char *)&value;
+for (uint64_t i=0;i<sizeof(value);++i) data[i]=0;
+switch(field) {
+case 0:value.f0=7ULL;break;
+default:return UINT64_MAX;
+}
+if (byte==UINT64_MAX) {
+for (uint64_t i=0;i<sizeof(value);++i) if (data[i]) return i;
+return UINT64_MAX;
+}
+return byte<sizeof(value)?data[byte]:UINT64_MAX;
+}
+static uint64_t dylib_go_42696e64696e6773_record24_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record24);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record24);
+case 2:return dylib_go_42696e64696e6773_record24_mask(0,UINT64_MAX);
+case 3:return offsetof(dylib_go_42696e64696e6773_record24,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+uint32_t f0;
+double f1;
+} dylib_go_42696e64696e6773_record24_transport;
+static dylib_go_42696e64696e6773_record24 dylib_go_42696e64696e6773_record24_from_transport(dylib_go_42696e64696e6773_record24_transport value) {
+dylib_go_42696e64696e6773_record24 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record24_transport dylib_go_42696e64696e6773_record24_to_transport(dylib_go_42696e64696e6773_record24 value) {
+dylib_go_42696e64696e6773_record24_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+#pragma pack(push,2)
+typedef struct __attribute__((aligned(2))) {
+struct __attribute__((aligned(8))) {
+float f0;
+uint32_t :3;
+int8_t f1;
+};
+unsigned char :0;
+unsigned char :0;
+float f2;
+} dylib_go_42696e64696e6773_record25;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record25_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record25);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record25);
+case 2:return offsetof(dylib_go_42696e64696e6773_record25,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record25,f1);
+case 4:return offsetof(dylib_go_42696e64696e6773_record25,f2);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+float f0;
+int8_t f1;
+float f2;
+} dylib_go_42696e64696e6773_record25_transport;
+static dylib_go_42696e64696e6773_record25 dylib_go_42696e64696e6773_record25_from_transport(dylib_go_42696e64696e6773_record25_transport value) {
+dylib_go_42696e64696e6773_record25 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+return result;
+}
+static dylib_go_42696e64696e6773_record25_transport dylib_go_42696e64696e6773_record25_to_transport(dylib_go_42696e64696e6773_record25 value) {
+dylib_go_42696e64696e6773_record25_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+return result;
+}
+#pragma pack(push,2)
+typedef struct __attribute__((aligned(2))) {
+struct __attribute__((aligned(8))) {
+struct __attribute__((aligned(4))) {
+int8_t f0;
+uint32_t :3;
+};
+unsigned char :0;
+unsigned char :0;
+int16_t f1;
+};
+unsigned char :0;
+unsigned char :0;
+float f2;
+} dylib_go_42696e64696e6773_record26;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record26_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record26);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record26);
+case 2:return offsetof(dylib_go_42696e64696e6773_record26,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record26,f1);
+case 4:return offsetof(dylib_go_42696e64696e6773_record26,f2);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+int16_t f1;
+float f2;
+} dylib_go_42696e64696e6773_record26_transport;
+static dylib_go_42696e64696e6773_record26 dylib_go_42696e64696e6773_record26_from_transport(dylib_go_42696e64696e6773_record26_transport value) {
+dylib_go_42696e64696e6773_record26 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+return result;
+}
+static dylib_go_42696e64696e6773_record26_transport dylib_go_42696e64696e6773_record26_to_transport(dylib_go_42696e64696e6773_record26 value) {
+dylib_go_42696e64696e6773_record26_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+result.f2 = value.f2;
+return result;
+}
+#pragma pack(push,2)
+typedef struct __attribute__((aligned(2))) {
+struct __attribute__((aligned(8))) {
+uint32_t :1;
+int8_t f0;
+};
+unsigned char :0;
+unsigned char :0;
+unsigned long long :0;
+double f1;
+} dylib_go_42696e64696e6773_record27;
+#pragma pack(pop)
+static uint64_t dylib_go_42696e64696e6773_record27_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record27);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record27);
+case 2:return offsetof(dylib_go_42696e64696e6773_record27,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record27,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int8_t f0;
+double f1;
+} dylib_go_42696e64696e6773_record27_transport;
+static dylib_go_42696e64696e6773_record27 dylib_go_42696e64696e6773_record27_from_transport(dylib_go_42696e64696e6773_record27_transport value) {
+dylib_go_42696e64696e6773_record27 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record27_transport dylib_go_42696e64696e6773_record27_to_transport(dylib_go_42696e64696e6773_record27 value) {
+dylib_go_42696e64696e6773_record27_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+typedef struct {
+int32_t f0;
+dylib_go_42696e64696e6773_record23 f1[2];
+dylib_go_42696e64696e6773_record24 f2;
+} dylib_go_42696e64696e6773_record28;
+static uint64_t dylib_go_42696e64696e6773_record28_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record28);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record28);
+case 2:return offsetof(dylib_go_42696e64696e6773_record28,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record28,f1);
+case 4:return offsetof(dylib_go_42696e64696e6773_record28,f2);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int32_t f0;
+dylib_go_42696e64696e6773_record23_transport f1[2];
+dylib_go_42696e64696e6773_record24_transport f2;
+} dylib_go_42696e64696e6773_record28_transport;
+static dylib_go_42696e64696e6773_record28 dylib_go_42696e64696e6773_record28_from_transport(dylib_go_42696e64696e6773_record28_transport value) {
+dylib_go_42696e64696e6773_record28 result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = dylib_go_42696e64696e6773_record23_from_transport(value.f1[i0]);
+}
+result.f2 = dylib_go_42696e64696e6773_record24_from_transport(value.f2);
+return result;
+}
+static dylib_go_42696e64696e6773_record28_transport dylib_go_42696e64696e6773_record28_to_transport(dylib_go_42696e64696e6773_record28 value) {
+dylib_go_42696e64696e6773_record28_transport result = {0};
+result.f0 = value.f0;
+for (uint32_t i0 = 0; i0 < 2; ++i0) {
+result.f1[i0] = dylib_go_42696e64696e6773_record23_to_transport(value.f1[i0]);
+}
+result.f2 = dylib_go_42696e64696e6773_record24_to_transport(value.f2);
+return result;
+}
 typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call0_function)(dylib_go_42696e64696e6773_record0);
 static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call0(uintptr_t address,const dylib_go_42696e64696e6773_record0_transport *p0) {
 return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call0_function)address)(dylib_go_42696e64696e6773_record0_from_transport(*p0)));
@@ -1158,6 +1405,56 @@ typedef dylib_go_42696e64696e6773_record22 (*dylib_go_42696e64696e6773_call40_fu
 static dylib_go_42696e64696e6773_record22_transport dylib_go_42696e64696e6773_call40(uintptr_t address,const dylib_go_42696e64696e6773_record22_transport *p0,int32_t p1,float p2) {
 return dylib_go_42696e64696e6773_record22_to_transport(((dylib_go_42696e64696e6773_call40_function)address)(dylib_go_42696e64696e6773_record22_from_transport(*p0),(int8_t)p1,p2));
 }
+typedef dylib_go_42696e64696e6773_record23 (*dylib_go_42696e64696e6773_call41_function)(dylib_go_42696e64696e6773_record23);
+static dylib_go_42696e64696e6773_record23_transport dylib_go_42696e64696e6773_call41(uintptr_t address,const dylib_go_42696e64696e6773_record23_transport *p0) {
+return dylib_go_42696e64696e6773_record23_to_transport(((dylib_go_42696e64696e6773_call41_function)address)(dylib_go_42696e64696e6773_record23_from_transport(*p0)));
+}
+typedef dylib_go_42696e64696e6773_record24 (*dylib_go_42696e64696e6773_call42_function)(dylib_go_42696e64696e6773_record24);
+static dylib_go_42696e64696e6773_record24_transport dylib_go_42696e64696e6773_call42(uintptr_t address,const dylib_go_42696e64696e6773_record24_transport *p0) {
+return dylib_go_42696e64696e6773_record24_to_transport(((dylib_go_42696e64696e6773_call42_function)address)(dylib_go_42696e64696e6773_record24_from_transport(*p0)));
+}
+typedef dylib_go_42696e64696e6773_record25 (*dylib_go_42696e64696e6773_call43_function)(dylib_go_42696e64696e6773_record25);
+static dylib_go_42696e64696e6773_record25_transport dylib_go_42696e64696e6773_call43(uintptr_t address,const dylib_go_42696e64696e6773_record25_transport *p0) {
+return dylib_go_42696e64696e6773_record25_to_transport(((dylib_go_42696e64696e6773_call43_function)address)(dylib_go_42696e64696e6773_record25_from_transport(*p0)));
+}
+typedef dylib_go_42696e64696e6773_record26 (*dylib_go_42696e64696e6773_call44_function)(dylib_go_42696e64696e6773_record26);
+static dylib_go_42696e64696e6773_record26_transport dylib_go_42696e64696e6773_call44(uintptr_t address,const dylib_go_42696e64696e6773_record26_transport *p0) {
+return dylib_go_42696e64696e6773_record26_to_transport(((dylib_go_42696e64696e6773_call44_function)address)(dylib_go_42696e64696e6773_record26_from_transport(*p0)));
+}
+typedef dylib_go_42696e64696e6773_record27 (*dylib_go_42696e64696e6773_call45_function)(dylib_go_42696e64696e6773_record27);
+static dylib_go_42696e64696e6773_record27_transport dylib_go_42696e64696e6773_call45(uintptr_t address,const dylib_go_42696e64696e6773_record27_transport *p0) {
+return dylib_go_42696e64696e6773_record27_to_transport(((dylib_go_42696e64696e6773_call45_function)address)(dylib_go_42696e64696e6773_record27_from_transport(*p0)));
+}
+typedef dylib_go_42696e64696e6773_record28 (*dylib_go_42696e64696e6773_call46_function)(dylib_go_42696e64696e6773_record28);
+static dylib_go_42696e64696e6773_record28_transport dylib_go_42696e64696e6773_call46(uintptr_t address,const dylib_go_42696e64696e6773_record28_transport *p0) {
+return dylib_go_42696e64696e6773_record28_to_transport(((dylib_go_42696e64696e6773_call46_function)address)(dylib_go_42696e64696e6773_record28_from_transport(*p0)));
+}
+typedef dylib_go_42696e64696e6773_record24 (*dylib_go_42696e64696e6773_call47_function)(dylib_go_42696e64696e6773_record24,...);
+static dylib_go_42696e64696e6773_record24_transport dylib_go_42696e64696e6773_call47(uintptr_t address,const dylib_go_42696e64696e6773_record24_transport *p0,int32_t p1,float p2) {
+return dylib_go_42696e64696e6773_record24_to_transport(((dylib_go_42696e64696e6773_call47_function)address)(dylib_go_42696e64696e6773_record24_from_transport(*p0),(int8_t)p1,p2));
+}
+typedef double (*dylib_go_42696e64696e6773_call48_function)(int64_t,int64_t,int64_t,int64_t,int64_t,int64_t,double,double,double,double,double,double,double,double,dylib_go_42696e64696e6773_record24,int64_t);
+static double dylib_go_42696e64696e6773_call48(uintptr_t address,int64_t p0,int64_t p1,int64_t p2,int64_t p3,int64_t p4,int64_t p5,double p6,double p7,double p8,double p9,double p10,double p11,double p12,double p13,const dylib_go_42696e64696e6773_record24_transport *p14,int64_t p15) {
+return ((dylib_go_42696e64696e6773_call48_function)address)(p0,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,dylib_go_42696e64696e6773_record24_from_transport(*p14),p15);
+}
+typedef dylib_go_42696e64696e6773_record24 (*dylib_go_42696e64696e6773_call49_pointer0)(dylib_go_42696e64696e6773_record24);
+typedef dylib_go_42696e64696e6773_call49_pointer0 (*dylib_go_42696e64696e6773_call49_function)(void);
+static void * dylib_go_42696e64696e6773_call49(uintptr_t address) {
+return (void *)((dylib_go_42696e64696e6773_call49_function)address)();
+}
+typedef dylib_go_42696e64696e6773_record24 (*dylib_go_42696e64696e6773_call50_pointer1)(dylib_go_42696e64696e6773_record24);
+typedef dylib_go_42696e64696e6773_record24 (*dylib_go_42696e64696e6773_call50_function)(dylib_go_42696e64696e6773_call50_pointer1,dylib_go_42696e64696e6773_record24);
+static dylib_go_42696e64696e6773_record24_transport dylib_go_42696e64696e6773_call50(uintptr_t address,void * p0,const dylib_go_42696e64696e6773_record24_transport *p1) {
+return dylib_go_42696e64696e6773_record24_to_transport(((dylib_go_42696e64696e6773_call50_function)address)((dylib_go_42696e64696e6773_call50_pointer1)p0,dylib_go_42696e64696e6773_record24_from_transport(*p1)));
+}
+typedef dylib_go_42696e64696e6773_record24 * (*dylib_go_42696e64696e6773_call51_function)(dylib_go_42696e64696e6773_record24);
+static void * dylib_go_42696e64696e6773_call51(uintptr_t address,const dylib_go_42696e64696e6773_record24_transport *p0) {
+return (void *)((dylib_go_42696e64696e6773_call51_function)address)(dylib_go_42696e64696e6773_record24_from_transport(*p0));
+}
+typedef dylib_go_42696e64696e6773_record24 (*dylib_go_42696e64696e6773_call52_function)(dylib_go_42696e64696e6773_record24 *);
+static dylib_go_42696e64696e6773_record24_transport dylib_go_42696e64696e6773_call52(uintptr_t address,void * p0) {
+return dylib_go_42696e64696e6773_record24_to_transport(((dylib_go_42696e64696e6773_call52_function)address)((dylib_go_42696e64696e6773_record24 *)p0));
+}
 */
 import "C"
 
@@ -1214,6 +1511,18 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "gap_array_variable", Symbol: "gap_array_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_array", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F32}}}, {Name: "array_right", Type: abi.TypeDesc{Type: abi.F32}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_array", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F32}}}, {Name: "array_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
 		{Name: "echo_gap_multiple", Symbol: "echo_gap_multiple", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "next_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_right", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "next_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
 		{Name: "gap_multiple_variable", Symbol: "gap_multiple_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "next_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_right", Type: abi.TypeDesc{Type: abi.F32}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "next_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_right", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "echo_byte_prefix", Symbol: "echo_byte_prefix", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "echo_bit_prefix", Symbol: "echo_bit_prefix", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
+		{Name: "echo_float_prefix", Symbol: "echo_float_prefix", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_first", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "float_second", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_first", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "float_second", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "echo_multi_prefix", Symbol: "echo_multi_prefix", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "multi_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "multi_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_real", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "multi_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "multi_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_real", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "echo_typedef_prefix", Symbol: "echo_typedef_prefix", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "typedef_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "typedef_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "typedef_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "typedef_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
+		{Name: "echo_prefix_envelope", Symbol: "echo_prefix_envelope", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "prefix_tag", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "prefix_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}, {Name: "prefix_bits", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "prefix_tag", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "prefix_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}, {Name: "prefix_bits", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}}},
+		{Name: "prefix_variable", Symbol: "prefix_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
+		{Name: "prefix_overflow", Symbol: "prefix_overflow", Signature: abi.Signature{Result: abi.F64, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I64, abi.I64, abi.I64, abi.I64, abi.I64, abi.I64, abi.F64, abi.F64, abi.F64, abi.F64, abi.F64, abi.F64, abi.F64, abi.F64, abi.Struct, abi.I64}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.I64}, abi.TypeDesc{Type: abi.I64}, abi.TypeDesc{Type: abi.I64}, abi.TypeDesc{Type: abi.I64}, abi.TypeDesc{Type: abi.I64}, abi.TypeDesc{Type: abi.I64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}, abi.TypeDesc{Type: abi.I64}}}},
+		{Name: "prefix_factory", Symbol: "prefix_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}},
+		{Name: "forward_prefix", Symbol: "forward_prefix", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}},
+		{Name: "prefix_pointer", Symbol: "prefix_pointer", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}},
+		{Name: "read_prefix", Symbol: "read_prefix", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
 	},
 	Records: []clang.Record{
 		{Name: "Tiny", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 2, Alignment: 2, Offsets: []uint64{0, 0}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{0, 0}, FieldAlignments: []clang.FieldAlignment{{Position: 0, Aligned: 8}, {Position: 1, Aligned: 32}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}}},
@@ -1239,6 +1548,12 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "GapNested", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_nested", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bare_left", Type: abi.TypeDesc{Type: abi.F32}}}}}, {Name: "nested_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 12, Alignment: 2, Offsets: []uint64{0, 8}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 0, Offset: 8, Aligned: 8, Gap: 4}}},
 		{Name: "GapArray", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "gap_array", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.F32}}}, {Name: "array_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 12, Alignment: 2, Offsets: []uint64{0, 8}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 0, Offset: 8, Aligned: 8, Gap: 4}}},
 		{Name: "GapMultiple", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "first_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "next_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_right", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 12, Alignment: 2, Offsets: []uint64{0, 4, 8}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 0, Offset: 4, Aligned: 4, Gap: 3}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 8, Aligned: 8, Gap: 2}}},
+		{Name: "BytePrefix", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 8, Alignment: 2, Offsets: []uint64{1, 4}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 1, Offset: 0}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 4, Aligned: 4, Gap: 2}}},
+		{Name: "BitPrefix", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 16, Alignment: 2, Offsets: []uint64{0, 8}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{0, 2}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 5, Offset: 0}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 8, Aligned: 8, Gap: 7}}},
+		{Name: "FloatPrefix", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_first", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "float_second", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 12, Alignment: 2, Offsets: []uint64{0, 5, 8}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 1, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 0}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 8, Aligned: 8, Gap: 2}}},
+		{Name: "MultiPrefix", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "multi_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "multi_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_real", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 12, Alignment: 2, Offsets: []uint64{0, 4, 8}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 0}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 4, Aligned: 4, Gap: 2}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 8, Aligned: 8, Gap: 2}}},
+		{Name: "TypedefPrefix", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "typedef_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "typedef_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 16, Alignment: 2, Offsets: []uint64{1, 8}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 1, Offset: 0}, {Before: 1, Type: abi.Type(4), Width: 0, Offset: 8, TypeAlignment: 8, Gap: 6}}},
+		{Name: "PrefixEnvelope", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "prefix_tag", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "prefix_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}, {Name: "prefix_bits", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}, Layout: abi.Layout{Size: 36, Alignment: 4, Offsets: []uint64{0, 4, 20}}},
 	},
 }
 
@@ -1434,6 +1749,57 @@ type BindingsRecord22 struct {
 	First_tag   int8
 	Next_code   int16
 	Multi_right float32
+}
+
+// BindingsRecord23 describes BytePrefix; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord23 struct {
+	Byte_tag  int8
+	Byte_real float32
+}
+
+// BindingsRecord24 describes BitPrefix; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord24 struct {
+	Bit_flags uint32
+	Bit_real  float64
+}
+
+// BindingsRecord25 describes FloatPrefix; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord25 struct {
+	Float_first  float32
+	Float_tag    int8
+	Float_second float32
+}
+
+// BindingsRecord26 describes MultiPrefix; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord26 struct {
+	Multi_tag  int8
+	Multi_code int16
+	Multi_real float32
+}
+
+// BindingsRecord27 describes TypedefPrefix; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord27 struct {
+	Typedef_tag  int8
+	Typedef_real float64
+}
+
+// BindingsRecord28 describes PrefixEnvelope; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord28 struct {
+	Prefix_tag   int32
+	Prefix_items [2]BindingsRecord23
+	Prefix_bits  BindingsRecord24
 }
 
 func _BindingsRecord0ToC(value BindingsRecord0) (result C.dylib_go_42696e64696e6773_record0_transport) {
@@ -1764,6 +2130,88 @@ func _BindingsRecord22FromC(value C.dylib_go_42696e64696e6773_record22_transport
 	return result
 }
 
+func _BindingsRecord23ToC(value BindingsRecord23) (result C.dylib_go_42696e64696e6773_record23_transport) {
+	result.f0 = C.int8_t(value.Byte_tag)
+	result.f1 = C.float(value.Byte_real)
+	return result
+}
+
+func _BindingsRecord23FromC(value C.dylib_go_42696e64696e6773_record23_transport) (result BindingsRecord23) {
+	result.Byte_tag = int8(value.f0)
+	result.Byte_real = float32(value.f1)
+	return result
+}
+
+func _BindingsRecord24ToC(value BindingsRecord24) (result C.dylib_go_42696e64696e6773_record24_transport) {
+	result.f0 = C.uint32_t(value.Bit_flags)
+	result.f1 = C.double(value.Bit_real)
+	return result
+}
+
+func _BindingsRecord24FromC(value C.dylib_go_42696e64696e6773_record24_transport) (result BindingsRecord24) {
+	result.Bit_flags = uint32(value.f0)
+	result.Bit_real = float64(value.f1)
+	return result
+}
+
+func _BindingsRecord25ToC(value BindingsRecord25) (result C.dylib_go_42696e64696e6773_record25_transport) {
+	result.f0 = C.float(value.Float_first)
+	result.f1 = C.int8_t(value.Float_tag)
+	result.f2 = C.float(value.Float_second)
+	return result
+}
+
+func _BindingsRecord25FromC(value C.dylib_go_42696e64696e6773_record25_transport) (result BindingsRecord25) {
+	result.Float_first = float32(value.f0)
+	result.Float_tag = int8(value.f1)
+	result.Float_second = float32(value.f2)
+	return result
+}
+
+func _BindingsRecord26ToC(value BindingsRecord26) (result C.dylib_go_42696e64696e6773_record26_transport) {
+	result.f0 = C.int8_t(value.Multi_tag)
+	result.f1 = C.int16_t(value.Multi_code)
+	result.f2 = C.float(value.Multi_real)
+	return result
+}
+
+func _BindingsRecord26FromC(value C.dylib_go_42696e64696e6773_record26_transport) (result BindingsRecord26) {
+	result.Multi_tag = int8(value.f0)
+	result.Multi_code = int16(value.f1)
+	result.Multi_real = float32(value.f2)
+	return result
+}
+
+func _BindingsRecord27ToC(value BindingsRecord27) (result C.dylib_go_42696e64696e6773_record27_transport) {
+	result.f0 = C.int8_t(value.Typedef_tag)
+	result.f1 = C.double(value.Typedef_real)
+	return result
+}
+
+func _BindingsRecord27FromC(value C.dylib_go_42696e64696e6773_record27_transport) (result BindingsRecord27) {
+	result.Typedef_tag = int8(value.f0)
+	result.Typedef_real = float64(value.f1)
+	return result
+}
+
+func _BindingsRecord28ToC(value BindingsRecord28) (result C.dylib_go_42696e64696e6773_record28_transport) {
+	result.f0 = C.int32_t(value.Prefix_tag)
+	for i0 := range 2 {
+		result.f1[i0] = _BindingsRecord23ToC(value.Prefix_items[i0])
+	}
+	result.f2 = _BindingsRecord24ToC(value.Prefix_bits)
+	return result
+}
+
+func _BindingsRecord28FromC(value C.dylib_go_42696e64696e6773_record28_transport) (result BindingsRecord28) {
+	result.Prefix_tag = int32(value.f0)
+	for i0 := range 2 {
+		result.Prefix_items[i0] = _BindingsRecord23FromC(value.f1[i0])
+	}
+	result.Prefix_bits = _BindingsRecord24FromC(value.f2)
+	return result
+}
+
 // Bindings retains symbol handles; its caller owns the Session.
 type Bindings struct {
 	symbol0  *dylib.Symbol
@@ -1807,6 +2255,18 @@ type Bindings struct {
 	symbol38 *dylib.Symbol
 	symbol39 *dylib.Symbol
 	symbol40 *dylib.Symbol
+	symbol41 *dylib.Symbol
+	symbol42 *dylib.Symbol
+	symbol43 *dylib.Symbol
+	symbol44 *dylib.Symbol
+	symbol45 *dylib.Symbol
+	symbol46 *dylib.Symbol
+	symbol47 *dylib.Symbol
+	symbol48 *dylib.Symbol
+	symbol49 *dylib.Symbol
+	symbol50 *dylib.Symbol
+	symbol51 *dylib.Symbol
+	symbol52 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -1886,6 +2346,24 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 	}
 	if uint64(C.dylib_go_42696e64696e6773_record22_layout(0)) != 12 || uint64(C.dylib_go_42696e64696e6773_record22_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record22_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record22_layout(3)) != 4 || uint64(C.dylib_go_42696e64696e6773_record22_layout(4)) != 8 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for GapMultiple")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record23_layout(0)) != 8 || uint64(C.dylib_go_42696e64696e6773_record23_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record23_layout(2)) != 1 || uint64(C.dylib_go_42696e64696e6773_record23_layout(3)) != 4 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for BytePrefix")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record24_layout(0)) != 16 || uint64(C.dylib_go_42696e64696e6773_record24_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record24_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record24_layout(3)) != 8 || uint64(C.dylib_go_42696e64696e6773_record24_mask(0, 0)) != 7 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for BitPrefix")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record25_layout(0)) != 12 || uint64(C.dylib_go_42696e64696e6773_record25_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record25_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record25_layout(3)) != 5 || uint64(C.dylib_go_42696e64696e6773_record25_layout(4)) != 8 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for FloatPrefix")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record26_layout(0)) != 12 || uint64(C.dylib_go_42696e64696e6773_record26_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record26_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record26_layout(3)) != 4 || uint64(C.dylib_go_42696e64696e6773_record26_layout(4)) != 8 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for MultiPrefix")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record27_layout(0)) != 16 || uint64(C.dylib_go_42696e64696e6773_record27_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record27_layout(2)) != 1 || uint64(C.dylib_go_42696e64696e6773_record27_layout(3)) != 8 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for TypedefPrefix")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record28_layout(0)) != 36 || uint64(C.dylib_go_42696e64696e6773_record28_layout(1)) != 4 || uint64(C.dylib_go_42696e64696e6773_record28_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record28_layout(3)) != 4 || uint64(C.dylib_go_42696e64696e6773_record28_layout(4)) != 20 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PrefixEnvelope")
 	}
 	symbol0, err := session.Resolve("echo_tiny")
 	if err != nil {
@@ -2092,6 +2570,66 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol40 = symbol40
+	symbol41, err := session.Resolve("echo_byte_prefix")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol41 = symbol41
+	symbol42, err := session.Resolve("echo_bit_prefix")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol42 = symbol42
+	symbol43, err := session.Resolve("echo_float_prefix")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol43 = symbol43
+	symbol44, err := session.Resolve("echo_multi_prefix")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol44 = symbol44
+	symbol45, err := session.Resolve("echo_typedef_prefix")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol45 = symbol45
+	symbol46, err := session.Resolve("echo_prefix_envelope")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol46 = symbol46
+	symbol47, err := session.Resolve("prefix_variable")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol47 = symbol47
+	symbol48, err := session.Resolve("prefix_overflow")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol48 = symbol48
+	symbol49, err := session.Resolve("prefix_factory")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol49 = symbol49
+	symbol50, err := session.Resolve("forward_prefix")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol50 = symbol50
+	symbol51, err := session.Resolve("prefix_pointer")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol51 = symbol51
+	symbol52, err := session.Resolve("read_prefix")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol52 = symbol52
 	return b, nil
 }
 
@@ -2579,6 +3117,148 @@ func (b *Bindings) Gap_multiple_variable(p0 BindingsRecord22, p1 int8, p2 float3
 	err = b.symbol40.WithAddress(func(address uintptr) error {
 		c0 := _BindingsRecord22ToC(p0)
 		result = _BindingsRecord22FromC(C.dylib_go_42696e64696e6773_call40(C.uintptr_t(address), &c0, C.int32_t(p1), C.float(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_byte_prefix(p0 BindingsRecord23) (result BindingsRecord23, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol41.WithAddress(func(address uintptr) error {
+		c0 := _BindingsRecord23ToC(p0)
+		result = _BindingsRecord23FromC(C.dylib_go_42696e64696e6773_call41(C.uintptr_t(address), &c0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_bit_prefix(p0 BindingsRecord24) (result BindingsRecord24, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol42.WithAddress(func(address uintptr) error {
+		c0 := _BindingsRecord24ToC(p0)
+		result = _BindingsRecord24FromC(C.dylib_go_42696e64696e6773_call42(C.uintptr_t(address), &c0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_float_prefix(p0 BindingsRecord25) (result BindingsRecord25, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol43.WithAddress(func(address uintptr) error {
+		c0 := _BindingsRecord25ToC(p0)
+		result = _BindingsRecord25FromC(C.dylib_go_42696e64696e6773_call43(C.uintptr_t(address), &c0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_multi_prefix(p0 BindingsRecord26) (result BindingsRecord26, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol44.WithAddress(func(address uintptr) error {
+		c0 := _BindingsRecord26ToC(p0)
+		result = _BindingsRecord26FromC(C.dylib_go_42696e64696e6773_call44(C.uintptr_t(address), &c0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_typedef_prefix(p0 BindingsRecord27) (result BindingsRecord27, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol45.WithAddress(func(address uintptr) error {
+		c0 := _BindingsRecord27ToC(p0)
+		result = _BindingsRecord27FromC(C.dylib_go_42696e64696e6773_call45(C.uintptr_t(address), &c0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_prefix_envelope(p0 BindingsRecord28) (result BindingsRecord28, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol46.WithAddress(func(address uintptr) error {
+		c0 := _BindingsRecord28ToC(p0)
+		result = _BindingsRecord28FromC(C.dylib_go_42696e64696e6773_call46(C.uintptr_t(address), &c0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Prefix_variable(p0 BindingsRecord24, p1 int8, p2 float32) (result BindingsRecord24, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol47.WithAddress(func(address uintptr) error {
+		c0 := _BindingsRecord24ToC(p0)
+		result = _BindingsRecord24FromC(C.dylib_go_42696e64696e6773_call47(C.uintptr_t(address), &c0, C.int32_t(p1), C.float(p2)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Prefix_overflow(p0 int64, p1 int64, p2 int64, p3 int64, p4 int64, p5 int64, p6 float64, p7 float64, p8 float64, p9 float64, p10 float64, p11 float64, p12 float64, p13 float64, p14 BindingsRecord24, p15 int64) (result float64, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol48.WithAddress(func(address uintptr) error {
+		c14 := _BindingsRecord24ToC(p14)
+		result = float64(C.dylib_go_42696e64696e6773_call48(C.uintptr_t(address), C.int64_t(p0), C.int64_t(p1), C.int64_t(p2), C.int64_t(p3), C.int64_t(p4), C.int64_t(p5), C.double(p6), C.double(p7), C.double(p8), C.double(p9), C.double(p10), C.double(p11), C.double(p12), C.double(p13), &c14, C.int64_t(p15)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Prefix_factory() (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol49.WithAddress(func(address uintptr) error {
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call49(C.uintptr_t(address)))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Forward_prefix(p0 unsafe.Pointer, p1 BindingsRecord24) (result BindingsRecord24, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol50.WithAddress(func(address uintptr) error {
+		c1 := _BindingsRecord24ToC(p1)
+		result = _BindingsRecord24FromC(C.dylib_go_42696e64696e6773_call50(C.uintptr_t(address), p0, &c1))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Prefix_pointer(p0 BindingsRecord24) (result unsafe.Pointer, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol51.WithAddress(func(address uintptr) error {
+		c0 := _BindingsRecord24ToC(p0)
+		result = unsafe.Pointer(C.dylib_go_42696e64696e6773_call51(C.uintptr_t(address), &c0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Read_prefix(p0 unsafe.Pointer) (result BindingsRecord24, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol52.WithAddress(func(address uintptr) error {
+		result = _BindingsRecord24FromC(C.dylib_go_42696e64696e6773_call52(C.uintptr_t(address), p0))
 		return nil
 	})
 	return result, err

@@ -489,8 +489,17 @@ Multiple boundaries nest these prefixes, and a trailing gap can still use the
 lowered-alignment typedef facade. Neither form adds an integer padding value to
 the argument/result registers. Native calls cover floating fields, named
 bitfields, signed bytes, nested records, arrays and variadic register positions.
-Interior gaps mixed with original unnamed nonzero bitfields remain unqualified
-and are rejected before generation.
+Small GNU AMD64 prefixes may also retain original unnamed nonzero bitfields
+when every eight-byte chunk touched by the prefix already contains a named
+integer or native-pointer field. An integer class then already covers those
+bytes, so the unnamed declarations cannot replace an SSE class. Compiler checks
+and the [over-aligned bitfield tests](../examples/overalignedbits/prefix_test.go)
+cover byte/named-bitfield prefixes, floating fields in a mixed integer chunk,
+multiple boundaries, aligned base typedefs and nested arrays. The same tests
+execute fixed/variadic returns, exhausted argument registers, native factories
+and struct pointers through Go and llgo for objects, archives and libraries.
+Prefixes without that integer proof, and attributed boundaries followed by
+another unnamed nonzero field, remain rejected before generation.
 
 GNU AMD64 also requires care with nonzero trailing unnamed bitfields. Clang can
 ignore their padding when assigning argument/result registers, while GCC counts

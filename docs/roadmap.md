@@ -109,7 +109,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Bounded nested struct/union member paths with exact leaf types, whole-input zero initialization, nonzero offsets, small/large native union ABIs and scalar/record/native-pointer Go/llgo execution.
 - [x] Named fixed array union member views through shared ordinary struct wrappers, exact extent/element checks, multidimensional/record/HFA/native-pointer elements, nested paths and small/large/packed/aligned union Go/llgo execution.
 - [x] Exact-size whole-union byte representations with shared ordinary array wrappers, compiler union/size/prototype checks, nested union leaves, independent public headers and Go/llgo object/archive/library execution.
-- [ ] Remaining packing/alignment forms through validated compiler adapters, including small GNU AMD64 interior gaps mixed with original unnamed nonzero bitfields.
+- [x] Small GNU AMD64 interior gaps with original unnamed nonzero bitfields inside integer-class prefixes, preserving mixed integer/SSE calls, multiple boundaries, aligned typedefs, nested arrays, factories, pointers, variadic promotion and stack arguments through Go/llgo C bridges.
+- [ ] Remaining packing/alignment forms through validated compiler adapters, including unnamed prefixes without a proven integer class and attributed boundaries followed by further unnamed nonzero fields.
 - [x] Dynamic argument counts for scalar/aggregate calls, variadic shapes, and callbacks; reproducible call/allocation benchmarks.
 - [x] Session-owned logical-signature CIF reuse, aggregate layout deduplication, and lazy typed pointee layout caches with rollback.
 - [x] Indexed signature lookup and canonical omitted/explicit scalar metadata, preserving logical type distinctions.

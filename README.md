@@ -486,6 +486,9 @@ Small GNU AMD64 records with only trailing unnamed values use implicit padding
 to preserve Clang/GCC register classes and stack arguments; see the
 [tested tail padding example](examples/tailpadding/call.go) and its
 [qualification limits](docs/clang.md#pragma-packing).
+Interior gaps with original unnamed bitfields can also use implicit prefixes
+when each affected eight-byte chunk already has a named integer class; see the
+[tested prefix cases](examples/overalignedbits/prefix_test.go).
 Named and unnamed member-level `packed` bitfields use validated C bridges,
 including small value returns, packed/aligned named and unnamed members, ignored
 MSVC alignment requests and mixed zero-width boundaries; see the

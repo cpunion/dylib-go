@@ -44,3 +44,17 @@ GapArray echo_gap_array(GapArray v) { v.gap_array[0]+=1.5f; v.array_right+=2.5f;
 GapArray gap_array_variable(GapArray v,...) { __builtin_va_list a; __builtin_va_start(a,v); v.gap_array[0]+=__builtin_va_arg(a,int); v.array_right+=__builtin_va_arg(a,double); __builtin_va_end(a); return v; }
 GapMultiple echo_gap_multiple(GapMultiple v) { v.first_tag++; v.next_code--; v.multi_right+=1.5f; return v; }
 GapMultiple gap_multiple_variable(GapMultiple v,...) { __builtin_va_list a; __builtin_va_start(a,v); v.first_tag+=__builtin_va_arg(a,int); v.next_code--; v.multi_right+=__builtin_va_arg(a,double); __builtin_va_end(a); return v; }
+
+BytePrefix echo_byte_prefix(BytePrefix v) { v.byte_tag++; v.byte_real+=1.5f; return v; }
+BitPrefix echo_bit_prefix(BitPrefix v) { v.bit_flags^=3; v.bit_real+=1.5; return v; }
+FloatPrefix echo_float_prefix(FloatPrefix v) { v.float_first+=1.5f; v.float_tag++; v.float_second+=2.5f; return v; }
+MultiPrefix echo_multi_prefix(MultiPrefix v) { v.multi_tag++; v.multi_code--; v.multi_real+=1.5f; return v; }
+TypedefPrefix echo_typedef_prefix(TypedefPrefix v) { v.typedef_tag++; v.typedef_real+=1.5; return v; }
+PrefixEnvelope echo_prefix_envelope(PrefixEnvelope v) { v.prefix_items[0]=echo_byte_prefix(v.prefix_items[0]); v.prefix_items[1]=echo_byte_prefix(v.prefix_items[1]); v.prefix_bits=echo_bit_prefix(v.prefix_bits); return v; }
+BitPrefix prefix_variable(BitPrefix v,...) { __builtin_va_list a; __builtin_va_start(a,v); v.bit_flags^=__builtin_va_arg(a,int); v.bit_real+=__builtin_va_arg(a,double); __builtin_va_end(a); return v; }
+double prefix_overflow(long long a,long long b,long long c,long long d,long long e,long long f,double g,double h,double i,double j,double k,double l,double m,double n,BitPrefix v,long long tail) { return a+b+c+d+e+f+g+h+i+j+k+l+m+n+v.bit_flags+v.bit_real+tail; }
+PrefixEntry prefix_factory(void) { return echo_bit_prefix; }
+BitPrefix forward_prefix(PrefixEntry entry,BitPrefix v) { return entry?entry(v):v; }
+static BitPrefix prefix_storage;
+BitPrefix *prefix_pointer(BitPrefix v) { prefix_storage=v; return &prefix_storage; }
+BitPrefix read_prefix(BitPrefix *v) { BitPrefix zero={0}; return v?*v:zero; }

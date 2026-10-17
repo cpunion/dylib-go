@@ -198,7 +198,7 @@ Value echo(Value);
 func TestPragmaBitfieldSmallGNUUnnamedGapRejected(t *testing.T) {
 	path := headerFile(t, `
 #pragma pack(push,2)
-typedef struct { unsigned :1; signed char tag; unsigned :0 __attribute__((aligned(4))); float right; } Value;
+typedef struct { float left; unsigned :1; unsigned :0 __attribute__((aligned(8))); float right; } Value;
 #pragma pack(pop)
 Value echo(Value);
 `)
