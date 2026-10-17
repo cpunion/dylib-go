@@ -32,17 +32,20 @@ func tool(t *testing.T, name string) string {
 }
 
 func TestOverAlignedBitfieldsCalls(t *testing.T) {
-	compiler := os.Getenv("DYLIB_LLVM_CLANG")
+	compiler := os.Getenv("DYLIB_TYPEDEF_CLANG")
+	if compiler == "" {
+		compiler = os.Getenv("DYLIB_LLVM_CLANG")
+	}
 	if compiler == "" {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_tiny", "echo_bits", "echo_padding", "echo_inner", "echo_envelope", "echo_floating", "echo_packed", "echo_padding_float", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "tiny_variable", "floating_variable", "apply_slot", "echo_tiny_tail", "tiny_tail_variable", "echo_triple", "triple_variable", "echo_single", "single_variable", "echo_bare", "echo_double", "echo_array", "echo_nested", "echo_gap_float", "gap_float_variable", "echo_gap_tail", "gap_tail_variable", "echo_gap_bits", "gap_bits_variable", "echo_gap_byte", "gap_byte_variable", "echo_gap_nested", "gap_nested_variable", "echo_gap_array", "gap_array_variable", "echo_gap_multiple", "gap_multiple_variable"}
+	names := []string{"echo_tiny", "echo_bits", "echo_padding", "echo_inner", "echo_envelope", "echo_floating", "echo_packed", "echo_padding_float", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "tiny_variable", "floating_variable", "apply_slot", "echo_tiny_tail", "tiny_tail_variable", "echo_triple", "triple_variable", "echo_single", "single_variable", "echo_bare", "echo_double", "echo_array", "echo_nested", "echo_gap_float", "gap_float_variable", "echo_gap_tail", "gap_tail_variable", "echo_gap_bits", "gap_bits_variable", "echo_gap_byte", "gap_byte_variable", "echo_gap_nested", "gap_nested_variable", "echo_gap_array", "gap_array_variable", "echo_gap_multiple", "gap_multiple_variable", "echo_byte_prefix", "echo_bit_prefix", "echo_float_prefix", "echo_multi_prefix", "echo_typedef_prefix", "echo_prefix_envelope", "prefix_variable", "prefix_overflow", "prefix_factory", "forward_prefix", "prefix_pointer", "read_prefix"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, index := range []int{13, 15, 18, 20, 22, 28, 30, 32, 34, 36, 38, 40} {
+	for _, index := range []int{13, 15, 18, 20, 22, 28, 30, 32, 34, 36, 38, 40, 47} {
 		h.Functions[index], err = h.Functions[index].WithTail(abi.I8, abi.F32)
 		if err != nil {
 			t.Fatal(err)
@@ -260,6 +263,7 @@ func checkCalls(t *testing.T, path string) {
 		check("multiple interior boundaries", gapMultipleGot, BindingsRecord22{First_tag: -126, Next_code: -32768, Multi_right: 22}, err)
 		gapMultipleGot, err = b.Gap_multiple_variable(gapMultiple, -1, 1.5)
 		check("nested implicit prefixes/variadic tail", gapMultipleGot, BindingsRecord22{First_tag: -128, Next_code: -32768, Multi_right: 22}, err)
+		t.Run("unnamed_prefix", func(t *testing.T) { checkUnnamedPrefixCalls(t, b) })
 		null := value
 		null.Tag = 125
 		null.Truth = false

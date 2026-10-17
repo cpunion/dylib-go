@@ -93,3 +93,23 @@ GapArray echo_gap_array(GapArray);
 GapArray gap_array_variable(GapArray,...);
 GapMultiple echo_gap_multiple(GapMultiple);
 GapMultiple gap_multiple_variable(GapMultiple,...);
+
+#pragma pack(push,2)
+typedef struct { unsigned :1; signed char byte_tag; unsigned :0 __attribute__((aligned(4))); float byte_real; } BytePrefix;
+typedef struct { unsigned bit_flags:3; unsigned :5; unsigned :0 __attribute__((aligned(8))); double bit_real; } BitPrefix;
+typedef struct { float float_first; unsigned :3; signed char float_tag; unsigned :0 __attribute__((aligned(8))); float float_second; } FloatPrefix;
+typedef struct { signed char multi_tag; unsigned :3; unsigned :0 __attribute__((aligned(4))); short multi_code; unsigned :0 __attribute__((aligned(8))); float multi_real; } MultiPrefix;
+typedef unsigned long long Boundary __attribute__((aligned(8)));
+typedef struct { unsigned :1; signed char typedef_tag; Boundary :0; double typedef_real; } TypedefPrefix;
+#pragma pack(pop)
+typedef struct { BytePrefix prefix_items[2]; BitPrefix prefix_bits; } PrefixEnvelope;
+BytePrefix echo_byte_prefix(BytePrefix); BitPrefix echo_bit_prefix(BitPrefix);
+FloatPrefix echo_float_prefix(FloatPrefix); MultiPrefix echo_multi_prefix(MultiPrefix);
+TypedefPrefix echo_typedef_prefix(TypedefPrefix);
+PrefixEnvelope echo_prefix_envelope(PrefixEnvelope);
+
+BitPrefix prefix_variable(BitPrefix,...);
+double prefix_overflow(long long,long long,long long,long long,long long,long long,double,double,double,double,double,double,double,double,BitPrefix,long long);
+typedef BitPrefix (*PrefixEntry)(BitPrefix);
+PrefixEntry prefix_factory(void); BitPrefix forward_prefix(PrefixEntry,BitPrefix);
+BitPrefix *prefix_pointer(BitPrefix); BitPrefix read_prefix(BitPrefix *);

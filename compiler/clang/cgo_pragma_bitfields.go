@@ -152,13 +152,20 @@ func (t *cgoTypes) gnuPrefixPadding(r Record) map[int]uint64 {
 		if padding.Width != 0 && (padding.TypeAlignment == 0 || hasFloatingFields(r.Description)) {
 			continue
 		}
-		priorValues := false
+		priorValues, laterValues := false, false
 		for other, prior := range r.Padding {
-			if padding.Width == 0 || other < index {
-				priorValues = priorValues || prior.Width != 0
+			if prior.Width != 0 {
+				if other < index {
+					priorValues = true
+				} else if padding.Width == 0 {
+					laterValues = true
+				}
 			}
 		}
-		if priorValues {
+		// Moving original unnamed values into an aligned prefix is safe
+		// only when each affected eightbyte already has an integer class.
+		// Values after the boundary need separate qualification.
+		if laterValues || priorValues && (padding.Width != 0 || !t.sysVIntegerPaddingCompatible(r, padding.Offset)) {
 			continue
 		}
 		if padding.TypeAlignment == 0 && padding.Aligned <= r.MaxFieldAlignment || padding.requestedAlignment() <= r.Layout.Alignment || padding.Gap == 0 || padding.Before == 0 || padding.Before == len(r.Description.Fields) {

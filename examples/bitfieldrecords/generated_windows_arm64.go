@@ -515,7 +515,7 @@ dylib_go_42696e64696e6773_record5_transport f1;
 dylib_go_42696e64696e6773_record6_transport f2[2];
 } dylib_go_42696e64696e6773_record7_transport;
 static dylib_go_42696e64696e6773_record7 dylib_go_42696e64696e6773_record7_from_transport(dylib_go_42696e64696e6773_record7_transport value) {
-dylib_go_42696e64696e6773_record7 result = {0};
+dylib_go_42696e64696e6773_record7 result = {};
 for (uint32_t i0 = 0; i0 < 2; ++i0) {
 result.f0[i0] = dylib_go_42696e64696e6773_record4_from_transport(value.f0[i0]);
 }
