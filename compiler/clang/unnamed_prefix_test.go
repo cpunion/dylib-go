@@ -19,22 +19,23 @@ func unnamedPrefixFixture(t *testing.T) string {
 var unnamedPrefixFunctions = []string{"echo_byte_prefix", "echo_bit_prefix", "echo_float_prefix", "echo_multi_prefix", "echo_typedef_prefix", "echo_prefix_envelope"}
 
 func TestUnnamedPrefixBridge(t *testing.T) {
+	compiler := typedefCompilerTool(t)
 	var producers []string
 	for _, target := range targets {
 		producers = append(producers, target.triple)
 	}
-	testCompilerBridgeTargetsWithInspection(t, compilerTool(t), unnamedPrefixFixture(t), nil, producers, func(t *testing.T, path string, h *Header) {
+	testCompilerBridgeTargetsWithInspection(t, compiler, unnamedPrefixFixture(t), nil, producers, func(t *testing.T, path string, h *Header) {
 		if len(h.Records) != 6 {
 			t.Fatal("missing unnamed-prefix records", len(h.Records))
 		}
 		if h.Target.OS != "windows" || h.Target.Arch != "386" {
-			testCompilerRecordCallingABI(t, compilerTool(t), path, h)
+			testCompilerRecordCallingABI(t, compiler, path, h)
 		}
 	}, unnamedPrefixFunctions...)
 }
 
 func TestUnnamedPrefixGCCBridge(t *testing.T) {
-	testCompilerRecordGCCBridge(t, compilerTool(t), unnamedPrefixFixture(t), unnamedPrefixFunctions)
+	testCompilerRecordGCCBridge(t, typedefCompilerTool(t), unnamedPrefixFixture(t), unnamedPrefixFunctions)
 }
 
 func TestUnnamedPrefixUnqualified(t *testing.T) {

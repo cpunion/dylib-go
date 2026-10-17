@@ -32,7 +32,10 @@ func tool(t *testing.T, name string) string {
 }
 
 func TestOverAlignedBitfieldsCalls(t *testing.T) {
-	compiler := os.Getenv("DYLIB_LLVM_CLANG")
+	compiler := os.Getenv("DYLIB_TYPEDEF_CLANG")
+	if compiler == "" {
+		compiler = os.Getenv("DYLIB_LLVM_CLANG")
+	}
 	if compiler == "" {
 		compiler = "clang"
 	}
