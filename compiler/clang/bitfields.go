@@ -34,8 +34,12 @@ type BitfieldPadding struct {
 	// declaration's member attribute and its observed allocation boundary.
 	TypeAlignment uint64
 	// Offset is the compiler-confirmed boundary for a zero-width field, or the
-	// first byte of a nonzero-width field with a member/base alignment request.
+	// first byte of a nonzero-width field with an alignment request or byte mask.
 	Offset uint64
+	// Mask optionally observes the occupied bytes starting at Offset. Small GNU
+	// AMD64 records use this to qualify unnamed-field register classes. It is
+	// compiler metadata, never a public value field; a nil mask is unobserved.
+	Mask []byte
 	// StorageAlignment observes an MS allocation-unit start/active zero-width
 	// boundary, or a GNU aligned typedef boundary. Shared requests retain zero.
 	StorageAlignment uint64
@@ -77,6 +81,38 @@ func cloneBitfields(fields []Bitfield) []Bitfield {
 		result[i].Mask = append([]byte(nil), fields[i].Mask...)
 	}
 	return result
+}
+
+func clonePadding(fields []BitfieldPadding) []BitfieldPadding {
+	result := append([]BitfieldPadding(nil), fields...)
+	for i := range result {
+		result[i].Mask = append([]byte(nil), fields[i].Mask...)
+	}
+	return result
+}
+
+func validateBitfieldMask(mask []byte, width int) error {
+	if len(mask) == 0 || len(mask) > 9 || mask[0] == 0 || mask[len(mask)-1] == 0 {
+		return fmt.Errorf("invalid bitfield mask")
+	}
+	count, started, ended := 0, false, false
+	for _, b := range mask {
+		for bit := uint(0); bit < 8; bit++ {
+			if b&(1<<bit) != 0 {
+				if ended {
+					return fmt.Errorf("noncontiguous bitfield mask")
+				}
+				count++
+				started = true
+			} else if started {
+				ended = true
+			}
+		}
+	}
+	if count != width {
+		return fmt.Errorf("invalid bitfield mask")
+	}
+	return nil
 }
 
 func (r Record) bitfieldAt(position int) *Bitfield {
@@ -124,8 +160,16 @@ func validateBitfields(r Record, complete bool) error {
 		if f.Before < before || f.Before > len(r.Description.Fields) || bits == 0 || f.Width < 0 || f.Width > bits || !validAlignment(f.Aligned) || !validAlignment(f.TypeAlignment) || !validAlignment(f.StorageAlignment) || f.StorageAlignment != 0 && r.MaxFieldAlignment == 0 && f.TypeAlignment == 0 {
 			return fmt.Errorf("clang: invalid unnamed bitfield in %s", r.Name)
 		}
-		if f.Width != 0 && f.requestedAlignment() == 0 && f.Offset != 0 || complete && (f.Offset > r.Layout.Size || f.Width != 0 && f.requestedAlignment() != 0 && f.Offset == r.Layout.Size) {
+		if f.Width != 0 && f.requestedAlignment() == 0 && len(f.Mask) == 0 && f.Offset != 0 || complete && (f.Offset > r.Layout.Size || f.Width != 0 && (f.requestedAlignment() != 0 || len(f.Mask) != 0) && f.Offset == r.Layout.Size) {
 			return fmt.Errorf("clang: invalid unnamed bitfield boundary in %s", r.Name)
+		}
+		if len(f.Mask) != 0 {
+			if err := validateBitfieldMask(f.Mask, f.Width); err != nil {
+				return fmt.Errorf("clang: unnamed %w in %s", err, r.Name)
+			}
+			if complete && (f.Offset >= r.Layout.Size || uint64(len(f.Mask)) > r.Layout.Size-f.Offset) {
+				return fmt.Errorf("clang: unnamed bitfield mask outside %s", r.Name)
+			}
 		}
 		if complete && f.StorageAlignment != 0 && (f.StorageAlignment > r.Layout.Alignment && f.TypeAlignment == 0 || (f.Width == 0 || f.requestedAlignment() != 0) && f.Offset%f.StorageAlignment != 0) {
 			return fmt.Errorf("clang: incompatible unnamed storage alignment in %s", r.Name)
@@ -155,22 +199,8 @@ func validateBitfields(r Record, complete bool) error {
 			}
 			continue
 		}
-		count, started, ended := 0, false, false
-		for _, b := range f.Mask {
-			for bit := uint(0); bit < 8; bit++ {
-				if b&(1<<bit) != 0 {
-					if ended {
-						return fmt.Errorf("clang: noncontiguous bitfield mask in %s", r.Name)
-					}
-					count++
-					started = true
-				} else if started {
-					ended = true
-				}
-			}
-		}
-		if f.Mask[0] == 0 || f.Mask[len(f.Mask)-1] == 0 || count != f.Width {
-			return fmt.Errorf("clang: invalid bitfield mask in %s", r.Name)
+		if err := validateBitfieldMask(f.Mask, f.Width); err != nil {
+			return fmt.Errorf("clang: %w in %s", err, r.Name)
 		}
 		if complete {
 			if len(r.Layout.Offsets) != len(r.Description.Fields) {

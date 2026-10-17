@@ -132,3 +132,10 @@ double root_overflow(long long,long long,long long,long long,long long,long long
 typedef PackedRootByte (*RootEntry)(PackedRootByte);
 RootEntry root_factory(void); PackedRootByte forward_root(RootEntry,PackedRootByte);
 PackedRootEnvelope *root_pointer(PackedRootEnvelope); PackedRootEnvelope read_root(PackedRootEnvelope *);
+
+/* Keep this native control's root alignment identical across compiler targets. */
+typedef struct __attribute__((aligned(8))) { float class_wide_real; unsigned long long :33; signed char class_wide_tag; } ClassWide;
+typedef struct { short class_inner_integer; } ClassInteger;
+typedef struct { ClassInteger class_integer; unsigned :16; float class_nested_real; } ClassNested;
+typedef struct { short class_items[1]; unsigned :16; float class_array_real; } ClassArray;
+ClassWide echo_class_wide(ClassWide); ClassNested echo_class_nested(ClassNested); ClassArray echo_class_array(ClassArray);

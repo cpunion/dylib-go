@@ -24,6 +24,11 @@ Bits echo(Bits); Prefix prefix(Prefix); Bits *pointer(Bits *); Entries fields(En
 			r, err := h.LookupRecord("Bits")
 			wantPadding := []BitfieldPadding{{Before: 0, Type: abi.U32, Width: 3}, {Before: 1, Type: abi.U32}, {Before: 2, Type: abi.U32, Width: 4}, {Before: 3, Type: abi.U32}, {Before: 4, Type: abi.U32, Width: 5}}
 			wantPadding[1].Offset, wantPadding[3].Offset = 4, 8
+			if target.arch == "amd64" && target.os != "windows" {
+				wantPadding[0].Mask = []byte{7}
+				wantPadding[2].Offset, wantPadding[2].Mask = 4, []byte{128, 7}
+				wantPadding[4].Offset, wantPadding[4].Mask = 12, []byte{31}
+			}
 			if target.os == "windows" {
 				wantPadding[3].Offset = 12
 			}
@@ -93,7 +98,7 @@ func TestUnnamedBitfieldValidation(t *testing.T) {
 		func(r *Record) { r.Padding[0].Width = -1 },
 		func(r *Record) { r.Padding[0].Width = 33 },
 		func(r *Record) { r.Padding[0].Type = abi.F32 },
-		func(r *Record) { r.Padding[0].Offset = 1 },
+		func(r *Record) { r.Padding[0].Offset = r.Layout.Size + 1 },
 		func(r *Record) { r.Padding[1].Offset = r.Layout.Size + 1 },
 		func(r *Record) { r.Padding[0].Before, r.Padding[1].Before = 1, 0 },
 		func(r *Record) { r.Padding = make([]BitfieldPadding, 32) },

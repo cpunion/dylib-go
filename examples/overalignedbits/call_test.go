@@ -40,7 +40,7 @@ func TestOverAlignedBitfieldsCalls(t *testing.T) {
 		compiler = "clang"
 	}
 	compiler = tool(t, compiler)
-	names := []string{"echo_tiny", "echo_bits", "echo_padding", "echo_inner", "echo_envelope", "echo_floating", "echo_packed", "echo_padding_float", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "tiny_variable", "floating_variable", "apply_slot", "echo_tiny_tail", "tiny_tail_variable", "echo_triple", "triple_variable", "echo_single", "single_variable", "echo_bare", "echo_double", "echo_array", "echo_nested", "echo_gap_float", "gap_float_variable", "echo_gap_tail", "gap_tail_variable", "echo_gap_bits", "gap_bits_variable", "echo_gap_byte", "gap_byte_variable", "echo_gap_nested", "gap_nested_variable", "echo_gap_array", "gap_array_variable", "echo_gap_multiple", "gap_multiple_variable", "echo_byte_prefix", "echo_bit_prefix", "echo_float_prefix", "echo_multi_prefix", "echo_typedef_prefix", "echo_prefix_envelope", "prefix_variable", "prefix_overflow", "prefix_factory", "forward_prefix", "prefix_pointer", "read_prefix", "echo_root_byte", "echo_root_leading", "echo_root_named", "echo_root_floating", "echo_root_aligned", "echo_root_envelope", "root_variable", "root_overflow", "root_factory", "forward_root", "root_pointer", "read_root"}
+	names := []string{"echo_tiny", "echo_bits", "echo_padding", "echo_inner", "echo_envelope", "echo_floating", "echo_packed", "echo_padding_float", "bits_factory", "apply_bits", "bits_pointer", "mutate_bits", "sum_bits", "bits_variable", "tiny_variable", "floating_variable", "apply_slot", "echo_tiny_tail", "tiny_tail_variable", "echo_triple", "triple_variable", "echo_single", "single_variable", "echo_bare", "echo_double", "echo_array", "echo_nested", "echo_gap_float", "gap_float_variable", "echo_gap_tail", "gap_tail_variable", "echo_gap_bits", "gap_bits_variable", "echo_gap_byte", "gap_byte_variable", "echo_gap_nested", "gap_nested_variable", "echo_gap_array", "gap_array_variable", "echo_gap_multiple", "gap_multiple_variable", "echo_byte_prefix", "echo_bit_prefix", "echo_float_prefix", "echo_multi_prefix", "echo_typedef_prefix", "echo_prefix_envelope", "prefix_variable", "prefix_overflow", "prefix_factory", "forward_prefix", "prefix_pointer", "read_prefix", "echo_root_byte", "echo_root_leading", "echo_root_named", "echo_root_floating", "echo_root_aligned", "echo_root_envelope", "root_variable", "root_overflow", "root_factory", "forward_root", "root_pointer", "read_root", "echo_class_wide", "echo_class_nested", "echo_class_array"}
 	h, err := clang.Parse(context.Background(), "testdata/exports.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
 	if err != nil {
 		t.Fatal(err)
@@ -265,6 +265,7 @@ func checkCalls(t *testing.T, path string) {
 		check("nested implicit prefixes/variadic tail", gapMultipleGot, BindingsRecord22{First_tag: -128, Next_code: -32768, Multi_right: 22}, err)
 		t.Run("unnamed_prefix", func(t *testing.T) { checkUnnamedPrefixCalls(t, b) })
 		t.Run("packed_root", func(t *testing.T) { checkPackedRootCalls(t, b) })
+		t.Run("padding_classes", func(t *testing.T) { checkPaddingClassCalls(t, b) })
 		null := value
 		null.Tag = 125
 		null.Truth = false

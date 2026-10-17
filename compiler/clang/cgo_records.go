@@ -200,10 +200,19 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			return err
 		}
 		tailPadding := t.gnuAMD64 && gnuImplicitTailPadding(record) && t.sysVAlignedRecord(record, 0)
-		if t.gnuAMD64 && !tailPadding && record.Layout.Size <= 16 && t.sysVAlignedRecord(record, 0) && onlyFloatingFields(record.Description) {
+		if t.gnuAMD64 && len(record.Padding) != 0 && !tailPadding && record.Layout.Size <= 16 && t.sysVAlignedRecord(record, 0) {
+			integers := t.sysVIntegerClasses(record, 0)
 			for _, padding := range record.Padding {
-				if padding.Width != 0 {
-					return fmt.Errorf("clang: GNU AMD64 small unnamed floating padding in %s requires an implicit-padding C bridge", record.Name)
+				if padding.Width == 0 {
+					continue
+				}
+				// Without an observation, require integer coverage of every lane.
+				required := sysVClasses(0, record.Layout.Size)
+				if len(padding.Mask) != 0 {
+					required = sysVClasses(padding.Offset, uint64(len(padding.Mask)))
+				}
+				if required&^integers != 0 {
+					return fmt.Errorf("clang: GNU AMD64 small unnamed bitfields in %s require an implicit-padding C bridge", record.Name)
 				}
 			}
 		}

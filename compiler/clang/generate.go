@@ -145,6 +145,13 @@ func (h *Header) GoSource(packageName, variableName string) ([]byte, error) {
 					if field.Gap != 0 {
 						fmt.Fprintf(&output, ",Gap:%d", field.Gap)
 					}
+					if len(field.Mask) != 0 {
+						fmt.Fprint(&output, ",Mask:[]byte{")
+						for _, b := range field.Mask {
+							fmt.Fprintf(&output, "%d,", b)
+						}
+						fmt.Fprint(&output, "}")
+					}
 					fmt.Fprint(&output, "},")
 				}
 				fmt.Fprint(&output, "}")

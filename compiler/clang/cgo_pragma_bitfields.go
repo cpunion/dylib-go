@@ -257,8 +257,7 @@ func (t *cgoTypes) sysVTypeSize(d abi.TypeDesc) uint64 {
 	return 0
 }
 
-// Integer-only SysV records already classify occupied padding lanes as integer.
-// Floating fields need an implicit facade when a new unnamed gap crosses them.
+// Attributed gaps containing floating values need an implicit-padding facade.
 func hasFloatingFields(d abi.TypeDesc) bool {
 	if d.Type == abi.F32 || d.Type == abi.F64 {
 		return true
@@ -274,25 +273,58 @@ func hasFloatingFields(d abi.TypeDesc) bool {
 	return false
 }
 
-// GCC counts unnamed nonzero bitfields as integer values in small SysV
-// records. Clang can ignore them even when every named leaf is floating point.
-// A matching memory layout alone does not prove a compatible call ABI.
-func onlyFloatingFields(d abi.TypeDesc) bool {
+// GCC counts unnamed nonzero bitfields as integer values, while Clang can
+// ignore them. They cannot change a lane already containing a named integer.
+// Recurse through logical fields without classifying record/array padding.
+func (t *cgoTypes) sysVIntegerClasses(r Record, base uint64) uint64 {
+	var classes uint64
+	for i, field := range r.Description.Fields {
+		offset := base + r.Layout.Offsets[i]
+		if bit := r.bitfieldAt(i); bit != nil {
+			classes |= sysVClasses(offset, uint64(len(bit.Mask)))
+		} else {
+			classes |= t.sysVIntegerTypeClasses(field.Type, offset)
+		}
+	}
+	return classes
+}
+
+func (t *cgoTypes) sysVIntegerTypeClasses(d abi.TypeDesc, base uint64) uint64 {
+	if base >= 16 {
+		return 0
+	}
 	switch d.Type {
 	case abi.F32, abi.F64:
-		return true
+		return 0
 	case abi.Array:
-		return d.Elem != nil && onlyFloatingFields(*d.Elem)
+		var classes uint64
+		stride := t.sysVTypeSize(*d.Elem)
+		if stride == 0 {
+			return 0
+		}
+		for i := 0; i < d.Len && uint64(i)*stride < 16-base; i++ {
+			classes |= t.sysVIntegerTypeClasses(*d.Elem, base+uint64(i)*stride)
+		}
+		return classes
 	case abi.Struct:
-		if len(d.Fields) == 0 {
-			return false
+		i, err := t.recordIndex(d)
+		if err == nil {
+			return t.sysVIntegerClasses(t.records[i], base)
 		}
-		for _, field := range d.Fields {
-			if !onlyFloatingFields(field.Type) {
-				return false
-			}
-		}
-		return true
+		return 0
+	default:
+		return sysVClasses(base, t.sysVTypeSize(d))
 	}
-	return false
+}
+
+func sysVClasses(offset, size uint64) uint64 {
+	if offset >= 16 {
+		return 0
+	}
+	size = min(size, 16-offset)
+	var classes uint64
+	for position := offset; position < offset+size; position++ {
+		classes |= 1 << (position / 8)
+	}
+	return classes
 }

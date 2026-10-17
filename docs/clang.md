@@ -516,12 +516,20 @@ named-unit controls, against eight targets. The
 padding, floating fields, aligned roots, nested arrays, variadic/stack arguments,
 factories and native pointers through Go/llgo C bridges for objects, archives and
 libraries. Other GNU unnamed bitfield forms still need independent qualification.
-Small GNU AMD64 records whose named leaves are all floating point require an
-implicit facade when nonzero unnamed fields would change register classes.
-Generation rejects unqualified leading/interior forms, including float arrays
-and nested float records, before binding a symbol. The qualified trailing-padding
-facade and records already passed in memory because of unaligned fields remain
-available. Equal sizes and field offsets cannot replace this ABI check.
+Small naturally aligned GNU AMD64 records require an implicit facade when
+nonzero unnamed fields would change register classes. Clang probes their occupied
+bytes into `BitfieldPadding.Offset` and the optional `Mask`; portable metadata
+retains these observations and record snapshots copy the masks independently.
+Each affected eight-byte lane must already contain a named integer value,
+including integer leaves in nested records and arrays. Generation rejects
+unproved floating or empty lanes before binding a symbol. Empty lanes also occur
+in integer-only records, such as a leading 64-bit unnamed field followed by an
+`int`. Caller-assembled or older metadata without a mask requires integer
+coverage of every lane. The qualified trailing-padding facade and records
+already passed in memory because of unaligned fields remain available.
+The [native controls](../examples/overalignedbits/classes_test.go) exercise
+wide unnamed fields, nested integers and array leaves through Go/llgo bridges.
+Equal sizes and field offsets cannot replace this ABI check.
 
 GNU AMD64 also requires care with nonzero trailing unnamed bitfields. Clang can
 ignore their padding when assigning argument/result registers, while GCC counts
