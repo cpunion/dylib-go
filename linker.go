@@ -27,6 +27,10 @@ var ErrInitialization = errors.New("dylib: C initialization failed; close the se
 // (for example libc on POSIX). Explicitly loaded libraries are always searched.
 type Options struct {
 	ProcessSymbols bool
+	// EmulatedTLS enables Clang -femulated-tls for raw objects and archives.
+	// Values belong to native OS threads, not Go goroutines. Constant initial
+	// values are supported; C++ thread destructors and native TLS models are not.
+	EmulatedTLS bool
 	// RegisterUnwind registers supported raw-image runtime function tables.
 	// Supports Windows/macOS amd64/arm64 and Linux amd64/arm64/386 C frames.
 	// Linux/macOS also support the documented native C++ DWARF subset.
@@ -192,6 +196,9 @@ func (s *Session) define(name string, address uintptr) error {
 	}
 	if name == "" || strings.IndexByte(name, 0) >= 0 || address == 0 {
 		return fmt.Errorf("invalid native symbol")
+	}
+	if emulatedTLSReserved(strings.TrimPrefix(name, "__imp_")) {
+		return fmt.Errorf("%s is reserved for image-owned emulated TLS", name)
 	}
 	if runtimeHelper(strings.TrimPrefix(name, "__imp_")) {
 		return fmt.Errorf("%s is reserved for session-owned object lifecycle", name)
@@ -416,6 +423,9 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 				}
 			}
 			for _, n := range wanted {
+				if s.opts.EmulatedTLS && n == emulatedTLSHelper {
+					continue
+				}
 				if _, ok := defs[n]; ok {
 					continue
 				}
@@ -518,7 +528,7 @@ func (s *Session) link(roots []string) error {
 	if err != nil {
 		return err
 	}
-	im, err := newImage(objs, defs, s.external, imports)
+	im, err := newImage(objs, defs, s.external, imports, s.opts.EmulatedTLS)
 	if err != nil {
 		return err
 	}
@@ -643,6 +653,7 @@ type image struct {
 	page                                   uint64
 	pointerSize                            uint64
 	lifecycle                              *native.Lifecycle
+	emulatedTLS                            *native.EmulatedTLS
 	hooks                                  map[string]uintptr
 	initializers, finalizers               []uintptr
 	cInitializers                          []cInitializer
@@ -663,9 +674,12 @@ func alignUp(n, a uint64) uint64 {
 	}
 	return (n + a - 1) &^ (a - 1)
 }
-func newImage(objs []*object, defs map[string]definition, external func(string) uintptr, imports map[*coffImport]uintptr) (*image, error) {
+func newImage(objs []*object, defs map[string]definition, external func(string) uintptr, imports map[*coffImport]uintptr, emulatedTLS bool) (*image, error) {
+	tlsNeeded, err := checkEmulatedTLS(objs, emulatedTLS)
+	if err != nil {
+		return nil, err
+	}
 	im := &image{objects: objs, defs: defs, external: external, imports: imports, common: map[string]commonAllocation{}, resolved: map[string]uintptr{}, got: map[uintptr]uintptr{}, stubs: map[uintptr]uintptr{}, page: uint64(os.Getpagesize())}
-	var err error
 	im.aliases, err = weakAliases(objs)
 	if err != nil {
 		return nil, err
@@ -782,6 +796,12 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	if e := im.prepareRuntimeHelpers(); e != nil {
 		return nil, e
 	}
+	if tlsNeeded {
+		if im.hooks == nil {
+			im.hooks = make(map[string]uintptr)
+		}
+		im.hooks[emulatedTLSHelper] = native.EmulatedTLSHelper()
+	}
 	if e := im.fillStartupPadding(); e != nil {
 		return nil, e
 	}
@@ -815,6 +835,11 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	}
 	if e := im.rebaseMachOInitializerOffsets(); e != nil {
 		return nil, e
+	}
+	if tlsNeeded {
+		if err := im.prepareEmulatedTLS(); err != nil {
+			return nil, err
+		}
 	}
 	if e := im.prepareLifecycle(); e != nil {
 		return nil, e
@@ -866,6 +891,7 @@ func (im *image) close() error {
 		return err
 	}
 	im.lifecycle.Close()
+	im.emulatedTLS.Close()
 	e := native.Free(im.mem)
 	im.mem = nil
 	im.initializers, im.finalizers = nil, nil
