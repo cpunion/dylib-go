@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Keep the expanded compiler matrix in bounded processes on Intel macOS.
+# Keep the expanded compiler matrix in bounded processes on macOS.
 # Compile once and enumerate the binary's real tests so new tests are included.
 directory=$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/dylib-compiler.XXXXXX")
 trap 'rm -rf "$directory"' EXIT

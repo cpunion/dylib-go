@@ -91,7 +91,7 @@ jobs:
           # C facade ownership needs libffi; other producers run in direct mode.
           DYLIB_TEST_LANGUAGES: ${{ runner.os == 'macOS' && 'swift,objc' || '' }}
         run: |
-          if [[ '${{ matrix.target }}' == darwin-amd64 ]]; then
+          if [[ '${{ runner.os }}' == macOS ]]; then
             go list -tags llgo,libffi ./... > "$RUNNER_TEMP/dylib-llgo-ffi-packages"
             packages=()
             while IFS= read -r package; do
