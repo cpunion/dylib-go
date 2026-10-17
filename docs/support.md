@@ -29,7 +29,7 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 | Ordinary GNU/BSD ar (`.a`, ordinary COFF `.lib`) | Inspect all members, but map only needed members; unresolved dependencies in unused members do not affect linking |
 | COFF bigobj, directly or inside ordinary `.lib` archives | 32-bit section numbers and 20-byte symbols; the same relocation and lifecycle limits as ordinary COFF |
 | COFF short import objects, directly or inside `.lib` archives | Selected imports bind functions/data/ordinal exports from session-owned DLLs; all five name policies supported |
-| GNU long import libraries (`.a` / `.lib`) | Standard per-symbol IAT/thunk templates decoded across descriptor/DLL-name members; functions/data/names/ordinals supported. Arbitrary mixed import/code objects are rejected |
+| GNU long import libraries (`.a` / `.lib`) | Standard per-symbol IAT/thunk templates decoded across descriptor/DLL-name members; functions/data/names/ordinals supported. A verified template can coexist with retained ordinary sections; custom/multiple-IAT layouts remain unsupported. See [mixed-member limits](coff.md#gnu-long-import-libraries) |
 | `.so`, `.dylib`, PE DLL | Host OS loads complete images, dependencies, TLS, and initialization |
 | PE EXE, ELF EXEC/PIE, Mach-O EXEC | Identified and rejected as library inputs |
 | GNU/LLVM thin archives | External objects and GNU proxy references into regular archives; snapshot reads and the same lazy extraction as ordinary archives. See [paths and limits](archives.md) |
