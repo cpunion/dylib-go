@@ -10,6 +10,17 @@ Ordinary COFF section references above 32767 remain positive; only reserved valu
 
 Extended relocation tables use the first record as a count marker, including that marker in the stored count. It is validated and excluded from actual relocations. This works for ordinary objects and bigobj. Bigobj does not widen relocation fields: a 16-bit SECTION relocation cannot encode an image ordinal above 65535. It also does not relax image size, W^X, architecture, TLS, or unwinding limits.
 
+i386 C names remove one extra linker underscore. Import normalization retains
+the `__imp_` marker and the fastcall `@` prefix: `__imp_@fast_add@8` remains
+unchanged. MSVC C++ IAT names such as `__imp_?add@api@@YAHHH@Z` also
+retain their complete import marker. Vectorcall retains its `@@N` suffix and identifier-leading underscores.
+The DLL export spelling follows its import record, independently of the normalized
+public name. Native Windows 386 tests use real linker-generated import libraries
+for cdecl/stdcall/fastcall/vectorcall, including underscore-leading identifiers,
+with repeated object/archive consumer calls at `-O0` and `-O2`. C++ fixtures
+check primitive functions and data, exact mangled direct calls and compiled C++
+callers, with exceptions and RTTI disabled.
+
 ## Short import libraries
 
 Short import objects use a 20-byte header followed by the public symbol, DLL name, and optional export-name string. Their signature resembles bigobj, but their version and content select a separate Go parser. Ordinary `.lib` containers can mix short imports with regular COFF members. Only selected imports open a DLL; unused missing dependencies remain inert.

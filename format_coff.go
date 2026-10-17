@@ -48,7 +48,8 @@ func parseCOFF(name string, b []byte) (*file, error) {
 			// marker and any stdcall suffix. Calling conventions stay explicit.
 			if strings.HasPrefix(n, "__imp__") {
 				n = "__imp_" + coffname.NormalizeI386(strings.TrimPrefix(n, "__imp_"))
-			} else {
+			} else if !strings.HasPrefix(n, "__imp_@") && !strings.HasPrefix(n, "__imp_?") {
+				// Fastcall and MSVC C++ IAT names have no extra C underscore.
 				n = coffname.NormalizeI386(n)
 			}
 		}
