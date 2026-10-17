@@ -179,11 +179,94 @@ func main() {
 	}
 	pointersResult, e := b.Union_array_pointers(pointers)
 	check(pointersResult, e, pointers)
+	smallBytes, e := b.Union_bytes_small_make(17)
+	if e != nil {
+		panic(e)
+	}
+	for i, v := range smallBytes.Values {
+		if v != byte((17+17*i)%256) {
+			panic("union byte factory")
+		}
+	}
+	smallWant := smallBytes
+	for i := range smallWant.Values {
+		smallWant.Values[i] ^= 0x5a
+	}
+	smallResult, e := b.Union_bytes_small(smallBytes)
+	check(smallResult, e, smallWant)
+
+	largeBytes, e := b.Union_bytes_large_make(17)
+	if e != nil {
+		panic(e)
+	}
+	for i, v := range largeBytes.Values {
+		if v != byte((17+17*i)%256) {
+			panic("union byte factory")
+		}
+	}
+	largeWant := largeBytes
+	for i := range largeWant.Values {
+		largeWant.Values[i] ^= 0x5a
+	}
+	largeResult, e := b.Union_bytes_large(largeBytes)
+	check(largeResult, e, largeWant)
+
+	packedBytes, e := b.Union_bytes_packed_make(17)
+	if e != nil {
+		panic(e)
+	}
+	for i, v := range packedBytes.Values {
+		if v != byte((17+17*i)%256) {
+			panic("union byte factory")
+		}
+	}
+	packedWant := packedBytes
+	for i := range packedWant.Values {
+		packedWant.Values[i] ^= 0x5a
+	}
+	packedResult, e := b.Union_bytes_packed(packedBytes)
+	check(packedResult, e, packedWant)
+
+	alignedBytes, e := b.Union_bytes_aligned_make(17)
+	if e != nil {
+		panic(e)
+	}
+	for i, v := range alignedBytes.Values {
+		if v != byte((17+17*i)%256) {
+			panic("union byte factory")
+		}
+	}
+	alignedWant := alignedBytes
+	for i := range alignedWant.Values {
+		alignedWant.Values[i] ^= 0x5a
+	}
+	alignedResult, e := b.Union_bytes_aligned(alignedBytes)
+	check(alignedResult, e, alignedWant)
+
+	nestedBytes, e := b.Union_bytes_nested_make(17)
+	if e != nil {
+		panic(e)
+	}
+	for i, v := range nestedBytes.Values {
+		if v != byte((17+17*i)%256) {
+			panic("union byte factory")
+		}
+	}
+	nestedWant := nestedBytes
+	for i := range nestedWant.Values {
+		nestedWant.Values[i] ^= 0x5a
+	}
+	nestedResult, e := b.Union_bytes_nested(nestedBytes)
+	check(nestedResult, e, nestedWant)
+
 	if err := s.Close(); err != nil {
 		panic(err)
 	}
 	if _, err := b.Union_add(20, 22); err != dylib.ErrClosed {
 		panic("closed union provider")
+	}
+	if _, err := b.Union_bytes_small(smallBytes); err != dylib.ErrClosed {
+		panic("closed union byte view")
 	}
 	fmt.Println(42)
 }

@@ -1,4 +1,4 @@
-# C union member facades
+# C union facades
 
 `compiler/cunion.Generate` renders C17 facades for explicitly selected scalar,
 pointer, ordinary struct or fixed array members of native union arguments and results.
@@ -36,6 +36,24 @@ Arrays cannot be ordinary native C by-value arguments/results; this selection
 requires a union member. Nested paths and multidimensional/record/pointer array
 elements use the same interface. Pointer elements remain borrowed.
 
+`Value{Type: abi.Array, Union: "union Payload", Bytes: 32}` selects all 32
+bytes of a union object representation. Leave `Member` empty for the root union,
+or supply a path selecting a complete nested union. `Bytes` must be 1–65536 and
+excludes `Array`/`Record`. The public transport is an ordinary struct containing
+`uint8_t values[Bytes]`; generated Go bindings expose `Values`. Equal byte widths
+share a wrapper across exports and independently generated headers for the same
+original include. Byte-only facade headers do not need the original native header.
+
+The C compiler verifies that both the native root and selected leaf are unions
+and the byte count equals the selected union's complete `sizeof`. C copies the
+representation without interpreting a member, then calls the original union
+prototype. Nested input views explicitly clear all neighboring bytes, including
+padding, before copying the selected union. Scalars, structs, arrays, pointers,
+bitfields and missing fields cannot masquerade as a union leaf. The caller owns
+the meaning of the bytes, valid native representations and any encoded pointer
+lifetimes; no active-member detection or C++ object construction is supplied.
+Only ordinary byte-array transports cross Go's dynamic or generated ABI boundary.
+
 Compile `Facade.CSource` against the original header with the producer target
 and flags. It uses Clang/GCC's union classification builtin, C17 `_Generic`
 prototype and member checks, and full-member storage checks. Wrong prototypes,
@@ -45,7 +63,7 @@ unions and other language object semantics need a separate adapter.
 
 `Facade.CHeader` exposes C transport declarations. Struct/array transports include the
 original header so `compiler/clang` can inspect their actual fields and layouts;
-scalar-only headers remain independent. Parse it with `compiler/clang`, then use
+scalar-only and byte-only headers remain independent. Parse it with `compiler/clang`, then use
 `CgoSource`, `LLGoSource` or `ForHost` with `Session.Bind`. Generated cgo and
 direct llgo callers require no libffi. Dynamic calls use the facade's supported
 scalar/record signature with libffi. Direct binding to the original by-value
@@ -59,7 +77,7 @@ aligned or exceed register size; those details remain inside compiled C.
 Ordinary struct views use the existing compiler/clang layout validation and
 backend limits; dynamic/direct llgo calls still reject packed or otherwise
 unrepresentable transport records. Array wrappers use those same backend layout
-and element-count limits. Whole union member transports, bitfields,
+and element-count limits. Bitfield member views,
 variadic functions and non-default native conventions are not
 implemented. C exceptions or other runtime unwinding cannot cross the facade.
 
@@ -71,7 +89,8 @@ and negative zero, Boolean values, borrowed/null pointers,
 small/large/packed/aligned unions, ordinary struct member views with nested
 arrays/pointers, nested scalar/struct/pointer leaves at nonzero offsets, zeroed
 neighboring fields, named array views with scalar/record/floating/pointer elements,
-multidimensional arrays, composable wrapper headers, and provider retirement.
+multidimensional arrays, exact-size whole-union byte views, nested union byte
+leaves with zeroed neighboring storage, composable wrapper headers, and provider retirement.
 Cross-target tests compile all eight
 supported native targets, generate cgo bindings for all eight, and qualify
 direct llgo bindings only on amd64/arm64. See [the example

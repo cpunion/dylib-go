@@ -63,3 +63,28 @@ union SmallArray small_array_add(union SmallArray value, int32_t add) { value.in
 union PackedArray packed_array_echo(union PackedArray value) { return value; }
 union AlignedArray aligned_array_echo(union AlignedArray value) { return value; }
 union NestedArray nested_array_echo(union NestedArray value) { if(value.payload.before || value.payload.after) value.payload.inner.ints[0]=-1000; return value; }
+
+#define RAW_FUNCTIONS(name, type) \
+union type raw_##name##_make(uint32_t seed) { union type value={0}; for(unsigned i=0;i<sizeof(value.bytes);i++) value.bytes[i]=(unsigned char)(seed+17*i); return value; } \
+union type raw_##name##_echo(union type value) { for(unsigned i=0;i<sizeof(value.bytes);i++) value.bytes[i]^=0x5a; return value; }
+RAW_FUNCTIONS(small, RawSmall)
+RAW_FUNCTIONS(large, RawLarge)
+RAW_FUNCTIONS(packed, RawPacked)
+RAW_FUNCTIONS(aligned, RawAligned)
+#undef RAW_FUNCTIONS
+union RawNested raw_nested_make(uint32_t seed) {
+    union RawNested value={0};
+    for(unsigned i=0;i<sizeof(value.payload.inner.bytes);i++) value.payload.inner.bytes[i]=(unsigned char)(seed+17*i);
+    return value;
+}
+union RawNested raw_nested_echo(union RawNested value) {
+    // The facade must zero every neighboring byte before copying the leaf union.
+    for(unsigned i=0;i<sizeof(value.bytes);i++) {
+        unsigned start=__builtin_offsetof(union RawNested,payload.inner);
+        if((i<start || i>=start+sizeof(value.payload.inner)) && value.bytes[i]) {
+            union RawNested invalid={0}; return invalid;
+        }
+    }
+    for(unsigned i=0;i<sizeof(value.payload.inner.bytes);i++) value.payload.inner.bytes[i]^=0x5a;
+    return value;
+}
