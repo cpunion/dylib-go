@@ -161,8 +161,10 @@ Linux amd64/arm64 Go and llgo jobs, and native Go 386, execute optional ELF fram
 
 macOS amd64/arm64 Go and llgo jobs execute optional per-FDE DWARF registration with system libunwind, real object/archive stack traversal, before/after-close FDE lookup, validation retry and failed initialization cleanup. Pure Go jobs inspect real `__eh_frame` compiler output and verify explicit ARM64 pairs and implicit x86-64 address rebasing.
 
-CI pins merged llgo `main` commit `cb9f3eccdae4909194e5086eaca1380b3e827d00`,
-which includes [SysV aggregate register exhaustion](https://github.com/xgo-dev/llgo/pull/2822)
+CI pins merged llgo `main` commit `1e93b154897f169f81defe0acba3f857a25db206`,
+which includes the [channel wake lifetime fix](https://github.com/xgo-dev/llgo/commit/78b265a31),
+[Darwin detached-thread state](https://github.com/xgo-dev/llgo/pull/2804),
+[SysV aggregate register exhaustion](https://github.com/xgo-dev/llgo/pull/2822)
 and [ARM64 HFA stack layout](https://github.com/xgo-dev/llgo/pull/2825), as well as
 [public C-export foreign-thread guards](https://github.com/xgo-dev/llgo/pull/2752),
 [indirect C variadic arguments](https://github.com/xgo-dev/llgo/pull/2766), the
