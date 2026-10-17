@@ -91,9 +91,15 @@ func TestNativeGeneratedVectorcall(t *testing.T) {
 	// Go accepts quoted executable paths followed by compiler options in CC.
 	cc := strconv.Quote(filepath.ToSlash(compiler))
 	for _, flag := range flags {
-		cc += " " + strconv.Quote(flag)
+		if flag != "--rtlib=libgcc" {
+			cc += " " + strconv.Quote(flag)
+		}
 	}
 	cmd.Env = append(os.Environ(), "GOARCH="+runtime.GOARCH, "CC="+cc)
+	if os.Getenv("DYLIB_NATIVE_SYSROOT") != "" {
+		// runtime/cgo compiles with -Werror; runtime selection is a link flag.
+		cmd.Env = append(cmd.Env, "CGO_LDFLAGS="+strings.TrimSpace(os.Getenv("CGO_LDFLAGS")+" --rtlib=libgcc"))
+	}
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("%s vectorcall caller: %v\n%s", host, err, out)
 	}
