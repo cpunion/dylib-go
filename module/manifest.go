@@ -1,5 +1,5 @@
-// Package module loads an explicit, versioned dependency graph using retained
-// dylib sessions. It does not discover ABI signatures or search for providers.
+// Package module loads versioned dependency graphs using retained dylib sessions.
+// Optional provider catalogs discover declarations without inferring native ABIs.
 package module
 
 import (
@@ -57,28 +57,64 @@ func contractName(s string) bool { return textName(s) && strings.TrimSpace(s) ==
 // no native files and invokes no native code. The reader remains caller-owned.
 func Read(reader io.Reader) (Manifest, error) {
 	var manifest Manifest
-	if reader == nil {
-		return manifest, fmt.Errorf("module: nil manifest reader")
-	}
-	data, err := io.ReadAll(io.LimitReader(reader, maxManifestSize+1))
-	if err != nil {
-		return manifest, err
-	}
-	if len(data) > maxManifestSize {
-		return manifest, fmt.Errorf("module: manifest exceeds 1 MiB")
-	}
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&manifest); err != nil {
-		return Manifest{}, fmt.Errorf("module: decode manifest: %w", err)
-	}
-	if err := decoder.Decode(new(any)); err != io.EOF {
-		return Manifest{}, fmt.Errorf("module: expected one JSON document")
+	if _, err := readDocument(reader, &manifest); err != nil {
+		return Manifest{}, err
 	}
 	if err := manifest.Validate(); err != nil {
 		return Manifest{}, err
 	}
 	return manifest, nil
+}
+
+func readDocument(reader io.Reader, result any) (int, error) {
+	if reader == nil {
+		return 0, fmt.Errorf("module: nil manifest reader")
+	}
+	data, err := io.ReadAll(io.LimitReader(reader, maxManifestSize+1))
+	if err != nil {
+		return 0, err
+	}
+	if len(data) > maxManifestSize {
+		return len(data), fmt.Errorf("module: manifest exceeds 1 MiB")
+	}
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(result); err != nil {
+		return len(data), fmt.Errorf("module: decode manifest: %w", err)
+	}
+	if err := decoder.Decode(new(any)); err != io.EOF {
+		return len(data), fmt.Errorf("module: expected one JSON document")
+	}
+	return len(data), nil
+}
+
+func (mod Module) validate() (map[string]bool, error) {
+	if !contractName(mod.Name) || !contractName(mod.Version) || len(mod.Files) == 0 {
+		return nil, fmt.Errorf("module: invalid name/version or empty files for %q", mod.Name)
+	}
+	for _, path := range mod.Files {
+		if !textName(path) {
+			return nil, fmt.Errorf("module: invalid input path for %q", mod.Name)
+		}
+	}
+	exports := make(map[string]bool)
+	for _, symbol := range mod.Exports {
+		if !textName(symbol) || exports[symbol] {
+			return nil, fmt.Errorf("module: invalid or duplicate export %q in %q", symbol, mod.Name)
+		}
+		exports[symbol] = true
+	}
+	aliases := make(map[string]bool)
+	for _, imp := range mod.Imports {
+		if !contractName(imp.Provider) || !contractName(imp.Version) {
+			return nil, fmt.Errorf("module: invalid import provider/version in %q", mod.Name)
+		}
+		if !textName(imp.Symbol) || !textName(imp.name()) || aliases[imp.name()] {
+			return nil, fmt.Errorf("module: invalid or duplicate import name %q in %q", imp.name(), mod.Name)
+		}
+		aliases[imp.name()] = true
+	}
+	return exports, nil
 }
 
 // Validate checks structural contracts, provider versions, declared exports,
@@ -96,40 +132,25 @@ func (m Manifest) order() ([]int, error) {
 	indices := make(map[string]int)
 	exports := make(map[string]map[string]bool)
 	for index, mod := range m.Modules {
-		if !contractName(mod.Name) || !contractName(mod.Version) || len(mod.Files) == 0 {
-			return nil, fmt.Errorf("module: invalid name/version or empty files for %q", mod.Name)
+		declared, err := mod.validate()
+		if err != nil {
+			return nil, err
 		}
 		if _, exists := indices[mod.Name]; exists {
 			return nil, fmt.Errorf("module: duplicate module %q", mod.Name)
 		}
 		indices[mod.Name] = index
-		exports[mod.Name] = make(map[string]bool)
-		for _, path := range mod.Files {
-			if !textName(path) {
-				return nil, fmt.Errorf("module: invalid input path for %q", mod.Name)
-			}
-		}
-		for _, symbol := range mod.Exports {
-			if !textName(symbol) || exports[mod.Name][symbol] {
-				return nil, fmt.Errorf("module: invalid or duplicate export %q in %q", symbol, mod.Name)
-			}
-			exports[mod.Name][symbol] = true
-		}
+		exports[mod.Name] = declared
 	}
 	for _, mod := range m.Modules {
-		aliases := make(map[string]bool)
 		for _, imp := range mod.Imports {
 			provider, ok := indices[imp.Provider]
-			if !ok || !contractName(imp.Version) || imp.Version != m.Modules[provider].Version {
+			if !ok || imp.Version != m.Modules[provider].Version {
 				return nil, fmt.Errorf("module: %q requires provider %q version %q", mod.Name, imp.Provider, imp.Version)
 			}
 			if !exports[imp.Provider][imp.Symbol] {
 				return nil, fmt.Errorf("module: provider %q does not declare export %q", imp.Provider, imp.Symbol)
 			}
-			if !textName(imp.name()) || aliases[imp.name()] {
-				return nil, fmt.Errorf("module: invalid or duplicate import name %q in %q", imp.name(), mod.Name)
-			}
-			aliases[imp.name()] = true
 		}
 	}
 	states := make([]uint8, len(m.Modules))

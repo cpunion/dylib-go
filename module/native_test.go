@@ -3,6 +3,7 @@
 package module_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"os"
@@ -18,6 +19,54 @@ import (
 	example "github.com/cpunion/dylib-go/examples/modules"
 	"github.com/cpunion/dylib-go/module"
 )
+
+func TestNativeDiscoveredModuleGraphCalls(t *testing.T) {
+	for _, kind := range []string{"object", "archive", "library"} {
+		for _, opt := range []string{"-O0", "-O2"} {
+			t.Run(kind+"/"+opt, func(t *testing.T) {
+				providerDir, appDir := t.TempDir(), t.TempDir()
+				provider := produce(t, providerDir, "provider", `API int module_bias=2; API int module_add(int a,int b){return a+b;}`, kind, opt)
+				consumer := produce(t, appDir, "consumer", consumerCode, "object", opt)
+				declared := example.Manifest(filepath.Base(provider), filepath.Base(consumer)).Modules
+				writeCatalog(t, appDir, "app", declared[0])
+				unused := declared[1]
+				unused.Version, unused.Files = "math/2", []string{"not-installed.o"}
+				writeCatalog(t, providerDir, "math", declared[1], unused)
+				manifest, err := example.Discover(context.Background(), appDir, providerDir)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(manifest.Modules) != 2 {
+					t.Fatal("unreachable provider selected", manifest)
+				}
+				graph, err := module.Open("", manifest, dylib.Options{})
+				if err != nil {
+					t.Fatal(err)
+				}
+				t.Cleanup(func() {
+					if err := graph.Close(); err != nil {
+						t.Error(err)
+					}
+				})
+				session, err := graph.Session("app")
+				if err != nil {
+					t.Fatal(err)
+				}
+				lease, read := nativeRead(t, session, "module_run")
+				if got := read(20, 20); got != 42 {
+					t.Fatal(got)
+				}
+				lease.Close()
+				if err := graph.Close(); err != nil {
+					t.Fatal(err)
+				}
+				if _, err := graph.Session("app"); !errors.Is(err, dylib.ErrClosed) {
+					t.Fatal(err)
+				}
+			})
+		}
+	}
+}
 
 const exportMacro = `
 #if defined(_WIN32)
