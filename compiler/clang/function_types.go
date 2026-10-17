@@ -139,6 +139,11 @@ func callingConvention(cc string, target Target) (abi.Convention, error) {
 		convention = abi.StdCall
 	case "fastcall":
 		convention = abi.FastCall
+	case "vectorcall":
+		if target.OS != "windows" || target.Arch != "amd64" && target.Arch != "386" {
+			return 0, fmt.Errorf("vectorcall requires Windows amd64 or 386")
+		}
+		return abi.VectorCall, nil
 	default:
 		return 0, fmt.Errorf("unsupported function calling convention %q", cc)
 	}

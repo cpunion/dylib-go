@@ -15,7 +15,8 @@ import (
 // addresses are supported. Attributed values cross the Go boundary as
 // ordinary transport records; C constructs and calls the native type. WithTail
 // specifies a concrete variadic call shape; C performs default promotions.
-// Windows 386 also supports fixed stdcall/fastcall prototypes. Struct pointees
+// Windows 386 also supports fixed stdcall/fastcall prototypes. Fixed vectorcall
+// prototypes on Windows amd64/386 require a supporting C compiler. Struct pointees
 // use opaque native addresses; no Go struct pointer conversion is inferred.
 // The caller owns the Session, native storage and function-pointer lifetimes.
 func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
@@ -68,6 +69,22 @@ func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
 		if err := h.writeCgoBridge(&preamble, &methods, function, bindingType, name, helper, i, mapper); err != nil {
 			return nil, fmt.Errorf("clang: %s: %w", function.Name, err)
 		}
+	}
+	if bytes.Contains(preamble.Bytes(), []byte("DYLIB_GO_VECTORCALL ")) {
+		// An ignored calling-convention attribute would silently call the wrong ABI.
+		// Keep ordinary generated sources unchanged; only vectorcall uses this token.
+		guard := `#if defined(__has_attribute)
+#if __has_attribute(vectorcall) && defined(_WIN32) && (defined(__i386__) || defined(__x86_64__))
+#define DYLIB_GO_VECTORCALL __attribute__((vectorcall))
+#endif
+#endif
+#ifndef DYLIB_GO_VECTORCALL
+#error dylib_go_vectorcall_requires_a_supporting_C_compiler
+#endif
+`
+		guarded := bytes.Replace(preamble.Bytes(), []byte("#include <stdint.h>\n"), []byte("#include <stdint.h>\n"+guard), 1)
+		preamble.Reset()
+		preamble.Write(guarded)
 	}
 	fmt.Fprint(&preamble, "*/\nimport \"C\"\n\n")
 	// A separate C import keeps the preamble adjacent to cgo's special import.
@@ -127,6 +144,19 @@ func (h *Header) cgoAttribute(s abi.Signature) (string, error) {
 		}
 		return "", nil
 	}
+	if s.Convention == abi.VectorCall && h.Target.OS == "windows" && (h.Target.Arch == "amd64" || h.Target.Arch == "386") && !s.Variadic {
+		if h.Target.Arch == "386" && h.Target.msLayout() {
+			if s.Result == abi.Struct {
+				return "", fmt.Errorf("MSVC i386 vectorcall record values require a separate compiler ABI adapter")
+			}
+			for _, arg := range s.Args {
+				if arg == abi.Struct {
+					return "", fmt.Errorf("MSVC i386 vectorcall record values require a separate compiler ABI adapter")
+				}
+			}
+		}
+		return "DYLIB_GO_VECTORCALL ", nil
+	}
 	if h.Target.OS == "windows" && h.Target.Arch == "386" && !s.Variadic {
 		switch s.Convention {
 		case abi.StdCall:
@@ -135,7 +165,7 @@ func (h *Header) cgoAttribute(s abi.Signature) (string, error) {
 			return "__attribute__((fastcall)) ", nil
 		}
 	}
-	return "", fmt.Errorf("cgo bridges require cdecl or fixed Windows 386 stdcall/fastcall prototypes")
+	return "", fmt.Errorf("cgo bridges require cdecl, fixed Windows 386 stdcall/fastcall or Windows amd64/386 vectorcall prototypes")
 }
 
 func (h *Header) cgoPrototype(s abi.Signature, mapper *cgoTypes) (string, string, error) {

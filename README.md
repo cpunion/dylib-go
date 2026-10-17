@@ -51,7 +51,7 @@ Known native signatures can use caller-defined cgo or llgo adapters. For dynamic
 - `NewRegistration(resources, stop)`: group code, native-value and callback leases; run unregister/join before releasing them, retaining resources on cleanup failure.
 - `Close()`: free the object image and release system library references; subsequent symbol access and bound calls return `ErrClosed`.
 
-Mach-O and i386 COFF C names omit one leading linker underscore. Mach-O supports external `N_INDR` aliases, eager indirect pointer binding, and standard amd64/arm64 symbol stubs; see [Mach-O symbol rules](docs/macho.md). i386 stdcall/fastcall decorations remain; select the matching convention explicitly when binding. C++ names still require their exact mangled linkage name.
+Mach-O and i386 COFF C names omit one leading linker underscore. Mach-O supports external `N_INDR` aliases, eager indirect pointer binding, and standard amd64/arm64 symbol stubs; see [Mach-O symbol rules](docs/macho.md). Windows vectorcall and i386 stdcall/fastcall decorations remain. Use the matching ABI adapter; vectorcall requires a generated C bridge. C++ names still require their exact mangled linkage name.
 
 ELF amd64/i386 size relocations use the selected object definition's size, including merged common storage. Address-only host symbols cannot supply size metadata; see [ELF size rules](docs/elf.md).
 
@@ -744,7 +744,8 @@ Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cde
 | C union values | Explicit scalar/native-pointer/struct/array member facades | Supported subset | `compiler/cunion` + matching C17 compiler; fixed array wrappers, nested member paths, objects, archives and libraries; generated cgo/direct llgo or dynamic binding |
 | C with x86 conventions | Windows 386 stdcall / fastcall | Supported subset | Explicit `Convention` or generated `CgoSource`; fixed calls and native function pointers, exact decorated symbols; tested with C fixtures |
 | C callbacks into Go / llgo | Fixed host C ABI; Windows 386 stdcall / fastcall | Supported subset | Scalars, pointers, ordinary struct values, captures, explicit leases, and C-created threads; no variadic callbacks |
-| C with other conventions | vectorcall and other non-default ABIs | Not implemented | Use a compiled adapter matching the convention |
+| C vectorcall | Windows amd64 / 386 | Compiled bridge subset | `Header.CgoSource` with a vectorcall-capable C compiler; fixed scalar/pointer calls and native function pointers, plus ordinary records on amd64 and GNU 386; Go amd64/386 and llgo amd64 runtime tests |
+| C with other conventions | Other non-default ABIs | Not implemented | Use a compiled adapter matching the convention |
 | C++ C exports | `extern "C"`, host C ABI | Verified subset | C exports and global construction/destruction on native targets; ordinary raw fixtures disable exceptions and RTTI; Linux amd64/arm64/386 and macOS amd64/arm64 execute native throw/catch/rethrow and RAII with explicit compatible runtimes and `RegisterUnwind`; macOS accepts the implemented DWARF/compact tables |
 | C++ free functions | C-compatible representation, exact mangled symbol | Conditional | Caller supplies the exact symbol and signature; direct mangled entry calls are not separately tested in CI |
 | C++ class facades | Generated C exports + matching C++17 compiler | Supported subset | Explicit `compiler/cxx` manifests: constructors, ordinary/const/static members, public multiple/virtual base views, native virtual dispatch, class values/references, named native pointees, native function pointers, named lambda/`std::function` calls and captured Go callbacks, owned results and exception status codes; complete libraries |

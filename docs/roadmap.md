@@ -12,7 +12,7 @@ The CLI now accepts Go-style signature declarations and typed invocations throug
 | --- | --- |
 | Current 64-bit raw targets | Remaining relocations, Mach-O general coalescing/custom stubs, remaining lifecycle forms, TLS, and remaining POSIX/Mach-O unwind registration; external `N_INDR` aliases, eager indirect pointers/standard stubs, and optional Windows/Linux/macOS C frame tables plus the Linux C++ DWARF and macOS C++ DWARF/compact exception subsets are implemented |
 | Windows ARM64 raw objects | Nonstandard import tables, remaining relocations/lifecycle forms, and language exception handlers; C frame tables are optional |
-| 386 and additional ISAs | 386 executes C cdecl on Linux/Windows with Go; Windows 386 stdcall/fastcall are implemented; other conventions and llgo qualification remain. Additional ISAs need linker/ABI backends and execution tests |
+| 386 and additional ISAs | 386 executes C cdecl on Linux/Windows with Go; Windows 386 stdcall/fastcall and Windows amd64/386 compiled vectorcall bridges are implemented; other conventions and llgo 386 qualification remain. Additional ISAs need linker/ABI backends and execution tests |
 | BSD and Apple mobile hosts | Native OS backend, ABI/runtime integration, platform policy compatibility, and device tests |
 | Additional containers | Nonstandard import tables and automatic LTO archive member selection |
 | Full dynamic C/C++ interfaces | Whole union member transports, remaining packing/alignment forms and callback conventions/aggregates; selected scalar/native-pointer/struct/array union views and nested member paths use compiled C facades, as do explicit packed/aligned structs/bitfields |
@@ -123,6 +123,7 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Direct ordinary-record llgo adapters, fixed array fields, native struct pointers and Clang/llgo layout checks without libffi.
 - [x] Direct fixed-cdecl function-pointer parameters/results, native factories and noncapturing same-thread Go entries without libffi.
 - [x] Typed scalar/native-address cgo bridges for Go/llgo, concrete variadic shapes with C promotions, native function-pointer prototype forwarding and no-libffi runtime tests.
+- [x] Fixed Windows amd64/386 vectorcall C bridges with explicit compiler guards, decorated symbols, ordinary amd64/GNU 386 records and native factories; Go amd64/386 and llgo amd64 object/archive/library execution. Direct dynamic calls, callbacks, MSVC 386 records and LLVM vector types remain unqualified.
 - [x] Fixed Windows Go 386 stdcall/fastcall cgo bridges, mixed scalars, decorated exports and native function-pointer convention preservation without libffi.
 - [x] Direct variadic llgo methods with concrete promoted tails, empty calls, record prefixes/results and native variadic factories/forwarding without libffi.
 - [x] Direct llgo narrow-parameter qualification with wide results, signed/unsigned boundaries, Boolean values, native factories/forwarding, C-to-Go callback arguments, stack/sret parameters and fixed variadic prefixes; objects/archives/libraries at `-O0` and `-O2` require llgo's C ABI and debug-pointer fixes.
