@@ -54,7 +54,7 @@ type Session struct {
 	mu            sync.Mutex
 	cond          *sync.Cond
 	calls         int
-	closing       bool
+	closeAttempt  *sessionClose
 	opts          Options
 	files         []*file
 	libs          []uintptr
@@ -64,13 +64,18 @@ type Session struct {
 	image         *image
 	initializing  bool
 	stagedImage   *image // Only scoped initialization calls can use this mapping.
-	failedImage   *image // Retain code for exit registrations until Close after init failure.
+	failedImage   *image // Retain unpublished or partially cleaned code until Close succeeds.
 	initErr       error
 	closed        bool
 	plans         map[string]*abi.CallPlan
 	physicalPlans map[string]*abi.CallPlan // Index existing logical owners, not extra references.
 
 	symbolDependencies []*SymbolLease // Code providers retained through native cleanup.
+}
+
+type sessionClose struct {
+	done chan struct{}
+	err  error
 }
 
 func New(opts Options) *Session {
@@ -572,16 +577,21 @@ func (s *Session) lookup(name string) (uintptr, error) {
 // users and leases before releasing resources. Call it outside this session's
 // adapters, initializers, callbacks, and finalizers. Release leases after
 // unregister/join; waiting for one's own call or lease would deadlock.
+// A cleanup error keeps the session retired and retains resources still needed
+// by native cleanup. Call Close again to retry; completed finalizers do not repeat.
 func (s *Session) Close() error {
 	s.mu.Lock()
-	if s.closed {
-		for s.closing {
-			s.waitCalls()
-		}
+	if attempt := s.closeAttempt; attempt != nil {
+		s.mu.Unlock()
+		<-attempt.done
+		return attempt.err
+	}
+	if s.closed && s.failedImage == nil && len(s.libs) == 0 && len(s.symbolDependencies) == 0 {
 		s.mu.Unlock()
 		return nil
 	}
-	s.closed, s.closing = true, true
+	attempt := &sessionClose{done: make(chan struct{})}
+	s.closed, s.closeAttempt = true, attempt
 	for s.calls != 0 {
 		s.waitCalls()
 	}
@@ -601,24 +611,46 @@ func (s *Session) Close() error {
 	}
 	if image != nil {
 		err = image.close()
-	}
-	if !s.opts.KeepLibraries {
-		for i := len(libs) - 1; i >= 0; i-- {
-			err = errors.Join(err, native.Close(libs[i]))
+		if err == nil {
+			image = nil
 		}
 	}
-	// Destructors and OS library cleanup may still reference provider code/data.
-	// Release dependencies only after all of this consumer's native cleanup.
-	for i := len(dependencies) - 1; i >= 0; i-- {
-		dependencies[i].Close()
+	if image == nil {
+		if !s.opts.KeepLibraries {
+			libs, err = closeLibraries(libs, native.Close)
+		} else {
+			libs = nil // KeepLibraries deliberately retains OS references for process lifetime.
+		}
+		if len(libs) == 0 {
+			// Image finalizers and OS library cleanup may use provider code/data.
+			for i := len(dependencies) - 1; i >= 0; i-- {
+				dependencies[i].Close()
+			}
+			dependencies = nil
+		}
 	}
 	s.mu.Lock()
-	s.closing = false
-	if s.cond != nil {
-		s.cond.Broadcast()
-	}
+	s.failedImage, s.libs, s.symbolDependencies = image, libs, dependencies
+	attempt.err, s.closeAttempt = err, nil
+	close(attempt.done)
 	s.mu.Unlock()
 	return err
+}
+
+// Keep failed handles in load order; successful releases must never be retried.
+func closeLibraries(libraries []uintptr, release func(uintptr) error) ([]uintptr, error) {
+	var pending []uintptr
+	var err error
+	for i := len(libraries) - 1; i >= 0; i-- {
+		if e := release(libraries[i]); e != nil {
+			err = errors.Join(err, e)
+			pending = append(pending, libraries[i])
+		}
+	}
+	for i, j := 0, len(pending)-1; i < j; i, j = i+1, j-1 {
+		pending[i], pending[j] = pending[j], pending[i]
+	}
+	return pending, err
 }
 
 // waitCalls requires mu. Lazy creation preserves the usable zero value.
@@ -892,11 +924,13 @@ func (im *image) close() error {
 	}
 	im.lifecycle.Close()
 	im.emulatedTLS.Close()
-	e := native.Free(im.mem)
+	if err := native.Free(im.mem); err != nil {
+		return err
+	}
 	im.mem = nil
 	im.initializers, im.finalizers = nil, nil
 	im.cInitializers = nil
-	return e
+	return nil
 }
 func (im *image) lookup(n string) (uintptr, error) {
 	if len(im.objects) != 0 && elfOwnedGOT(im.objects[0].info, n) {

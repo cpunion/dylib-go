@@ -129,6 +129,10 @@ executes direct `LLGoSource` calls with negative narrow arguments. Generated cgo
 bridges retain 32-bit integer transport and restore the C widths, with negative
 arguments and variadic promotions checked at runtime.
 
+Pure Go module tests cover provider ordering, concurrent close failure, failed load rollback ownership, and failed old/candidate/migration/panic cleanup retained by managers.
+
+Native close-retry tests use a deterministic unregister-validation failure on every host. They verify retirement, active leases, concurrent/sequential error propagation, retained mappings/OS libraries/provider leases/TLS values, native finalizers running once and successful recovery. POSIX also forces a safe mapper slice-validation error to verify image-release retry. These run in Go/llgo, including independent Go on Windows ARM64.
+
 Emulated TLS fixtures cross-inspect all eight targets, including actual C++ thread-destructor refusal. Native Go/llgo tests run unoptimized/optimized raw object and archive calls, constant/zero initialization and 64-byte alignment, provider retry, shared C++ inline descriptors, independent owners, repeated generations, native thread isolation/exit cleanup, lifecycle access and retirement before/concurrent with thread exit. These tests use native C entries without requiring libffi. The independent Windows ARM64 Go process runs the same cases. See [TLS coverage](tls.md).
 
 Raw lifecycle fixtures run in every native Go and llgo job, without requiring libffi: C++ dependency initialization/destruction, ordinary archive selection, C termination tables, `atexit`/`__cxa_atexit`, selective and recursive `__cxa_finalize`, two-image isolation, validation rollback, and close idempotence. A retained observer library verifies callbacks after raw-image release. Pure Go jobs cross-inspect the eight target lifecycle table formats. See [lifecycle coverage](lifecycle.md).

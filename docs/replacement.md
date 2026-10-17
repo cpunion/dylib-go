@@ -41,8 +41,8 @@ leases. New scopes can execute against the replacement during this wait.
 
 | Result | Current selection |
 | --- | --- |
-| `published == false`, non-nil error | The candidate was not installed; any returned candidate is closed |
-| Panic after builder return, before publication | The candidate is closed; the panic propagates and the previous selection remains |
+| `published == false`, non-nil error | The candidate was not installed; candidate cleanup is attempted; failures remain manager-owned |
+| Panic after builder return, before publication | Candidate cleanup is attempted and failures stay owned; the panic propagates and the previous selection remains |
 | `published == true`, nil error | The replacement was installed and old cleanup completed |
 | `published == true`, non-nil error | The replacement was installed; old cleanup reported an error |
 
@@ -67,7 +67,7 @@ sessions continue to own independent snapshots and mappings.
 
 Close retires new admission immediately, even while a builder or migration is
 running. That in-progress replacement closes its candidate without publishing
-when it observes retirement. Concurrent closes share one result. Do not call
+when it observes retirement. Concurrent closes share one attempt and its result. Failed cleanup can be retried with `Close`. Do not call
 this manager's `Replace` or `Close` from its own scope, builder, migration, native
 callback or finalizer: draining that operation would wait for itself.
 
@@ -75,3 +75,10 @@ Tests run real old/new native code, migrate state, verify failure/panic cleanup,
 publish while old scopes and external leases remain callable, and close during
 build/migration or old retirement. Native jobs execute these on all eight Go
 targets and six llgo targets, without libffi.
+
+Failed native cleanup remains owned by the manager, including a replaced old
+generation and a rejected candidate after a builder/migration error or panic.
+The selected graph keeps its documented publication state. `Manager.Close`
+retires admission and retries all remaining graphs; another close can retry a
+failed attempt without replaying completed graph cleanup. Providers inside a
+failed graph remain retained until that consumer succeeds.

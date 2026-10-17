@@ -22,8 +22,9 @@ type Manager struct {
 	changed   *sync.Cond
 	operation sync.Mutex // Serialize replacement and cleanup, not native calls.
 	current   *generation
-	closeDone chan struct{}
-	closeErr  error
+	retired   bool
+	attempt   *closeAttempt
+	pending   []*Graph // Owned generations/candidates whose native cleanup failed.
 }
 
 func (g *Graph) isOpen() bool {
@@ -32,7 +33,7 @@ func (g *Graph) isOpen() bool {
 	}
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	return g.done == nil && len(g.sessions) != 0
+	return !g.retired && len(g.sessions) != 0
 }
 
 // NewManager takes ownership of an open graph on success. On error, ownership
@@ -58,7 +59,7 @@ func (m *Manager) WithGraph(use func(*Graph) error) error {
 		return fmt.Errorf("module: nil graph user")
 	}
 	m.mu.Lock()
-	if m.closeDone != nil || m.current == nil {
+	if m.retired || m.current == nil {
 		m.mu.Unlock()
 		return dylib.ErrClosed
 	}
@@ -100,7 +101,7 @@ func (m *Manager) Replace(build func() (*Graph, error), migrate func(old, next *
 	m.operation.Lock()
 	defer m.operation.Unlock()
 	m.mu.Lock()
-	if m.closeDone != nil || m.current == nil {
+	if m.retired || m.current == nil {
 		m.mu.Unlock()
 		return false, dylib.ErrClosed
 	}
@@ -112,7 +113,8 @@ func (m *Manager) Replace(build func() (*Graph, error), migrate func(old, next *
 	}
 	defer func() {
 		if !published && next != nil {
-			err = errors.Join(err, next.Close())
+			m.pending = append(m.pending, next)
+			err = errors.Join(err, m.cleanupPending())
 		}
 	}()
 	if err != nil {
@@ -122,7 +124,7 @@ func (m *Manager) Replace(build func() (*Graph, error), migrate func(old, next *
 		return false, fmt.Errorf("module: builder must return a fresh open graph")
 	}
 	m.mu.Lock()
-	closing := m.closeDone != nil
+	closing := m.retired
 	m.mu.Unlock()
 	if closing {
 		return false, dylib.ErrClosed
@@ -133,7 +135,7 @@ func (m *Manager) Replace(build func() (*Graph, error), migrate func(old, next *
 		}
 	}
 	m.mu.Lock()
-	if m.closeDone != nil {
+	if m.retired {
 		m.mu.Unlock()
 		return false, dylib.ErrClosed
 	}
@@ -143,25 +145,43 @@ func (m *Manager) Replace(build func() (*Graph, error), migrate func(old, next *
 		m.changed.Wait()
 	}
 	m.mu.Unlock()
-	return true, old.graph.Close()
+	m.pending = append(m.pending, old.graph)
+	return true, m.cleanupPending()
+}
+
+// operation guards the queue. Graphs are independent owners; a failed graph
+// retains its internal dependency order while other generations can complete.
+func (m *Manager) cleanupPending() error {
+	pending := m.pending[:0]
+	var err error
+	for _, graph := range m.pending {
+		if e := graph.Close(); e != nil {
+			err = errors.Join(err, e)
+			pending = append(pending, graph)
+		}
+	}
+	clear(m.pending[len(pending):])
+	m.pending = pending
+	return err
 }
 
 // Close immediately rejects new scopes and publications, then waits for any
 // replacement, current scopes and graph leases before cleanup. It holds no
-// admission mutex across native cleanup. Concurrent/repeated closes share one
-// result. Call outside this manager's scopes, builder, migration and callbacks.
+// admission mutex across native cleanup. Concurrent callers share one attempt.
+// Failed current/retired/candidate cleanup stays owned for a later Close retry;
+// admission remains retired. Call outside scopes, builders, migration and callbacks.
 func (m *Manager) Close() error {
 	if m == nil {
 		return nil
 	}
 	m.mu.Lock()
-	if m.closeDone != nil {
-		done := m.closeDone
+	if attempt := m.attempt; attempt != nil {
 		m.mu.Unlock()
-		<-done
-		return m.closeErr
+		<-attempt.done
+		return attempt.err
 	}
-	m.closeDone = make(chan struct{})
+	attempt := &closeAttempt{done: make(chan struct{})}
+	m.attempt, m.retired = attempt, true
 	m.mu.Unlock()
 	m.operation.Lock()
 	m.mu.Lock()
@@ -173,14 +193,14 @@ func (m *Manager) Close() error {
 	}
 	m.current = nil
 	m.mu.Unlock()
-	var err error
 	if current != nil {
-		err = current.graph.Close()
+		m.pending = append(m.pending, current.graph)
 	}
+	err := m.cleanupPending()
 	m.operation.Unlock()
 	m.mu.Lock()
-	m.closeErr = err
-	close(m.closeDone)
+	attempt.err, m.attempt = err, nil
+	close(attempt.done)
 	m.mu.Unlock()
 	return err
 }
