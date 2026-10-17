@@ -91,16 +91,8 @@ jobs:
           # C facade ownership needs libffi; other producers run in direct mode.
           DYLIB_TEST_LANGUAGES: ${{ runner.os == 'macOS' && 'swift,objc' || '' }}
         run: |
-          if [[ '${{ matrix.target }}' == darwin-amd64 ]]; then
-            go list -tags llgo,libffi ./... > "$RUNNER_TEMP/dylib-llgo-ffi-packages"
-            packages=()
-            while IFS= read -r package; do
-              if [[ "$package" != github.com/cpunion/dylib-go/compiler/clang ]]; then
-                packages+=("$package")
-              fi
-            done < "$RUNNER_TEMP/dylib-llgo-ffi-packages"
-            llgo test -count=1 -timeout="$LLGO_TEST_TIMEOUT" -v -tags libffi "${packages[@]}"
-            bash scripts/test-llgo-compiler.sh
+          if [[ '${{ runner.os }}' == macOS ]]; then
+            bash scripts/test-native.sh llgo
           else
             llgo test -count=1 -timeout="$LLGO_TEST_TIMEOUT" -v -tags libffi ./...
           fi

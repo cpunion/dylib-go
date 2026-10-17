@@ -113,3 +113,22 @@ double prefix_overflow(long long,long long,long long,long long,long long,long lo
 typedef BitPrefix (*PrefixEntry)(BitPrefix);
 PrefixEntry prefix_factory(void); BitPrefix forward_prefix(PrefixEntry,BitPrefix);
 BitPrefix *prefix_pointer(BitPrefix); BitPrefix read_prefix(BitPrefix *);
+
+#pragma pack(push,2)
+typedef struct __attribute__((packed)) { unsigned :1; signed char root_byte_tag; unsigned :0 __attribute__((aligned(4))); float root_byte_real; } PackedRootByte;
+#pragma pack(pop)
+#pragma pack(push,4)
+typedef struct __attribute__((packed)) { unsigned long long :31; signed char root_leading_tag; float root_leading_real; } PackedRootLeading;
+typedef struct __attribute__((packed)) { unsigned root_named_flags:3; unsigned long long :40; signed char root_named_tag; float root_named_real; } PackedRootNamed;
+typedef struct __attribute__((packed)) { float root_floating_head; unsigned :3; signed char root_floating_tag; double root_floating_real; } PackedRootFloating;
+typedef struct __attribute__((packed,aligned(16))) { unsigned :3; signed char root_aligned_tag; double root_aligned_real; } PackedRootAligned;
+#pragma pack(pop)
+typedef struct { PackedRootByte root_items[2]; PackedRootNamed root_bits; PackedRootFloating root_floats; } PackedRootEnvelope;
+PackedRootByte echo_root_byte(PackedRootByte); PackedRootLeading echo_root_leading(PackedRootLeading);
+PackedRootNamed echo_root_named(PackedRootNamed); PackedRootFloating echo_root_floating(PackedRootFloating);
+PackedRootAligned echo_root_aligned(PackedRootAligned); PackedRootEnvelope echo_root_envelope(PackedRootEnvelope);
+PackedRootByte root_variable(PackedRootByte,...);
+double root_overflow(long long,long long,long long,long long,long long,long long,double,double,double,double,double,double,double,double,PackedRootByte,long long);
+typedef PackedRootByte (*RootEntry)(PackedRootByte);
+RootEntry root_factory(void); PackedRootByte forward_root(RootEntry,PackedRootByte);
+PackedRootEnvelope *root_pointer(PackedRootEnvelope); PackedRootEnvelope read_root(PackedRootEnvelope *);

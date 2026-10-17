@@ -93,9 +93,12 @@ jobs:
           clang --version
           pkg-config --modversion libffi
       - name: Execute C/C++, archives, shared libraries and selected language interfaces
-        # Preserve the full cross-target compiler matrix on macOS Intel,
-        # where the complete compiler package already approaches 20 minutes.
-        run: go test -count=1 -timeout="$GO_TEST_TIMEOUT" -v -tags libffi ./...
+        run: |
+          if [[ '${{ matrix.target }}' == darwin-amd64 ]]; then
+            bash scripts/test-native.sh go
+          else
+            go test -count=1 -timeout="$GO_TEST_TIMEOUT" -v -tags libffi ./...
+          fi
       - name: Execute README cgo, dynamic call and callback examples
         run: bash examples/run.sh go library
       - name: Execute dynamic CLI signatures, values, objects and libraries
@@ -111,7 +114,12 @@ jobs:
         if: matrix.arch != '386'
         env:
           DYLIB_TEST_LANGUAGES: ''
-        run: go test -count=1 -timeout="$GO_TEST_TIMEOUT" -race -tags libffi ./...
+        run: |
+          if [[ '${{ matrix.target }}' == darwin-amd64 ]]; then
+            bash scripts/test-native.sh go -race
+          else
+            go test -count=1 -timeout="$GO_TEST_TIMEOUT" -race -tags libffi ./...
+          fi
       - run: go vet -tags libffi ./...
 
   inspection:
