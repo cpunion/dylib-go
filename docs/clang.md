@@ -505,6 +505,24 @@ anonymous unit, transport conversion uses the existing empty initializer through
 each enclosing record. This avoids invalid brace-elided initialization in the
 MinGW bridge without changing the public Go value.
 
+Packed records with unnamed nonzero fields can also inherit a larger root
+alignment from GCC's pragma than the Clang producer used. GNU bridges cap their
+private packing pragma at the compiler-measured record alignment. The original
+`MaxFieldAlignment` metadata stays intact; named allocation units and explicitly
+aligned roots retain the producer's observed alignment. The compiler matrix
+checks 60 records across packing caps 1/2/4/8/16 and widths 1/3/31/40, including
+named-unit controls, against eight targets. The
+[packed root tests](../examples/overalignedbits/root_test.go) execute leading
+padding, floating fields, aligned roots, nested arrays, variadic/stack arguments,
+factories and native pointers through Go/llgo C bridges for objects, archives and
+libraries. Other GNU unnamed bitfield forms still need independent qualification.
+Small GNU AMD64 records whose named leaves are all floating point require an
+implicit facade when nonzero unnamed fields would change register classes.
+Generation rejects unqualified leading/interior forms, including float arrays
+and nested float records, before binding a symbol. The qualified trailing-padding
+facade and records already passed in memory because of unaligned fields remain
+available. Equal sizes and field offsets cannot replace this ABI check.
+
 GNU AMD64 also requires care with nonzero trailing unnamed bitfields. Clang can
 ignore their padding when assigning argument/result registers, while GCC counts
 it as an integer value. Matching sizes and offsets alone cannot detect this.

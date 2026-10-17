@@ -489,6 +489,9 @@ to preserve Clang/GCC register classes and stack arguments; see the
 Interior gaps with original unnamed bitfields can also use implicit prefixes
 when each affected eight-byte chunk already has a named integer class; see the
 [tested prefix cases](examples/overalignedbits/prefix_test.go).
+GNU bridges also preserve compiler-measured packed root alignment when GCC's
+pragma would otherwise raise it; see the
+[tested packed root cases](examples/overalignedbits/root_test.go).
 Named and unnamed member-level `packed` bitfields use validated C bridges,
 including small value returns, packed/aligned named and unnamed members, ignored
 MSVC alignment requests and mixed zero-width boundaries; see the

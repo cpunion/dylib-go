@@ -200,6 +200,13 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			return err
 		}
 		tailPadding := t.gnuAMD64 && gnuImplicitTailPadding(record) && t.sysVAlignedRecord(record, 0)
+		if t.gnuAMD64 && !tailPadding && record.Layout.Size <= 16 && t.sysVAlignedRecord(record, 0) && onlyFloatingFields(record.Description) {
+			for _, padding := range record.Padding {
+				if padding.Width != 0 {
+					return fmt.Errorf("clang: GNU AMD64 small unnamed floating padding in %s requires an implicit-padding C bridge", record.Name)
+				}
+			}
+		}
 		if t.gnuAMD64 && record.Layout.Size <= 16 && len(record.Bitfields) == 0 && !tailPadding && t.sysVAlignedRecord(record, 0) {
 			for _, padding := range record.Padding {
 				if padding.Width != 0 && padding.Before == len(record.Description.Fields) {
@@ -259,7 +266,9 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 			fmt.Fprint(output, "#else\n")
 		}
 		bridgePacking := record.MaxFieldAlignment
-		if t.gnuPacking && record.hasPaddingTypedefs() && bridgePacking > record.Layout.Alignment {
+		// GCC can retain an unnamed unit's alignment under a pragma even
+		// when the producer's packed record has a lower root alignment.
+		if t.gnuPacking && (record.hasPaddingTypedefs() || record.Packed && len(record.Padding) != 0) && bridgePacking > record.Layout.Alignment {
 			bridgePacking = record.Layout.Alignment
 		}
 		if (plainBoundary || len(prefixPadding) != 0) && (bridgePacking == 0 || bridgePacking > record.Layout.Alignment) {

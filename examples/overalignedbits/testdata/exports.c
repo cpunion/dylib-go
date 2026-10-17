@@ -58,3 +58,17 @@ BitPrefix forward_prefix(PrefixEntry entry,BitPrefix v) { return entry?entry(v):
 static BitPrefix prefix_storage;
 BitPrefix *prefix_pointer(BitPrefix v) { prefix_storage=v; return &prefix_storage; }
 BitPrefix read_prefix(BitPrefix *v) { BitPrefix zero={0}; return v?*v:zero; }
+
+PackedRootByte echo_root_byte(PackedRootByte v) { v.root_byte_tag++; v.root_byte_real+=1.5f; return v; }
+PackedRootLeading echo_root_leading(PackedRootLeading v) { v.root_leading_tag++; v.root_leading_real+=1.5f; return v; }
+PackedRootNamed echo_root_named(PackedRootNamed v) { v.root_named_flags^=3; v.root_named_tag++; v.root_named_real+=1.5f; return v; }
+PackedRootFloating echo_root_floating(PackedRootFloating v) { v.root_floating_head+=1.5f; v.root_floating_tag++; v.root_floating_real+=2.5; return v; }
+PackedRootAligned echo_root_aligned(PackedRootAligned v) { v.root_aligned_tag++; v.root_aligned_real+=1.5; return v; }
+PackedRootEnvelope echo_root_envelope(PackedRootEnvelope v) { v.root_items[0]=echo_root_byte(v.root_items[0]); v.root_items[1]=echo_root_byte(v.root_items[1]); v.root_bits=echo_root_named(v.root_bits); v.root_floats=echo_root_floating(v.root_floats); return v; }
+PackedRootByte root_variable(PackedRootByte v,...) { __builtin_va_list a; __builtin_va_start(a,v); v.root_byte_tag+=__builtin_va_arg(a,int); v.root_byte_real+=__builtin_va_arg(a,double); __builtin_va_end(a); return v; }
+double root_overflow(long long a,long long b,long long c,long long d,long long e,long long f,double g,double h,double i,double j,double k,double l,double m,double n,PackedRootByte v,long long tail) { return a+b+c+d+e+f+g+h+i+j+k+l+m+n+v.root_byte_tag+v.root_byte_real+tail; }
+RootEntry root_factory(void) { return echo_root_byte; }
+PackedRootByte forward_root(RootEntry entry,PackedRootByte v) { return entry?entry(v):v; }
+static PackedRootEnvelope root_storage;
+PackedRootEnvelope *root_pointer(PackedRootEnvelope v) { root_storage=v; return &root_storage; }
+PackedRootEnvelope read_root(PackedRootEnvelope *v) { PackedRootEnvelope zero={0}; return v?*v:zero; }

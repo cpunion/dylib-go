@@ -273,3 +273,26 @@ func hasFloatingFields(d abi.TypeDesc) bool {
 	}
 	return false
 }
+
+// GCC counts unnamed nonzero bitfields as integer values in small SysV
+// records. Clang can ignore them even when every named leaf is floating point.
+// A matching memory layout alone does not prove a compatible call ABI.
+func onlyFloatingFields(d abi.TypeDesc) bool {
+	switch d.Type {
+	case abi.F32, abi.F64:
+		return true
+	case abi.Array:
+		return d.Elem != nil && onlyFloatingFields(*d.Elem)
+	case abi.Struct:
+		if len(d.Fields) == 0 {
+			return false
+		}
+		for _, field := range d.Fields {
+			if !onlyFloatingFields(field.Type) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
