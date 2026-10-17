@@ -121,9 +121,22 @@ func TestNativeGeneratedVectorcall(t *testing.T) {
 				t.Fatalf("vectorcall archive: %v\n%s", err, out)
 			}
 			library := filepath.Join(dir, "exports.dll")
-			args = append([]string{"-shared", object, "-o", library}, flags...)
-			if out, err := exec.Command(compiler, args...).CombinedOutput(); err != nil {
-				t.Fatalf("vectorcall DLL: %v\n%s", err, out)
+			if runtime.GOARCH == "386" {
+				// MinGW consumes one leading underscore in export directives,
+				// including vectorcall identifiers. Export the exact object name.
+				def := filepath.Join(dir, "exports.def")
+				if err := os.WriteFile(def, []byte("EXPORTS\n\"__vector_add@@8\"=\"_vector_add@@8\"\n"), 0600); err != nil {
+					t.Fatal(err)
+				}
+				args = []string{"/lldmingw", "/dll", "/noentry", "/nodefaultlib", "/machine:X86", "/def:" + def, "/out:" + library, object}
+				if out, err := exec.Command(tool(t, "lld-link"), args...).CombinedOutput(); err != nil {
+					t.Fatalf("vectorcall DLL: %v\n%s", err, out)
+				}
+			} else {
+				args = append([]string{"-shared", object, "-o", library}, flags...)
+				if out, err := exec.Command(compiler, args...).CombinedOutput(); err != nil {
+					t.Fatalf("vectorcall DLL: %v\n%s", err, out)
+				}
 			}
 			for _, input := range []struct{ kind, path string }{{"object", object}, {"archive", archive}, {"library", library}} {
 				t.Run(input.kind, func(t *testing.T) {

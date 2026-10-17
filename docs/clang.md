@@ -773,6 +773,10 @@ a fresh caller without libffi and execute independently compiled objects, archiv
 and DLLs at `-O0` and `-O2`. They check repeated narrow/wide integer and floating
 register/stack calls, pointers, ordinary records, HFA and large results, decorated
 exports, independently attributed native factories/consumers and closed sessions.
+For the Windows 386 DLL fixture an explicit MinGW export alias preserves the
+vectorcall identifier underscore; MinGW otherwise strips one from its export
+directive. A real DLL may choose different export names: set `Declaration.Symbol`
+to the actual export before generation when it differs from the object name.
 The C compiler determines the register and stack ABI; LLVM vector types and
 variadic vectorcall signatures are outside this interface. See the
 [Microsoft ABI description](https://learn.microsoft.com/en-us/cpp/cpp/vectorcall)
