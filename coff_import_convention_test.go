@@ -68,17 +68,33 @@ func TestCOFFI386ImportConventionNames(t *testing.T) {
 		})
 	}
 }
+
+type coffImportCall struct {
+	name, symbol string
+	want         int32
+}
+
 func TestNativeCOFFI386ConventionImports(t *testing.T) {
+	var calls []coffImportCall
+	for i, tc := range coffConventionCases() {
+		calls = append(calls, coffImportCall{tc.name, fmt.Sprintf("invoke%d", i), 42 + int32(i)})
+	}
+	nativeCOFFI386Imports(t, coffConventionSources, calls)
+}
+
+func nativeCOFFI386Imports(t *testing.T, sources func(*testing.T, string) (string, string), calls []coffImportCall, flags ...string) {
+	t.Helper()
 	if runtime.GOOS != "windows" || runtime.GOARCH != "386" {
-		t.Skip("native Windows i386 calling conventions")
+		t.Skip("native Windows i386 imports")
 	}
 	needNative(t)
 	for _, opt := range []string{"-O0", "-O2"} {
 		t.Run(opt, func(t *testing.T) {
 			dir := t.TempDir()
-			src, consumerSrc := coffConventionSources(t, dir)
-			provider := compile(t, src, filepath.Join(dir, "provider.o"), "--target=i686-pc-windows-msvc", opt)
-			consumer := compile(t, consumerSrc, filepath.Join(dir, "consumer.o"), "--target=i686-pc-windows-msvc", opt)
+			src, consumerSrc := sources(t, dir)
+			args := append([]string{"--target=i686-pc-windows-msvc", opt}, flags...)
+			provider := compile(t, src, filepath.Join(dir, "provider.o"), args...)
+			consumer := compile(t, consumerSrc, filepath.Join(dir, "consumer.o"), args...)
 			dll, library := filepath.Join(dir, "provider.dll"), filepath.Join(dir, "provider.lib")
 			command(t, "lld-link", "/dll", "/noentry", "/nodefaultlib", "/machine:X86", "/out:"+dll, "/implib:"+library, provider)
 			archive := filepath.Join(dir, "consumer.a")
@@ -88,11 +104,11 @@ func TestNativeCOFFI386ConventionImports(t *testing.T) {
 					s := New(Options{})
 					defer s.Close()
 					load(t, s, library, input.path)
-					for i, tc := range coffConventionCases() {
-						t.Run(tc.name, func(t *testing.T) {
+					for _, entry := range calls {
+						t.Run(entry.name, func(t *testing.T) {
 							// Repetition catches convention-specific stack cleanup errors.
 							for n := int32(0); n < 100; n++ {
-								call(t, s, fmt.Sprintf("invoke%d", i), 20+n, 22-n, 42+int32(i))
+								call(t, s, entry.symbol, 20+n, 22-n, entry.want)
 							}
 						})
 					}
@@ -102,7 +118,7 @@ func TestNativeCOFFI386ConventionImports(t *testing.T) {
 					if err := s.Close(); err != nil {
 						t.Fatal(err)
 					}
-					if _, err := callInt32(s, "invoke0", 20, 22); !errors.Is(err, ErrClosed) {
+					if _, err := callInt32(s, calls[0].symbol, 20, 22); !errors.Is(err, ErrClosed) {
 						t.Fatal("closed import provider", err)
 					}
 				})

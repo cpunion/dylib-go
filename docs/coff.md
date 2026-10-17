@@ -12,11 +12,14 @@ Extended relocation tables use the first record as a count marker, including tha
 
 i386 C names remove one extra linker underscore. Import normalization retains
 the `__imp_` marker and the fastcall `@` prefix: `__imp_@fast_add@8` remains
-unchanged. Vectorcall retains its `@@N` suffix and identifier-leading underscores.
+unchanged. MSVC C++ IAT names such as `__imp_?add@api@@YAHHH@Z` also
+retain their complete import marker. Vectorcall retains its `@@N` suffix and identifier-leading underscores.
 The DLL export spelling follows its import record, independently of the normalized
 public name. Native Windows 386 tests use real linker-generated import libraries
 for cdecl/stdcall/fastcall/vectorcall, including underscore-leading identifiers,
-with repeated object/archive consumer calls at `-O0` and `-O2`.
+with repeated object/archive consumer calls at `-O0` and `-O2`. C++ fixtures
+check primitive functions and data, exact mangled direct calls and compiled C++
+callers, with exceptions and RTTI disabled.
 
 ## Short import libraries
 
