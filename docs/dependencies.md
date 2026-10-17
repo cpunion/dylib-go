@@ -3,7 +3,7 @@
 `Session.DefineSymbol(name, symbol)` imports a resolved function or data symbol
 from another session. It acquires its own `SymbolLease`, registers the requested
 linkage name through the normal definition rules and retains the provider until
-the consumer has returned from native image and library cleanup. Import aliases
+the consumer has successfully finished native image and library cleanup. Import aliases
 may use a different name; this does not infer or adapt a native signature.
 
 | Operation | Code ownership |
@@ -11,7 +11,7 @@ may use a different name; this does not infer or adapt a native signature.
 | `Define(name, address)` | Caller retains the native address owner |
 | `DefineSymbol(name, symbol)` | Consumer retains the symbol's provider session |
 | Consumer call or code lease | Transitively retains all accepted symbol dependencies |
-| Consumer `Close` | Waits for uses, runs native cleanup, then releases dependency leases |
+| Consumer `Close` | Waits for uses, completes native cleanup, then releases dependency leases; failures retain leases for retry |
 | Provider `Close` | Rejects new acquisitions and waits for dependent consumers |
 
 Resolve the provider first, add retained definitions before linking the consumer,
@@ -33,7 +33,10 @@ A failed definition releases its newly acquired lease. A failed link retains
 accepted dependencies so the consumer can add missing inputs and retry. If a
 native initializer fails, dependency code stays alive for the failed image's
 registered exit callbacks until consumer cleanup. Repeated/concurrent consumer
-close releases each acquired lease once.
+close releases each acquired lease once. A cleanup failure leaves the consumer
+retired, retains its unfinished image/library resources and provider leases, and
+returns an error. Retry consumer `Close` before waiting for a provider to finish
+closing; completed native finalizers do not repeat.
 
 The core API uses Go ownership and does not require libffi. Call signatures,
 mutable native data synchronization, retained callback registrations, TLS and

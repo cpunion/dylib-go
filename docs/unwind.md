@@ -53,7 +53,9 @@ The output table lives in OS-owned read-only memory. Go calls
 Registration stays alive through all active calls, exit registrations and
 static termination tables, including cleanup after a failed C initializer.
 `Close` calls `RtlDeleteFunctionTable` before freeing the table or image. If
-deletion fails, native storage is retained and an error is returned.
+deletion fails, native storage, library handles and provider leases are retained
+and an error is returned. The session remains retired; call `Close` again to retry
+cleanup without replaying completed finalizers.
 
 ## Linux
 

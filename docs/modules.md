@@ -14,7 +14,7 @@ No llgo compiler, libffi or external dependency resolver is required.
 | `Discover(ctx, roots, directories...)` | Read provider catalogs from explicit directories and return a complete manifest for exact root versions; no native loading |
 | `DiscoverCompatible(ctx, roots, directories...)` | Select a consistent graph from explicit acceptable root versions in preference order, pinning exact imports before native loading |
 | `Graph.Session(name)` | Borrow one loaded session for normal library calls and adapters |
-| `Graph.Close()` | Retire graph lookup, then close consumers before providers; concurrent closes share the cleanup result |
+| `Graph.Close()` | Retire graph lookup, then close consumers before providers; concurrent closes share one attempt; failed cleanup retains consumers/providers for retry |
 
 The [executed manifest example](../examples/modules/manifest.go) imports a C
 function and global data using different consumer linkage names. Native tests
@@ -73,7 +73,7 @@ External leases can delay cleanup; release them after their native users finish.
 Stop native registrations, join workers and destroy language objects before
 closing their graph. Call close outside its own calls, callbacks and finalizers.
 
-Open failure closes every session created by that attempt, including the failing
+Open failure attempts to close every session created by that attempt, including the failing
 consumer. Cleanup releases retained provider leases in dependency order and
 returns any cleanup errors together with the original failure. Native
 initialization/finalization has side effects; cleanup does not undo those effects.
@@ -160,3 +160,10 @@ manifest. Cancellation is checked during search as well as catalog I/O. Root
 preference order is deterministic, not a global newest-version policy. Discovery
 does not open native inputs. A native loading, initializer or ABI failure in
 `Open` does not trigger another version attempt or execute a fallback image.
+
+A failed native close stops reverse dependency cleanup at that consumer. Its
+providers remain alive, graph lookup remains retired, and another `Graph.Close`
+retries unfinished sessions. Completed sessions and native finalizers do not
+repeat. If `Open`/`Load` fails and rollback cleanup also fails, it returns a
+non-nil retired graph together with the joined error. The caller owns that graph
+and must retry its `Close`, including when opening returned an error.

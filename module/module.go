@@ -3,6 +3,7 @@ package module
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -17,14 +18,20 @@ import (
 type Graph struct {
 	mu       sync.Mutex
 	sessions map[string]*dylib.Session
-	order    []*dylib.Session // Providers precede consumers.
-	done     chan struct{}
-	err      error
+	order    []io.Closer // Providers precede consumers; completed tails are removed.
+	retired  bool
+	attempt  *closeAttempt
+}
+
+type closeAttempt struct {
+	done chan struct{}
+	err  error
 }
 
 // Load reads a JSON manifest and resolves inputs relative to its directory.
 // Options apply to each session. Native loading has the same initialization
 // effects as Session.Load/Link; closing on failure cannot undo native effects.
+// A non-nil graph returned with an error owns failed cleanup; retry its Close.
 func Load(path string, options dylib.Options) (*Graph, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
@@ -45,7 +52,8 @@ func Load(path string, options dylib.Options) (*Graph, error) {
 // Open validates all declared contracts before loading the roots and their
 // transitive providers. Each selected module gets one session. Imports use
 // DefineSymbol, retaining code/data until the consumer finishes native cleanup.
-// A failure closes every newly created session in reverse dependency order.
+// A failure closes newly created sessions in reverse dependency order. If native
+// cleanup fails too, the returned graph is non-nil and retired: retry its Close.
 // Callers must keep the manifest and options stable for the duration of Open.
 func Open(base string, manifest Manifest, options dylib.Options) (*Graph, error) {
 	order, err := manifest.order()
@@ -57,9 +65,6 @@ func Open(base string, manifest Manifest, options dylib.Options) (*Graph, error)
 		return nil, err
 	}
 	graph := &Graph{sessions: make(map[string]*dylib.Session)}
-	fail := func(mod string, err error) (*Graph, error) {
-		return nil, errors.Join(fmt.Errorf("module: %s: %w", mod, err), graph.Close())
-	}
 	for _, index := range order {
 		mod := manifest.Modules[index]
 		session := dylib.New(options)
@@ -68,10 +73,10 @@ func Open(base string, manifest Manifest, options dylib.Options) (*Graph, error)
 		for _, imp := range mod.Imports {
 			symbol, err := graph.sessions[imp.Provider].Resolve(imp.Symbol)
 			if err != nil {
-				return fail(mod.Name, err)
+				return graph.loadFailure(mod.Name, err)
 			}
 			if err := session.DefineSymbol(imp.name(), symbol); err != nil {
-				return fail(mod.Name, err)
+				return graph.loadFailure(mod.Name, err)
 			}
 		}
 		for _, path := range mod.Files {
@@ -79,21 +84,29 @@ func Open(base string, manifest Manifest, options dylib.Options) (*Graph, error)
 				path = filepath.Join(base, path)
 			}
 			if err := session.Load(path); err != nil {
-				return fail(mod.Name, err)
+				return graph.loadFailure(mod.Name, err)
 			}
 		}
 		// Resolve declared exports even for leaf roots so a stale contract fails
 		// during Open, without requiring a later consumer to discover it.
 		if err := session.Link(mod.Exports...); err != nil {
-			return fail(mod.Name, err)
+			return graph.loadFailure(mod.Name, err)
 		}
 		for _, name := range mod.Exports {
 			if _, err := session.Resolve(name); err != nil {
-				return fail(mod.Name, err)
+				return graph.loadFailure(mod.Name, err)
 			}
 		}
 	}
 	return graph, nil
+}
+
+func (g *Graph) loadFailure(name string, cause error) (*Graph, error) {
+	err := fmt.Errorf("module: %s: %w", name, cause)
+	if cleanup := g.Close(); cleanup != nil {
+		return g, errors.Join(err, cleanup)
+	}
+	return nil, err
 }
 
 // Session borrows one loaded session. Unselected modules are unavailable.
@@ -105,7 +118,7 @@ func (g *Graph) Session(name string) (*dylib.Session, error) {
 	}
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	if g.done != nil {
+	if g.retired {
 		return nil, dylib.ErrClosed
 	}
 	session, ok := g.sessions[name]
@@ -117,29 +130,43 @@ func (g *Graph) Session(name string) (*dylib.Session, error) {
 
 // Close retires Graph lookup and closes consumers before their providers. It
 // waits for external symbol/function leases too; release them after native users
-// stop. Call outside this graph's calls, callbacks and finalizers. Concurrent or
-// repeated closes wait for the same cleanup and return its result.
+// stop. Call outside this graph's calls, callbacks and finalizers. Concurrent
+// callers share one cleanup attempt. On failure, providers remain
+// alive and a later Close retries from the failed consumer without replaying
+// completed sessions. Graph lookup remains retired.
 func (g *Graph) Close() error {
 	if g == nil {
 		return nil
 	}
 	g.mu.Lock()
-	if g.done != nil {
-		done := g.done
+	if attempt := g.attempt; attempt != nil {
 		g.mu.Unlock()
-		<-done
-		return g.err
+		<-attempt.done
+		return attempt.err
 	}
-	g.done = make(chan struct{})
+	if g.retired && len(g.order) == 0 {
+		g.mu.Unlock()
+		return nil
+	}
+	attempt := &closeAttempt{done: make(chan struct{})}
+	g.attempt, g.retired = attempt, true
+	order := g.order
+	g.sessions, g.order = nil, nil
 	g.mu.Unlock()
 	var err error
-	for index := len(g.order) - 1; index >= 0; index-- {
-		err = errors.Join(err, g.order[index].Close())
+	for index := len(order) - 1; index >= 0; index-- {
+		if err = order[index].Close(); err != nil {
+			break // This consumer still owns leases on its providers.
+		}
+		order[index] = nil
+		order = order[:index]
 	}
 	g.mu.Lock()
-	g.err = err
-	g.sessions, g.order = nil, nil
-	close(g.done)
+	if len(order) != 0 {
+		g.order = order
+	}
+	attempt.err, g.attempt = err, nil
+	close(attempt.done)
 	g.mu.Unlock()
 	return err
 }

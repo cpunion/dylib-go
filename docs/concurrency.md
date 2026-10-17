@@ -19,6 +19,7 @@ captures, and native state that their C API does not permit sharing.
 | --- | --- | --- | --- |
 | Open | Accepted | May overlap or nest | None |
 | Retiring after Close starts | `ErrClosed` | Retain resources; existing lease calls can finish unregister/join | Waits without an invocation lock |
+| Cleanup failed | `ErrClosed` | None | Retains unfinished image/library resources and provider leases; retry `Close` |
 | Closed | `ErrClosed` | None | Completed |
 
 `Session.Close` retires the owner before waiting. A callback racing close can
@@ -27,7 +28,10 @@ new call while the outer native invocation remains active. Existing uses finish
 normally, including result conversion/copy-back, before unmapping or DLL release.
 `CallPlan.Close` applies the same protocol to its prepared ABI resources and
 returns `abi.ErrClosed` for new calls. Concurrent close callers wait for the
-same cleanup; cleanup runs once. A panic in a Go address adapter releases its
+same cleanup attempt and receive its result. Failed session cleanup can be retried
+with another `Close`; completed finalizers do not repeat. A failed image cleanup
+keeps its OS libraries and provider leases alive. Failed library releases keep
+their handles and dependencies for retry. A panic in a Go address adapter releases its
 active-use guard while preserving the panic.
 
 `CallPlan.Share` gives each logical plan an independent retirement state while
