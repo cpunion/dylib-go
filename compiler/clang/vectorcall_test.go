@@ -23,7 +23,11 @@ int __vectorcall keyword(int,int);`)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if h.Functions[0].Signature.Convention != abi.VectorCall || h.Functions[0].Symbol != "vector_add@@8" || h.Functions[3].Signature.Convention != abi.VectorCall || h.Functions[3].Symbol != "keyword@@8" {
+			suffix := "@@8"
+			if h.Target.Arch == "amd64" {
+				suffix = "@@16"
+			}
+			if h.Functions[0].Signature.Convention != abi.VectorCall || h.Functions[0].Symbol != "vector_add"+suffix || h.Functions[3].Signature.Convention != abi.VectorCall || h.Functions[3].Symbol != "keyword"+suffix {
 				t.Fatal("vectorcall metadata/decoration", h.Functions)
 			}
 			if h.Functions[1].FunctionPointers[0].Signature.Convention != abi.VectorCall || h.Functions[2].FunctionPointers[0].Signature.Convention != abi.VectorCall {
