@@ -397,6 +397,11 @@ func callbackThreadLibrary(t *testing.T, source string) *Session {
 	if !abi.Available() {
 		t.Skip("callbacks require libffi")
 	}
+	return nativeThreadLibrary(t, source)
+}
+
+func nativeThreadLibrary(t *testing.T, source string) *Session {
+	t.Helper()
 	needShared(t)
 	dir := t.TempDir()
 	name, flag := "threads.so", "-shared"

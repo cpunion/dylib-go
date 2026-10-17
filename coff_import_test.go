@@ -245,7 +245,7 @@ func TestNativeCOFFImportHelperPreparation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	im, err := newImage([]*object{f.obj}, defs, func(string) uintptr { return 0 }, nil)
+	im, err := newImage([]*object{f.obj}, defs, func(string) uintptr { return 0 }, nil, false)
 	if err != nil {
 		t.Fatal(err)
 	}
