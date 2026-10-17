@@ -85,13 +85,6 @@ func (p coffLocation) name(skip uint64) (string, bool) {
 }
 
 func (g coffImportGraph) convert(o *object) (*object, bool) {
-	if converted, ok := g.convertPure(o); ok {
-		return converted, true
-	}
-	return g.convertMixed(o)
-}
-
-func (g coffImportGraph) convertPure(o *object) (*object, bool) {
 	if o.info.Format != "COFF" || len(o.groups) != 0 {
 		return nil, false
 	}
@@ -105,6 +98,14 @@ func (g coffImportGraph) convertPure(o *object) (*object, bool) {
 	if !candidate {
 		return nil, false
 	}
+
+	if converted, ok := g.convertPure(o); ok {
+		return converted, true
+	}
+	return g.convertMixed(o)
+}
+
+func (g coffImportGraph) convertPure(o *object) (*object, bool) {
 	indexes := make(map[string]int)
 	for i, sec := range o.sections {
 		if sec == nil {
