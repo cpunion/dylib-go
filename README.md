@@ -189,7 +189,9 @@ concurrently; existing consumers can still use a retiring provider. See
 
 The optional [`module`](module) package loads versioned dependency manifests.
 `module.Discover` selects exact-version providers from catalogs in explicit
-directories before loading; it does not infer binary ABI versions or signatures.
+directories before loading. `module.DiscoverCompatible` selects a consistent graph
+from caller-declared acceptable versions in preference order, with bounded
+backtracking. Neither API infers binary ABI versions or signatures.
 It validates provider versions and declared exports, loads selected dependency
 graphs, retains imported code/data, and closes consumers before providers. See
 the [executed manifest](examples/modules/manifest.go) and [module guide](docs/modules.md).

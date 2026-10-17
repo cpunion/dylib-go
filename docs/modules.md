@@ -12,6 +12,7 @@ No llgo compiler, libffi or external dependency resolver is required.
 | `Open(base, manifest, options)` | Load selected roots and their transitive providers, resolving relative file paths from `base` |
 | `Load(path, options)` | Read a manifest and use its containing directory as the input base |
 | `Discover(ctx, roots, directories...)` | Read provider catalogs from explicit directories and return a complete manifest for exact root versions; no native loading |
+| `DiscoverCompatible(ctx, roots, directories...)` | Select a consistent graph from explicit acceptable root versions in preference order, pinning exact imports before native loading |
 | `Graph.Session(name)` | Borrow one loaded session for normal library calls and adapters |
 | `Graph.Close()` | Retire graph lookup, then close consumers before providers; concurrent closes share the cleanup result |
 
@@ -125,5 +126,37 @@ The [executed example](../examples/modules/manifest.go) selects `app/1` with
 directories, select the required version while another version has missing
 native files, and execute object/archive/library graphs at `-O0`/`-O2` with Go
 and llgo. Existing graph retirement and rollback rules apply unchanged.
-Automatic ABI/signature discovery, semantic-version negotiation, system-directory
-search and symbol-triggered compilation remain outside this API.
+Automatic ABI/signature discovery, semantic-version ranges, system-directory
+search and symbol-triggered compilation remain outside these APIs.
+
+## Explicit compatible versions
+
+`DiscoverCompatible` accepts `CompatibleRequirement{Name, Versions}` roots. Each
+`Versions` slice lists ABI contracts that the caller accepts, ordered by preference.
+Versions remain opaque strings: `app/2` does not imply compatibility with `app/1`.
+Catalog imports still require their exact declared versions. A provider that is
+also a root must satisfy that root's acceptable versions, even if another root
+reaches it first.
+
+Selection tries root/version combinations in caller order, returning the first
+complete graph whose versions, exports and dependency cycles validate. A conflict
+introduced by a later root can cause an earlier root to use its next version.
+Missing provider versions, conflicting dependencies, missing exports and cycles
+invalidate a candidate. Locally malformed declarations or ambiguous duplicate
+providers fail discovery regardless of preference; they cannot be hidden behind
+a fallback. Unselected candidates do not leave dependencies in the final graph.
+
+The result is an ordinary manifest with one exact version per name, absolute
+catalog-relative file paths, and the same `Open`/retirement behavior. It can be
+serialized with Go's JSON encoder or supplied to a replacement builder. The
+[executed example](../examples/modules/manifest.go) prefers `app/2`, accepts `app/1`,
+and pins `math/1`. Native tests select and execute the compatible graph while an
+unacceptable provider version names a missing file, using objects, archives and
+libraries at `-O0`/`-O2` through Go and llgo adapters.
+
+All catalog limits above apply. At most 4096 total acceptable versions and 4096
+candidate attempts are allowed; exhausting either limit returns an error with no
+manifest. Cancellation is checked during search as well as catalog I/O. Root
+preference order is deterministic, not a global newest-version policy. Discovery
+does not open native inputs. A native loading, initializer or ABI failure in
+`Open` does not trigger another version attempt or execute a fallback image.
