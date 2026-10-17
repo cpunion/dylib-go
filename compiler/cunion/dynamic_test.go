@@ -107,6 +107,41 @@ func TestNativeDynamicUnionFacade(t *testing.T) {
 						call(t, "union_nested_pointer", address, address)
 						call(t, "union_nested_pointer", abi.Ptr(0), abi.Ptr(0))
 					})
+					t.Run("array_views", func(t *testing.T) {
+						for _, name := range []string{"ints", "matrix", "pairs", "hfa", "pointers"} {
+							args := []abi.Value{abi.Int32(20), abi.Int32(22)}
+							if name == "hfa" {
+								args = []abi.Value{abi.Float64(20.5), abi.Float64(21.5)}
+							} else if name == "pointers" {
+								args = nil
+							}
+							value, err := entries["union_array_"+name+"_make"].Call(args...)
+							if err != nil {
+								t.Fatal(err)
+							}
+							call(t, "union_array_"+name, value, value)
+							switch name {
+							case "ints":
+								if !reflect.DeepEqual(value.Aggregate.Fields[0].Aggregate.Fields, []abi.Value{abi.Int32(20), abi.Int32(22)}) {
+									t.Fatal("array factory", value)
+								}
+								want, err := entries["union_array_ints_make"].Call(abi.Int32(42), abi.Int32(44))
+								if err != nil {
+									t.Fatal(err)
+								}
+								call(t, "union_arrays_add", want, value, abi.Int32(22))
+								call(t, "union_array_small", want, value, abi.Int32(22))
+								call(t, "union_array_aligned", value, value)
+								call(t, "union_array_nested", value, value)
+							case "hfa":
+								call(t, "union_array_packed", value, value)
+							case "pointers":
+								if !reflect.DeepEqual(value.Aggregate.Fields[0].Aggregate.Fields, []abi.Value{abi.Ptr(0), address}) {
+									t.Fatal("pointer array factory", value)
+								}
+							}
+						}
+					})
 					// A pointer projection remains borrowed from this provider. A retained code
 					// entry keeps the native global alive while the session retires.
 					lease, err := entries["union_pointer_read"].Acquire()

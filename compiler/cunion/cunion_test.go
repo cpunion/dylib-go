@@ -31,6 +31,36 @@ func functions() []cunion.Function {
 		{Name: "native_address", Symbol: "union_address", Result: cunion.Value{Type: abi.Pointer}},
 		{Name: "read_pointer", Symbol: "union_pointer_read", Args: []cunion.Value{{Type: abi.Pointer, Union: "union Number", Member: "p"}}, Result: cunion.Value{Type: abi.I32}},
 	}...)
+	for _, entry := range []struct{ name, member, array, factory string }{
+		{"ints", "ints", "IntPair", "arrays_make"},
+		{"matrix", "matrix", "Matrix", "matrix_make"},
+		{"pairs", "pairs", "PairArray", "pairs_make"},
+		{"hfa", "doubles", "DoublePair", "array_hfa_make"},
+		{"pointers", "pointers", "PointerPair", "pointers_make"},
+	} {
+		v := cunion.Value{Type: abi.Array, Array: entry.array, Union: "union Arrays", Member: entry.member}
+		args := []cunion.Value{{Type: abi.I32}, {Type: abi.I32}}
+		if entry.name == "hfa" {
+			args = []cunion.Value{{Type: abi.F64}, {Type: abi.F64}}
+		} else if entry.name == "pointers" {
+			args = nil
+		}
+		result = append(result, cunion.Function{Name: entry.factory, Symbol: "union_array_" + entry.name + "_make", Args: args, Result: v}, cunion.Function{Name: "arrays_echo", Symbol: "union_array_" + entry.name, Args: []cunion.Value{v}, Result: v})
+	}
+	for _, entry := range []struct{ name, union, member, array string }{
+		{"small", "union SmallArray", "ints", "IntPair"},
+		{"packed", "union PackedArray", "doubles", "DoublePair"},
+		{"aligned", "union AlignedArray", "ints", "IntPair"},
+		{"nested", "union NestedArray", "payload.inner.ints", "IntPair"},
+	} {
+		v := cunion.Value{Type: abi.Array, Array: entry.array, Union: entry.union, Member: entry.member}
+		f := cunion.Function{Name: entry.name + "_array_echo", Symbol: "union_array_" + entry.name, Args: []cunion.Value{v}, Result: v}
+		if entry.name == "small" {
+			f.Name = "small_array_add"
+			f.Args = append(f.Args, cunion.Value{Type: abi.I32})
+		}
+		result = append(result, f)
+	}
 	for _, entry := range []struct {
 		name, member, record string
 		kind                 abi.Type
@@ -298,5 +328,76 @@ func TestUnionCompilerRejectsMemberPaths(t *testing.T) {
 				t.Fatalf("nested member contract: %v\n%s", err, out)
 			}
 		})
+	}
+}
+
+func TestUnionArrayManifestValidation(t *testing.T) {
+	for _, value := range []cunion.Value{
+		{Type: abi.Array, Union: "union Values", Member: "array"},
+		{Type: abi.Array, Array: "int32_t[2]", Union: "union Values", Member: "array"},
+		{Type: abi.Array, Array: "return", Union: "union Values", Member: "array"},
+		{Type: abi.Array, Array: "Ints"},
+		{Type: abi.Array, Array: "Ints", Record: "struct Pair", Union: "union Values", Member: "array"},
+		{Type: abi.I32, Array: "Ints", Union: "union Values", Member: "array"},
+	} {
+		for _, result := range []bool{false, true} {
+			f := cunion.Function{Name: "target", Symbol: "bridge"}
+			if result {
+				f.Result = value
+			} else {
+				f.Args = []cunion.Value{value}
+			}
+			if _, err := cunion.Generate("values.h", []cunion.Function{f}); err == nil {
+				t.Fatalf("accepted invalid array manifest %+v", value)
+			}
+		}
+	}
+}
+
+func TestUnionCompilerRejectsArrayContracts(t *testing.T) {
+	for _, tc := range []struct{ name, alias, member, message string }{
+		{"pointer_alias", "Pointer", "pointer", "array transport must name a nonempty fixed array"},
+		{"scalar_alias", "Scalar", "scalar", "array transport must name a nonempty fixed array"},
+		{"zero_extent", "Empty", "empty", "array transport must name a nonempty fixed array"},
+		{"incomplete_extent", "Incomplete", "array", "flexible array"},
+		{"wrong_extent", "Three", "array", "incompatible union array transport"},
+		{"wrong_element", "Floats", "array", "incompatible union array transport"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			header := filepath.Join(dir, "values.h")
+			write(t, header, []byte("#include <stdint.h>\ntypedef int32_t Ints[2];typedef int32_t Three[3];typedef float Floats[2];typedef int32_t Empty[0];typedef int32_t Incomplete[];typedef int32_t *Pointer;typedef int32_t Scalar;union Values{Ints array;Pointer pointer;Scalar scalar;Empty empty;};union Values target(union Values);\n"))
+			v := cunion.Value{Type: abi.Array, Array: tc.alias, Union: "union Values", Member: tc.member}
+			facade, err := cunion.Generate(filepath.ToSlash(header), []cunion.Function{{Name: "target", Symbol: "bridge", Args: []cunion.Value{v}, Result: v}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			src := filepath.Join(dir, "facade.c")
+			write(t, src, facade.CSource)
+			out, err := exec.Command(clangTool(t), "-std=c17", "-c", src, "-o", filepath.Join(dir, "facade.o")).CombinedOutput()
+			if err == nil || !strings.Contains(string(out), tc.message) {
+				t.Fatalf("array contract rejection: %v\n%s", err, out)
+			}
+		})
+	}
+}
+
+func TestUnionArrayHeadersCompose(t *testing.T) {
+	dir := t.TempDir()
+	header := filepath.Join(dir, "values.h")
+	write(t, header, []byte("#ifndef VALUES_H\n#define VALUES_H\n#include <stdint.h>\ntypedef int32_t Ints[2];union Values{Ints array;};union Values target(union Values);\n#endif\n"))
+	v := cunion.Value{Type: abi.Array, Array: "Ints", Union: "union Values", Member: "array"}
+	for _, symbol := range []string{"first", "second"} {
+		facade, err := cunion.Generate(filepath.ToSlash(header), []cunion.Function{{Name: "target", Symbol: symbol, Args: []cunion.Value{v}, Result: v}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		write(t, filepath.Join(dir, symbol+".h"), facade.CHeader)
+	}
+	src := filepath.Join(dir, "consumer.c")
+	// Both headers must expose the same ordinary wrapper type without redefining it.
+	write(t, src, []byte("#include \"first.h\"\n#include \"second.h\"\nvoid compose(void){__auto_type value=first;__auto_type other=second;_Static_assert(__builtin_types_compatible_p(__typeof__(value),__typeof__(other)),\"array wrapper identity\");}\n"))
+	if out, err := exec.Command(clangTool(t), "-std=c17", "-fsyntax-only", src).CombinedOutput(); err != nil {
+		t.Fatalf("composed array headers: %v\n%s", err, out)
 	}
 }

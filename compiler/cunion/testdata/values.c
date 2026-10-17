@@ -52,3 +52,14 @@ union NestedSmall nested_small_add(union NestedSmall value, int32_t add) {
     value.payload.inner.i += add;
     return value;
 }
+union Arrays arrays_make(int32_t a, int32_t b) { union Arrays v={0}; v.ints[0]=a; v.ints[1]=b; return v; }
+union Arrays matrix_make(int32_t a, int32_t b) { union Arrays v={0}; v.matrix[0][0]=a; v.matrix[0][1]=b; v.matrix[1][0]=b; v.matrix[1][1]=a; return v; }
+union Arrays pairs_make(int32_t a, int32_t b) { union Arrays v={0}; v.pairs[0].a=a; v.pairs[0].b=b; v.pairs[1].a=b; v.pairs[1].b=a; return v; }
+union Arrays array_hfa_make(double a, double b) { union Arrays v={0}; v.doubles[0]=a; v.doubles[1]=b; return v; }
+union Arrays pointers_make(void) { union Arrays v={0}; v.pointers[1]=&stored; return v; }
+union Arrays arrays_echo(union Arrays value) { return value; }
+union Arrays arrays_add(union Arrays value, int32_t add) { value.ints[0]+=add; value.ints[1]+=add; return value; }
+union SmallArray small_array_add(union SmallArray value, int32_t add) { value.ints[0]+=add; value.ints[1]+=add; return value; }
+union PackedArray packed_array_echo(union PackedArray value) { return value; }
+union AlignedArray aligned_array_echo(union AlignedArray value) { return value; }
+union NestedArray nested_array_echo(union NestedArray value) { if(value.payload.before || value.payload.after) value.payload.inner.ints[0]=-1000; return value; }

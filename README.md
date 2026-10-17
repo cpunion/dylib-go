@@ -555,7 +555,7 @@ This complements [llcppg](https://github.com/goplus/llcppg)'s static bindings.
 
 ## C union member facades
 
-`compiler/cunion` generates C17 exports for explicitly selected scalar, native-pointer or ordinary struct members of union arguments/results, including nested member paths. The C compiler handles the native union ABI; the exported facade works with generated cgo/direct llgo bindings or dynamic `Bind`. The selected result member is a caller contract. See [union interfaces and limits](docs/unions.md).
+`compiler/cunion` generates C17 exports for explicitly selected scalar, native-pointer, ordinary struct or fixed array members of union arguments/results, including nested member paths. Arrays use ordinary struct wrappers with a `Values` field in generated Go bindings. The C compiler handles the native union ABI; the exported facade works with generated cgo/direct llgo bindings or dynamic `Bind`. The selected result member is a caller contract. See [union interfaces and limits](docs/unions.md).
 
 <!-- embedme examples/cunion/manifest.go -->
 
@@ -574,11 +574,13 @@ func Functions() []cunion.Function {
 	pair := cunion.Value{Type: abi.Struct, Record: "struct Pair", Union: "union Records", Member: "pair"}
 	double := cunion.Value{Type: abi.F64, Union: "union Number", Member: "d"}
 	nested := cunion.Value{Type: abi.I32, Union: "union Nested", Member: "payload.inner.pair.a"}
+	array := cunion.Value{Type: abi.Array, Array: "IntPair", Union: "union Arrays", Member: "ints"}
 	return []cunion.Function{
 		{Name: "number_add", Symbol: "union_add", Args: []cunion.Value{integer, integer}, Result: integer},
 		{Name: "target", Symbol: "union_double", Args: []cunion.Value{double}, Result: double},
 		{Name: "record_pair_add", Symbol: "union_pair", Args: []cunion.Value{pair, {Type: abi.Struct, Record: "struct Pair"}}, Result: pair},
 		{Name: "nested_add", Symbol: "union_nested_add", Args: []cunion.Value{nested, {Type: abi.I32}}, Result: nested},
+		{Name: "arrays_add", Symbol: "union_arrays_add", Args: []cunion.Value{array, {Type: abi.I32}}, Result: array},
 	}
 }
 
@@ -737,7 +739,7 @@ Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cde
 | Language / interface | Calling convention / ABI | Current support | Verified coverage / limits |
 | --- | --- | --- | --- |
 | C | Host default C ABI | Supported subset | Eight Go targets; six llgo targets. Scalars, pointers, ordinary structs, struct pointers and concrete variadic shapes; explicit packed/aligned records and bitfields through compiled C bridges |
-| C union values | Explicit scalar/native-pointer/struct member facades | Supported subset | `compiler/cunion` + matching C17 compiler; nested struct/union member paths, objects, archives and libraries; generated cgo/direct llgo or dynamic binding |
+| C union values | Explicit scalar/native-pointer/struct/array member facades | Supported subset | `compiler/cunion` + matching C17 compiler; fixed array wrappers, nested member paths, objects, archives and libraries; generated cgo/direct llgo or dynamic binding |
 | C with x86 conventions | Windows 386 stdcall / fastcall | Supported subset | Explicit `Convention` or generated `CgoSource`; fixed calls and native function pointers, exact decorated symbols; tested with C fixtures |
 | C callbacks into Go / llgo | Fixed host C ABI; Windows 386 stdcall / fastcall | Supported subset | Scalars, pointers, ordinary struct values, captures, explicit leases, and C-created threads; no variadic callbacks |
 | C with other conventions | vectorcall and other non-default ABIs | Not implemented | Use a compiled adapter matching the convention |

@@ -41,4 +41,25 @@ union NestedSmall {
     double alternative;
 };
 union NestedSmall nested_small_add(union NestedSmall value, int32_t add);
+typedef int32_t IntPair[2];
+typedef int32_t Matrix[2][2];
+typedef struct Pair PairArray[2];
+typedef double DoublePair[2];
+typedef void *PointerPair[2];
+union Arrays { IntPair ints; Matrix matrix; PairArray pairs; DoublePair doubles; PointerPair pointers; unsigned char storage[128]; };
+union Arrays arrays_make(int32_t a, int32_t b);
+union Arrays matrix_make(int32_t a, int32_t b);
+union Arrays pairs_make(int32_t a, int32_t b);
+union Arrays array_hfa_make(double a, double b);
+union Arrays pointers_make(void);
+union Arrays arrays_echo(union Arrays value);
+union Arrays arrays_add(union Arrays value, int32_t add);
+union SmallArray { IntPair ints; double alternative; };
+union SmallArray small_array_add(union SmallArray value, int32_t add);
+union __attribute__((packed)) PackedArray { DoublePair doubles; unsigned char storage[17]; };
+union PackedArray packed_array_echo(union PackedArray value);
+union __attribute__((aligned(32))) AlignedArray { IntPair ints; };
+union AlignedArray aligned_array_echo(union AlignedArray value);
+union NestedArray { struct { int32_t before; union Arrays inner; int32_t after; } payload; };
+union NestedArray nested_array_echo(union NestedArray value);
 #endif

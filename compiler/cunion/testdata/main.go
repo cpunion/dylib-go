@@ -135,6 +135,50 @@ func main() {
 	check(p, e, address)
 	p, e = b.Union_nested_pointer(nil)
 	check(p, e, unsafe.Pointer(nil))
+	ints, e := b.Union_array_ints_make(20, 22)
+	if e != nil || ints.Values != [2]int32{20, 22} {
+		panic("array factory")
+	}
+	intsResult, e := b.Union_array_ints(ints)
+	check(intsResult, e, ints)
+	intsResult, e = b.Union_arrays_add(ints, 22)
+	if e != nil || intsResult.Values != [2]int32{42, 44} {
+		panic("array union argument/result")
+	}
+	intsResult, e = b.Union_array_small(ints, 22)
+	if e != nil || intsResult.Values != [2]int32{42, 44} {
+		panic("small array union")
+	}
+	intsResult, e = b.Union_array_aligned(ints)
+	check(intsResult, e, ints)
+	intsResult, e = b.Union_array_nested(ints)
+	check(intsResult, e, ints)
+	matrix, e := b.Union_array_matrix_make(20, 22)
+	if e != nil || matrix.Values != [2][2]int32{{20, 22}, {22, 20}} {
+		panic("multidimensional array")
+	}
+	matrixResult, e := b.Union_array_matrix(matrix)
+	check(matrixResult, e, matrix)
+	pairs, e := b.Union_array_pairs_make(20, 22)
+	if e != nil || pairs.Values[0].A != 20 || pairs.Values[1].A != 22 {
+		panic("record array")
+	}
+	pairsResult, e := b.Union_array_pairs(pairs)
+	check(pairsResult, e, pairs)
+	doubles, e := b.Union_array_hfa_make(20.5, 21.5)
+	if e != nil || doubles.Values != [2]float64{20.5, 21.5} {
+		panic("floating array")
+	}
+	doublesResult, e := b.Union_array_hfa(doubles)
+	check(doublesResult, e, doubles)
+	doublesResult, e = b.Union_array_packed(doubles)
+	check(doublesResult, e, doubles)
+	pointers, e := b.Union_array_pointers_make()
+	if e != nil || pointers.Values != [2]unsafe.Pointer{nil, address} {
+		panic("pointer array")
+	}
+	pointersResult, e := b.Union_array_pointers(pointers)
+	check(pointersResult, e, pointers)
 	if err := s.Close(); err != nil {
 		panic(err)
 	}
