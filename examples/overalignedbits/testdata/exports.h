@@ -102,7 +102,7 @@ typedef struct { signed char multi_tag; unsigned :3; unsigned :0 __attribute__((
 typedef unsigned long long Boundary __attribute__((aligned(8)));
 typedef struct { unsigned :1; signed char typedef_tag; Boundary :0; double typedef_real; } TypedefPrefix;
 #pragma pack(pop)
-typedef struct { int prefix_tag; BytePrefix prefix_items[2]; BitPrefix prefix_bits; } PrefixEnvelope;
+typedef struct { BytePrefix prefix_items[2]; BitPrefix prefix_bits; } PrefixEnvelope;
 BytePrefix echo_byte_prefix(BytePrefix); BitPrefix echo_bit_prefix(BitPrefix);
 FloatPrefix echo_float_prefix(FloatPrefix); MultiPrefix echo_multi_prefix(MultiPrefix);
 TypedefPrefix echo_typedef_prefix(TypedefPrefix);

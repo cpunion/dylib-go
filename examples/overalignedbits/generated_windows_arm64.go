@@ -1547,9 +1547,8 @@ result.f1 = value.f1;
 return result;
 }
 typedef struct {
-int32_t f0;
-dylib_go_42696e64696e6773_record23 f1[2];
-dylib_go_42696e64696e6773_record24 f2;
+dylib_go_42696e64696e6773_record23 f0[2];
+dylib_go_42696e64696e6773_record24 f1;
 } dylib_go_42696e64696e6773_record28;
 static uint64_t dylib_go_42696e64696e6773_record28_layout(int32_t index) {
 switch(index) {
@@ -1557,31 +1556,27 @@ case 0:return sizeof(dylib_go_42696e64696e6773_record28);
 case 1:return _Alignof(dylib_go_42696e64696e6773_record28);
 case 2:return offsetof(dylib_go_42696e64696e6773_record28,f0);
 case 3:return offsetof(dylib_go_42696e64696e6773_record28,f1);
-case 4:return offsetof(dylib_go_42696e64696e6773_record28,f2);
 default:return UINT64_MAX;
 }
 }
 typedef struct {
-int32_t f0;
-dylib_go_42696e64696e6773_record23_transport f1[2];
-dylib_go_42696e64696e6773_record24_transport f2;
+dylib_go_42696e64696e6773_record23_transport f0[2];
+dylib_go_42696e64696e6773_record24_transport f1;
 } dylib_go_42696e64696e6773_record28_transport;
 static dylib_go_42696e64696e6773_record28 dylib_go_42696e64696e6773_record28_from_transport(dylib_go_42696e64696e6773_record28_transport value) {
-dylib_go_42696e64696e6773_record28 result = {0};
-result.f0 = value.f0;
+dylib_go_42696e64696e6773_record28 result = {};
 for (uint32_t i0 = 0; i0 < 2; ++i0) {
-result.f1[i0] = dylib_go_42696e64696e6773_record23_from_transport(value.f1[i0]);
+result.f0[i0] = dylib_go_42696e64696e6773_record23_from_transport(value.f0[i0]);
 }
-result.f2 = dylib_go_42696e64696e6773_record24_from_transport(value.f2);
+result.f1 = dylib_go_42696e64696e6773_record24_from_transport(value.f1);
 return result;
 }
 static dylib_go_42696e64696e6773_record28_transport dylib_go_42696e64696e6773_record28_to_transport(dylib_go_42696e64696e6773_record28 value) {
 dylib_go_42696e64696e6773_record28_transport result = {0};
-result.f0 = value.f0;
 for (uint32_t i0 = 0; i0 < 2; ++i0) {
-result.f1[i0] = dylib_go_42696e64696e6773_record23_to_transport(value.f1[i0]);
+result.f0[i0] = dylib_go_42696e64696e6773_record23_to_transport(value.f0[i0]);
 }
-result.f2 = dylib_go_42696e64696e6773_record24_to_transport(value.f2);
+result.f1 = dylib_go_42696e64696e6773_record24_to_transport(value.f1);
 return result;
 }
 typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call0_function)(dylib_go_42696e64696e6773_record0);
@@ -1861,7 +1856,7 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "echo_float_prefix", Symbol: "echo_float_prefix", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_first", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "float_second", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_first", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "float_second", Type: abi.TypeDesc{Type: abi.F32}}}}}},
 		{Name: "echo_multi_prefix", Symbol: "echo_multi_prefix", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "multi_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "multi_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_real", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "multi_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "multi_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_real", Type: abi.TypeDesc{Type: abi.F32}}}}}},
 		{Name: "echo_typedef_prefix", Symbol: "echo_typedef_prefix", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "typedef_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "typedef_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "typedef_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "typedef_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
-		{Name: "echo_prefix_envelope", Symbol: "echo_prefix_envelope", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "prefix_tag", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "prefix_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}, {Name: "prefix_bits", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "prefix_tag", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "prefix_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}, {Name: "prefix_bits", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}}},
+		{Name: "echo_prefix_envelope", Symbol: "echo_prefix_envelope", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "prefix_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}, {Name: "prefix_bits", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "prefix_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}, {Name: "prefix_bits", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}}},
 		{Name: "prefix_variable", Symbol: "prefix_variable", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: true, FixedArgs: 1, Args: []abi.Type{abi.Struct, abi.I8, abi.F32}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}, abi.TypeDesc{Type: abi.I8}, abi.TypeDesc{Type: abi.F32}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}},
 		{Name: "prefix_overflow", Symbol: "prefix_overflow", Signature: abi.Signature{Result: abi.F64, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.I64, abi.I64, abi.I64, abi.I64, abi.I64, abi.I64, abi.F64, abi.F64, abi.F64, abi.F64, abi.F64, abi.F64, abi.F64, abi.F64, abi.Struct, abi.I64}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.I64}, abi.TypeDesc{Type: abi.I64}, abi.TypeDesc{Type: abi.I64}, abi.TypeDesc{Type: abi.I64}, abi.TypeDesc{Type: abi.I64}, abi.TypeDesc{Type: abi.I64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.F64}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}, abi.TypeDesc{Type: abi.I64}}}},
 		{Name: "prefix_factory", Symbol: "prefix_factory", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{}}, FunctionPointers: []clang.FunctionPointer{{Position: -1, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}},
@@ -1898,7 +1893,7 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "FloatPrefix", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "float_first", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "float_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "float_second", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 14, Alignment: 2, Offsets: []uint64{0, 8, 10}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{2, 1, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 0, StorageAlignment: 2}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 9, Aligned: 8}}},
 		{Name: "MultiPrefix", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "multi_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "multi_code", Type: abi.TypeDesc{Type: abi.I16}}, {Name: "multi_real", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 16, Alignment: 4, Offsets: []uint64{0, 8, 10}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2, 2}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 0, StorageAlignment: 2}, {Before: 1, Type: abi.Type(2), Width: 0, Offset: 8, Aligned: 4, StorageAlignment: 4}, {Before: 2, Type: abi.Type(2), Width: 0, Offset: 10, Aligned: 8}}},
 		{Name: "TypedefPrefix", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "typedef_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "typedef_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 14, Alignment: 2, Offsets: []uint64{4, 6}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{1, 2}, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 1, Offset: 0, StorageAlignment: 2}, {Before: 1, Type: abi.Type(4), Width: 0, Offset: 5, TypeAlignment: 8}}},
-		{Name: "PrefixEnvelope", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "prefix_tag", Type: abi.TypeDesc{Type: abi.I32}}, {Name: "prefix_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}, {Name: "prefix_bits", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}, Layout: abi.Layout{Size: 40, Alignment: 8, Offsets: []uint64{0, 4, 24}}},
+		{Name: "PrefixEnvelope", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "prefix_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}, {Name: "prefix_bits", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "bit_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "bit_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}, Layout: abi.Layout{Size: 40, Alignment: 8, Offsets: []uint64{0, 24}}},
 	},
 }
 
@@ -2142,7 +2137,6 @@ type BindingsRecord27 struct {
 //
 //llgo:type C
 type BindingsRecord28 struct {
-	Prefix_tag   int32
 	Prefix_items [2]BindingsRecord23
 	Prefix_bits  BindingsRecord24
 }
@@ -2540,20 +2534,18 @@ func _BindingsRecord27FromC(value C.dylib_go_42696e64696e6773_record27_transport
 }
 
 func _BindingsRecord28ToC(value BindingsRecord28) (result C.dylib_go_42696e64696e6773_record28_transport) {
-	result.f0 = C.int32_t(value.Prefix_tag)
 	for i0 := range 2 {
-		result.f1[i0] = _BindingsRecord23ToC(value.Prefix_items[i0])
+		result.f0[i0] = _BindingsRecord23ToC(value.Prefix_items[i0])
 	}
-	result.f2 = _BindingsRecord24ToC(value.Prefix_bits)
+	result.f1 = _BindingsRecord24ToC(value.Prefix_bits)
 	return result
 }
 
 func _BindingsRecord28FromC(value C.dylib_go_42696e64696e6773_record28_transport) (result BindingsRecord28) {
-	result.Prefix_tag = int32(value.f0)
 	for i0 := range 2 {
-		result.Prefix_items[i0] = _BindingsRecord23FromC(value.f1[i0])
+		result.Prefix_items[i0] = _BindingsRecord23FromC(value.f0[i0])
 	}
-	result.Prefix_bits = _BindingsRecord24FromC(value.f2)
+	result.Prefix_bits = _BindingsRecord24FromC(value.f1)
 	return result
 }
 
@@ -2707,7 +2699,7 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 	if uint64(C.dylib_go_42696e64696e6773_record27_layout(0)) != 14 || uint64(C.dylib_go_42696e64696e6773_record27_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record27_layout(2)) != 4 || uint64(C.dylib_go_42696e64696e6773_record27_layout(3)) != 6 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for TypedefPrefix")
 	}
-	if uint64(C.dylib_go_42696e64696e6773_record28_layout(0)) != 40 || uint64(C.dylib_go_42696e64696e6773_record28_layout(1)) != 8 || uint64(C.dylib_go_42696e64696e6773_record28_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record28_layout(3)) != 4 || uint64(C.dylib_go_42696e64696e6773_record28_layout(4)) != 24 {
+	if uint64(C.dylib_go_42696e64696e6773_record28_layout(0)) != 40 || uint64(C.dylib_go_42696e64696e6773_record28_layout(1)) != 8 || uint64(C.dylib_go_42696e64696e6773_record28_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record28_layout(3)) != 24 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PrefixEnvelope")
 	}
 	symbol0, err := session.Resolve("echo_tiny")

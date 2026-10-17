@@ -500,6 +500,10 @@ execute fixed/variadic returns, exhausted argument registers, native factories
 and struct pointers through Go and llgo for objects, archives and libraries.
 Prefixes without that integer proof, and attributed boundaries followed by
 another unnamed nonzero field, remain rejected before generation.
+For nested native records/arrays whose first leaf starts with a padding-only
+anonymous unit, transport conversion uses the existing empty initializer through
+each enclosing record. This avoids invalid brace-elided initialization in the
+MinGW bridge without changing the public Go value.
 
 GNU AMD64 also requires care with nonzero trailing unnamed bitfields. Clang can
 ignore their padding when assigning argument/result registers, while GCC counts

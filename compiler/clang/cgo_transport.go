@@ -67,18 +67,7 @@ func (t *cgoTypes) writeTransport(output *bytes.Buffer, index int) error {
 			from, to = native, transport
 		}
 		initializer := "{0}"
-		if toNative && t.gnuPacking {
-			for _, padding := range record.Padding {
-				if padding.Before == 0 && record.gnuPlainZeroBoundary(padding) && uint64(bitfieldTypeBits(padding.Type)/8) > record.Layout.Alignment {
-					initializer = "{}"
-					break
-				}
-			}
-		}
-		if toNative && t.msLayout && len(record.Padding) != 0 && record.Padding[0].Before == 0 && (record.MaxFieldAlignment != 0 || !record.Packed && record.Padding[0].Packed) {
-			// A leading wrapped unit may have only unnamed fields. {0} then
-			// supplies an excess initializer; GCC/Clang's empty initializer
-			// clears the aggregate without targeting an unnamed member.
+		if toNative && t.emptyNativeInitializer(index) {
 			initializer = "{}"
 		}
 		fmt.Fprintf(output, "static %s %s(%s value) {\n%s result = %s;\n", to, t.cConversion(index, toNative), from, to, initializer)
@@ -89,6 +78,32 @@ func (t *cgoTypes) writeTransport(output *bytes.Buffer, index int) error {
 		fmt.Fprint(output, "return result;\n}\n")
 	}
 	return nil
+}
+
+// A leading wrapped unit may have only unnamed fields. Brace elision descends
+// into the first record/array member, so {0} is also invalid in its parents.
+// GCC/Clang's empty initializer clears the aggregate without targeting that unit.
+func (t *cgoTypes) emptyNativeInitializer(index int) bool {
+	r := t.records[index]
+	if t.gnuPacking {
+		for _, p := range r.Padding {
+			if p.Before == 0 && r.gnuPlainZeroBoundary(p) && uint64(bitfieldTypeBits(p.Type)/8) > r.Layout.Alignment {
+				return true
+			}
+		}
+	}
+	if t.msLayout && len(r.Padding) != 0 && r.Padding[0].Before == 0 && (r.MaxFieldAlignment != 0 || !r.Packed && r.Padding[0].Packed) {
+		return true
+	}
+	first := r.Description.Fields[0].Type
+	for first.Type == abi.Array {
+		first = *first.Elem
+	}
+	if first.Type == abi.Struct {
+		child, _ := t.recordIndex(first)
+		return t.emptyNativeInitializer(child)
+	}
+	return false
 }
 
 func (t *cgoTypes) writeTransportCopy(output *bytes.Buffer, d abi.TypeDesc, destination, source string, toNative bool, depth int) {

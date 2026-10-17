@@ -40,8 +40,8 @@ func checkUnnamedPrefixCalls(t *testing.T, b *Bindings) {
 		check(t, got, BindingsRecord27{Typedef_tag: -126, Typedef_real: 22}, err)
 	})
 	t.Run("nested", func(t *testing.T) {
-		got, err := b.Echo_prefix_envelope(BindingsRecord28{Prefix_tag: -123456, Prefix_items: [2]BindingsRecord23{byteValue, byteValue}, Prefix_bits: bitValue})
-		check(t, got, BindingsRecord28{Prefix_tag: -123456, Prefix_items: [2]BindingsRecord23{byteWant, byteWant}, Prefix_bits: bitWant}, err)
+		got, err := b.Echo_prefix_envelope(BindingsRecord28{Prefix_items: [2]BindingsRecord23{byteValue, byteValue}, Prefix_bits: bitValue})
+		check(t, got, BindingsRecord28{Prefix_items: [2]BindingsRecord23{byteWant, byteWant}, Prefix_bits: bitWant}, err)
 	})
 	t.Run("variadic", func(t *testing.T) {
 		got, err := b.Prefix_variable(bitValue, 3, 1.5)
