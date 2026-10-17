@@ -1,7 +1,7 @@
 # C union member facades
 
 `compiler/cunion.Generate` renders C17 facades for explicitly selected scalar,
-pointer or ordinary struct members of native union arguments and results.
+pointer, ordinary struct or fixed array members of native union arguments and results.
 `Value{Type: abi.F64, Union: "union Number", Member: "d"}` transports a Go
 `float64`; the facade creates or receives the actual native union. `Type:
 abi.Struct, Record: "struct Pair"` selects a struct transport, including
@@ -24,6 +24,18 @@ array indexing and expressions are rejected. Pointer views borrow their pointees
 provider lifetime; retain an appropriate code or registration lease when an
 address outlives an ordinary call.
 
+`Value{Type: abi.Array, Array: "IntPair", Union: "union Arrays", Member: "ints"}`
+selects a fixed array typedef such as `typedef int32_t IntPair[2]`. The public
+facade uses a generated ordinary struct containing that array in its `values`
+field; generated Go bindings expose `Values`. Each typedef shares one wrapper
+across argument/result positions and exports, including separately generated
+headers. C copies the complete selected array without array-to-pointer decay.
+The array extent and element types must match exactly. Pointer/scalar aliases,
+empty or incomplete arrays and incompatible extents/elements fail compilation.
+Arrays cannot be ordinary native C by-value arguments/results; this selection
+requires a union member. Nested paths and multidimensional/record/pointer array
+elements use the same interface. Pointer elements remain borrowed.
+
 Compile `Facade.CSource` against the original header with the producer target
 and flags. It uses Clang/GCC's union classification builtin, C17 `_Generic`
 prototype and member checks, and full-member storage checks. Wrong prototypes,
@@ -31,7 +43,7 @@ non-union typedefs, missing/incompatible members and bitfields fail compilation.
 This is an explicit declaration manifest, not header discovery. C++ native
 unions and other language object semantics need a separate adapter.
 
-`Facade.CHeader` exposes C transport declarations. Struct transports include the
+`Facade.CHeader` exposes C transport declarations. Struct/array transports include the
 original header so `compiler/clang` can inspect their actual fields and layouts;
 scalar-only headers remain independent. Parse it with `compiler/clang`, then use
 `CgoSource`, `LLGoSource` or `ForHost` with `Session.Bind`. Generated cgo and
@@ -46,7 +58,8 @@ values. The native union may contain other fields, be packed, be explicitly
 aligned or exceed register size; those details remain inside compiled C.
 Ordinary struct views use the existing compiler/clang layout validation and
 backend limits; dynamic/direct llgo calls still reject packed or otherwise
-unrepresentable transport records. Bare array/union member views, bitfields,
+unrepresentable transport records. Array wrappers use those same backend layout
+and element-count limits. Whole union member transports, bitfields,
 variadic functions and non-default native conventions are not
 implemented. C exceptions or other runtime unwinding cannot cross the facade.
 
@@ -57,7 +70,9 @@ and `-O2`. The Go and llgo jobs cover integer boundaries, floating NaN payloads
 and negative zero, Boolean values, borrowed/null pointers,
 small/large/packed/aligned unions, ordinary struct member views with nested
 arrays/pointers, nested scalar/struct/pointer leaves at nonzero offsets, zeroed
-neighboring fields, and provider retirement. Cross-target tests compile all eight
+neighboring fields, named array views with scalar/record/floating/pointer elements,
+multidimensional arrays, composable wrapper headers, and provider retirement.
+Cross-target tests compile all eight
 supported native targets, generate cgo bindings for all eight, and qualify
 direct llgo bindings only on amd64/arm64. See [the example
 manifest](../examples/cunion/manifest.go).

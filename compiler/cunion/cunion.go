@@ -12,19 +12,22 @@ import (
 	"github.com/cpunion/dylib-go/abi"
 )
 
-// Value selects a scalar, native-address or named struct transport.
+// Value selects a scalar, native-address, named struct or fixed array transport.
 // Union optionally names a C union tag ("union Number") or typedef, and Member
 // selects its active member or a dot-separated path through nested aggregates.
 // Paths allow at most 16 identifiers and 1024 bytes, without indexes or pointer dereferences.
 // Input unions are zero-initialized before assigning Member. Result Member must
 // be valid for the native result. Pointer addresses and pointees remain borrowed.
 // Record names an ordinary C struct or typedef when Type is abi.Struct.
-// Void is allowed only for an ordinary result. Array views, bitfields, variadics
+// Array names a C array typedef when Type is abi.Array. It requires a union
+// member and uses a generated ordinary struct with a values field for transport.
+// Void is allowed only for an ordinary result. Bitfields, variadics
 // and other calling conventions require a different compiled adapter.
 type Value struct {
 	Type          abi.Type
 	Union, Member string
 	Record        string
+	Array         string
 }
 
 // Function selects an exact native C prototype and a distinct exported facade.
@@ -39,8 +42,8 @@ type Function struct {
 // Facade contains independent C17 source/header buffers and ordered export names.
 // Compile CSource against the original header with the library's target/flags.
 // Parse CHeader with compiler/clang to generate dynamic, cgo or direct llgo calls.
-// Struct transports include the original header so the compiler can describe
-// their fields; scalar-only CHeader output remains independent of that header.
+// Struct and array transports include the original header so the compiler can
+// describe their fields; scalar-only output remains independent of that header.
 type Facade struct {
 	CHeader, CSource []byte
 	Functions        []string
@@ -65,8 +68,28 @@ func Generate(header string, functions []Function) (*Facade, error) {
 		}
 		seen[f.Symbol], native[f.Name] = true, true
 	}
-	var declarations, definitions bytes.Buffer
+	var declarations, definitions, wrappers bytes.Buffer
 	needsHeader := false
+	arrays := map[string]string{}
+	kindOf := func(v Value, result bool) (string, error) {
+		kind, err := transport(v, result)
+		if err != nil {
+			return "", err
+		}
+		needsHeader = needsHeader || v.Record != "" || v.Array != ""
+		if v.Type != abi.Array {
+			return kind, nil
+		}
+		if name := arrays[v.Array]; name != "" {
+			return name, nil
+		}
+		digest := sha256.Sum256([]byte(header + "\x00" + v.Array))
+		name := fmt.Sprintf("dylib_go_cunion_array_%x", digest[:8])
+		guard := strings.ToUpper(name)
+		fmt.Fprintf(&wrappers, "#ifndef %s\n#define %s\ntypedef struct %s { %s values; } %s;\n#endif\n", guard, guard, name, v.Array, name)
+		arrays[v.Array] = name
+		return name, nil
+	}
 	result := &Facade{}
 	for _, f := range functions {
 		if native[f.Symbol] {
@@ -74,12 +97,9 @@ func Generate(header string, functions []Function) (*Facade, error) {
 		}
 		digest := sha256.Sum256([]byte(header + "\x00" + f.Name + "\x00" + f.Symbol))
 		prefix := fmt.Sprintf("dylib_go_cunion_%x_", digest[:8])
-		r, err := transport(f.Result, true)
+		r, err := kindOf(f.Result, true)
 		if err != nil {
 			return nil, fmt.Errorf("cunion: %s result: %w", f.Symbol, err)
-		}
-		if f.Result.Record != "" {
-			needsHeader = true
 		}
 		nativeResult := r
 		if f.Result.Union != "" {
@@ -88,12 +108,11 @@ func Generate(header string, functions []Function) (*Facade, error) {
 		var params, types, args []string
 		var checks, body bytes.Buffer
 		for i, v := range f.Args {
-			kind, err := transport(v, false)
+			kind, err := kindOf(v, false)
 			if err != nil {
 				return nil, fmt.Errorf("cunion: %s argument %d: %w", f.Symbol, i+1, err)
 			}
 			if v.Record != "" {
-				needsHeader = true
 				writeRecordCheck(&checks, v.Record)
 			}
 			params = append(params, fmt.Sprintf("%s %sa%d", kind, prefix, i))
@@ -105,7 +124,12 @@ func Generate(header string, functions []Function) (*Facade, error) {
 			types = append(types, v.Union)
 			args = append(args, fmt.Sprintf("%sv%d", prefix, i))
 			writeChecks(&checks, v, kind)
-			fmt.Fprintf(&body, "%s %sv%d = {0};\n%sv%d.%s = %sa%d;\n", v.Union, prefix, i, prefix, i, v.Member, prefix, i)
+			fmt.Fprintf(&body, "%s %sv%d = {0};\n", v.Union, prefix, i)
+			if v.Type == abi.Array {
+				fmt.Fprintf(&body, "__builtin_memcpy(&%sv%d.%s, &%sa%d.values, sizeof(%sa%d.values));\n", prefix, i, v.Member, prefix, i, prefix, i)
+			} else {
+				fmt.Fprintf(&body, "%sv%d.%s = %sa%d;\n", prefix, i, v.Member, prefix, i)
+			}
 		}
 		if f.Result.Record != "" {
 			writeRecordCheck(&checks, f.Result.Record)
@@ -125,7 +149,12 @@ func Generate(header string, functions []Function) (*Facade, error) {
 		fmt.Fprintf(&definitions, "DYLIB_GO_CUNION_API %s %s(%s) {\n%s", r, f.Symbol, strings.Join(params, ", "), body.String())
 		call := prefix + "target(" + strings.Join(args, ", ") + ")"
 		if f.Result.Union != "" {
-			fmt.Fprintf(&definitions, "%s %svalue = %s;\nreturn %svalue.%s;\n", nativeResult, prefix, call, prefix, f.Result.Member)
+			fmt.Fprintf(&definitions, "%s %svalue = %s;\n", nativeResult, prefix, call)
+			if f.Result.Type == abi.Array {
+				fmt.Fprintf(&definitions, "%s %sout = {0};\n__builtin_memcpy(&%sout.values, &%svalue.%s, sizeof(%sout.values));\nreturn %sout;\n", r, prefix, prefix, prefix, f.Result.Member, prefix, prefix)
+			} else {
+				fmt.Fprintf(&definitions, "return %svalue.%s;\n", prefix, f.Result.Member)
+			}
 		} else if f.Result.Type == abi.Void {
 			fmt.Fprintf(&definitions, "%s;\n", call)
 		} else {
@@ -133,7 +162,7 @@ func Generate(header string, functions []Function) (*Facade, error) {
 		}
 		fmt.Fprintln(&definitions, "}")
 		result.Functions = append(result.Functions, f.Symbol)
-		if declarations.Len()+definitions.Len() > 1<<20 {
+		if declarations.Len()+definitions.Len()+wrappers.Len() > 1<<20 {
 			return nil, fmt.Errorf("cunion: generated source exceeds 1 MiB")
 		}
 	}
@@ -144,7 +173,7 @@ func Generate(header string, functions []Function) (*Facade, error) {
 	if needsHeader {
 		headerInclude, sourceInclude = sourceInclude, ""
 	}
-	result.CHeader = []byte(fmt.Sprintf("#ifndef %s\n#define %s\n#include <stdint.h>\n#include <stdbool.h>\n%s%s#ifdef __cplusplus\nextern \"C\" {\n#endif\n%s#ifdef __cplusplus\n}\n#endif\n#endif\n", guard, guard, headerInclude, api, declarations.String()))
+	result.CHeader = []byte(fmt.Sprintf("#ifndef %s\n#define %s\n#include <stdint.h>\n#include <stdbool.h>\n%s%s%s#ifdef __cplusplus\nextern \"C\" {\n#endif\n%s#ifdef __cplusplus\n}\n#endif\n#endif\n", guard, guard, headerInclude, api, wrappers.String(), declarations.String()))
 	result.CSource = []byte(fmt.Sprintf("%s%s\n%s", sourceInclude, result.CHeader, definitions.String()))
 	if len(result.CSource) > 1<<20 {
 		return nil, fmt.Errorf("cunion: generated source exceeds 1 MiB")
@@ -153,7 +182,15 @@ func Generate(header string, functions []Function) (*Facade, error) {
 }
 
 func writeChecks(out *bytes.Buffer, v Value, kind string) {
-	fmt.Fprintf(out, "_Static_assert(__builtin_classify_type(*(%s *)0) == 13, \"cunion: selected type must be a union\");\n_Static_assert(_Generic(((%s *)0)->%s, %s: 1, default: 0), \"cunion: incompatible union member transport\");\n_Static_assert(sizeof(((%s *)0)->%s) == sizeof(%s), \"cunion: member requires full member storage\");\n", v.Union, v.Union, v.Member, kind, v.Union, v.Member, kind)
+	fmt.Fprintf(out, "_Static_assert(__builtin_classify_type(*(%s *)0) == 13, \"cunion: selected type must be a union\");\n", v.Union)
+	if v.Type == abi.Array {
+		kind = v.Array
+		fmt.Fprintf(out, "_Static_assert(__builtin_classify_type(*(%s *)0) == 5 && !__builtin_types_compatible_p(%s, __typeof__((*(%s *)0) + 0)) && sizeof(%s) > 0, \"cunion: array transport must name a nonempty fixed array\");\n", kind, kind, kind, kind)
+		fmt.Fprintf(out, "_Static_assert(_Generic(&((%s *)0)->%s, %s *: 1, default: 0), \"cunion: incompatible union array transport\");\n", v.Union, v.Member, kind)
+	} else {
+		fmt.Fprintf(out, "_Static_assert(_Generic(((%s *)0)->%s, %s: 1, default: 0), \"cunion: incompatible union member transport\");\n", v.Union, v.Member, kind)
+	}
+	fmt.Fprintf(out, "_Static_assert(sizeof(((%s *)0)->%s) == sizeof(%s), \"cunion: member requires full member storage\");\n", v.Union, v.Member, kind)
 }
 
 func writeRecordCheck(out *bytes.Buffer, name string) {
@@ -161,6 +198,13 @@ func writeRecordCheck(out *bytes.Buffer, name string) {
 }
 
 func transport(v Value, result bool) (string, error) {
+	if v.Type == abi.Array {
+		if !identifier(v.Array) || v.Union == "" {
+			return "", fmt.Errorf("array transport requires a C array typedef and union member")
+		}
+	} else if v.Array != "" {
+		return "", fmt.Errorf("array name requires an array transport")
+	}
 	if v.Type == abi.Struct {
 		if !recordName(v.Record) {
 			return "", fmt.Errorf("struct transport requires a C record name")
@@ -172,6 +216,8 @@ func transport(v Value, result bool) (string, error) {
 		return "", fmt.Errorf("invalid union/member selection")
 	}
 	switch v.Type {
+	case abi.Array:
+		return v.Array, nil
 	case abi.Struct:
 		return v.Record, nil
 	case abi.Void:
@@ -203,7 +249,7 @@ func transport(v Value, result bool) (string, error) {
 	case abi.Pointer:
 		return "void *", nil
 	}
-	return "", fmt.Errorf("expected a scalar/native-address or named struct transport")
+	return "", fmt.Errorf("expected a scalar/native-address, named struct or array transport")
 }
 
 func recordName(s string) bool { return identifier(strings.TrimPrefix(s, "struct ")) }
