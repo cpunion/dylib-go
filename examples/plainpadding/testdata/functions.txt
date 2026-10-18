@@ -1,0 +1,17 @@
+echo_wide
+echo_lead
+echo_tail
+echo_pair
+echo_mixed
+echo_pointer
+echo_multiple
+echo_array
+echo_envelope
+plain_variable
+plain_overflow
+plain_factory
+plain_forward
+plain_pointer
+plain_read
+plain_write
+plain_record_variable

@@ -496,6 +496,10 @@ Small GNU AMD64 records also use observed unnamed-field byte masks to reject
 floating or empty register lanes without a proven named integer class. Nested
 integer fields and arrays retain their working C bridges; see the
 [tested controls](examples/overalignedbits/classes_test.go).
+On Darwin ARM64, plain nonzero unnamed bitfields use compiler-measured byte
+padding in the private C bridge, preserving Clang/GCC layout and value calls.
+The [tested example](examples/plainpadding/call_darwin_arm64.go) includes native
+pointers, nested arrays, factories, variadic records and exhausted registers.
 Named and unnamed member-level `packed` bitfields use validated C bridges,
 including small value returns, packed/aligned named and unnamed members, ignored
 MSVC alignment requests and mixed zero-width boundaries; see the

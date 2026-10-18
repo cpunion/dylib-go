@@ -531,6 +531,26 @@ The [native controls](../examples/overalignedbits/classes_test.go) exercise
 wide unnamed fields, nested integers and array leaves through Go/llgo bridges.
 Equal sizes and field offsets cannot replace this ABI check.
 
+On Darwin ARM64, GCC can raise a plain unnamed field's record alignment when
+Clang does not. For example, `struct { float real; unsigned long long :33;
+signed char tag; }` has Clang size 16/alignment 4, while GCC uses alignment 8.
+For otherwise unattributed records containing only nonzero unnamed bitfields,
+`CgoSource` emits anonymous byte fields at the measured ordinary offsets and
+tail size, with the measured root alignment. Ordinary scalar, native-address,
+record and array members keep their native types. The original `Padding`,
+`Aligned` and layout metadata remain unchanged. Named bitfields, zero-width
+boundaries and packing/alignment attributes retain their existing adapters.
+This byte facade is specific to Darwin ARM64: the same transformation can
+introduce incorrect integer registers on SysV AMD64.
+
+Compiler tests compare 585 mixed, integer/Boolean-base, array and consecutive
+unnamed layouts and LLVM calling shapes. On Darwin ARM64, independently compiled
+Clang definitions are invoked through the generated GCC bridges at `-O0`/`-O2`.
+The [plain padding example](../examples/plainpadding/call_darwin_arm64.go) also
+executes objects, archives and libraries through Go and llgo, covering small and
+memory values, nested arrays, native pointer fields, pointer mutation, factories,
+exhausted integer/floating registers, variadic prefixes and record-valued tails.
+
 GNU AMD64 also requires care with nonzero trailing unnamed bitfields. Clang can
 ignore their padding when assigning argument/result registers, while GCC counts
 it as an integer value. Matching sizes and offsets alone cannot detect this.
@@ -541,7 +561,8 @@ that size and its typedef restores the measured native alignment. This preserves
 both register classes and stack allocation when registers are exhausted.
 Other small trailing unnamed layouts in this subset require another adapter and
 are rejected before generation, including a 12-byte pair of floats with padding.
-Other targets retain their native declarations.
+Other targets retain their native declarations except for the qualified Darwin
+ARM64 byte facade described above.
 
 The [tail padding example](../examples/tailpadding/call.go) runs float/double,
 integer and array values, nested arrays, native factories and pointer mutation.

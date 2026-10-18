@@ -13,8 +13,7 @@ import (
 	"testing"
 )
 
-func testCompilerRecordGCCBridge(t *testing.T, compiler, source string, names []string) {
-	t.Helper()
+func gccCompiler() string {
 	candidates := []string{"gcc"}
 	if fc := os.Getenv("DYLIB_FC"); strings.Contains(filepath.Base(fc), "gfortran") {
 		candidates = append(candidates, filepath.Join(filepath.Dir(fc), strings.Replace(filepath.Base(fc), "gfortran", "gcc", 1)))
@@ -32,6 +31,12 @@ func testCompilerRecordGCCBridge(t *testing.T, compiler, source string, names []
 			break
 		}
 	}
+	return gcc
+}
+
+func testCompilerRecordGCCBridge(t *testing.T, compiler, source string, names []string) {
+	t.Helper()
+	gcc := gccCompiler()
 	if gcc == "" {
 		t.Skip("GNU GCC is unavailable")
 	}
