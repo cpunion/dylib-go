@@ -18,6 +18,7 @@ type cgoTypes struct {
 	ms386            bool
 	gnuPacking       bool
 	gnuAMD64         bool
+	darwinARM64      bool
 	pointerTransport bool
 	pointerSize      int
 	transports       map[int]bool
@@ -194,6 +195,11 @@ func (t *cgoTypes) writeCRecords(output *bytes.Buffer) error {
 					return err
 				}
 			}
+		}
+		var err error
+		record, err = t.darwinPaddingRecord(record)
+		if err != nil {
+			return err
 		}
 		name := t.cRecordName(i)
 		if err := t.writeFieldAliases(output, record); err != nil {

@@ -1543,9 +1543,10 @@ case 2:return offsetof(dylib_go_42696e64696e6773_record36,f0);
 default:return UINT64_MAX;
 }
 }
-typedef struct {
+typedef struct __attribute__((aligned(4))) {
 dylib_go_42696e64696e6773_record36 f0;
-uint32_t :16;
+uint8_t :8;
+uint8_t :8;
 float f1;
 } dylib_go_42696e64696e6773_record37;
 static uint64_t dylib_go_42696e64696e6773_record37_layout(int32_t index) {
@@ -1573,9 +1574,10 @@ result.f0 = value.f0;
 result.f1 = value.f1;
 return result;
 }
-typedef struct {
+typedef struct __attribute__((aligned(4))) {
 int16_t f0[1];
-uint32_t :16;
+uint8_t :8;
+uint8_t :8;
 float f1;
 } dylib_go_42696e64696e6773_record38;
 static uint64_t dylib_go_42696e64696e6773_record38_layout(int32_t index) {

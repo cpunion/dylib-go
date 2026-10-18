@@ -39,6 +39,7 @@ func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
 		windows: h.Target.OS == "windows", msLayout: h.Target.msLayout(),
 		ms386:      h.Target.msLayout() && h.Target.Arch == "386",
 		gnuPacking: h.Target.gnuPacking(), gnuAMD64: h.Target.gnuPacking() && h.Target.Arch == "amd64",
+		darwinARM64:      h.Target.OS == "darwin" && h.Target.Arch == "arm64",
 		pointerTransport: h.Target.Arch == "arm64" || h.Target.gnuPacking() && h.Target.Arch == "amd64",
 	}
 	var preamble, methods bytes.Buffer

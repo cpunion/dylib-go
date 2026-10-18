@@ -7,9 +7,12 @@ package tailpadding
 /*
 #include <stdint.h>
 #include <stddef.h>
-typedef struct {
+typedef struct __attribute__((aligned(4))) {
 float f0;
-uint32_t :3;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
 } dylib_go_42696e64696e6773_record0;
 static uint64_t dylib_go_42696e64696e6773_record0_layout(int32_t index) {
 switch(index) {
@@ -32,9 +35,16 @@ dylib_go_42696e64696e6773_record0_transport result = {0};
 result.f0 = value.f0;
 return result;
 }
-typedef struct {
+typedef struct __attribute__((aligned(8))) {
 double f0;
-uint32_t :3;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
 } dylib_go_42696e64696e6773_record1;
 static uint64_t dylib_go_42696e64696e6773_record1_layout(int32_t index) {
 switch(index) {
@@ -57,9 +67,16 @@ dylib_go_42696e64696e6773_record1_transport result = {0};
 result.f0 = value.f0;
 return result;
 }
-typedef struct {
+typedef struct __attribute__((aligned(8))) {
 int64_t f0;
-uint32_t :3;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
 } dylib_go_42696e64696e6773_record2;
 static uint64_t dylib_go_42696e64696e6773_record2_layout(int32_t index) {
 switch(index) {
@@ -82,9 +99,12 @@ dylib_go_42696e64696e6773_record2_transport result = {0};
 result.f0 = value.f0;
 return result;
 }
-typedef struct {
+typedef struct __attribute__((aligned(4))) {
 float f0[1];
-uint32_t :3;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
 } dylib_go_42696e64696e6773_record3;
 static uint64_t dylib_go_42696e64696e6773_record3_layout(int32_t index) {
 switch(index) {
@@ -111,11 +131,14 @@ result.f0[i0] = value.f0[i0];
 }
 return result;
 }
-typedef struct {
+typedef struct __attribute__((aligned(4))) {
 float f0;
 float f1;
 float f2;
-uint32_t :3;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
+uint8_t :8;
 } dylib_go_42696e64696e6773_record4;
 static uint64_t dylib_go_42696e64696e6773_record4_layout(int32_t index) {
 switch(index) {

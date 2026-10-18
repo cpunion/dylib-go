@@ -147,8 +147,8 @@ const maxFunctions = 256
 // aliases preserve independent alignment at each nested array layer. GNU AMD64
 // records require compiler-probed Clang 19-compatible SysV lowering. Aligned
 // scalar/enum typedef bitfields use observed allocation units and argument
-// alignment. Aligned record typedefs and aligned unnamed typedef bitfields
-// remain unsupported.
+// alignment. Aligned record aliases retain separate canonical-body metadata.
+// Plain Darwin ARM64 unnamed bitfields use compiler-measured byte facades.
 // Unions, other attributed
 // records/fields/typedefs, inline/static
 // functions and unsupported calling conventions are rejected. Headers and their includes
