@@ -42,8 +42,8 @@ jobs:
       - uses: xgo-dev/setup-llgo@v0.2.0
         id: llgo
         with:
-          # Includes the merged SysV register and ARM64 HFA fixes (#2822/#2825).
-          llgo-version: cb9f3eccdae4909194e5086eaca1380b3e827d00
+          # Includes the ABI fixes and channel wake lifetime fix (78b265a31).
+          llgo-version: 1e93b154897f169f81defe0acba3f857a25db206
           install-method: source
           go-version: '1.27.x'
           llvm-version: '22'

@@ -132,7 +132,7 @@ func (h *Header) LookupRecord(name string) (Record, error) {
 				record.Layout.Offsets = append([]uint64(nil), record.Layout.Offsets...)
 				record.FunctionPointers = cloneFunctionPointers(record.FunctionPointers)
 				record.Bitfields = cloneBitfields(record.Bitfields)
-				record.Padding = append([]BitfieldPadding(nil), record.Padding...)
+				record.Padding = clonePadding(record.Padding)
 				record.FieldAlignments = append([]FieldAlignment(nil), record.FieldAlignments...)
 				record.FieldTypeAlignments = append([]TypedefFieldAlignment(nil), record.FieldTypeAlignments...)
 				record.MemberAlignments = append([]uint64(nil), record.MemberAlignments...)

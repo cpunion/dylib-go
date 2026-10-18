@@ -492,6 +492,10 @@ when each affected eight-byte chunk already has a named integer class; see the
 GNU bridges also preserve compiler-measured packed root alignment when GCC's
 pragma would otherwise raise it; see the
 [tested packed root cases](examples/overalignedbits/root_test.go).
+Small GNU AMD64 records also use observed unnamed-field byte masks to reject
+floating or empty register lanes without a proven named integer class. Nested
+integer fields and arrays retain their working C bridges; see the
+[tested controls](examples/overalignedbits/classes_test.go).
 Named and unnamed member-level `packed` bitfields use validated C bridges,
 including small value returns, packed/aligned named and unnamed members, ignored
 MSVC alignment requests and mixed zero-width boundaries; see the

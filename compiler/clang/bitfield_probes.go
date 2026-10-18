@@ -29,7 +29,7 @@ func (h *Header) probeBitfields(ctx context.Context, compiler, header string, fl
 	}
 	for i, r := range h.Records {
 		for j, p := range r.Padding {
-			if p.Width == 0 || p.requestedAlignment() == 0 {
+			if !h.probePaddingMask(r, p) {
 				continue
 			}
 			if r.Layout.Size == 0 || r.Layout.Size > 65536 || size > maxBitfieldProbe-r.Layout.Size {
@@ -116,18 +116,21 @@ func (h *Header) probeBitfields(ctx context.Context, compiler, header string, fl
 		}
 		for j := range r.Padding {
 			p := &r.Padding[j]
-			if p.Width == 0 || p.requestedAlignment() == 0 {
+			if !h.probePaddingMask(*r, *p) {
 				continue
 			}
 			value, err := symbols.value(fmt.Sprintf("dylib_bitfield_padding_%d_%d", i, j), r.Layout.Size)
 			if err != nil {
 				return err
 			}
-			first := -1
+			first, last := -1, -1
 			count := 0
 			for index, b := range value {
 				if b != 0 && first < 0 {
 					first = index
+				}
+				if b != 0 {
+					last = index
 				}
 				for b != 0 {
 					count++
@@ -138,6 +141,9 @@ func (h *Header) probeBitfields(ctx context.Context, compiler, header string, fl
 				return fmt.Errorf("clang: invalid compiler unnamed bitfield mask")
 			}
 			p.Offset = uint64(first)
+			if h.Target.gnuPacking() && h.Target.Arch == "amd64" && r.Layout.Size <= 16 {
+				p.Mask = append([]byte(nil), value[first:last+1]...)
+			}
 			if h.Target.gnuPacking() && p.TypeAlignment != 0 {
 				alignment := p.TypeAlignment
 				if r.MaxFieldAlignment != 0 && alignment > r.MaxFieldAlignment {
@@ -166,6 +172,10 @@ func (h *Header) probeBitfields(ctx context.Context, compiler, header string, fl
 		}
 	}
 	return ctx.Err()
+}
+
+func (h *Header) probePaddingMask(r Record, p BitfieldPadding) bool {
+	return p.Width != 0 && (p.requestedAlignment() != 0 || h.Target.gnuPacking() && h.Target.Arch == "amd64" && r.Layout.Size <= 16)
 }
 
 type bitfieldSymbols map[string][]byte

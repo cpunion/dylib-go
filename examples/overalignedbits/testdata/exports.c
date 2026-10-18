@@ -72,3 +72,7 @@ PackedRootByte forward_root(RootEntry entry,PackedRootByte v) { return entry?ent
 static PackedRootEnvelope root_storage;
 PackedRootEnvelope *root_pointer(PackedRootEnvelope v) { root_storage=v; return &root_storage; }
 PackedRootEnvelope read_root(PackedRootEnvelope *v) { PackedRootEnvelope zero={0}; return v?*v:zero; }
+
+ClassWide echo_class_wide(ClassWide v) { v.class_wide_real+=1.5f; v.class_wide_tag++; return v; }
+ClassNested echo_class_nested(ClassNested v) { v.class_integer.class_inner_integer++; v.class_nested_real+=1.5f; return v; }
+ClassArray echo_class_array(ClassArray v) { v.class_items[0]++; v.class_array_real+=1.5f; return v; }

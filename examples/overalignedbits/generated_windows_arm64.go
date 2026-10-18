@@ -1903,6 +1903,111 @@ result.f1 = dylib_go_42696e64696e6773_record31_to_transport(value.f1);
 result.f2 = dylib_go_42696e64696e6773_record32_to_transport(value.f2);
 return result;
 }
+typedef struct __attribute__((aligned(8))) {
+float f0;
+uint64_t :33;
+int8_t f1;
+} dylib_go_42696e64696e6773_record35;
+static uint64_t dylib_go_42696e64696e6773_record35_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record35);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record35);
+case 2:return offsetof(dylib_go_42696e64696e6773_record35,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record35,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+float f0;
+int8_t f1;
+} dylib_go_42696e64696e6773_record35_transport;
+static dylib_go_42696e64696e6773_record35 dylib_go_42696e64696e6773_record35_from_transport(dylib_go_42696e64696e6773_record35_transport value) {
+dylib_go_42696e64696e6773_record35 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record35_transport dylib_go_42696e64696e6773_record35_to_transport(dylib_go_42696e64696e6773_record35 value) {
+dylib_go_42696e64696e6773_record35_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+typedef struct {
+int16_t f0;
+} dylib_go_42696e64696e6773_record36;
+static uint64_t dylib_go_42696e64696e6773_record36_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record36);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record36);
+case 2:return offsetof(dylib_go_42696e64696e6773_record36,f0);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+dylib_go_42696e64696e6773_record36 f0;
+uint32_t :16;
+float f1;
+} dylib_go_42696e64696e6773_record37;
+static uint64_t dylib_go_42696e64696e6773_record37_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record37);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record37);
+case 2:return offsetof(dylib_go_42696e64696e6773_record37,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record37,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+dylib_go_42696e64696e6773_record36 f0;
+float f1;
+} dylib_go_42696e64696e6773_record37_transport;
+static dylib_go_42696e64696e6773_record37 dylib_go_42696e64696e6773_record37_from_transport(dylib_go_42696e64696e6773_record37_transport value) {
+dylib_go_42696e64696e6773_record37 result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record37_transport dylib_go_42696e64696e6773_record37_to_transport(dylib_go_42696e64696e6773_record37 value) {
+dylib_go_42696e64696e6773_record37_transport result = {0};
+result.f0 = value.f0;
+result.f1 = value.f1;
+return result;
+}
+typedef struct {
+int16_t f0[1];
+uint32_t :16;
+float f1;
+} dylib_go_42696e64696e6773_record38;
+static uint64_t dylib_go_42696e64696e6773_record38_layout(int32_t index) {
+switch(index) {
+case 0:return sizeof(dylib_go_42696e64696e6773_record38);
+case 1:return _Alignof(dylib_go_42696e64696e6773_record38);
+case 2:return offsetof(dylib_go_42696e64696e6773_record38,f0);
+case 3:return offsetof(dylib_go_42696e64696e6773_record38,f1);
+default:return UINT64_MAX;
+}
+}
+typedef struct {
+int16_t f0[1];
+float f1;
+} dylib_go_42696e64696e6773_record38_transport;
+static dylib_go_42696e64696e6773_record38 dylib_go_42696e64696e6773_record38_from_transport(dylib_go_42696e64696e6773_record38_transport value) {
+dylib_go_42696e64696e6773_record38 result = {0};
+for (uint32_t i0 = 0; i0 < 1; ++i0) {
+result.f0[i0] = value.f0[i0];
+}
+result.f1 = value.f1;
+return result;
+}
+static dylib_go_42696e64696e6773_record38_transport dylib_go_42696e64696e6773_record38_to_transport(dylib_go_42696e64696e6773_record38 value) {
+dylib_go_42696e64696e6773_record38_transport result = {0};
+for (uint32_t i0 = 0; i0 < 1; ++i0) {
+result.f0[i0] = value.f0[i0];
+}
+result.f1 = value.f1;
+return result;
+}
 typedef dylib_go_42696e64696e6773_record0 (*dylib_go_42696e64696e6773_call0_function)(dylib_go_42696e64696e6773_record0);
 static dylib_go_42696e64696e6773_record0_transport dylib_go_42696e64696e6773_call0(uintptr_t address,const dylib_go_42696e64696e6773_record0_transport *p0) {
 return dylib_go_42696e64696e6773_record0_to_transport(((dylib_go_42696e64696e6773_call0_function)address)(dylib_go_42696e64696e6773_record0_from_transport(*p0)));
@@ -2169,6 +2274,18 @@ typedef dylib_go_42696e64696e6773_record34 (*dylib_go_42696e64696e6773_call64_fu
 static dylib_go_42696e64696e6773_record34_transport dylib_go_42696e64696e6773_call64(uintptr_t address,void * p0) {
 return dylib_go_42696e64696e6773_record34_to_transport(((dylib_go_42696e64696e6773_call64_function)address)((dylib_go_42696e64696e6773_record34 *)p0));
 }
+typedef dylib_go_42696e64696e6773_record35 (*dylib_go_42696e64696e6773_call65_function)(dylib_go_42696e64696e6773_record35);
+static dylib_go_42696e64696e6773_record35_transport dylib_go_42696e64696e6773_call65(uintptr_t address,const dylib_go_42696e64696e6773_record35_transport *p0) {
+return dylib_go_42696e64696e6773_record35_to_transport(((dylib_go_42696e64696e6773_call65_function)address)(dylib_go_42696e64696e6773_record35_from_transport(*p0)));
+}
+typedef dylib_go_42696e64696e6773_record37 (*dylib_go_42696e64696e6773_call66_function)(dylib_go_42696e64696e6773_record37);
+static dylib_go_42696e64696e6773_record37_transport dylib_go_42696e64696e6773_call66(uintptr_t address,const dylib_go_42696e64696e6773_record37_transport *p0) {
+return dylib_go_42696e64696e6773_record37_to_transport(((dylib_go_42696e64696e6773_call66_function)address)(dylib_go_42696e64696e6773_record37_from_transport(*p0)));
+}
+typedef dylib_go_42696e64696e6773_record38 (*dylib_go_42696e64696e6773_call67_function)(dylib_go_42696e64696e6773_record38);
+static dylib_go_42696e64696e6773_record38_transport dylib_go_42696e64696e6773_call67(uintptr_t address,const dylib_go_42696e64696e6773_record38_transport *p0) {
+return dylib_go_42696e64696e6773_record38_to_transport(((dylib_go_42696e64696e6773_call67_function)address)(dylib_go_42696e64696e6773_record38_from_transport(*p0)));
+}
 */
 import "C"
 
@@ -2249,6 +2366,9 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "forward_root", Symbol: "forward_root", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer, abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer}, abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}, FunctionPointers: []clang.FunctionPointer{{Position: 0, Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}}},
 		{Name: "root_pointer", Symbol: "root_pointer", Signature: abi.Signature{Result: abi.Pointer, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}, {Name: "root_bits", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_named_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "root_named_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_named_real", Type: abi.TypeDesc{Type: abi.F32}}}}}, {Name: "root_floats", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_floating_head", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "root_floating_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_floating_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}, {Name: "root_bits", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_named_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "root_named_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_named_real", Type: abi.TypeDesc{Type: abi.F32}}}}}, {Name: "root_floats", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_floating_head", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "root_floating_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_floating_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}}}},
 		{Name: "read_root", Symbol: "read_root", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Pointer, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}, {Name: "root_bits", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_named_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "root_named_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_named_real", Type: abi.TypeDesc{Type: abi.F32}}}}}, {Name: "root_floats", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_floating_head", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "root_floating_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_floating_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}, {Name: "root_bits", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_named_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "root_named_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_named_real", Type: abi.TypeDesc{Type: abi.F32}}}}}, {Name: "root_floats", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_floating_head", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "root_floating_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_floating_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}}},
+		{Name: "echo_class_wide", Symbol: "echo_class_wide", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "class_wide_real", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "class_wide_tag", Type: abi.TypeDesc{Type: abi.I8}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "class_wide_real", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "class_wide_tag", Type: abi.TypeDesc{Type: abi.I8}}}}}},
+		{Name: "echo_class_nested", Symbol: "echo_class_nested", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "class_integer", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "class_inner_integer", Type: abi.TypeDesc{Type: abi.I16}}}}}, {Name: "class_nested_real", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "class_integer", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "class_inner_integer", Type: abi.TypeDesc{Type: abi.I16}}}}}, {Name: "class_nested_real", Type: abi.TypeDesc{Type: abi.F32}}}}}},
+		{Name: "echo_class_array", Symbol: "echo_class_array", Signature: abi.Signature{Result: abi.Struct, Convention: abi.CDecl, Variadic: false, FixedArgs: 0, Args: []abi.Type{abi.Struct}, ArgTypes: []abi.TypeDesc{abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "class_items", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.I16}}}, {Name: "class_array_real", Type: abi.TypeDesc{Type: abi.F32}}}}}, ResultType: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "class_items", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.I16}}}, {Name: "class_array_real", Type: abi.TypeDesc{Type: abi.F32}}}}}},
 	},
 	Records: []clang.Record{
 		{Name: "Tiny", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "tiny_low", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "tiny_high", Type: abi.TypeDesc{Type: abi.I32}}}}, Layout: abi.Layout{Size: 8, Alignment: 8, Offsets: []uint64{0, 0}}, MaxFieldAlignment: 2, MemberAlignments: []uint64{8, 0}, FieldAlignments: []clang.FieldAlignment{{Position: 0, Aligned: 8}, {Position: 1, Aligned: 32}}, Bitfields: []clang.Bitfield{{Position: 0, Width: 3, Mask: []byte{7}}, {Position: 1, Width: 5, Mask: []byte{248}}}},
@@ -2286,6 +2406,10 @@ var _BindingsDeclarations = clang.Header{
 		{Name: "PackedRootFloating", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_floating_head", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "root_floating_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_floating_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 17, Alignment: 1, Offsets: []uint64{0, 8, 9}}, Packed: true, MaxFieldAlignment: 4, MemberAlignments: []uint64{1, 1, 1}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 3, Offset: 0, StorageAlignment: 1}}},
 		{Name: "PackedRootAligned", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_aligned_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_aligned_real", Type: abi.TypeDesc{Type: abi.F64}}}}, Layout: abi.Layout{Size: 16, Alignment: 16, Offsets: []uint64{4, 5}}, Packed: true, MaxFieldAlignment: 4, MemberAlignments: []uint64{1, 1}, Aligned: 16, Padding: []clang.BitfieldPadding{{Before: 0, Type: abi.Type(2), Width: 3, Offset: 0, StorageAlignment: 1}}},
 		{Name: "PackedRootEnvelope", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_items", Type: abi.TypeDesc{Type: abi.Array, Len: 2, Elem: &abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_byte_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_byte_real", Type: abi.TypeDesc{Type: abi.F32}}}}}}, {Name: "root_bits", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_named_flags", Type: abi.TypeDesc{Type: abi.U32}}, {Name: "root_named_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_named_real", Type: abi.TypeDesc{Type: abi.F32}}}}}, {Name: "root_floats", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "root_floating_head", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "root_floating_tag", Type: abi.TypeDesc{Type: abi.I8}}, {Name: "root_floating_real", Type: abi.TypeDesc{Type: abi.F64}}}}}}}, Layout: abi.Layout{Size: 52, Alignment: 1, Offsets: []uint64{0, 18, 35}}},
+		{Name: "ClassWide", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "class_wide_real", Type: abi.TypeDesc{Type: abi.F32}}, {Name: "class_wide_tag", Type: abi.TypeDesc{Type: abi.I8}}}}, Layout: abi.Layout{Size: 24, Alignment: 8, Offsets: []uint64{0, 16}}, Aligned: 8, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(4), Width: 33, Offset: 0}}},
+		{Name: "ClassInteger", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "class_inner_integer", Type: abi.TypeDesc{Type: abi.I16}}}}, Layout: abi.Layout{Size: 2, Alignment: 2, Offsets: []uint64{0}}},
+		{Name: "ClassNested", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "class_integer", Type: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "class_inner_integer", Type: abi.TypeDesc{Type: abi.I16}}}}}, {Name: "class_nested_real", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 12, Alignment: 4, Offsets: []uint64{0, 8}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 16, Offset: 0}}},
+		{Name: "ClassArray", Description: abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "class_items", Type: abi.TypeDesc{Type: abi.Array, Len: 1, Elem: &abi.TypeDesc{Type: abi.I16}}}, {Name: "class_array_real", Type: abi.TypeDesc{Type: abi.F32}}}}, Layout: abi.Layout{Size: 12, Alignment: 4, Offsets: []uint64{0, 8}}, Padding: []clang.BitfieldPadding{{Before: 1, Type: abi.Type(2), Width: 16, Offset: 0}}},
 	},
 }
 
@@ -2582,6 +2706,37 @@ type BindingsRecord34 struct {
 	Root_items  [2]BindingsRecord29
 	Root_bits   BindingsRecord31
 	Root_floats BindingsRecord32
+}
+
+// BindingsRecord35 describes ClassWide; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord35 struct {
+	Class_wide_real float32
+	Class_wide_tag  int8
+}
+
+// BindingsRecord36 describes ClassInteger; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord36 struct {
+	Class_inner_integer int16
+}
+
+// BindingsRecord37 describes ClassNested; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord37 struct {
+	Class_integer     BindingsRecord36
+	Class_nested_real float32
+}
+
+// BindingsRecord38 describes ClassArray; pointer fields are caller-managed native addresses.
+//
+//llgo:type C
+type BindingsRecord38 struct {
+	Class_items      [1]int16
+	Class_array_real float32
 }
 
 func _BindingsRecord0ToC(value BindingsRecord0) (result C.dylib_go_42696e64696e6773_record0_transport) {
@@ -3074,6 +3229,56 @@ func _BindingsRecord34FromC(value C.dylib_go_42696e64696e6773_record34_transport
 	return result
 }
 
+func _BindingsRecord35ToC(value BindingsRecord35) (result C.dylib_go_42696e64696e6773_record35_transport) {
+	result.f0 = C.float(value.Class_wide_real)
+	result.f1 = C.int8_t(value.Class_wide_tag)
+	return result
+}
+
+func _BindingsRecord35FromC(value C.dylib_go_42696e64696e6773_record35_transport) (result BindingsRecord35) {
+	result.Class_wide_real = float32(value.f0)
+	result.Class_wide_tag = int8(value.f1)
+	return result
+}
+
+func _BindingsRecord36ToC(value BindingsRecord36) (result C.dylib_go_42696e64696e6773_record36) {
+	result.f0 = C.int16_t(value.Class_inner_integer)
+	return result
+}
+
+func _BindingsRecord36FromC(value C.dylib_go_42696e64696e6773_record36) (result BindingsRecord36) {
+	result.Class_inner_integer = int16(value.f0)
+	return result
+}
+
+func _BindingsRecord37ToC(value BindingsRecord37) (result C.dylib_go_42696e64696e6773_record37_transport) {
+	result.f0 = _BindingsRecord36ToC(value.Class_integer)
+	result.f1 = C.float(value.Class_nested_real)
+	return result
+}
+
+func _BindingsRecord37FromC(value C.dylib_go_42696e64696e6773_record37_transport) (result BindingsRecord37) {
+	result.Class_integer = _BindingsRecord36FromC(value.f0)
+	result.Class_nested_real = float32(value.f1)
+	return result
+}
+
+func _BindingsRecord38ToC(value BindingsRecord38) (result C.dylib_go_42696e64696e6773_record38_transport) {
+	for i0 := range 1 {
+		result.f0[i0] = C.int16_t(value.Class_items[i0])
+	}
+	result.f1 = C.float(value.Class_array_real)
+	return result
+}
+
+func _BindingsRecord38FromC(value C.dylib_go_42696e64696e6773_record38_transport) (result BindingsRecord38) {
+	for i0 := range 1 {
+		result.Class_items[i0] = int16(value.f0[i0])
+	}
+	result.Class_array_real = float32(value.f1)
+	return result
+}
+
 // Bindings retains symbol handles; its caller owns the Session.
 type Bindings struct {
 	symbol0  *dylib.Symbol
@@ -3141,6 +3346,9 @@ type Bindings struct {
 	symbol62 *dylib.Symbol
 	symbol63 *dylib.Symbol
 	symbol64 *dylib.Symbol
+	symbol65 *dylib.Symbol
+	symbol66 *dylib.Symbol
+	symbol67 *dylib.Symbol
 }
 
 // NewBindings validates the host and resolves each requested export.
@@ -3256,6 +3464,18 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 	}
 	if uint64(C.dylib_go_42696e64696e6773_record34_layout(0)) != 52 || uint64(C.dylib_go_42696e64696e6773_record34_layout(1)) != 1 || uint64(C.dylib_go_42696e64696e6773_record34_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record34_layout(3)) != 18 || uint64(C.dylib_go_42696e64696e6773_record34_layout(4)) != 35 {
 		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for PackedRootEnvelope")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record35_layout(0)) != 24 || uint64(C.dylib_go_42696e64696e6773_record35_layout(1)) != 8 || uint64(C.dylib_go_42696e64696e6773_record35_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record35_layout(3)) != 16 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for ClassWide")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record36_layout(0)) != 2 || uint64(C.dylib_go_42696e64696e6773_record36_layout(1)) != 2 || uint64(C.dylib_go_42696e64696e6773_record36_layout(2)) != 0 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for ClassInteger")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record37_layout(0)) != 12 || uint64(C.dylib_go_42696e64696e6773_record37_layout(1)) != 4 || uint64(C.dylib_go_42696e64696e6773_record37_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record37_layout(3)) != 8 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for ClassNested")
+	}
+	if uint64(C.dylib_go_42696e64696e6773_record38_layout(0)) != 12 || uint64(C.dylib_go_42696e64696e6773_record38_layout(1)) != 4 || uint64(C.dylib_go_42696e64696e6773_record38_layout(2)) != 0 || uint64(C.dylib_go_42696e64696e6773_record38_layout(3)) != 8 {
+		return nil, fmt.Errorf("clang: compiler/cgo layout mismatch for ClassArray")
 	}
 	symbol0, err := session.Resolve("echo_tiny")
 	if err != nil {
@@ -3582,6 +3802,21 @@ func NewBindings(session *dylib.Session) (*Bindings, error) {
 		return nil, err
 	}
 	b.symbol64 = symbol64
+	symbol65, err := session.Resolve("echo_class_wide")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol65 = symbol65
+	symbol66, err := session.Resolve("echo_class_nested")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol66 = symbol66
+	symbol67, err := session.Resolve("echo_class_array")
+	if err != nil {
+		return nil, err
+	}
+	b.symbol67 = symbol67
 	return b, nil
 }
 
@@ -4353,6 +4588,42 @@ func (b *Bindings) Read_root(p0 unsafe.Pointer) (result BindingsRecord34, err er
 	}
 	err = b.symbol64.WithAddress(func(address uintptr) error {
 		result = _BindingsRecord34FromC(C.dylib_go_42696e64696e6773_call64(C.uintptr_t(address), p0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_class_wide(p0 BindingsRecord35) (result BindingsRecord35, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol65.WithAddress(func(address uintptr) error {
+		c0 := _BindingsRecord35ToC(p0)
+		result = _BindingsRecord35FromC(C.dylib_go_42696e64696e6773_call65(C.uintptr_t(address), &c0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_class_nested(p0 BindingsRecord37) (result BindingsRecord37, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol66.WithAddress(func(address uintptr) error {
+		c0 := _BindingsRecord37ToC(p0)
+		result = _BindingsRecord37FromC(C.dylib_go_42696e64696e6773_call66(C.uintptr_t(address), &c0))
+		return nil
+	})
+	return result, err
+}
+
+func (b *Bindings) Echo_class_array(p0 BindingsRecord38) (result BindingsRecord38, err error) {
+	if b == nil {
+		return result, dylib.ErrClosed
+	}
+	err = b.symbol67.WithAddress(func(address uintptr) error {
+		c0 := _BindingsRecord38ToC(p0)
+		result = _BindingsRecord38FromC(C.dylib_go_42696e64696e6773_call67(C.uintptr_t(address), &c0))
 		return nil
 	})
 	return result, err

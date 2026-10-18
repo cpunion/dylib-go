@@ -46,7 +46,15 @@ func (r Record) alignedPaddingProbe(record, padding int) string {
 		}
 	}
 	p := r.Padding[padding]
-	fmt.Fprintf(&source, "const struct %s{\n%s} dylib_bitfield_padding_%d_%d = {.value=%s};\n", r.cAttributes(), body.String(), record, padding, bitfieldValue(p.Type, p.Width))
+	probe := fmt.Sprintf("dylib_padding_%d_%d_type", record, padding)
+	fmt.Fprintf(&source, "typedef struct %s{\n%s} %s;\nconst %s dylib_bitfield_padding_%d_%d = {.value=%s};\n", r.cAttributes(), body.String(), probe, probe, record, padding, bitfieldValue(p.Type, p.Width))
+	// Naming a field must not silently shift the ordinary members whose lane
+	// classes the observation will be compared with.
+	for i, field := range r.Description.Fields {
+		if r.bitfieldAt(i) == nil {
+			fmt.Fprintf(&source, "_Static_assert(__builtin_offsetof(%s,f%d)==__builtin_offsetof(%s,%s),\"unnamed probe moved a field\");\n", probe, i, r.Name, field.Name)
+		}
+	}
 	if r.MaxFieldAlignment != 0 {
 		fmt.Fprint(&source, "#pragma pack(pop)\n")
 	}
