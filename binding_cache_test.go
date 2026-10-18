@@ -111,6 +111,24 @@ func TestNativeBindingCachePreservesLogicalMetadata(t *testing.T) {
 			t.Fatalf("cached result metadata: %+v, %v", got, err)
 		}
 	}
+	// Identity alone must distinguish logical plans while sharing the same CIF.
+	nominal := sig.Clone()
+	nominal.ResultType.RecordID = "OtherPair"
+	nominal.ArgTypes[0].RecordID = "OtherPair"
+	third, err := s.Bind("echo_pair", nominal)
+	if err != nil || third.plan == second.plan || len(s.plans) != 3 || len(s.physicalPlans) != 1 {
+		t.Fatal("record identities conflated cached plans or duplicated the CIF", err)
+	}
+	for _, test := range []struct {
+		function *Function
+		identity string
+	}{{second, ""}, {third, "OtherPair"}} {
+		got, err := test.function.Call(v)
+		if err != nil || got.Aggregate == nil || got.Aggregate.Type.RecordID != test.identity {
+			t.Fatal("cached result identity changed", got, err)
+		}
+	}
+
 }
 
 func TestNativeLargePointeeRemainsOpaque(t *testing.T) {

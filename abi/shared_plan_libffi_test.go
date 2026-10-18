@@ -10,7 +10,7 @@ import (
 
 func TestSharedNativePlanRecordsAndReentry(t *testing.T) {
 	array := TypeDesc{Type: Array, Len: 2, Elem: &TypeDesc{Type: I32}}
-	desc := TypeDesc{Type: Struct, Fields: []Field{{Name: "depth", Type: TypeDesc{Type: I32}}, {Name: "values", Type: array}}}
+	desc := TypeDesc{Type: Struct, RecordID: "First", Fields: []Field{{Name: "depth", Type: TypeDesc{Type: I32}}, {Name: "values", Type: array}}}
 	signature := Signature{Result: Struct, ResultType: &desc, Args: []Type{Struct}, ArgTypes: []TypeDesc{desc}}
 	first, err := Prepare(signature)
 	if err != nil {
@@ -19,6 +19,8 @@ func TestSharedNativePlanRecordsAndReentry(t *testing.T) {
 	defer first.Close()
 	backend := first.backend.(*ffiBackend)
 	renamed := signature.Clone()
+	renamed.ResultType.RecordID = "SecondResult"
+	renamed.ArgTypes[0].RecordID = "SecondInput"
 	renamed.ResultType.Fields[1].Name = "result"
 	renamed.ArgTypes[0].Fields[1].Name = "input"
 	second, err := first.Share(renamed)
@@ -61,15 +63,15 @@ func TestSharedNativePlanRecordsAndReentry(t *testing.T) {
 						return
 					}
 					got, err := plan.Call(entry, value)
-					name := "values"
+					name, identity := "values", "First"
 					if j == 1 {
-						name = "result"
+						name, identity = "result", "SecondResult"
 					}
 					if err != nil {
 						t.Error(err)
 						return
 					}
-					if got.Aggregate.Type.Fields[1].Name != name || got.Aggregate.Fields[0] != Int32(0) || got.Aggregate.Fields[1].Aggregate.Fields[0] != Int32(seed) {
+					if got.Aggregate.Type.RecordID != identity || got.Aggregate.Type.Fields[1].Name != name || got.Aggregate.Fields[0] != Int32(0) || got.Aggregate.Fields[1].Aggregate.Fields[0] != Int32(seed) {
 						t.Error("shared native call changed logical metadata or values")
 					}
 				}

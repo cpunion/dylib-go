@@ -208,6 +208,9 @@ func writeSignature(output *bytes.Buffer, signature abi.Signature) {
 
 func writeDescription(output *bytes.Buffer, description abi.TypeDesc) {
 	fmt.Fprintf(output, "abi.TypeDesc{Type:abi.%s", typeName(description.Type))
+	if description.RecordID != "" {
+		fmt.Fprintf(output, ",RecordID:%q", description.RecordID)
+	}
 	if description.Len != 0 {
 		fmt.Fprintf(output, ",Len:%d", description.Len)
 	}

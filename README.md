@@ -466,6 +466,11 @@ supported with Go on Windows 386. Ordinary record values support nested records,
 fixed arrays and native address fields. Fields are copied into independent C
 values; public Go structs need not share C padding or alignment. Constructors
 verify C sizes, alignments and offsets against Clang before resolving symbols.
+Set `clang.Options.NominalRecords` to distinguish C declarations with identical
+fields but different native layouts. Optional `abi.TypeDesc.RecordID` metadata
+preserves their identities across nested values, pointers and generated bindings.
+See the [tested example](examples/nominalrecords/call.go).
+
 Explicit `__attribute__((packed))` records and bitfields, including nested arrays, use ordinary
 transport records across Go/C and field copies inside C. These native values
 never cross that boundary directly. The [tested packed example](examples/packedrecords/call.go)

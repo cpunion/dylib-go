@@ -25,6 +25,10 @@ type Options struct {
 	Target    string
 	Flags     []string
 	Functions []string
+	// NominalRecords preserves the canonical C record spelling in RecordID.
+	// Distinct declarations can then share logical fields without conflating
+	// native layouts. The default retains structural descriptor compatibility.
+	NominalRecords bool
 }
 
 type Target struct {
@@ -213,7 +217,7 @@ func Parse(ctx context.Context, path string, opts Options) (*Header, error) {
 	var defaultPacking *uint64
 	var header *Header
 	for {
-		header, err = decodeDeclarations(data, string(triple), opts.Functions, fields, recordPackingPolicy{defaultCap: defaultPacking, pragmas: packings})
+		header, err = decodeNominalDeclarations(data, string(triple), opts.Functions, fields, opts.NominalRecords, recordPackingPolicy{defaultCap: defaultPacking, pragmas: packings})
 		if errors.Is(err, errDefaultPacking) && defaultPacking == nil {
 			packing, probeErr := compilerDefaultPacking(ctx, compiler, path, flags)
 			if probeErr != nil {

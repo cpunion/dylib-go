@@ -10,6 +10,7 @@ import (
 
 type typeResolver struct {
 	target         Target
+	nominalRecords bool
 	defaultPacking *uint64
 	aliases        map[string]string
 	enums          map[string]*enumType
@@ -221,6 +222,9 @@ func (r *typeResolver) record(id string, depth int) (abi.TypeDesc, error) {
 	r.building[id] = true
 	defer delete(r.building, id)
 	d := abi.TypeDesc{Type: abi.Struct}
+	if r.nominalRecords {
+		d.RecordID = name
+	}
 	packed := false
 	packing := *r.defaultPacking
 	aligned := uint64(0)

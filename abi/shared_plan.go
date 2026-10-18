@@ -8,9 +8,9 @@ import (
 
 // ABIShape returns independent metadata for comparing the current C backend's
 // native call shapes on one host. It applies C tail promotions, normalizes
-// Default/CDecl and omits field names/pointee descriptions. It preserves scalar
-// kinds, aggregate structure, array lengths and variadic boundaries. This is
-// not register allocation, a persistent identifier or a language compatibility
+// Default/CDecl and omits record identities, field names and pointee descriptions.
+// It preserves scalar kinds, aggregate structure, array lengths and variadic
+// boundaries. This is not register allocation, a persistent identifier or a language compatibility
 // test; keep the original signature for value validation and conversion.
 func (s Signature) ABIShape() (Signature, error) {
 	_, physical, err := planSignatures(s)

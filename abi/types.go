@@ -9,6 +9,11 @@ type TypeDesc struct {
 	Fields []Field
 	Elem   *TypeDesc
 	Len    int // Array length; zero for all other types.
+	// RecordID optionally distinguishes logical struct declarations with equal
+	// fields. It is an opaque identifier of at most 4096 bytes, not a native
+	// layout or calling-convention annotation. ABIShape and value layout checks
+	// ignore it; cloning, logical signature keys and result metadata preserve it.
+	RecordID string `json:",omitempty"`
 }
 
 type Field struct {
@@ -30,6 +35,9 @@ func (d TypeDesc) validate(depth int) (int, error) {
 	}
 	if d.Type > Array {
 		return 0, fmt.Errorf("invalid native type %d", d.Type)
+	}
+	if d.RecordID != "" && (d.Type != Struct || len(d.RecordID) > 4096) {
+		return 0, fmt.Errorf("record identity requires a struct and at most 4096 bytes")
 	}
 	if d.Type != Struct && len(d.Fields) != 0 {
 		return 0, fmt.Errorf("fields require a struct type")
@@ -88,7 +96,7 @@ func (d TypeDesc) validate(depth int) (int, error) {
 
 // Clone copies a descriptor that has passed Validate.
 func (d TypeDesc) Clone() TypeDesc {
-	c := TypeDesc{Type: d.Type, Len: d.Len}
+	c := TypeDesc{Type: d.Type, Len: d.Len, RecordID: d.RecordID}
 	if d.Elem != nil {
 		e := d.Elem.Clone()
 		c.Elem = &e
