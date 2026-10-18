@@ -59,9 +59,15 @@ func TestNominalRecordMetadata(t *testing.T) {
 				t.Fatal("native function pointer lost declaration identity")
 			}
 			encoded, err := json.Marshal(h)
+			if err != nil {
+				t.Fatal("marshal nominal header:", err)
+			}
 			var restored Header
-			if err != nil || json.Unmarshal(encoded, &restored) != nil || !reflect.DeepEqual(*h, restored) {
-				t.Fatal("nominal header round trip failed", err)
+			if err := json.Unmarshal(encoded, &restored); err != nil {
+				t.Fatal("unmarshal nominal header:", err)
+			}
+			if !reflect.DeepEqual(*h, restored) {
+				t.Fatal("nominal header metadata changed after JSON round trip")
 			}
 			code, err := h.GoSource("bindings", "Declarations")
 			if err != nil || !strings.Contains(string(code), `RecordID: "Packed"`) {
