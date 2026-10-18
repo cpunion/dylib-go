@@ -1,4 +1,8 @@
 #include "exports.h"
+#if defined(_MSC_VER)
+// MSVC objects reference this floating-point marker; MinGW does not provide it.
+int _fltused = 0x9875;
+#endif
 #include <stdarg.h>
 Plain echo_plain(Plain v) { v.x+=1.5f; v.y+=1; return v; }
 Packed echo_packed(Packed v) { v.x+=1.5f; v.y+=1; return v; }
