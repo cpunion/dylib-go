@@ -48,6 +48,7 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Standard GNU COFF long import libraries, including MinGW consumer and genuine GNU dlltool fixture execution.
 - [x] Verified GNU single-import templates mixed with ordinary sections, preserving code/data/BSS/lifecycle, original symbol indices, dependency extraction, failed-link retry and native Windows Go/llgo calls.
 - [x] Ordinary COMDAT sections in mixed GNU import members, preserving selection, associative lifecycle entries, lazy extraction and failed-link retry; native Windows Go/llgo tests cover retained and discarded groups.
+- [x] Contiguous multi-entry GNU import members for one DLL, reusing single-entry validation for function/data/const/name/ordinal slots, preserving ordinary sections/groups, and qualifying pure/mixed Windows Go/llgo calls, lifecycle selection, laziness and retry.
 - [ ] Custom/multiple-IAT COFF import layouts, grouped import thunks/tables and delay import tables.
 - [x] Mach-O external `N_INDR` forwarding aliases, chains, archive dependencies, and native macOS object/archive calls.
 - [x] Mach-O eager indirect pointer binding, local/absolute markers, and standard amd64/arm64 stubs with native scalar/large-record calls.

@@ -72,7 +72,7 @@ func (g coffImportGraph) convertMixed(o *object) (*object, bool) {
 		if !template[s.section] {
 			continue
 		}
-		if imported, ok := imports[s.name]; ok && s.global && s.value == 0 {
+		if imported, ok := imports[s.name]; ok && s.global {
 			copy.symbols[i] = imported
 		} else {
 			copy.symbols[i] = symbol{section: -3}

@@ -11,6 +11,7 @@ import (
 // may coexist with ordinary sections; other .idata objects remain unsupported.
 type coffImportGraph struct {
 	defs map[string][]definition
+	dlls map[coffLocation]string // Per-conversion cache for combined import members.
 }
 
 type coffLocation struct {
@@ -105,7 +106,7 @@ func (g coffImportGraph) convert(o *object) (*object, bool) {
 	return g.convertMixed(o)
 }
 
-func (g coffImportGraph) convertPure(o *object) (*object, bool) {
+func coffImportSections(o *object) (map[string]int, bool) {
 	if len(o.groups) != 0 {
 		return nil, false
 	}
@@ -126,6 +127,22 @@ func (g coffImportGraph) convertPure(o *object) (*object, bool) {
 			}
 		}
 	}
+	return indexes, true
+}
+
+func (g coffImportGraph) convertPure(o *object) (*object, bool) {
+	indexes, ok := coffImportSections(o)
+	width := uint64(o.info.Bits / 8)
+	if !ok || indexes[".idata$5"] == 0 || (width != 4 && width != 8) {
+		return nil, false
+	}
+	if o.sections[indexes[".idata$5"]].size > width {
+		return g.convertMultiple(o, indexes)
+	}
+	return g.convertSingle(o, indexes)
+}
+
+func (g coffImportGraph) convertSingle(o *object, indexes map[string]int) (*object, bool) {
 	iat, force := indexes[".idata$5"], indexes[".idata$7"]
 	width := uint64(o.info.Bits / 8)
 	if iat == 0 || force == 0 || (width != 4 && width != 8) || o.sections[iat].size != width || len(o.sections[iat].data) != int(width) || o.sections[force].size != 4 {
@@ -143,23 +160,8 @@ func (g coffImportGraph) convertPure(o *object) (*object, bool) {
 	if public == "" {
 		return nil, false
 	}
-	descriptor, ok := g.reference(o, force, 0)
-	if !ok || descriptor.o.sections[descriptor.section].name != ".idata$2" || descriptor.offset != 0 || descriptor.o.sections[descriptor.section].size != 20 || !validCOFFImportHelper(descriptor.o) {
-		return nil, false
-	}
-	dllName, ok := g.reference(descriptor.o, descriptor.section, descriptor.offset+12)
+	dll, ok := g.longImportDLL(o, force)
 	if !ok {
-		return nil, false
-	}
-	if !validCOFFImportHelper(dllName.o) || dllName.offset != 0 {
-		return nil, false
-	}
-	dll, ok := dllName.name(0)
-	if !ok {
-		return nil, false
-	}
-	dll, err := coffDLLName(dll)
-	if err != nil {
 		return nil, false
 	}
 	entry := &coffImport{dll: dll, public: public}
@@ -219,6 +221,35 @@ func (g coffImportGraph) convertPure(o *object) (*object, bool) {
 	}
 	copy.info.Imports = []ImportInfo{{DLL: dll, Symbol: public, Name: entry.name, Ordinal: entry.ordinal, Kind: kind}}
 	return &copy, true
+}
+
+func (g coffImportGraph) longImportDLL(o *object, force int) (string, bool) {
+	descriptor, ok := g.reference(o, force, 0)
+	if !ok || descriptor.o.sections[descriptor.section].name != ".idata$2" || descriptor.offset != 0 || descriptor.o.sections[descriptor.section].size != 20 {
+		return "", false
+	}
+	if dll, exists := g.dlls[descriptor]; exists {
+		return dll, true
+	}
+	if !validCOFFImportHelper(descriptor.o) {
+		return "", false
+	}
+	dllName, ok := g.reference(descriptor.o, descriptor.section, 12)
+	if !ok || !validCOFFImportHelper(dllName.o) || dllName.offset != 0 {
+		return "", false
+	}
+	dll, ok := dllName.name(0)
+	if !ok {
+		return "", false
+	}
+	dll, err := coffDLLName(dll)
+	if err != nil {
+		return "", false
+	}
+	if g.dlls != nil {
+		g.dlls[descriptor] = dll
+	}
+	return dll, true
 }
 
 // A descriptor/name member would normally be extracted with its import.
@@ -294,6 +325,7 @@ func (g coffImportGraph) validLongTables(o *object, indexes map[string]int, entr
 		}
 	}
 	textRelocs := 0
+	var textSites uint8
 	for _, r := range o.relocs {
 		switch r.section {
 		case iat, indexes[".idata$4"]:
@@ -323,6 +355,11 @@ func (g coffImportGraph) validLongTables(o *object, indexes map[string]int, entr
 			} else if r.offset != 2 || (o.info.Arch == "amd64" && r.typ != 4) || (o.info.Arch == "386" && r.typ != 6) {
 				return false
 			}
+			site := uint8(1) << r.offset // Validated thunk offsets are 0, 2 or 4.
+			if textSites&site != 0 {
+				return false
+			}
+			textSites |= site
 			textRelocs++
 		default:
 			return false
