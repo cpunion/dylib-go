@@ -42,8 +42,8 @@ jobs:
       - uses: xgo-dev/setup-llgo@v0.2.0
         id: llgo
         with:
-          # Temporary #2851 head; replace with its merge commit after upstream merges.
-          llgo-version: c0ccbbaa41cec547739a324397c8469d0a6545ea
+          # Includes the merged imported bound-method identity fix (#2851).
+          llgo-version: 5926054cd0ae0e5a621557288e79d2c28bdb5fa2
           install-method: source
           go-version: '1.27.x'
           llvm-version: '22'

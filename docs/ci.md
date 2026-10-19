@@ -165,10 +165,8 @@ Linux amd64/arm64 Go and llgo jobs, and native Go 386, execute optional ELF fram
 
 macOS amd64/arm64 Go and llgo jobs execute optional per-FDE DWARF registration with system libunwind, real object/archive stack traversal, before/after-close FDE lookup, validation retry and failed initialization cleanup. Pure Go jobs inspect real `__eh_frame` compiler output and verify explicit ARM64 pairs and implicit x86-64 address rebasing.
 
-CI temporarily pins llgo [PR #2851](https://github.com/xgo-dev/llgo/pull/2851)
-head `c0ccbbaa41cec547739a324397c8469d0a6545ea` to qualify the imported
-bound-method identity fix needed by JSON record metadata. Replace this pin with
-the upstream merge commit after that PR merges. This head also includes the
+CI pins merged llgo `main` commit `5926054cd0ae0e5a621557288e79d2c28bdb5fa2`, which includes the
+[imported bound-method identity fix](https://github.com/xgo-dev/llgo/pull/2851), the
 [channel wake lifetime fix](https://github.com/xgo-dev/llgo/commit/78b265a31),
 [Darwin detached-thread state](https://github.com/xgo-dev/llgo/pull/2804),
 [SysV aggregate register exhaustion](https://github.com/xgo-dev/llgo/pull/2822)
