@@ -404,16 +404,23 @@ func (im *image) prepareRuntimeHelpers() error {
 		if name == "__cxa_atexit" {
 			args = 3
 		}
-		code, err := lifecycleThunk(im.objects[0].info.Arch, im.objects[0].info.OS, im.lifecycle.Context(), im.lifecycle.Helper(name), args)
-		if err != nil {
+		if err := im.bindNativeHelper(name, im.lifecycle.Context(), im.lifecycle.Helper(name), args); err != nil {
 			return err
 		}
-		if im.stubNext+uint64(len(code)) > uint64(len(im.mem)) {
-			return fmt.Errorf("lifecycle thunk capacity exceeded")
-		}
-		im.hooks[name] = im.base + uintptr(im.stubNext)
-		copy(im.mem[im.stubNext:], code)
-		im.stubNext += alignUp(uint64(len(code)), 16)
 	}
+	return nil
+}
+
+func (im *image) bindNativeHelper(name string, context, target uintptr, args int) error {
+	code, err := lifecycleThunk(im.objects[0].info.Arch, im.objects[0].info.OS, context, target, args)
+	if err != nil {
+		return err
+	}
+	if im.stubNext+uint64(len(code)) > uint64(len(im.mem)) {
+		return fmt.Errorf("native helper thunk capacity exceeded")
+	}
+	im.hooks[name] = im.base + uintptr(im.stubNext)
+	copy(im.mem[im.stubNext:], code)
+	im.stubNext += alignUp(uint64(len(code)), 16)
 	return nil
 }

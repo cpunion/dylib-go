@@ -23,13 +23,18 @@ var ErrLinked = errors.New("dylib: session is already linked; create a new sessi
 // failed session and use a new one; native side effects cannot be retried safely.
 var ErrInitialization = errors.New("dylib: C initialization failed; close the session and create a new one")
 
+// ErrPendingThreadDestructors means retired code is retained until other native
+// threads finish their TLS destructors. Join those threads and retry Close.
+var ErrPendingThreadDestructors = errors.New("dylib: native thread destructors remain pending")
+
 // Options controls resolution. ProcessSymbols exposes exported host symbols
 // (for example libc on POSIX). Explicitly loaded libraries are always searched.
 type Options struct {
 	ProcessSymbols bool
 	// EmulatedTLS enables Clang -femulated-tls for raw objects and archives.
-	// Values belong to native OS threads, not Go goroutines. Constant initial
-	// values are supported; C++ thread destructors and native TLS models are not.
+	// Values belong to native OS threads, not Go goroutines. Supports constant
+	// values and the documented C++ thread-exit registrations. Native TLS models
+	// and MSVC dynamic TLS initialization remain unsupported.
 	EmulatedTLS bool
 	// RegisterUnwind registers supported raw-image runtime function tables.
 	// Supports Windows/macOS amd64/arm64 and Linux amd64/arm64/386 C frames.
@@ -428,7 +433,7 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 				}
 			}
 			for _, n := range wanted {
-				if s.opts.EmulatedTLS && n == emulatedTLSHelper {
+				if s.opts.EmulatedTLS && (n == emulatedTLSHelper || emulatedTLSThreadHelper(n)) {
 					continue
 				}
 				if _, ok := defs[n]; ok {
@@ -807,7 +812,7 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	im.stubStart = size
 	im.stubNext = size
 	size += alignUp((count+1)*16, im.page)
-	// Three context-bound exit helpers need at most 64 bytes each.
+	// Lifecycle and thread-exit helpers need at most 64 bytes each.
 	// This also leaves capacity for branch stubs from every relocation.
 	size += im.page
 	if size > maxImage {
@@ -829,10 +834,9 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 		return nil, e
 	}
 	if tlsNeeded {
-		if im.hooks == nil {
-			im.hooks = make(map[string]uintptr)
+		if err := im.prepareEmulatedTLSHelpers(); err != nil {
+			return nil, err
 		}
-		im.hooks[emulatedTLSHelper] = native.EmulatedTLSHelper()
 	}
 	if e := im.fillStartupPadding(); e != nil {
 		return nil, e
@@ -906,6 +910,15 @@ func (im *image) close() error {
 	if im.mem == nil {
 		return nil
 	}
+	if im.emulatedTLS != nil {
+		// Native finalizers may create TLS and register more thread callbacks.
+		// Keep their teardown on one native thread across separate C calls.
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
+	}
+	if _, err := im.drainThreadDestructors(); err != nil {
+		return err
+	}
 	// Registrations from a failed C initializer still own pointers into the
 	// image. Drain them before unmapping, without running static termination
 	// arrays for constructors that never completed.
@@ -915,8 +928,18 @@ func (im *image) close() error {
 		for _, address := range im.finalizers {
 			native.CallVoid(address)
 		}
-		// A finalizer may itself register an exit function.
+	}
+	// Global finalizers and thread destructors can register each other's hooks.
+	// Drain them together before releasing either native registry or code.
+	for {
 		im.lifecycle.Finalize()
+		drained, err := im.drainThreadDestructors()
+		if err != nil {
+			return err
+		}
+		if !drained {
+			break
+		}
 	}
 	if err := im.unwind.close(); err != nil {
 		// Never free code/table storage while the OS may still reference it.

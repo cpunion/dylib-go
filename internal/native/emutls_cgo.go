@@ -32,9 +32,10 @@ _Static_assert(sizeof(dylib_tls_descriptor) == 4 * sizeof(uintptr_t), "emulated 
 typedef struct dylib_tls_control dylib_tls_control;
 typedef struct dylib_tls_thread dylib_tls_thread;
 typedef struct dylib_tls_value dylib_tls_value;
+typedef struct dylib_tls_exit dylib_tls_exit;
 typedef struct {
     dylib_tls_control *controls;
-    size_t live;
+    size_t live, pending, active;
 } dylib_tls_owner;
 struct dylib_tls_control {
     dylib_tls_control *next;
@@ -44,7 +45,17 @@ struct dylib_tls_control {
     uintptr_t size, alignment;
     const void *initial;
 };
-struct dylib_tls_thread { dylib_tls_value *values; };
+struct dylib_tls_thread {
+    dylib_tls_value *values;
+    dylib_tls_exit *entries;
+    size_t pending;
+};
+struct dylib_tls_exit {
+    dylib_tls_exit *next;
+    dylib_tls_owner *owner;
+    void (*function)(void *);
+    void *argument;
+};
 struct dylib_tls_value {
     dylib_tls_value *owner_next, **owner_previous;
     dylib_tls_value *thread_next, **thread_previous;
@@ -67,6 +78,72 @@ static void dylib_tls_enter(void) {
 static void dylib_tls_leave(void) {
     atomic_flag_clear_explicit(&dylib_tls_lock, memory_order_release);
 }
+static void dylib_tls_set_thread(dylib_tls_thread *thread) {
+#ifdef _WIN32
+    if (!FlsSetValue(dylib_tls_key, thread)) abort();
+#else
+    if (pthread_setspecific(dylib_tls_key, thread)) abort();
+#endif
+}
+// Requires the native registry lock. Native callbacks never run under it.
+static dylib_tls_thread *dylib_tls_current(int create) {
+#ifdef _WIN32
+    dylib_tls_thread *thread = (dylib_tls_thread *)FlsGetValue(dylib_tls_key);
+#else
+    dylib_tls_thread *thread = (dylib_tls_thread *)pthread_getspecific(dylib_tls_key);
+#endif
+    if (!thread && create) {
+        thread = (dylib_tls_thread *)calloc(1, sizeof(*thread));
+        if (!thread) abort();
+        dylib_tls_set_thread(thread);
+    }
+    return thread;
+}
+static size_t dylib_tls_drain(dylib_tls_thread *thread, dylib_tls_owner *selected) {
+    size_t drained = 0;
+    for (;;) {
+        dylib_tls_enter();
+        dylib_tls_exit **cursor = &thread->entries;
+        while (*cursor && selected && (*cursor)->owner != selected) cursor = &(*cursor)->next;
+        dylib_tls_exit *entry = *cursor;
+        if (!entry) { dylib_tls_leave(); return drained; }
+        *cursor = entry->next;
+        dylib_tls_owner *owner = entry->owner;
+        --thread->pending;
+        --owner->pending;
+        ++owner->active;
+        void (*function)(void *) = entry->function;
+        void *argument = entry->argument;
+        free(entry);
+        dylib_tls_leave();
+        function(argument);
+        ++drained;
+        dylib_tls_enter();
+        --owner->active;
+        dylib_tls_leave();
+    }
+}
+static int DYLIB_TLS_ENTRY dylib_tls_atexit(void (*function)(void *), void *argument,
+                                          void *dso, dylib_tls_owner *owner) {
+    (void)dso; // The image-bound thunk supplies the owner independently of dso.
+    if (!function || !owner) return -1;
+    dylib_tls_exit *entry = (dylib_tls_exit *)malloc(sizeof(*entry));
+    if (!entry) return -1;
+    dylib_tls_enter();
+    dylib_tls_thread *thread = dylib_tls_current(1);
+    if (thread->pending >= 4096) {
+        dylib_tls_leave(); free(entry); return -1;
+    }
+    entry->owner = owner;
+    entry->function = function;
+    entry->argument = argument;
+    entry->next = thread->entries;
+    thread->entries = entry;
+    ++thread->pending;
+    ++owner->pending;
+    dylib_tls_leave();
+    return 0;
+}
 static void dylib_tls_remove(dylib_tls_value *v) {
     *v->owner_previous = v->owner_next;
     if (v->owner_next) v->owner_next->owner_previous = v->owner_previous;
@@ -83,6 +160,11 @@ static void DYLIB_TLS_ENTRY dylib_tls_thread_exit(void *p)
 #endif
 {
     dylib_tls_thread *thread = (dylib_tls_thread *)p;
+    // pthread/FLS exit dispatch may clear the key first. Reentrant destructors
+    // must see the same TLS values and registration list until draining ends.
+    dylib_tls_set_thread(thread);
+    dylib_tls_drain(thread, NULL);
+    dylib_tls_set_thread(NULL);
     dylib_tls_enter();
     while (thread->values) dylib_tls_remove(thread->values);
     dylib_tls_leave();
@@ -120,20 +202,7 @@ static void *DYLIB_TLS_ENTRY dylib_tls_get_address(dylib_tls_descriptor *descrip
     dylib_tls_enter();
     dylib_tls_control *c = (dylib_tls_control *)descriptor->object;
     if (!c || c->descriptor != descriptor) abort();
-#ifdef _WIN32
-    dylib_tls_thread *thread = (dylib_tls_thread *)FlsGetValue(dylib_tls_key);
-#else
-    dylib_tls_thread *thread = (dylib_tls_thread *)pthread_getspecific(dylib_tls_key);
-#endif
-    if (!thread) {
-        thread = (dylib_tls_thread *)calloc(1, sizeof(*thread));
-        if (!thread) abort();
-#ifdef _WIN32
-        if (!FlsSetValue(dylib_tls_key, thread)) abort();
-#else
-        if (pthread_setspecific(dylib_tls_key, thread)) abort();
-#endif
-    }
+    dylib_tls_thread *thread = dylib_tls_current(1);
     for (dylib_tls_value *v = thread->values; v; v = v->thread_next) {
         if (v->control == c) {
             void *address = v->address;
@@ -163,6 +232,17 @@ static void *DYLIB_TLS_ENTRY dylib_tls_get_address(dylib_tls_descriptor *descrip
     return address;
 }
 static uintptr_t dylib_tls_helper(void) { return (uintptr_t)&dylib_tls_get_address; }
+static uintptr_t dylib_tls_exit_helper(void) { return (uintptr_t)&dylib_tls_atexit; }
+static size_t dylib_tls_prepare_close(dylib_tls_owner *owner, size_t *drained) {
+    dylib_tls_enter();
+    dylib_tls_thread *thread = dylib_tls_current(0);
+    dylib_tls_leave();
+    *drained = thread ? dylib_tls_drain(thread, owner) : 0;
+    dylib_tls_enter();
+    size_t pending = owner->pending + owner->active;
+    dylib_tls_leave();
+    return pending;
+}
 static size_t dylib_tls_live(dylib_tls_owner *owner) {
     dylib_tls_enter();
     size_t live = owner->live;
@@ -171,6 +251,7 @@ static size_t dylib_tls_live(dylib_tls_owner *owner) {
 }
 static void dylib_tls_free(dylib_tls_owner *owner) {
     dylib_tls_enter();
+    if (owner->pending || owner->active) abort();
     while (owner->controls) {
         dylib_tls_control *c = owner->controls;
         while (c->values) dylib_tls_remove(c->values);
@@ -184,10 +265,14 @@ static void dylib_tls_free(dylib_tls_owner *owner) {
 */
 import "C"
 
-import "fmt"
+import (
+	"fmt"
+	"unsafe"
+)
 
 // EmulatedTLS owns native per-thread values for one raw image. Close requires
-// all native users to have stopped, as enforced by the session's code leases.
+// all native users to have stopped and DrainThreadDestructors to report zero
+// pending/active callbacks. The session retains its image until then.
 type EmulatedTLS struct{ context *C.dylib_tls_owner }
 
 func NewEmulatedTLS() (*EmulatedTLS, error) {
@@ -197,7 +282,17 @@ func NewEmulatedTLS() (*EmulatedTLS, error) {
 	}
 	return &EmulatedTLS{context: p}, nil
 }
-func EmulatedTLSHelper() uintptr { return uintptr(C.dylib_tls_helper()) }
+func EmulatedTLSHelper() uintptr           { return uintptr(C.dylib_tls_helper()) }
+func (t *EmulatedTLS) Context() uintptr    { return uintptr(unsafe.Pointer(t.context)) }
+func EmulatedTLSThreadExitHelper() uintptr { return uintptr(C.dylib_tls_exit_helper()) }
+func (t *EmulatedTLS) DrainThreadDestructors() (uint64, bool) {
+	if t == nil || t.context == nil {
+		return 0, false
+	}
+	var drained C.size_t
+	pending := C.dylib_tls_prepare_close(t.context, &drained)
+	return uint64(pending), drained != 0
+}
 func (t *EmulatedTLS) Add(descriptor uintptr) error {
 	if C.dylib_tls_add(t.context, C.uintptr_t(descriptor)) != 0 {
 		return fmt.Errorf("allocate native emulated TLS control")
