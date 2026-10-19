@@ -237,23 +237,33 @@ func mixedCOMDATImportAssembly(target string) string {
 	return text
 }
 
-func testNativeCOFFMixedImports(t *testing.T, comdat, discard bool) {
+func TestNativeCOFFMultiMixedImports(t *testing.T) {
+	entries := []longImportFixture{{"add", "add", 0, false}, {"renamed", "add", 0, false}, {"numbered", "", 7, false}, {"value", "value", 0, true}}
+	t.Run("ordinary", func(t *testing.T) { testNativeCOFFMixedImports(t, false, false, entries...) })
+	t.Run("comdat", func(t *testing.T) { testNativeCOFFMixedImports(t, true, false, entries...) })
+	t.Run("discard", func(t *testing.T) { testNativeCOFFMixedImports(t, true, true, entries...) })
+}
+
+func testNativeCOFFMixedImports(t *testing.T, comdat, discard bool, entries ...longImportFixture) {
 	t.Helper()
 	if runtime.GOOS != "windows" {
 		t.Skip("mixed COFF import execution requires Windows")
 	}
 	needNative(t)
+	if len(entries) == 0 {
+		entries = []longImportFixture{{"add", "add", 0, false}}
+	}
 	target := map[string]string{"amd64": "x86_64", "arm64": "aarch64", "386": "i686"}[runtime.GOARCH] + "-pc-windows-msvc"
 	for _, opt := range []string{"-O0", "-O2"} {
 		t.Run(opt, func(t *testing.T) {
 			dir := t.TempDir()
 			src := filepath.Join(dir, "provider.c")
-			if err := os.WriteFile(src, []byte("static int count; int add(int a,int b){++count;return a+b;} int events(int a,int b){return count;}"), 0600); err != nil {
+			if err := os.WriteFile(src, []byte("static int count; int add(int a,int b){++count;return a+b;} int events(int a,int b){return count;} int value=42;"), 0600); err != nil {
 				t.Fatal(err)
 			}
 			obj := compile(t, src, filepath.Join(dir, "provider.obj"), opt)
 			def := filepath.Join(dir, "provider.def")
-			if err := os.WriteFile(def, []byte("EXPORTS\nadd\nevents\n"), 0600); err != nil {
+			if err := os.WriteFile(def, []byte("EXPORTS\nadd @7\nevents\nvalue DATA\n"), 0600); err != nil {
 				t.Fatal(err)
 			}
 			dll := filepath.Join(dir, "provider.dll")
@@ -264,29 +274,44 @@ func testNativeCOFFMixedImports(t *testing.T, comdat, discard bool) {
 				t.Fatal(err)
 			}
 			dependency := compile(t, dep, dep+".obj", opt)
-			parts := mixedImportParts(t, target, "provider.dll")
+			extra := mixedImportAssembly(target)
 			var override string
 			if comdat {
-				data, _ := coffAssembly(t, target, longImportAssembly(target, longImportFixture{"add", "add", 0, false})+mixedCOMDATImportAssembly(target))
-				parts[2] = data
+				extra = mixedCOMDATImportAssembly(target)
 				key := "mixed_bias"
 				if runtime.GOARCH == "386" {
 					key = "_" + key
 				}
-				data, _ = coffAssembly(t, target, ".section .data$mix,\"dw\",discard,"+key+"\n.global "+key+"\n"+key+":\n.long 7\n")
+				data, _ := coffAssembly(t, target, ".section .data$mix,\"dw\",discard,"+key+"\n.global "+key+"\n"+key+":\n.long 7\n")
 				override = filepath.Join(dir, "override.obj")
 				if err := os.WriteFile(override, data, 0600); err != nil {
 					t.Fatal(err)
 				}
 			}
-			unused := longImportParts(t, target, "not-installed-mixed.dll")
+			parts := multiImportParts(t, target, "provider.dll", extra, entries...)
+			if len(entries) > 1 {
+				consumer := filepath.Join(dir, "multi-consumer.c")
+				if err := os.WriteFile(consumer, []byte("__declspec(dllimport) int renamed(int,int),numbered(int,int);\n__declspec(dllimport) extern int value;\nint combined_imports(int a,int b){return renamed(a,b)+numbered(a,b)+value-84;}\n"), 0600); err != nil {
+					t.Fatal(err)
+				}
+				obj := compile(t, consumer, consumer+".obj", opt)
+				data, err := os.ReadFile(obj)
+				if err != nil {
+					t.Fatal(err)
+				}
+				parts = append(parts, data)
+			}
 			unusedSection := ".data\n"
 			if comdat {
 				unusedSection = ".section .data$unused,\"dw\",discard,unused_mixed\n"
 			}
-			data, _ := coffAssembly(t, target, longImportAssembly(target, longImportFixture{"absent", "absent", 0, false})+unusedSection+".global unused_mixed\nunused_mixed:\n.long 1\n")
+			unusedEntries := []longImportFixture{{"absent", "absent", 0, false}}
+			if len(entries) > 1 {
+				unusedEntries = append(unusedEntries, longImportFixture{"also_absent", "also_absent", 0, false})
+			}
+			unused := multiImportParts(t, target, "not-installed-mixed.dll", unusedSection+".global unused_mixed\nunused_mixed:\n.long 1\n", unusedEntries...)
 			unusedLib := filepath.Join(dir, "unused.lib")
-			if err := os.WriteFile(unusedLib, longImportArchive(append(unused, data)), 0600); err != nil {
+			if err := os.WriteFile(unusedLib, longImportArchive(unused), 0600); err != nil {
 				t.Fatal(err)
 			}
 			for _, mode := range []string{"archive", "retry"} {
@@ -313,16 +338,26 @@ func testNativeCOFFMixedImports(t *testing.T, comdat, discard bool) {
 						load(t, s, override)
 					}
 					load(t, s, lib, unusedLib)
+					roots := []string{"mixed"}
+					if len(entries) > 1 {
+						roots = append(roots, "combined_imports")
+					}
 					if mode == "retry" {
-						if err := s.Link("mixed"); err == nil || !strings.Contains(err.Error(), "dependency") || s.image != nil {
+						if err := s.Link(roots...); err == nil || !strings.Contains(err.Error(), "dependency") || s.image != nil {
 							t.Fatal("ordinary dependency bypassed", err)
 						}
 						call(t, observer, "events", 0, 0, 0)
 						load(t, s, dependency)
 					}
+					if err := s.Link(roots...); err != nil {
+						t.Fatal(err)
+					}
 					read, initialized, objects := int32(62), int32(1), 2
 					if discard {
 						read, initialized, objects = 7, 0, 3
+					}
+					if len(entries) > 1 {
+						objects++
 					}
 					call(t, s, "mixed_read", 0, 0, read)
 					call(t, s, "mixed_dependency", 20, 22, 43)
@@ -330,13 +365,21 @@ func testNativeCOFFMixedImports(t *testing.T, comdat, discard bool) {
 						call(t, s, "mixed", 20+i, 22, 42+i)
 					}
 					call(t, observer, "events", 0, 0, 100+initialized)
+					extraCalls := int32(0)
+					if len(entries) > 1 {
+						call(t, s, "renamed", 20, 22, 42)
+						call(t, s, "numbered", 20, 22, 42)
+						call(t, s, "combined_imports", 20, 22, 42)
+						extraCalls = 4
+						call(t, observer, "events", 0, 0, 100+initialized+extraCalls)
+					}
 					if len(s.image.objects) != objects || len(s.libs) != 1 {
 						t.Fatal("metadata helpers extracted or DLL references duplicated")
 					}
 					if err := s.Close(); err != nil {
 						t.Fatal(err)
 					}
-					call(t, observer, "events", 0, 0, 100+2*initialized)
+					call(t, observer, "events", 0, 0, 100+2*initialized+extraCalls)
 					if _, err := s.Lookup("mixed"); !errors.Is(err, ErrClosed) {
 						t.Fatal(err)
 					}
