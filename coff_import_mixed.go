@@ -6,11 +6,11 @@ import "strings"
 // ordinary sections and their original symbol indices. Only template sections
 // may disappear; no code, data or lifecycle section is treated as metadata.
 func (g coffImportGraph) convertMixed(o *object) (*object, bool) {
-	if o.info.Format != "COFF" || len(o.groups) != 0 {
+	if o.info.Format != "COFF" {
 		return nil, false
 	}
 	template := make(map[int]bool)
-	mixed := false
+	mixed := len(o.groups) != 0
 	view := *o
 	view.sections = append([]*section(nil), o.sections...)
 	for i, sec := range o.sections {
@@ -31,6 +31,17 @@ func (g coffImportGraph) convertMixed(o *object) (*object, bool) {
 	if !mixed {
 		return nil, false
 	}
+	// COFF groups contain one original section. Only groups wholly outside
+	// the removed template may survive, including their associative parents.
+	retained := func(index int) bool {
+		return index > 0 && index < len(view.sections) && view.sections[index] == nil && o.sections[index] != nil
+	}
+	for _, group := range o.groups {
+		if len(group.sections) != 1 || !retained(group.sections[0]) || group.selection == 5 && !retained(group.parent) {
+			return nil, false
+		}
+	}
+	view.groups = nil
 	view.symbols = append([]symbol(nil), o.symbols...)
 	for i, s := range view.symbols {
 		if !template[s.section] {

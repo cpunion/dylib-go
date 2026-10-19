@@ -216,6 +216,28 @@ func TestCOFFMixedLongImportValidation(t *testing.T) {
 }
 
 func TestNativeCOFFMixedLongImports(t *testing.T) {
+	testNativeCOFFMixedImports(t, false, false)
+}
+
+func TestNativeCOFFMixedCOMDATImports(t *testing.T) {
+	t.Run("retain", func(t *testing.T) { testNativeCOFFMixedImports(t, true, false) })
+	t.Run("discard", func(t *testing.T) { testNativeCOFFMixedImports(t, true, true) })
+}
+
+func mixedCOMDATImportAssembly(target string) string {
+	key := "mixed_bias"
+	if strings.HasPrefix(target, "i686") {
+		key = "_" + key
+	}
+	text := strings.Replace(mixedImportAssembly(target), ".data\n", ".section .data$mix,\"dw\",discard,"+key+"\n", 1)
+	for _, name := range []string{".CRT$XCU", ".CRT$XTU"} {
+		text = strings.Replace(text, name+",\"dr\"", name+",\"dr\",associative,"+key, 1)
+	}
+	return text
+}
+
+func testNativeCOFFMixedImports(t *testing.T, comdat, discard bool) {
+	t.Helper()
 	if runtime.GOOS != "windows" {
 		t.Skip("mixed COFF import execution requires Windows")
 	}
@@ -242,8 +264,26 @@ func TestNativeCOFFMixedLongImports(t *testing.T) {
 			}
 			dependency := compile(t, dep, dep+".obj", opt)
 			parts := mixedImportParts(t, target, "provider.dll")
+			var override string
+			if comdat {
+				data, _ := coffAssembly(t, target, longImportAssembly(target, longImportFixture{"add", "add", 0, false})+mixedCOMDATImportAssembly(target))
+				parts[2] = data
+				key := "mixed_bias"
+				if runtime.GOARCH == "386" {
+					key = "_" + key
+				}
+				data, _ = coffAssembly(t, target, ".section .data$mix,\"dw\",discard,"+key+"\n.global "+key+"\n"+key+":\n.long 7\n")
+				override = filepath.Join(dir, "override.obj")
+				if err := os.WriteFile(override, data, 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
 			unused := longImportParts(t, target, "not-installed-mixed.dll")
-			data, _ := coffAssembly(t, target, longImportAssembly(target, longImportFixture{"absent", "absent", 0, false})+".data\n.global unused_mixed\nunused_mixed:\n.long 1\n")
+			unusedSection := ".data\n"
+			if comdat {
+				unusedSection = ".section .data$unused,\"dw\",discard,unused_mixed\n"
+			}
+			data, _ := coffAssembly(t, target, longImportAssembly(target, longImportFixture{"absent", "absent", 0, false})+unusedSection+".global unused_mixed\nunused_mixed:\n.long 1\n")
 			unusedLib := filepath.Join(dir, "unused.lib")
 			if err := os.WriteFile(unusedLib, longImportArchive(append(unused, data)), 0600); err != nil {
 				t.Fatal(err)
@@ -268,6 +308,9 @@ func TestNativeCOFFMixedLongImports(t *testing.T) {
 					}
 					s := New(Options{})
 					defer s.Close()
+					if discard {
+						load(t, s, override)
+					}
 					load(t, s, lib, unusedLib)
 					if mode == "retry" {
 						if err := s.Link("mixed"); err == nil || !strings.Contains(err.Error(), "dependency") || s.image != nil {
@@ -276,19 +319,23 @@ func TestNativeCOFFMixedLongImports(t *testing.T) {
 						call(t, observer, "events", 0, 0, 0)
 						load(t, s, dependency)
 					}
-					call(t, s, "mixed_read", 0, 0, 62)
+					read, initialized, objects := int32(62), int32(1), 2
+					if discard {
+						read, initialized, objects = 7, 0, 3
+					}
+					call(t, s, "mixed_read", 0, 0, read)
 					call(t, s, "mixed_dependency", 20, 22, 43)
 					for i := int32(0); i < 100; i++ {
 						call(t, s, "mixed", 20+i, 22, 42+i)
 					}
-					call(t, observer, "events", 0, 0, 101)
-					if len(s.image.objects) != 2 || len(s.libs) != 1 {
+					call(t, observer, "events", 0, 0, 100+initialized)
+					if len(s.image.objects) != objects || len(s.libs) != 1 {
 						t.Fatal("metadata helpers extracted or DLL references duplicated")
 					}
 					if err := s.Close(); err != nil {
 						t.Fatal(err)
 					}
-					call(t, observer, "events", 0, 0, 102)
+					call(t, observer, "events", 0, 0, 100+2*initialized)
 					if _, err := s.Lookup("mixed"); !errors.Is(err, ErrClosed) {
 						t.Fatal(err)
 					}

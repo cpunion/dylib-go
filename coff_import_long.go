@@ -85,7 +85,7 @@ func (p coffLocation) name(skip uint64) (string, bool) {
 }
 
 func (g coffImportGraph) convert(o *object) (*object, bool) {
-	if o.info.Format != "COFF" || len(o.groups) != 0 {
+	if o.info.Format != "COFF" {
 		return nil, false
 	}
 	candidate := false
@@ -106,6 +106,9 @@ func (g coffImportGraph) convert(o *object) (*object, bool) {
 }
 
 func (g coffImportGraph) convertPure(o *object) (*object, bool) {
+	if len(o.groups) != 0 {
+		return nil, false
+	}
 	indexes := make(map[string]int)
 	for i, sec := range o.sections {
 		if sec == nil {
