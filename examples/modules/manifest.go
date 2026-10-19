@@ -33,3 +33,11 @@ func DiscoverCompatible(ctx context.Context, directories ...string) (module.Mani
 		{Name: "math", Versions: []string{"math/1"}},
 	}, directories...)
 }
+
+// DiscoverVersionRanges declares acceptance of stable app versions in [1, 2).
+// Catalog dependencies still require their exact declared ABI contracts.
+func DiscoverVersionRanges(ctx context.Context, directories ...string) (module.Manifest, error) {
+	return module.DiscoverVersionRanges(ctx, []module.VersionRangeRequirement{
+		{Name: "app", AtLeast: "1.0.0", Before: "2.0.0"},
+	}, directories...)
+}

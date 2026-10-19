@@ -26,14 +26,8 @@ const maxVersionChoices = 4096
 // There is no numeric ordering, range syntax, implicit ABI compatibility or
 // fallback after native loading fails. The returned manifest pins exact versions.
 func DiscoverCompatible(ctx context.Context, roots []CompatibleRequirement, directories ...string) (Manifest, error) {
-	if ctx == nil {
-		return Manifest{}, fmt.Errorf("module: nil discovery context")
-	}
-	if err := ctx.Err(); err != nil {
+	if err := discoveryInputs(ctx, len(roots), len(directories)); err != nil {
 		return Manifest{}, err
-	}
-	if len(roots) == 0 || len(roots) > maxCatalogModules || len(directories) == 0 || len(directories) > maxCatalogDirectories {
-		return Manifest{}, fmt.Errorf("module: discovery requires 1-256 roots and 1-16 directories")
 	}
 	accepted := make(map[string]map[string]bool)
 	choices := 0
