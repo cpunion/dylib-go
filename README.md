@@ -760,6 +760,14 @@ aliases. The [executed discovery example](examples/cxx/discover.go) assigns expo
 names and feeds these relations into the existing facade generator. Class/member
 selection and ownership remain explicit.
 
+`cxx.DiscoverMembers` also lists direct public constructors, destructors, methods
+and conversions for a selected class or alias. It preserves native C++ type
+spellings and reports overloads, default parameters, deleted/defaulted members
+and static/variadic status. The [executed member example](examples/cxx/members.go)
+selects declarations and generates a callable C facade. ABI signatures, ownership
+and export names remain explicit; discovery does not make unsupported C++ types
+directly callable.
+
 ## Language interfaces and calling conventions
 
 Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cdecl and Windows 386 stdcall/fastcall selection. Language C exports and native language ABIs have different support levels:

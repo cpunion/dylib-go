@@ -255,6 +255,40 @@ entries and C++ captures; freshly generated cgo/direct llgo callers execute thos
 native cases without libffi. Standard-library callables require the native C++
 SDK/runtime matching their producer.
 
+## Selected member discovery
+
+`DiscoverMembers(ctx, header, name, DiscoveryOptions)` uses optional Clang C++17
+queries to return `ClassDeclaration` for one explicit complete, non-cv class name
+or alias. `Callables` lists directly declared public constructors, destructors,
+ordinary/static methods, operators and conversions in declaration order. Implicit,
+inherited, non-public and function-template declarations are excluded. Class
+template specializations can be selected through named aliases. Anonymous records
+without a compiler record name are not supported.
+
+`NativeType` preserves the compiler's C++ spelling in its declaring class context,
+including qualifiers and calling convention attributes. Parameters retain names,
+native types and default-argument presence. Deleted declarations are reported for
+diagnostics; they cannot be invoked. `Defaulted`, `Static`, `Variadic` and class
+`Abstract` metadata describe declarations without promising callable bindings.
+Ref-qualified members, conversions and variadics still require adapters beyond
+the current generator. Type spellings are not Go signatures, canonical qualified
+names, independently resolvable aliases or ownership contracts.
+
+The [executed selection example](../examples/cxx/members.go) chooses one scalar
+constructor, a const overload, static member and destruction, then supplies explicit
+ABI types and export names to `Generate`. The matching native C++ compiler remains
+responsible for exact prototype and access checks. Discovery does not instantiate
+arbitrary function templates, infer ownership, walk all declarations or generate
+exports automatically.
+
+Two bounded queries identify the selected record: the first obtains a short name
+for filtering, and the second associates its alias and complete definition by
+declaration IDs from that same compiler invocation. Namespace collisions, forward
+declarations and class-valued template arguments therefore do not select unrelated
+classes. The original header path, target and flags are preserved as for base
+discovery. Each AST is limited to 32 MiB, 150,000 nodes and 256 levels; compiler
+diagnostics are bounded and cancellation covers both queries.
+
 ## Coverage and remaining work
 
 Go and llgo CI compile the base facade's C declarations and C++ source for all
@@ -276,7 +310,13 @@ constructor/method exceptions, throwing destruction, cleared outputs and nulls.
 Linux 386 requires C++ multilib development files in addition to i386 libffi.
 `DYLIB_CXX` selects the Clang-compatible C++ test producer executable.
 
-Automatic lambda/declaration discovery,
+Selected member queries are cross-checked for eight targets, including same-name
+classes in other namespaces, forward declarations, aliases, class-template
+specializations, access sections, overloads, operators, default/deleted members,
+abstract classes and target-dependent declarations. Generated cgo, direct llgo
+and dynamic libffi callers execute the selected member facade at `-O0`/`-O2`.
+
+Automatic lambda and whole-header declaration discovery,
 ref-qualified/volatile members, variadics, inheritance discovery beyond selected types,
 downcasts/crosscasts and C++ header discovery remain outside this manifest. These
 facade tests use complete libraries. Raw C++ DWARF exceptions have a separately

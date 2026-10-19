@@ -64,6 +64,33 @@ func DiscoverBases(ctx context.Context, header string, names []string, opts Disc
 		}
 		seen[name] = true
 	}
+	query, err := discoveryCommand(ctx, header, opts)
+	if err != nil {
+		return nil, err
+	}
+	source, namespace, probes, err := baseProbes(names)
+	if err != nil {
+		return nil, err
+	}
+	data, err := query.run(ctx, source, namespace)
+	if err != nil {
+		return nil, err
+	}
+	return decodeBases(data, namespace, names, probes)
+}
+
+type discoveryCompiler struct {
+	compiler, header string
+	args             []string
+}
+
+func discoveryCommand(ctx context.Context, header string, opts DiscoveryOptions) (*discoveryCompiler, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("cxx: nil context")
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	header, err := filepath.Abs(header)
 	if err != nil {
 		return nil, err
@@ -83,20 +110,21 @@ func DiscoverBases(ctx context.Context, header string, names []string, opts Disc
 	if err != nil {
 		return nil, err
 	}
-	source, namespace, probes, err := baseProbes(names)
-	if err != nil {
-		return nil, err
-	}
 	args := append([]string(nil), opts.Flags...)
 	if opts.Target != "" {
 		args = append(args, "--target="+opts.Target)
 	}
-	args = append(args, "-x", "c++", "-std=c++17", "-include", header, "-Xclang", "-ast-dump=json", "-Xclang", "-ast-dump-filter="+namespace, "-fsyntax-only", "-")
-	data, err := clangcmd.Run(ctx, compiler, args, source, maxDiscoveryAST, false)
+	return &discoveryCompiler{compiler: compiler, header: header, args: args}, nil
+}
+
+func (q *discoveryCompiler) run(ctx context.Context, source, filter string) ([]byte, error) {
+	args := append([]string(nil), q.args...)
+	args = append(args, "-x", "c++", "-std=c++17", "-include", q.header, "-Xclang", "-ast-dump=json", "-Xclang", "-ast-dump-filter="+filter, "-fsyntax-only", "-")
+	data, err := clangcmd.Run(ctx, q.compiler, args, source, maxDiscoveryAST, false)
 	if err != nil {
 		return nil, fmt.Errorf("cxx: %w", err)
 	}
-	return decodeBases(data, namespace, names, probes)
+	return data, nil
 }
 
 type baseProbe struct {

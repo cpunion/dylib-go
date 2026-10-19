@@ -148,7 +148,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Named C++ captured lambda/`std::function` call operators, mutable state and independent copies, move-only capture ownership, native-entry construction, empty-function exceptions and retained Go callbacks during retirement.
 - [x] Named C++ scalar/character/void/enum/array/union and multi-level native pointees through existing object-pointer manifests, exact const/level validation, native mutation and borrowed provider retirement.
 - [x] Optional compiler-confirmed public/unambiguous base discovery among selected class names/aliases, including transitive/virtual inheritance, conditional compilation and native generated base views.
-- [ ] Callable/class/member declaration discovery and inheritance discovery beyond selected names.
+- [x] Optional public direct callable discovery for selected class names/aliases, with declaration identity, overloads, native types, access filtering, class-template specializations and executed facade selection.
+- [ ] Whole-header class/lambda/function-template discovery, automatic ABI/ownership selection and inheritance discovery beyond selected names.
 - [x] Explicit retained session-to-session function/data symbol providers, transitive code leases and cleanup ordering without libffi.
 - [x] Explicit JSON/Go dependency manifests, exact declared ABI versions, multiple-root provider planning, retained import aliases, lazy archive export roots, ordered cleanup and failure rollback without libffi.
 - [x] Pure Go provider catalog discovery in explicit directories, exact declared versions, cross-catalog dependencies, absolute input paths, bounded metadata IO and native object/archive/library execution.
