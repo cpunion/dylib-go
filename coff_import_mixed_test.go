@@ -230,6 +230,7 @@ func mixedCOMDATImportAssembly(target string) string {
 		key = "_" + key
 	}
 	text := strings.Replace(mixedImportAssembly(target), ".data\n", ".section .data$mix,\"dw\",discard,"+key+"\n", 1)
+	text = strings.Replace(text, ".section .text$mix,\"xr\"", ".section .text$mix,\"xr\",discard,"+strings.TrimSuffix(key, "_bias"), 1)
 	for _, name := range []string{".CRT$XCU", ".CRT$XTU"} {
 		text = strings.Replace(text, name+",\"dr\"", name+",\"dr\",associative,"+key, 1)
 	}

@@ -17,7 +17,7 @@ func TestCOFFMixedCOMDATMetadata(t *testing.T) {
 				t.Fatal(err)
 			}
 			o := f.members[2].obj
-			if len(o.info.Imports) != 1 || len(o.info.Unsupported) != 0 || len(o.groups) != 3 || !reflect.DeepEqual(o.groups, raw.groups) {
+			if len(o.info.Imports) != 1 || len(o.info.Unsupported) != 0 || len(o.groups) != 4 || !reflect.DeepEqual(o.groups, raw.groups) {
 				t.Fatalf("grouped import metadata: %+v, groups %+v", o.info, o.groups)
 			}
 			if len(o.symbols) != len(raw.symbols) || len(o.sections) != len(raw.sections) {
@@ -169,7 +169,11 @@ func TestCOFFMixedCOMDATValidation(t *testing.T) {
 				for i, sec := range o.sections {
 					if sec != nil && sec.name == section {
 						if name == "associative_thunk" {
-							o.groups[1].parent = i
+							for j := range o.groups {
+								if o.groups[j].selection == 5 {
+									o.groups[j].parent = i
+								}
+							}
 						} else {
 							o.groups[0].sections = []int{i}
 						}
