@@ -42,8 +42,8 @@ jobs:
       - uses: xgo-dev/setup-llgo@v0.2.0
         id: llgo
         with:
-          # Includes the ABI fixes and channel wake lifetime fix (78b265a31).
-          llgo-version: 1e93b154897f169f81defe0acba3f857a25db206
+          # Temporary #2851 head; replace with its merge commit after upstream merges.
+          llgo-version: c0ccbbaa41cec547739a324397c8469d0a6545ea
           install-method: source
           go-version: '1.27.x'
           llvm-version: '22'
