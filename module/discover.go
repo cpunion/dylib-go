@@ -48,14 +48,8 @@ const (
 // Cancellation is checked between filesystem operations, reads and graph visits;
 // an in-progress operating-system filesystem operation cannot be interrupted.
 func Discover(ctx context.Context, roots []Requirement, directories ...string) (Manifest, error) {
-	if ctx == nil {
-		return Manifest{}, fmt.Errorf("module: nil discovery context")
-	}
-	if err := ctx.Err(); err != nil {
+	if err := discoveryInputs(ctx, len(roots), len(directories)); err != nil {
 		return Manifest{}, err
-	}
-	if len(roots) == 0 || len(roots) > maxCatalogModules || len(directories) == 0 || len(directories) > maxCatalogDirectories {
-		return Manifest{}, fmt.Errorf("module: discovery requires 1-256 roots and 1-16 directories")
 	}
 	seenRoots := make(map[string]bool)
 	for _, root := range roots {
@@ -75,7 +69,20 @@ func Discover(ctx context.Context, roots []Requirement, directories ...string) (
 	return selectCompatible(ctx, candidates, nil, available)
 }
 
-// discoverCatalogs reads metadata once for exact and compatible selection.
+func discoveryInputs(ctx context.Context, roots, directories int) error {
+	if ctx == nil {
+		return fmt.Errorf("module: nil discovery context")
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if roots == 0 || roots > maxCatalogModules || directories == 0 || directories > maxCatalogDirectories {
+		return fmt.Errorf("module: discovery requires 1-256 roots and 1-16 directories")
+	}
+	return nil
+}
+
+// discoverCatalogs reads metadata once for all discovery policies.
 func discoverCatalogs(ctx context.Context, directories []string) (map[Requirement]Module, error) {
 	var paths []string
 	seenDirs := make(map[string]bool)

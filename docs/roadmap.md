@@ -153,7 +153,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] Explicit JSON/Go dependency manifests, exact declared ABI versions, multiple-root provider planning, retained import aliases, lazy archive export roots, ordered cleanup and failure rollback without libffi.
 - [x] Pure Go provider catalog discovery in explicit directories, exact declared versions, cross-catalog dependencies, absolute input paths, bounded metadata IO and native object/archive/library execution.
 - [x] Explicit caller-declared acceptable root versions with deterministic bounded backtracking, exact dependency/export/cycle checks, pinned manifests and native Go/llgo object/archive/library calls.
-- [ ] Inferred compatibility or semantic-version ranges, automatic system search and symbol-triggered provider compilation/loading.
+- [x] Caller-declared SemVer root intervals, explicit prerelease policy, deterministic precedence/ties and bounded graph backtracking; dependencies/results stay exact and selected object/archive/library providers execute through Go/llgo.
+- [ ] Inferred compatibility, automatic system search and symbol-triggered provider compilation/loading.
 - [x] Owned native scalar/record/array storage with stable address leases, C-retained pointer tests and explicit retirement.
 - [x] Generated cgo struct-pointer methods using opaque native addresses, native pointer prototypes and owned storage integration without casting Go record memory.
 - [x] Explicit long-lived native registration owners acquiring and coupling value, callback and code leases with caller-supplied unregister/join, cleanup retry and native-thread execution tests.

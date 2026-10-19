@@ -13,6 +13,7 @@ No llgo compiler, libffi or external dependency resolver is required.
 | `Load(path, options)` | Read a manifest and use its containing directory as the input base |
 | `Discover(ctx, roots, directories...)` | Read provider catalogs from explicit directories and return a complete manifest for exact root versions; no native loading |
 | `DiscoverCompatible(ctx, roots, directories...)` | Select a consistent graph from explicit acceptable root versions in preference order, pinning exact imports before native loading |
+| `DiscoverVersionRanges(ctx, roots, directories...)` | Expand caller-declared SemVer root intervals, then select and pin a consistent exact-version graph before native loading |
 | `Graph.Session(name)` | Borrow one loaded session for normal library calls and adapters |
 | `Graph.Close()` | Retire graph lookup, then close consumers before providers; concurrent closes share one attempt; failed cleanup retains consumers/providers for retry |
 
@@ -167,3 +168,33 @@ retries unfinished sessions. Completed sessions and native finalizers do not
 repeat. If `Open`/`Load` fails and rollback cleanup also fails, it returns a
 non-nil retired graph together with the joined error. The caller owns that graph
 and must retry its `Close`, including when opening returned an error.
+
+## Caller-declared SemVer intervals
+
+`DiscoverVersionRanges` accepts `VersionRangeRequirement{Name, AtLeast, Before,
+IncludePrerelease}`. Both bounds are required and describe the half-open interval
+`[AtLeast, Before)`. Versions follow [SemVer 2.0.0](https://semver.org/spec/v2.0.0.html):
+complete `MAJOR.MINOR.PATCH`, optional prerelease/build identifiers, no leading
+`v`, wildcards or comparison expressions. Version strings are limited to 256
+ASCII bytes. Numeric identifiers are compared without machine-integer overflow.
+
+Available matching versions are tried from newest to oldest. Build metadata is
+ignored for precedence; equal-precedence versions use ascending literal text for
+a deterministic tie-break. Prereleases are excluded unless `IncludePrerelease`
+is true, including when a bound itself is a prerelease. Opaque and overlong
+catalog versions remain valid exact contracts but do not match an interval.
+
+The caller declares acceptance of every matching version. The interval does not
+prove native ABI compatibility or inspect signatures. Catalog dependencies keep
+their exact literal versions, including build metadata. A dependency that is
+also a root must satisfy that root's interval. The existing bounded graph search
+can reconsider versions after later-root conflicts or invalid metadata graphs.
+Catalogs are read once; discovery retains the catalog and 4096-attempt budgets,
+cancellation, validation and native-failure behavior described above. The result
+pins exact versions and absolute native paths before loading.
+
+The [executed example](../examples/modules/manifest.go) accepts stable `app`
+versions from `1.0.0` up to `2.0.0`. Native Go/llgo tests use providers with distinct
+results to verify stable/prerelease selection, metadata fallback, retirement and
+native failure without fallback. Objects, archives and shared libraries execute
+at `-O0` and `-O2`.

@@ -191,8 +191,11 @@ The optional [`module`](module) package loads versioned dependency manifests.
 `module.Discover` selects exact-version providers from catalogs in explicit
 directories before loading. `module.DiscoverCompatible` selects a consistent graph
 from caller-declared acceptable versions in preference order, with bounded
-backtracking. Neither API infers binary ABI versions or signatures.
-It validates provider versions and declared exports, loads selected dependency
+backtracking. `module.DiscoverVersionRanges` expands caller-declared SemVer
+intervals into that same graph search, preferring newer matching versions and
+excluding prereleases by default. These APIs do not infer binary ABI versions or
+signatures. See the [executed discovery examples](examples/modules/manifest.go).
+The module loader validates provider versions and declared exports, loads selected dependency
 graphs, retains imported code/data, and closes consumers before providers. See
 the [executed manifest](examples/modules/manifest.go) and [module guide](docs/modules.md).
 `module.Manager` supports [replacement with explicit state migration](docs/replacement.md),
