@@ -168,6 +168,25 @@ func testDiscoveredBaseFacade(t *testing.T, direct bool) {
 	testGeneratedFacadeHeader(t, direct, "testdata/bases.hpp", "testdata/discovered_main.go", render)
 }
 
+func TestNativeGeneratedCgoDiscoveredMemberFacade(t *testing.T) {
+	testDiscoveredMemberFacade(t, false)
+}
+
+func TestNativeGeneratedDirectLLGoDiscoveredMemberFacade(t *testing.T) {
+	if !llgoHost {
+		t.Skip("the direct caller requires an llgo host")
+	}
+	testDiscoveredMemberFacade(t, true)
+}
+
+func testDiscoveredMemberFacade(t *testing.T, direct bool) {
+	t.Helper()
+	render := func(header string) (*cxx.Facade, error) {
+		return cxxexample.DiscoverMembers(context.Background(), header, cxx.DiscoveryOptions{Compiler: cppTool(t), Flags: cppTargetFlags()})
+	}
+	testGeneratedFacadeHeader(t, direct, "testdata/members.hpp", "testdata/members_main.go", render)
+}
+
 func testGeneratedFacadeHeader(t *testing.T, direct bool, header, fixture string, render func(string) (*cxx.Facade, error)) {
 	t.Helper()
 	headerPath, err := filepath.Abs(header)
