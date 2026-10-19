@@ -42,6 +42,8 @@ func bindingType(b *strings.Builder, d abi.TypeDesc) {
 	b.WriteByte(byte(d.Type))
 	switch d.Type {
 	case abi.Struct:
+		bindingNumber(b, uint64(len(d.RecordID)))
+		b.WriteString(d.RecordID)
 		bindingNumber(b, uint64(len(d.Fields)))
 		for _, field := range d.Fields {
 			bindingNumber(b, uint64(len(field.Name)))

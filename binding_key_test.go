@@ -69,6 +69,21 @@ func TestBindingKeyPreservesLogicalTypes(t *testing.T) {
 	}
 }
 
+func TestBindingKeyRecordIdentities(t *testing.T) {
+	record := abi.TypeDesc{Type: abi.Struct, Fields: []abi.Field{{Name: "value", Type: abi.TypeDesc{Type: abi.I32}}}}
+	seen := map[string]bool{}
+	for _, id := range []string{"", "A", "B", "A\x00B", "A:B"} {
+		d := record.Clone()
+		d.RecordID = id
+		signature := abi.Signature{Result: abi.Struct, ResultType: &d, Args: []abi.Type{abi.Pointer}, ArgTypes: []abi.TypeDesc{{Type: abi.Pointer, Elem: &d}}}
+		key, err := bindingKey(signature)
+		if err != nil || seen[key] {
+			t.Fatal("logical record identities collided", id, err)
+		}
+		seen[key] = true
+	}
+}
+
 func TestNativeIndexedBindingCache(t *testing.T) {
 	s := nativeABILibrary(t, "testdata/many_arguments.c", "object")
 	if _, err := s.Bind("missing_indexed_symbol", pointerArraySignature(257)); err == nil || len(s.plans) != 0 {

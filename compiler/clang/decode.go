@@ -49,6 +49,10 @@ type astNode struct {
 }
 
 func decodeDeclarations(data []byte, triple string, names []string, fieldProbes map[recordField]recordFieldProbe, packings ...recordPackingPolicy) (*Header, error) {
+	return decodeNominalDeclarations(data, triple, names, fieldProbes, false, packings...)
+}
+
+func decodeNominalDeclarations(data []byte, triple string, names []string, fieldProbes map[recordField]recordFieldProbe, nominal bool, packings ...recordPackingPolicy) (*Header, error) {
 	var root astNode
 	if err := json.Unmarshal(data, &root); err != nil {
 		return nil, fmt.Errorf("clang: invalid AST JSON: %w", err)
@@ -92,6 +96,7 @@ func decodeDeclarations(data []byte, triple string, names []string, fieldProbes 
 	found := make(map[string]Declaration)
 	resolver := newTypeResolver(root, aliases, sizes)
 	resolver.target = target
+	resolver.nominalRecords = nominal
 	resolver.fieldProbes = fieldProbes
 	if len(packings) != 0 {
 		resolver.packings = packings[0].pragmas

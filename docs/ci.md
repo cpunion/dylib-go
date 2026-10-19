@@ -68,6 +68,7 @@ All eight Go execution targets and six llgo targets set `DYLIB_TEST_REQUIRE_NATI
 | Member-packed bitfields with unnamed padding | Eight-target masks/layouts, Windows MSVC/MinGW comparisons for leading/trailing padding, consecutive zero-width fields, base-type changes and explicit alignment; native nested arrays, pointers, factories, variadic calls and small returns at `-O0`/`-O2` | Same native fixture paths on six llgo hosts without libffi |
 | Explicitly packed unnamed/zero-width bitfields | Eight-target layout/mask probes, metadata snapshots, MSVC/MinGW packing comparisons, and real padding-only allocation units, nested records and packed zero-width small-record calls at `-O0`/`-O2` | Same native fixture paths on six llgo hosts without libffi |
 | Aligned unnamed/zero-width bitfields | Eight-target numeric/omitted alignment and bit-position probes, MSVC and GNU producer bridges on three Windows architectures, ignored shared/consecutive requests, floating aggregates and packed/padding-only units; fresh generated object/archive/library calls at `-O0`/`-O2` | Same native fixture paths on six llgo hosts without libffi |
+| Nominal C record identities | Eight-target metadata, aliases, nested arrays, typed pointers/function pointers, JSON and LLVM call shapes; fresh `-O0`/`-O2` object/archive/library calls execute same-field ordinary/packed/aligned values, factories, pointers and variadic prefixes; Darwin ARM64 adds unequal unnamed-field layouts | Same native fixture paths on six llgo hosts without libffi; dynamic shared plans retain distinct logical result identities |
 | Ordinary pragma-packed C records | Eight-target packing caps 1/2/4/8/16, nested push/pop and record alignment; Windows MSVC/GNU size/alignment/offset comparisons; guarded text-AST decoding and ABI ambiguity rejection; fresh object/archive/library calls at `-O0`/`-O2` cover arrays, natural outer layout, native pointers/factories/function-pointer fields and variadic prefixes/results | Same native fixture paths on six llgo hosts without libffi |
 | Ordinary over-aligned pragma members | Eight-target numeric/omitted/type requests, packing caps 1/2/4/8/16, packed records, nested aligned arrays, floating aggregates and function-pointer members; MSVC/GNU bridge layout comparisons and cloned/generated storage alignment metadata; fresh `-O0`/`-O2` object/archive/library calls check factories, native pointers, mutation/nulls, variadic promotions and MSVC i386 indirect arguments | Same native fixture paths on six llgo hosts without libffi |
 | Global Clang packing defaults | Eight-target caps 1/2/4/8/16; response files, forwarded/numeric overrides, bounded driver inspection, MSVC oversized pragma rules and MinGW layout/mask checks. Fresh `-O0`/`-O2` object/archive/library calls execute nested arrays, alignment/floats, named/zero-width bitfields, Boolean/native addresses, pragma override/pop, factories/function-pointer fields, pointer mutation/nulls and variadic prefixes/results | Same native fixture paths on six llgo hosts without libffi |
@@ -162,8 +163,11 @@ Linux amd64/arm64 Go and llgo jobs, and native Go 386, execute optional ELF fram
 
 macOS amd64/arm64 Go and llgo jobs execute optional per-FDE DWARF registration with system libunwind, real object/archive stack traversal, before/after-close FDE lookup, validation retry and failed initialization cleanup. Pure Go jobs inspect real `__eh_frame` compiler output and verify explicit ARM64 pairs and implicit x86-64 address rebasing.
 
-CI pins merged llgo `main` commit `1e93b154897f169f81defe0acba3f857a25db206`,
-which includes the [channel wake lifetime fix](https://github.com/xgo-dev/llgo/commit/78b265a31),
+CI temporarily pins llgo [PR #2851](https://github.com/xgo-dev/llgo/pull/2851)
+head `c0ccbbaa41cec547739a324397c8469d0a6545ea` to qualify the imported
+bound-method identity fix needed by JSON record metadata. Replace this pin with
+the upstream merge commit after that PR merges. This head also includes the
+[channel wake lifetime fix](https://github.com/xgo-dev/llgo/commit/78b265a31),
 [Darwin detached-thread state](https://github.com/xgo-dev/llgo/pull/2804),
 [SysV aggregate register exhaustion](https://github.com/xgo-dev/llgo/pull/2822)
 and [ARM64 HFA stack layout](https://github.com/xgo-dev/llgo/pull/2825), as well as
@@ -171,6 +175,9 @@ and [ARM64 HFA stack layout](https://github.com/xgo-dev/llgo/pull/2825), as well
 [indirect C variadic arguments](https://github.com/xgo-dev/llgo/pull/2766), the
 [C ABI fix](https://github.com/xgo-dev/llgo/pull/2776), and the
 [native function-pointer debug fix](https://github.com/xgo-dev/llgo/pull/2783).
+The macOS ARM64 llgo job installs Homebrew's `lld` (23.x >= 23.1.3) and sets
+`LDFLAGS=--ld-path=<lld prefix>/bin/ld64.lld` for SDK 27 native linking.
+The compiler backend remains LLVM 22, as selected by `setup-llgo`.
 `TestNativeDirectAggregateRegisters` executes caller-defined `//llgo:cdecl`
 adapters through `Symbol.WithAddress` on all six native llgo hosts, without
 libffi. `TestNativeDynamicAggregateRegisters` independently exercises libffi

@@ -393,10 +393,23 @@ from the logical description. Native function pointers using packed values need
 a matching compiled adapter; `abi.NewCallback` does not supply this ABI.
 
 Unions and unqualified packing/alignment forms are not inferred by this adapter.
-When two records have identical
-logical fields but different native layouts, typed generation rejects the
-ambiguity rather than selecting a layout from metadata order. Generate separate
-bindings for those declarations.
+Set `Options.NominalRecords` when distinct C record declarations have identical
+logical fields. The parser places their canonical C spellings in the optional
+`abi.TypeDesc.RecordID`; typedef aliases of one declaration share its identity.
+Typed generators then select the correct native record even when packing,
+alignment or unnamed fields give those declarations different layouts. Identities
+survive nested arrays, typed pointers, native function-pointer prototypes, clones,
+JSON and generated Go metadata. The [native example](../examples/nominalrecords/call.go)
+executes packed/aligned variants together; Darwin ARM64 also tests the same-field
+16-byte and 8-byte unnamed-field reproducer.
+
+The default keeps structural descriptors for compatibility. Ambiguous metadata
+without distinct identities still fails generation. A record identity is a logical
+tag scoped to its declaration set, not a native ABI annotation or a cross-header
+compatibility guarantee. Value validation and `Signature.ABIShape` ignore it, so
+compatible native call resources can be shared while results retain each logical
+signature. `ForHost` continues to reject layouts the dynamic backend cannot pass;
+adding an identity does not make packed storage compatible with that backend.
 
 The [packed example](../examples/packedrecords/call.go) and its native tests run
 objects, archives and shared libraries at `-O0` and `-O2` through the existing
