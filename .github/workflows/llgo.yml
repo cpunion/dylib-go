@@ -53,8 +53,12 @@ jobs:
       - if: runner.os != 'Windows'
         run: bash scripts/ci-unix-deps.sh
       - name: Install macOS SDK 27 linker
-        if: runner.os == 'macOS'
-        run: brew list --versions lld@23 >/dev/null || brew install --skip-link lld@23
+        if: matrix.target == 'darwin-arm64'
+        run: |
+          brew list --versions lld >/dev/null || brew install --skip-link lld
+          linker="$(brew --prefix lld)/bin/ld64.lld"
+          "$linker" --version
+          echo "LDFLAGS=${LDFLAGS:+$LDFLAGS }--ld-path=$linker" >> "$GITHUB_ENV"
       - if: runner.os != 'Windows'
         uses: dtolnay/rust-toolchain@stable
       - if: runner.os != 'Windows'
