@@ -21,9 +21,6 @@ func TestNativeEmulatedTLSThreadDestructorGoCallbacks(t *testing.T) {
 					host := nativeThreadLibrary(t, "testdata/emutls_dtor_host.c")
 					var count, sum, work atomic.Int32
 					callback, err := abi.NewCallback(abi.Signature{Result: abi.Void, Args: []abi.Type{abi.I32}}, func(args []abi.Value) (abi.Value, error) {
-						if runtime.GOOS == "windows" && runtime.GOARCH == "386" {
-							t.Logf("native TLS callback event: %d", int32(args[0].Bits))
-						}
 						if args[0].Bits == 0 {
 							work.Add(1)
 							return abi.Value{}, nil

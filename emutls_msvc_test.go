@@ -82,7 +82,11 @@ func TestNativeMSVCEmulatedTLSHelpers(t *testing.T) {
 	if pending, drained := owner.DrainThreadDestructors(); pending != 0 || !drained {
 		t.Fatal(pending, drained)
 	}
-	call(t, s, "tls_events", 0, 0, 4231)
+	want := int32(4231)
+	if runtime.GOOS == "windows" && runtime.GOARCH == "386" {
+		want = 42531
+	}
+	call(t, s, "tls_events", 0, 0, want)
 	if pending, drained := owner.DrainThreadDestructors(); pending != 0 || drained {
 		t.Fatal("destructors executed twice", pending, drained)
 	}

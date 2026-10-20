@@ -8,6 +8,7 @@ package native
 #include <stdlib.h>
 #include <string.h>
 #include <stdatomic.h>
+#include "destructor.h"
 #if defined(__i386__)
 // Raw MSVC i386 callers and Windows callbacks only promise four-byte incoming
 // stack alignment; the GNU-built host helper may call sixteen-byte-aligned code.
@@ -121,7 +122,7 @@ static size_t dylib_tls_drain(dylib_tls_thread *thread, dylib_tls_owner *selecte
         void *argument = entry->argument;
         free(entry);
         dylib_tls_leave();
-        if (plain) plain(); else function(argument);
+        if (plain) plain(); else dylib_call_destructor(function, argument);
         ++drained;
         dylib_tls_enter();
         --owner->active;

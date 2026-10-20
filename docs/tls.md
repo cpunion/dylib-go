@@ -37,6 +37,11 @@ writable image data near the code. There are at most 4096 initializer entries.
 Active constructors retain the image during close retry, even before they have
 registered a destructor. Plain `void(void)` and C++ ABI `void(void*)` destructors
 keep their actual function types and share the same native LIFO registry.
+On Windows i386, Clang GNU registers automatic destructors with `thiscall`,
+while manual C registrations use `cdecl`. A shared native adapter supplies
+the single context in both ECX and the stack, aligns the call, and restores its
+frame. Global C++ ABI exit registration uses the same adapter. No convention
+is guessed from symbol names.
 
 macOS C++ destructor execution is qualified with LLVM 22. Older producers can
 mix native TLS accesses into `-O0 -femulated-tls` output: Apple Clang 17 and

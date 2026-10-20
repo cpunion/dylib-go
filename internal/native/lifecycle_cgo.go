@@ -6,6 +6,7 @@ package native
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdatomic.h>
+#include "destructor.h"
 
 typedef struct dylib_exit_entry {
     struct dylib_exit_entry *next;
@@ -70,7 +71,7 @@ static void dylib_cxa_finalize(void *dso, dylib_lifecycle *ctx) {
         void (*plain)(void) = entry->plain;
         void *arg = entry->argument;
         free(entry);
-        if (plain) plain(); else fn(arg);
+        if (plain) plain(); else dylib_call_destructor(fn, arg);
     }
 }
 static void dylib_lifecycle_free(dylib_lifecycle *ctx) {
