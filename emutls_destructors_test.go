@@ -18,9 +18,14 @@ func threadDestructorInputs(t *testing.T, optimization string, extra ...string) 
 	dir := t.TempDir()
 	flags := []string{"-std=c++17", "-femulated-tls", "-fno-exceptions", "-fno-rtti", optimization}
 	flags = append(flags, extra...)
+	source := "testdata/emutls_dtor_objects.cpp"
 	if runtime.GOOS == "windows" {
 		triple := map[string]string{"amd64": "x86_64", "arm64": "aarch64", "386": "i686"}[runtime.GOARCH]
-		flags = append(flags, "--target="+triple+"-w64-windows-gnu")
+		abi := "-w64-windows-gnu"
+		if os.Getenv("DYLIB_TEST_TLS_ABI") == "msvc" {
+			abi, source = "-pc-windows-msvc", "testdata/emutls_msvc_objects.cpp"
+		}
+		flags = append(flags, "--target="+triple+abi)
 	}
 	cc := compiler()
 	if runtime.GOOS == "darwin" && os.Getenv("DYLIB_LLVM_CLANG") != "" {
@@ -28,7 +33,7 @@ func threadDestructorInputs(t *testing.T, optimization string, extra ...string) 
 		// Use the qualified producer without changing other native fixtures.
 		cc = os.Getenv("DYLIB_LLVM_CLANG")
 	}
-	object := compileWith(t, cc, "testdata/emutls_dtor_objects.cpp", filepath.Join(dir, "objects.o"), flags...)
+	object := compileWith(t, cc, source, filepath.Join(dir, "objects.o"), flags...)
 	archive := filepath.Join(dir, "objects.a")
 	command(t, "ar", "rcs", archive, object)
 	finalizer := compile(t, "testdata/emutls_dtor_finalizer.c", filepath.Join(dir, "finalizer.o"), optimization)
@@ -263,7 +268,11 @@ func TestNativeEmulatedTLSThreadDestructorManual(t *testing.T) {
 			runtime.LockOSThread()
 			defer runtime.UnlockOSThread()
 			dir := t.TempDir()
-			input := compile(t, "testdata/emutls_dtor_manual.c", filepath.Join(dir, "manual.o"))
+			source := "testdata/emutls_dtor_manual.c"
+			if runtime.GOOS == "windows" && os.Getenv("DYLIB_TEST_TLS_ABI") == "msvc" {
+				source = "testdata/emutls_msvc_manual.c"
+			}
+			input := compile(t, source, filepath.Join(dir, "manual.o"))
 			finalizer := compile(t, "testdata/emutls_dtor_finalizer.c", filepath.Join(dir, "finalizer.o"))
 			host := nativeThreadLibrary(t, "testdata/emutls_dtor_host.c")
 			withoutOpt := New(Options{ProcessSymbols: true})

@@ -25,7 +25,23 @@ callback; native destructor bodies can use retained `abi.NewCallback` entries.
 | ELF / Linux | amd64, arm64, 386 | `__cxa_thread_atexit`, `__cxa_thread_atexit_impl` |
 | Mach-O / macOS | amd64, arm64 | Clang `_tlv_atexit`; explicit C++ ABI registration also uses the same image owner |
 | COFF / Windows GNU ABI | amd64, arm64, 386 | Clang `__cxa_thread_atexit` |
-| COFF / Windows MSVC ABI | amd64, arm64, 386 | Dynamic TLS initialization and `__tlregdtor` remain unsupported; trivial constant emulated TLS remains supported |
+| COFF / Windows MSVC ABI | amd64, arm64, 386 | Clang emulated TLS `.CRT$XDU`, `__dyn_tls_on_demand_init` and zero-argument `__tlregdtor` callbacks |
+
+MSVC ABI support requires Clang `-femulated-tls`; it does not load native MSVC TLS
+sections, PE TLS directories or `.CRT$XL*` loader callbacks. `.CRT$XDU` entries
+are validated and snapshotted separately from global constructors. On the first
+access by a native thread, the runtime marks its image-owned byte guard before
+calling that image's selected thread initializers. Reentry observes that guard;
+other images and threads have separate guards. The private descriptor stays in
+writable image data near the code. There are at most 4096 initializer entries.
+Active constructors retain the image during close retry, even before they have
+registered a destructor. Plain `void(void)` and C++ ABI `void(void*)` destructors
+keep their actual function types and share the same native LIFO registry.
+On Windows i386, Clang GNU registers automatic destructors with `thiscall`,
+while manual C registrations use `cdecl`. A shared native adapter supplies
+the single context in both ECX and the stack, aligns the call, and restores its
+frame. Global C++ ABI exit registration uses the same adapter. No convention
+is guessed from symbol names.
 
 macOS C++ destructor execution is qualified with LLVM 22. Older producers can
 mix native TLS accesses into `-O0 -femulated-tls` output: Apple Clang 17 and
@@ -71,7 +87,8 @@ callbacks on the invoking native thread before global finalizers. Cleanup remain
 on one native thread across its native calls. Global exit hooks and thread
 callbacks can register each other; cleanup drains new registrations before
 releasing either registry. If another thread still has queued or executing
-callbacks, `Close` returns `ErrPendingThreadDestructors`, retains the image,
+callbacks or active MSVC thread initializers, `Close` returns
+`ErrPendingThreadDestructors`, retains the image,
 unwind tables, TLS values and providers, and rejects new session calls. Join
 those threads and retry `Close`; completed global finalizers do not repeat.
 Keep callback/value/code leases needed by destructor bodies until their cleanup
@@ -90,8 +107,9 @@ the object can be used. Stop/unregister/join native users before releasing that
 lease. `Close` can reclaim values after native code has stopped even if an OS
 thread remains alive; it cannot make a stale borrowed TLS pointer valid.
 
-`TestEmulatedTLSAcrossTargets` compiles all eight targets and Windows GNU variants,
-and checks actual MSVC dynamic-runtime refusal. Native tests cover O0/O2 object/archive
+`TestEmulatedTLSAcrossTargets` compiles all eight targets and Windows GNU variants.
+MSVC fixtures inspect all three Windows targets at O0/O2 and execute in the native
+Windows Go and llgo jobs. Native tests cover O0/O2 object/archive
 calls, shared external descriptors, constant/zero values, 64-byte alignment,
 dependency retry, repeated load/close, C-created threads, thread-exit reclamation,
 constructor/exit-hook/finalizer access, retained code leases and owner retirement
@@ -102,6 +120,10 @@ manual registrations and the callback budget. The optional ABI suite calls
 captured Go handlers during ordinary foreign-thread work and again during
 thread exit, exercising runtime reentry after native thread cleanup has begun.
 Pure Go tests validate 32/64-bit descriptors and metadata without executing code.
+MSVC cases also cover multi-object/archive initializer tables, per-thread shared
+guards, constructor callbacks reentering Go and raw code, and retirement while
+constructors are blocked. A host C fixture independently exercises the common
+zero-argument initializer helper, recursive guard use and mixed destructor types.
 
 ABI references: [Clang emulated TLS option](https://clang.llvm.org/docs/UsersManual.html#cmdoption-femulated-tls)
 and [LLVM 22 descriptor/runtime ABI](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/compiler-rt/lib/builtins/emutls.c).

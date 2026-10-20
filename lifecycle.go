@@ -17,6 +17,7 @@ const (
 	lifecycleCInit
 	lifecycleInit
 	lifecycleFini
+	lifecycleThreadInit
 )
 
 // InitializationError reports a nonzero result from a COFF C initializer.
@@ -248,6 +249,11 @@ func (im *image) prepareLifecycle() error {
 			}
 			if s.lifecycle == lifecycleFini {
 				fini = append(fini, uintptr(address))
+			} else if s.lifecycle == lifecycleThreadInit {
+				if len(im.threadInitializers) >= 4096 {
+					return fmt.Errorf("emulated TLS thread initializer budget exceeded")
+				}
+				im.threadInitializers = append(im.threadInitializers, uintptr(address))
 			} else if s.lifecycle == lifecycleCInit {
 				im.cInitializers = append(im.cInitializers, cInitializer{uintptr(address), a.object.info.Name, s.name, pos})
 			} else {
@@ -308,16 +314,25 @@ func runtimeHelper(name string) bool {
 // These private C-ABI tail thunks bind the native registration helper to one
 // image. No Go pointers or thread-local ambient session state cross the ABI.
 func lifecycleThunk(arch, os string, context, target uintptr, args int) ([]byte, error) {
+	if args != 0 && args != 1 && args != 3 {
+		return nil, fmt.Errorf("unsupported native helper argument count: %d", args)
+	}
 	var code []byte
 	switch arch {
 	case "amd64":
 		reg := byte(0xbe) // rsi: second SysV argument.
 		prefix := byte(0x48)
+		if args == 0 {
+			reg = 0xbf // rdi: first SysV argument.
+		}
 		if args == 3 {
 			reg = 0xb9 // rcx: fourth SysV argument.
 		}
 		if os == "windows" {
 			reg = 0xba // rdx: second Windows argument.
+			if args == 0 {
+				reg = 0xb9 // rcx: first Windows argument.
+			}
 			if args == 3 {
 				prefix, reg = 0x49, 0xb9 // r9: fourth Windows argument.
 			}
@@ -329,6 +344,9 @@ func lifecycleThunk(arch, os string, context, target uintptr, args int) ([]byte,
 		code = append(code, 0xff, 0xe0) // jmp rax; original return address/stack.
 	case "arm64":
 		reg := uint32(1)
+		if args == 0 {
+			reg = 0
+		}
 		if args == 3 {
 			reg = 3
 		}
@@ -346,8 +364,8 @@ func lifecycleThunk(arch, os string, context, target uintptr, args int) ([]byte,
 		// incoming MSVC caller promises only 4-byte alignment. Preserve ebp
 		// and address the original arguments through it before realigning.
 		code = append(code, 0x55, 0x89, 0xe5, 0x83, 0xe4, 0xf0) // push ebp; mov ebp,esp; and esp,-16.
-		if args == 1 {
-			code = append(code, 0x83, 0xec, 8) // Padding below two outgoing args.
+		if padding := (16 - (args+1)*4) & 15; padding != 0 {
+			code = append(code, 0x83, 0xec, byte(padding))
 		}
 		code = append(code, 0x68)
 		code = binary.LittleEndian.AppendUint32(code, uint32(context))

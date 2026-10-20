@@ -521,15 +521,26 @@ func (im *image) relocCOFF(o *object, r relocation, b []byte, s, p uintptr) erro
 		if d < math.MinInt32 || d > math.MaxInt32 {
 			sec := o.sections[r.section]
 			off := sec.offset + r.offset
-			// REL32 also relocates data; only a direct call/jmp can use a stub.
-			if r.offset == 0 || (im.mem[off-1] != 0xe8 && im.mem[off-1] != 0xe9) {
+			// REL32 also relocates data. Only executable E8/E9 or 0F 8x
+			// branch operands can redirect through a nearby jump stub.
+			direct := r.offset > 0 && (im.mem[off-1] == 0xe8 || im.mem[off-1] == 0xe9)
+			conditional := r.offset >= 2 && im.mem[off-2] == 0x0f && im.mem[off-1]&0xf0 == 0x80
+			if !sec.exec || !direct && !conditional {
 				return fmt.Errorf("COFF data reference out of range; compile position-independent code or use __declspec(dllimport)")
 			}
-			stub, e := im.stub(s, "amd64")
+			// The CPU branches from the displacement's end. Fold any COFF
+			// trailing-byte bias and embedded addend into the absolute target,
+			// never into the offset of the stub's instruction bytes.
+			offset := add - int64(r.typ-4)
+			target := s + uintptr(offset)
+			if offset > 0 && target < s || offset < 0 && target > s {
+				return fmt.Errorf("COFF branch target address overflow")
+			}
+			stub, e := im.stub(target, "amd64")
 			if e != nil {
 				return e
 			}
-			d = int64(stub) + add - int64(p) - 4 - int64(r.typ-4)
+			d = int64(stub) - int64(p) - 4
 		}
 		return signed32(b, d)
 	default:

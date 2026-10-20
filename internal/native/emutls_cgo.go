@@ -8,6 +8,7 @@ package native
 #include <stdlib.h>
 #include <string.h>
 #include <stdatomic.h>
+#include "destructor.h"
 #if defined(__i386__)
 // Raw MSVC i386 callers and Windows callbacks only promise four-byte incoming
 // stack alignment; the GNU-built host helper may call sixteen-byte-aligned code.
@@ -36,6 +37,9 @@ typedef struct dylib_tls_exit dylib_tls_exit;
 typedef struct {
     dylib_tls_control *controls;
     size_t live, pending, active;
+    dylib_tls_descriptor *guard;
+    void (**initializers)(void);
+    size_t initializer_count;
 } dylib_tls_owner;
 struct dylib_tls_control {
     dylib_tls_control *next;
@@ -54,6 +58,7 @@ struct dylib_tls_exit {
     dylib_tls_exit *next;
     dylib_tls_owner *owner;
     void (*function)(void *);
+    void (*plain)(void);
     void *argument;
 };
 struct dylib_tls_value {
@@ -113,20 +118,20 @@ static size_t dylib_tls_drain(dylib_tls_thread *thread, dylib_tls_owner *selecte
         --owner->pending;
         ++owner->active;
         void (*function)(void *) = entry->function;
+        void (*plain)(void) = entry->plain;
         void *argument = entry->argument;
         free(entry);
         dylib_tls_leave();
-        function(argument);
+        if (plain) plain(); else dylib_call_destructor(function, argument);
         ++drained;
         dylib_tls_enter();
         --owner->active;
         dylib_tls_leave();
     }
 }
-static int DYLIB_TLS_ENTRY dylib_tls_atexit(void (*function)(void *), void *argument,
-                                          void *dso, dylib_tls_owner *owner) {
-    (void)dso; // The image-bound thunk supplies the owner independently of dso.
-    if (!function || !owner) return -1;
+static int dylib_tls_register(void (*function)(void *), void (*plain)(void),
+                              void *argument, dylib_tls_owner *owner) {
+    if ((!function && !plain) || !owner) return -1;
     dylib_tls_exit *entry = (dylib_tls_exit *)malloc(sizeof(*entry));
     if (!entry) return -1;
     dylib_tls_enter();
@@ -136,6 +141,7 @@ static int DYLIB_TLS_ENTRY dylib_tls_atexit(void (*function)(void *), void *argu
     }
     entry->owner = owner;
     entry->function = function;
+    entry->plain = plain;
     entry->argument = argument;
     entry->next = thread->entries;
     thread->entries = entry;
@@ -143,6 +149,14 @@ static int DYLIB_TLS_ENTRY dylib_tls_atexit(void (*function)(void *), void *argu
     ++owner->pending;
     dylib_tls_leave();
     return 0;
+}
+static int DYLIB_TLS_ENTRY dylib_tls_atexit(void (*function)(void *), void *argument,
+                                          void *dso, dylib_tls_owner *owner) {
+    (void)dso; // The image-bound thunk supplies the owner independently of dso.
+    return dylib_tls_register(function, NULL, argument, owner);
+}
+static int DYLIB_TLS_ENTRY dylib_tls_tlregdtor(void (*function)(void), dylib_tls_owner *owner) {
+    return dylib_tls_register(NULL, function, NULL, owner);
 }
 static void dylib_tls_remove(dylib_tls_value *v) {
     *v->owner_previous = v->owner_next;
@@ -233,6 +247,34 @@ static void *DYLIB_TLS_ENTRY dylib_tls_get_address(dylib_tls_descriptor *descrip
 }
 static uintptr_t dylib_tls_helper(void) { return (uintptr_t)&dylib_tls_get_address; }
 static uintptr_t dylib_tls_exit_helper(void) { return (uintptr_t)&dylib_tls_atexit; }
+static void DYLIB_TLS_ENTRY dylib_tls_msvc_init(dylib_tls_owner *owner) {
+    // No registry lock crosses constructors, which may reenter Go or register
+    // destructors. Mark the thread guard before calling any initializer.
+    dylib_tls_enter();
+    ++owner->active;
+    dylib_tls_leave();
+    unsigned char *guard = (unsigned char *)dylib_tls_get_address(owner->guard);
+    if (!*guard) {
+        *guard = 1;
+        for (size_t i = 0; i < owner->initializer_count; ++i) owner->initializers[i]();
+    }
+    dylib_tls_enter();
+    --owner->active;
+    dylib_tls_leave();
+}
+static int dylib_tls_set_initializers(dylib_tls_owner *owner, uintptr_t guard,
+                                      const uintptr_t *initializers, size_t count) {
+    if (!guard || count > 4096 || owner->guard) return -1;
+    void (**copy)(void) = count ? (void (**)(void))malloc(count * sizeof(*copy)) : NULL;
+    if (count && !copy) return -1;
+    for (size_t i = 0; i < count; ++i) copy[i] = (void (*)(void))initializers[i];
+    owner->guard = (dylib_tls_descriptor *)guard;
+    owner->initializers = copy;
+    owner->initializer_count = count;
+    return 0;
+}
+static uintptr_t dylib_tls_msvc_init_helper(void) { return (uintptr_t)&dylib_tls_msvc_init; }
+static uintptr_t dylib_tls_msvc_exit_helper(void) { return (uintptr_t)&dylib_tls_tlregdtor; }
 static size_t dylib_tls_prepare_close(dylib_tls_owner *owner, size_t *drained) {
     dylib_tls_enter();
     dylib_tls_thread *thread = dylib_tls_current(0);
@@ -260,6 +302,7 @@ static void dylib_tls_free(dylib_tls_owner *owner) {
         free(c);
     }
     dylib_tls_leave();
+    free(owner->initializers);
     free(owner);
 }
 */
@@ -285,6 +328,14 @@ func NewEmulatedTLS() (*EmulatedTLS, error) {
 func EmulatedTLSHelper() uintptr           { return uintptr(C.dylib_tls_helper()) }
 func (t *EmulatedTLS) Context() uintptr    { return uintptr(unsafe.Pointer(t.context)) }
 func EmulatedTLSThreadExitHelper() uintptr { return uintptr(C.dylib_tls_exit_helper()) }
+func EmulatedTLSMSVCInitHelper() uintptr   { return uintptr(C.dylib_tls_msvc_init_helper()) }
+func EmulatedTLSMSVCExitHelper() uintptr   { return uintptr(C.dylib_tls_msvc_exit_helper()) }
+func (t *EmulatedTLS) SetThreadInitializers(guard uintptr, entries []uintptr) error {
+	if C.dylib_tls_set_initializers(t.context, C.uintptr_t(guard), (*C.uintptr_t)(unsafe.Pointer(unsafe.SliceData(entries))), C.size_t(len(entries))) != 0 {
+		return fmt.Errorf("allocate native MSVC thread initializer table")
+	}
+	return nil
+}
 func (t *EmulatedTLS) DrainThreadDestructors() (uint64, bool) {
 	if t == nil || t.context == nil {
 		return 0, false

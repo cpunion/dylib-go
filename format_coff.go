@@ -161,6 +161,8 @@ func parseCOFF(name string, b []byte) (*file, error) {
 			kind = lifecycleInit
 		} else if strings.HasPrefix(s.name, ".CRT$XP") || strings.HasPrefix(s.name, ".CRT$XT") {
 			kind = lifecycleFini
+		} else if s.name == ".CRT$XDU" {
+			kind = lifecycleThreadInit
 		} else if strings.HasPrefix(s.name, ".CRT") {
 			o.unsupported("automatic initialization/finalization: " + s.name)
 		}
