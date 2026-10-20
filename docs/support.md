@@ -36,7 +36,7 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 | GNU/LLVM thin archives | External objects and GNU proxy references into regular archives; snapshot reads and the same lazy extraction as ordinary archives. See [paths and limits](archives.md) |
 | Universal Mach-O FAT32/FAT64 | Inspect all slices; macOS selects baseline amd64/arm64 objects or ordinary archives. Universal libraries use the OS loader. See [selection and limits](universal.md) |
 | Mach-O external `N_INDR` symbols | Strong forwarding aliases, chains, private-external names, archive target extraction, and dependency ordering. See [alias rules](macho.md) |
-| Mach-O indirect symbol tables | Eager non-lazy/lazy/lazy-dylib pointer binding and standard 6-byte amd64 / 12-byte arm64 stubs; local/absolute pointer markers supported. See [binding rules](macho.md) |
+| Mach-O indirect symbol tables | Eager non-lazy/lazy/lazy-dylib pointer binding; regenerated amd64 stubs of at least 5 bytes and aligned arm64 stubs of at least 4 bytes, including padding and distant-target islands; local/absolute pointer markers supported. See [binding rules](macho.md) |
 | Nonstandard/delay import tables | Rejected or unsupported; use a supported import library, an ordinary target slice/object, or load the DLL directly |
 | LLVM bitcode and text IR | Explicit optional `compiler/llvm` compilation to native objects; explicit modules merge with matching targets/layouts; ordinary/thin/proxy mixed archives retain lazy members; see [coverage and limits](llvm.md) |
 | OMF, D `.ddl`, Go gc `.a` | Not directly loaded |

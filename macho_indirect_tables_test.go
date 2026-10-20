@@ -151,9 +151,10 @@ func TestMachOIndirectTableMalformed(t *testing.T) {
 		})
 	}
 	bad := append([]byte(nil), b...)
-	le.PutUint32(bad[stub+72:], 4)
+	le.PutUint64(bad[stub+40:], 2)
+	le.PutUint32(bad[stub+72:], 2)
 	f, err := parse("custom-stub", bad)
-	if err != nil || len(f.info.Unsupported) == 0 || !strings.Contains(strings.Join(f.info.Unsupported, ","), "symbol stubs of width 4") {
+	if err != nil || len(f.info.Unsupported) == 0 || !strings.Contains(strings.Join(f.info.Unsupported, ","), "symbol stubs of width 2") {
 		t.Fatalf("custom stub scope: %v, %+v", err, f)
 	}
 	// Absolute local entries keep their numeric word; lazy-dylib pointers

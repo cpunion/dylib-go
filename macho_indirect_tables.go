@@ -3,6 +3,7 @@ package dylib
 import (
 	"debug/macho"
 	"fmt"
+	"math"
 )
 
 // Synthetic fixups cannot collide with the four-bit on-disk relocation types.
@@ -16,6 +17,16 @@ const (
 type machoIndirectTable struct {
 	section      int
 	first, width uint32
+}
+
+func machoStubWidthSupported(arch string, width uint64) bool {
+	switch arch {
+	case "amd64":
+		return width >= 5 // A near jump can reach an image-owned absolute island.
+	case "arm64":
+		return width >= 4 && width%4 == 0
+	}
+	return false
 }
 
 func machoUsesIndirectTable(flags uint32) bool {
@@ -107,9 +118,12 @@ func bindMachOIndirectTables(o *object, f *macho.File) error {
 		if f.Dysymtab == nil || f.Symtab == nil || first > uint64(len(f.Dysymtab.IndirectSyms)) || count > uint64(len(f.Dysymtab.IndirectSyms))-first {
 			return fmt.Errorf("%s: indirect symbol table range is invalid", sec.name)
 		}
-		if stub && (o.info.Arch != "amd64" || width != 6) && (o.info.Arch != "arm64" || width != 12) {
+		if stub && !machoStubWidthSupported(o.info.Arch, width) {
 			o.unsupported(fmt.Sprintf("Mach-O %s symbol stubs of width %d", o.info.Arch, width))
 			continue
+		}
+		if stub && o.info.Arch == "arm64" && sec.align < 4 {
+			return fmt.Errorf("%s: ARM64 symbol stubs require instruction alignment", sec.name)
 		}
 		original := make(map[uint64]relocation)
 		var retained []relocation
@@ -120,7 +134,7 @@ func bindMachOIndirectTables(o *object, f *macho.File) error {
 			}
 			if stub {
 				continue
-			} // Regenerate canonical jumps, including their GOT references.
+			} // Regenerate tail jumps, including their GOT or island references.
 			if r.offset%width != 0 || r.offset >= sec.size || uint64(r.width) != width || r.typ != 0 || r.pcrel || r.pair >= 0 {
 				return fmt.Errorf("%s: invalid relocation in indirect pointer entry", sec.name)
 			}
@@ -192,15 +206,41 @@ func (im *image) relocateMachOIndirect(o *object, r relocation, b []byte, target
 		le.PutUint64(b, uint64(target))
 		return nil
 	}
-	got, err := im.gotSlot(target)
-	if err != nil {
-		return err
-	}
 	switch o.info.Arch {
 	case "amd64":
+		for i := range b {
+			b[i] = 0x90
+		}
+		if len(b) == 5 {
+			b[0] = 0xe9 // jmp rel32; an absolute island preserves every argument.
+			delta := int64(target) - int64(place) - 5
+			if delta < math.MinInt32 || delta > math.MaxInt32 {
+				island, err := im.stub(target, "amd64")
+				if err != nil {
+					return err
+				}
+				delta = int64(island) - int64(place) - 5
+			}
+			return signed32(b[1:], delta)
+		}
+		got, err := im.gotSlot(target)
+		if err != nil {
+			return err
+		}
 		copy(b, []byte{0xff, 0x25}) // jmp [rip + displacement]; preserves all argument registers.
 		return signed32(b[2:], int64(got)-int64(place)-6)
 	case "arm64":
+		for i := 0; i < len(b); i += 4 {
+			le.PutUint32(b[i:], 0xd503201f) // nop
+		}
+		if len(b) < 12 {
+			le.PutUint32(b, 0x14000000) // b; preserve the caller's link and x8 result pointer.
+			return im.armBranch(b, target, place)
+		}
+		got, err := im.gotSlot(target)
+		if err != nil {
+			return err
+		}
 		le.PutUint32(b, 0x90000010)     // adrp x16, GOT page
 		le.PutUint32(b[4:], 0xf9400210) // ldr x16, [x16, GOT offset]
 		le.PutUint32(b[8:], 0xd61f0200) // br x16; retain caller's link register.

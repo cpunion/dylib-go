@@ -10,7 +10,7 @@ The CLI now accepts Go-style signature declarations and typed invocations throug
 
 | Coverage area | Work still required |
 | --- | --- |
-| Current 64-bit raw targets | Remaining relocations, Mach-O general coalescing/custom stubs, remaining lifecycle forms, native TLS models, and remaining POSIX/Mach-O unwind registration; external `N_INDR` aliases, eager indirect pointers/standard stubs, and optional Windows/Linux/macOS C frame tables plus the Linux C++ DWARF and macOS C++ DWARF/compact exception subsets are implemented |
+| Current 64-bit raw targets | Remaining relocations, Mach-O general coalescing, remaining lifecycle forms, native TLS models, and remaining POSIX/Mach-O unwind registration; external `N_INDR` aliases, eager indirect pointers/short and padded stubs, and optional Windows/Linux/macOS C frame tables plus the Linux C++ DWARF and macOS C++ DWARF/compact exception subsets are implemented |
 | Windows ARM64 raw objects | Nonstandard import tables, remaining relocations/lifecycle forms, and language exception handlers; C frame tables are optional |
 | 386 and additional ISAs | 386 executes C cdecl on Linux/Windows with Go; Windows 386 stdcall/fastcall/thiscall and Windows amd64/386 compiled vectorcall bridges are implemented; other conventions and llgo 386 qualification remain. Additional ISAs need linker/ABI backends and execution tests |
 | BSD and Apple mobile hosts | Native OS backend, ABI/runtime integration, platform policy compatibility, and device tests |
@@ -39,7 +39,7 @@ Keep the parser and linker in Go and extend llgo or small native adapters when l
 
 ## Development checklist
 
-Each implementation PR must pass its native Go and llgo CI jobs before the next item starts. A checked item describes implemented behavior with tests, not universal toolchain compatibility.
+Each implementation PR must pass its native Go and llgo CI jobs before merge. Dependent work can be prepared on a branch and rebased onto the qualified result. A checked item describes implemented behavior with tests, not universal toolchain compatibility.
 
 - [x] Explicit fixed amd64 Microsoft x64/System V selection: dynamic Win64 on three amd64 hosts, dynamic SysV on Linux/macOS amd64, generated C bridges on all three, ordinary struct/indirect results, native pointers and callback reentry.
 - [x] Explicit fixed Windows 386 thiscall: receiver pointers, mixed scalar/struct arguments, dynamic scalar/pointer/void calls and callbacks, native function-pointer metadata, generated C bridges with hidden struct results, and MSVC/GNU native execution fixtures.
@@ -64,7 +64,8 @@ Each implementation PR must pass its native Go and llgo CI jobs before the next 
 - [x] ELF i386 GOT32/GOT32X baseless memory addresses and GNU LEA offsets, with native Clang/GNU assembler calls and system-linked executable comparisons.
 - [x] ELF amd64/i386 8/16-bit absolute and PC-relative data fields, signed REL addends, checked widths and native Linux object/archive calls.
 - [x] AMD64 COFF far conditional tail branches, executable opcode checks and absolute addend/bias targets shared with call/jump stubs.
-- [ ] Remaining relocations on existing targets; Mach-O custom stubs and general coalescing.
+- [x] Mach-O short/padded symbol stubs with image-owned distant-target islands, adjacent entries and native scalar/indirect-record calls through objects, archives and retained providers.
+- [ ] Remaining relocations on existing targets; Mach-O general coalescing and authenticated stubs.
 - [x] Legacy ELF `.ctors/.dtors` pointer tables, priorities, sentinels, and mixed modern-array execution.
 - [x] COFF integer-returning CRT initializers, permanent failure state, and owned exit-registration cleanup.
 - [x] Mach-O linker-resolved initializer offsets, original-image rebasing, zero offsets, mixed pointer tables, lazy archives and native macOS Go/llgo execution.

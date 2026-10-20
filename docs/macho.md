@@ -19,16 +19,20 @@ The Go parser reads `reserved1`/`reserved2` from raw section headers and validat
 | `S_NON_LAZY_SYMBOL_POINTERS` | Resolve each symbol and write its address before execution |
 | `S_LAZY_SYMBOL_POINTERS` | Eagerly replace the initial resolver/helper word with the target address |
 | `S_LAZY_DYLIB_SYMBOL_POINTERS` | Same eager binding, using already loaded session libraries or host definitions |
-| `S_SYMBOL_STUBS`, amd64 width 6 | Regenerate `jmp [rip + displacement]` through an image-owned GOT slot |
-| `S_SYMBOL_STUBS`, arm64 width 12 | Regenerate `adrp x16; ldr x16; br x16` through an image-owned GOT slot |
+| `S_SYMBOL_STUBS`, amd64 width 5 | Regenerate `jmp rel32`, with an image-owned absolute island for a distant target |
+| `S_SYMBOL_STUBS`, amd64 width 6 or larger | Regenerate `jmp [rip + displacement]` through an image-owned GOT slot; NOP padding retains entry spacing |
+| `S_SYMBOL_STUBS`, arm64 width 4 or 8 | Regenerate `b`, with an image-owned absolute island for a distant target; retain NOP padding |
+| `S_SYMBOL_STUBS`, arm64 width 12 or larger, multiple of 4 | Regenerate `adrp x16; ldr x16; br x16` through an image-owned GOT slot; retain NOP padding |
 
-Pointer binding overwrites placeholder words rather than adding them to the resolved address. Original pointer fixups are retained only for local markers; global table entries and standard stubs replace their old fixups. Stub regeneration preserves parameter registers, stack arguments, floating-point registers, and the caller's return address. ARM64 uses the ABI's interprocedural scratch register `x16`, leaving the hidden result pointer in `x8` intact. Binding is complete before W^X protection and publication; no dyld lazy resolver is installed.
+Pointer binding overwrites placeholder words rather than adding them to the resolved address. Original pointer fixups are retained only for local markers; global table entries and supported stubs replace their old fixups. Stub regeneration preserves parameter registers, stack arguments, floating-point registers, and the caller's return address. ARM64 uses the ABI's interprocedural scratch register `x16`, leaving the hidden result pointer in `x8` intact. ARM64 stub storage must have at least four-byte alignment. Binding is complete before W^X protection and publication; no dyld lazy resolver is installed.
 
 Non-lazy `INDIRECT_SYMBOL_LOCAL` pointers use an existing pointer relocation or rebase their stored original address to an unambiguous retained section of the same object. `INDIRECT_SYMBOL_LOCAL | INDIRECT_SYMBOL_ABS` retains a numeric address without relocation. Missing targets, invalid symbol indices/ranges, partial entries, zero stub widths, misplaced markers, and invalid local addresses fail before execution. Unimplemented stub widths remain inspectable but block raw linking. Failure before initialization allows adding dependencies or host target definitions and retrying.
 
 Tests compile both target formats on every CI host. Native macOS Go and llgo tests call pointers and stubs from objects/archives, through forwarding aliases and host targets, and with stripped local fixups and lazy-dylib pointer types. A 24-byte C struct parameter/result with a floating-point argument exercises stack/register arguments and hidden aggregate-result state.
 
-General coalesced sections, other custom stub layouts, authenticated arm64e symbols, raw TLS, and language runtime registration still require additional support. Complete `.dylib` images continue to use the OS loader.
+Short/padded-stub tests compile two adjacent entries at four widths per architecture. Native macOS Go/llgo tests execute objects, lazy archives and retained symbol providers at O0/O2, including 24-byte indirect results and enough integer/floating arguments to exhaust registers. Portable tests check distant-target islands, full addresses, padding, entry boundaries and malformed instruction alignment.
+
+General coalesced sections, stubs smaller than one branch instruction, authenticated arm64e symbols, raw TLS, and language runtime registration still require additional support. Complete `.dylib` images continue to use the OS loader.
 
 ## Format references
 
