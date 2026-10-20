@@ -10,7 +10,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
+	"unsafe"
 
 	dylib "github.com/cpunion/dylib-go"
 	"github.com/cpunion/dylib-go/compiler/clang"
@@ -38,20 +40,26 @@ func TestNativeGeneratedThiscall(t *testing.T) {
 		compiler = "clang"
 	}
 	names := []string{"this_state", "this_calls", "this_add", "this_mixed", "this_wide", "this_pointer", "this_void", "this_payload", "this_large", "this_factory", "this_apply", "this_forward"}
-	h, err := clang.Parse(context.Background(), "../../testdata/thiscall.h", clang.Options{Compiler: compiler, Target: _BindingsDeclarations.Target.Triple, Functions: names})
-	if err != nil {
-		t.Fatal(err)
-	}
-	fresh, err := h.CgoSource("thiscall", "Bindings")
-	if err != nil {
-		t.Fatal(err)
-	}
-	committed, err := os.ReadFile("bindings_windows_386.go")
-	if err != nil || !bytes.Equal(fresh, bytes.ReplaceAll(committed, []byte("\r\n"), []byte("\n"))) {
-		t.Fatal("stale generated thiscall bindings:", err)
-	}
+
 	for _, target := range []string{"i686-pc-windows-msvc", "i686-w64-windows-gnu"} {
 		t.Run(target, func(t *testing.T) {
+			bindingType, file := "Bindings", "bindings_windows_386.go"
+			if strings.Contains(target, "-gnu") {
+				bindingType, file = "GNU", "gnu_windows_386.go"
+			}
+			h, err := clang.Parse(context.Background(), "../../testdata/thiscall.h", clang.Options{Compiler: compiler, Target: target, Functions: names})
+			if err != nil {
+				t.Fatal(err)
+			}
+			fresh, err := h.CgoSource("thiscall", bindingType)
+			if err != nil {
+				t.Fatal(err)
+			}
+			committed, err := os.ReadFile(file)
+			if err != nil || !bytes.Equal(fresh, bytes.ReplaceAll(committed, []byte("\r\n"), []byte("\n"))) {
+				t.Fatal("stale generated thiscall bindings:", file, err)
+			}
+
 			for _, opt := range []string{"-O0", "-O2"} {
 				t.Run(opt, func(t *testing.T) {
 					dir := t.TempDir()
@@ -75,7 +83,7 @@ func TestNativeGeneratedThiscall(t *testing.T) {
 					}
 					for _, input := range inputs {
 						t.Run(input.kind, func(t *testing.T) {
-							exerciseGeneratedThiscall(t, input.path)
+							exerciseGeneratedThiscall(t, target, input.path)
 						})
 					}
 				})
@@ -84,7 +92,7 @@ func TestNativeGeneratedThiscall(t *testing.T) {
 	}
 }
 
-func exerciseGeneratedThiscall(t *testing.T, path string) {
+func exerciseGeneratedThiscall(t *testing.T, target, path string) {
 	t.Helper()
 	session := dylib.New(dylib.Options{})
 	defer session.Close()
@@ -94,10 +102,12 @@ func exerciseGeneratedThiscall(t *testing.T, path string) {
 	if err := session.Load(path); err != nil {
 		t.Fatal(err)
 	}
-	if got, err := Add(session); err != nil || got != 42 {
-		t.Fatal("README example:", got, err)
+	if strings.Contains(target, "-msvc") {
+		if got, err := Add(session); err != nil || got != 42 {
+			t.Fatal("README example:", got, err)
+		}
 	}
-	b, err := NewBindings(session)
+	b, err := producerBindings(session, target)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,4 +158,37 @@ func exerciseGeneratedThiscall(t *testing.T, path string) {
 	if _, err := b.This_add(receiver, 22); !errors.Is(err, dylib.ErrClosed) {
 		t.Fatal("closed receiver call:", err)
 	}
+}
+
+// Both producer ABIs use the same logical Go values, with independent native
+// prototypes. Adapt generated Go record names only at this test boundary.
+type nativeBindings interface {
+	This_state() (unsafe.Pointer, error)
+	This_calls(unsafe.Pointer) (int32, error)
+	This_add(unsafe.Pointer, int32) (int32, error)
+	This_mixed(unsafe.Pointer, int8, uint16, float32, float64, uint64, int32) (float64, error)
+	This_wide(unsafe.Pointer, uint64) (uint64, error)
+	This_pointer(unsafe.Pointer, unsafe.Pointer) (unsafe.Pointer, error)
+	This_void(unsafe.Pointer, int32) error
+	This_payload(unsafe.Pointer, BindingsRecord1, int32) (int32, error)
+	This_large(unsafe.Pointer, int32) (BindingsRecord2, error)
+	This_factory() (unsafe.Pointer, error)
+	This_apply(unsafe.Pointer, unsafe.Pointer, int8, uint16, float32, float64, uint64, int32) (float64, error)
+	This_forward(unsafe.Pointer, unsafe.Pointer, int8, uint16, float32, float64, uint64, int32) (float64, error)
+}
+type gnuBindings struct{ *GNU }
+
+func (b gnuBindings) This_payload(p unsafe.Pointer, v BindingsRecord1, n int32) (int32, error) {
+	return b.GNU.This_payload(p, GNURecord1(v), n)
+}
+func (b gnuBindings) This_large(p unsafe.Pointer, n int32) (BindingsRecord2, error) {
+	v, err := b.GNU.This_large(p, n)
+	return BindingsRecord2(v), err
+}
+func producerBindings(s *dylib.Session, target string) (nativeBindings, error) {
+	if strings.Contains(target, "-gnu") {
+		b, err := NewGNU(s)
+		return gnuBindings{b}, err
+	}
+	return NewBindings(s)
 }

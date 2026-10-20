@@ -292,33 +292,47 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 	mapper.writeNativePrototype(c, s, helper+"_function", prototypeResult, attribute, prototype)
 	fmt.Fprintf(c, "static %s %s(%s) {\n", mapper.transport(s.ReturnType()), helper, strings.Join(bridge, ","))
 	fmt.Fprint(c, strings.Join(nativeLocals, ""))
-	if i, ok := mapper.registerResult(s); ok {
+	resultIndex, physicalResult := mapper.registerResult(s)
+	guardedResult := physicalResult && s.Convention != abi.ThisCall
+	if physicalResult {
+		i := resultIndex
 		name := mapper.cRecordName(i)
 		var arguments []string
 		for _, position := range mapper.registerResultOrder(s) {
 			argument := fmt.Sprintf("(%s_result_pointer){&nativeResult}", name)
+			if s.Convention == abi.ThisCall {
+				argument = "&nativeResult"
+			}
 			if position >= 0 {
 				argument = callArgs[position]
 			}
 			arguments = append(arguments, argument)
 		}
-		fmt.Fprintf(c, "#if %s\n%s nativeResult={0};\n((%s_function)address)(%s);\nreturn %s(nativeResult);\n#else\n", gccRegisterResult, name, helper, strings.Join(arguments, ","), mapper.cConversion(i, false))
-	}
-	if s.Result != abi.Void {
-		fmt.Fprint(c, "return ")
-		if s.Result == abi.Pointer {
-			fmt.Fprint(c, "(void *)")
+		if guardedResult {
+			fmt.Fprintf(c, "#if %s\n", gccRegisterResult)
+		}
+		fmt.Fprintf(c, "%s nativeResult={0};\n((%s_function)address)(%s);\nreturn %s(nativeResult);\n", name, helper, strings.Join(arguments, ","), mapper.cConversion(i, false))
+		if guardedResult {
+			fmt.Fprint(c, "#else\n")
 		}
 	}
-	nativeCall := fmt.Sprintf("((%s_function)address)(%s)", helper, strings.Join(callArgs, ","))
-	if s.Result == abi.Struct {
-		index, _ := mapper.recordIndex(s.ReturnType())
-		if mapper.needsTransport(index) {
-			nativeCall = mapper.cConversion(index, false) + "(" + nativeCall + ")"
+	if !physicalResult || guardedResult {
+		if s.Result != abi.Void {
+			fmt.Fprint(c, "return ")
+			if s.Result == abi.Pointer {
+				fmt.Fprint(c, "(void *)")
+			}
 		}
+		nativeCall := fmt.Sprintf("((%s_function)address)(%s)", helper, strings.Join(callArgs, ","))
+		if s.Result == abi.Struct {
+			index, _ := mapper.recordIndex(s.ReturnType())
+			if mapper.needsTransport(index) {
+				nativeCall = mapper.cConversion(index, false) + "(" + nativeCall + ")"
+			}
+		}
+		fmt.Fprintf(c, "%s;\n", nativeCall)
 	}
-	fmt.Fprintf(c, "%s;\n", nativeCall)
-	if _, ok := mapper.registerResult(s); ok {
+	if guardedResult {
 		fmt.Fprint(c, "#endif\n")
 	}
 	fmt.Fprint(c, "}\n")

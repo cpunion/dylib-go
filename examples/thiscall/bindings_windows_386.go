@@ -107,19 +107,11 @@ typedef int32_t (__attribute__((thiscall)) *dylib_go_42696e64696e6773_call7_func
 static int32_t dylib_go_42696e64696e6773_call7(uintptr_t address,void * p0,dylib_go_42696e64696e6773_record1 p1,int32_t p2) {
 return ((dylib_go_42696e64696e6773_call7_function)address)((dylib_go_42696e64696e6773_record0 *)p0,p1,p2);
 }
-#if defined(_WIN32) && defined(__i386__) && defined(__GNUC__) && !defined(__clang__)
-typedef void (__attribute__((thiscall)) *dylib_go_42696e64696e6773_call8_function)(dylib_go_42696e64696e6773_record0 *,dylib_go_42696e64696e6773_record2_result_pointer,int32_t);
-#else
-typedef dylib_go_42696e64696e6773_record2 (__attribute__((thiscall)) *dylib_go_42696e64696e6773_call8_function)(dylib_go_42696e64696e6773_record0 *,int32_t);
-#endif
+typedef void (__attribute__((thiscall)) *dylib_go_42696e64696e6773_call8_function)(dylib_go_42696e64696e6773_record0 *,dylib_go_42696e64696e6773_record2 *,int32_t);
 static dylib_go_42696e64696e6773_record2_transport dylib_go_42696e64696e6773_call8(uintptr_t address,void * p0,int32_t p1) {
-#if defined(_WIN32) && defined(__i386__) && defined(__GNUC__) && !defined(__clang__)
 dylib_go_42696e64696e6773_record2 nativeResult={0};
-((dylib_go_42696e64696e6773_call8_function)address)((dylib_go_42696e64696e6773_record0 *)p0,(dylib_go_42696e64696e6773_record2_result_pointer){&nativeResult},p1);
+((dylib_go_42696e64696e6773_call8_function)address)((dylib_go_42696e64696e6773_record0 *)p0,&nativeResult,p1);
 return dylib_go_42696e64696e6773_record2_to_transport(nativeResult);
-#else
-return dylib_go_42696e64696e6773_record2_to_transport(((dylib_go_42696e64696e6773_call8_function)address)((dylib_go_42696e64696e6773_record0 *)p0,p1));
-#endif
 }
 typedef double (__attribute__((thiscall)) *dylib_go_42696e64696e6773_call9_pointer0)(dylib_go_42696e64696e6773_record0 *,int8_t,uint16_t,float,double,uint64_t,int32_t);
 typedef dylib_go_42696e64696e6773_call9_pointer0 (__attribute__((cdecl)) *dylib_go_42696e64696e6773_call9_function)(void);

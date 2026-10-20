@@ -502,8 +502,8 @@ func prepare(s Signature) (callBackend, error) {
 	if convention < 0 {
 		return nil, fmt.Errorf("calling convention %d is unavailable on this host", s.Convention)
 	}
-	// libffi places a thiscall hidden record-result pointer in ECX, which
-	// displaces the explicit receiver. Let a matching C compiler lower it.
+	// libffi uses GNU thiscall result placement; MSVC keeps the receiver
+	// in ECX instead. A matching producer header must describe struct results.
 	if s.Convention == ThisCall && s.Result == Struct {
 		return nil, fmt.Errorf("thiscall struct results require a compiled C bridge")
 	}

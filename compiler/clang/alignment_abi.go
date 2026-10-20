@@ -159,14 +159,18 @@ func (t *cgoTypes) registerResult(s abi.Signature) (int, bool) {
 	return i, err == nil && t.records[i].IndirectResult
 }
 
-// GCC puts a fastcall/thiscall sret pointer in ECX; Clang leaves it on the
-// stack. For thiscall the receiver is the only register argument.
-// Put register arguments first, then a one-pointer aggregate for the hidden
+// GCC puts a fastcall sret pointer in ECX; MSVC-targeted Clang leaves it on
+// the stack. Thiscall also depends on the producer target: MSVC keeps the
+// receiver in ECX, whereas GNU puts the hidden result in ECX.
+// For fastcall, put register arguments first, then a one-pointer aggregate for the hidden
 // stack result, then the original stack arguments. GCC aggregates consume
 // register slots even though they are passed on the stack.
 func (t *cgoTypes) registerResultOrder(s abi.Signature) []int {
 	if s.Convention == abi.ThisCall {
-		order := []int{0, -1}
+		order := []int{-1, 0}
+		if t.ms386 {
+			order = []int{0, -1}
+		}
 		for i := 1; i < len(s.Args); i++ {
 			order = append(order, i)
 		}
@@ -191,10 +195,18 @@ func (t *cgoTypes) writeNativePrototype(output *bytes.Buffer, s abi.Signature, n
 		var physical []string
 		for _, position := range t.registerResultOrder(s) {
 			kind := t.cRecordName(i) + "_result_pointer"
+			if s.Convention == abi.ThisCall {
+				kind = t.cRecordName(i) + " *"
+			}
 			if position >= 0 {
 				kind = parameters[position]
 			}
 			physical = append(physical, kind)
+		}
+		if s.Convention == abi.ThisCall {
+			// Explicit pointers avoid relying on the C caller's own sret ABI.
+			fmt.Fprintf(output, "typedef void (%s*%s)(%s);\n", attribute, name, strings.Join(physical, ","))
+			return
 		}
 		fmt.Fprintf(output, "#if %s\ntypedef void (%s*%s)(%s);\n#else\n", gccRegisterResult, attribute, name, strings.Join(physical, ","))
 	}
