@@ -29,6 +29,7 @@ case "$(uname -s)" in
     fi
     test -n "$fc"
     echo "DYLIB_FC=$fc" >> "$GITHUB_ENV"
+    bash scripts/ci-abibridge.sh
     ;;
   *) exit 1 ;;
 esac

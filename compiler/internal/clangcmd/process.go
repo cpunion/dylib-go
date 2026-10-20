@@ -56,6 +56,16 @@ func Run(ctx context.Context, compiler string, args []string, input string, limi
 		if stderr.exceeded {
 			diagnostics += "\n[diagnostics truncated]"
 		}
+		// Build drivers such as SwiftPM also report compiler failures on stdout.
+		// Keep its tail so an unsuccessful build retains the final diagnostic.
+		output := stdout.buffer.Bytes()
+		if len(output) > DiagnosticsLimit {
+			output = output[len(output)-DiagnosticsLimit:]
+			diagnostics += "\n[stdout truncated]"
+		}
+		if len(output) != 0 {
+			diagnostics += "\n" + string(output)
+		}
 		return nil, fmt.Errorf("%s: %w\n%s", compiler, err, diagnostics)
 	}
 	if diagnostics {
