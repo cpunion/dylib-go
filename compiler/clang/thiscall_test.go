@@ -92,6 +92,9 @@ func thiscallNativeCallers(t *testing.T, h *Header) {
 	start := bytes.Index(source, []byte("/*\n")) + 3
 	end := bytes.Index(source[start:], []byte("*/")) + start
 	code := string(source[start:end]) + fmt.Sprintf(`
+// The GNU CRT does not supply the MSVC floating-point-use marker.
+// The freestanding producer contains floating-point fixtures alongside this_large.
+int _fltused;
 extern void this_large(void);
 int main(void) {
     int32_t state[8]={20,0};
