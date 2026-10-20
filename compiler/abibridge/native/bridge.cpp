@@ -94,7 +94,7 @@ Bytes storage(uint32_t size, uint32_t alignment) {
 }
 }
 
-extern "C" uint32_t dylib_abibridge_version() noexcept { return 1; }
+extern "C" uint32_t dylib_abibridge_version() noexcept { return 2; }
 
 extern "C" void *dylib_abibridge_prepare(const unsigned char *signature, uint32_t size, char *message, uint32_t capacity) noexcept {
     try {
@@ -151,3 +151,71 @@ extern "C" int32_t dylib_abibridge_invoke(void *handle, const void *function,
 }
 
 extern "C" void dylib_abibridge_release(void *handle) noexcept { delete static_cast<Plan *>(handle); }
+
+
+namespace {
+struct ManagedType {
+    const void *metadata;
+    ABISwiftValueLayout layout;
+};
+struct ManagedValue {
+    ManagedType *type;
+    Bytes bytes{nullptr, std::free};
+    bool initialized = false;
+    ~ManagedValue() {
+        if (initialized) ABISwiftDestroyValue(type->metadata, bytes.get());
+    }
+};
+}
+
+extern "C" void *dylib_abibridge_value_type(uintptr_t provider, uint64_t *layout,
+    char *message, uint32_t capacity) noexcept {
+    try {
+        if (!provider || !layout) invalid("Missing Swift metadata provider.");
+        auto metadata = reinterpret_cast<const void *(*)(void)>(provider)();
+        if (!metadata) invalid("Swift metadata provider returned null.");
+        auto description = ABISwiftGetValueLayout(metadata);
+        if (!description.stride || description.size > description.stride || description.stride > max_storage ||
+            !description.alignment || description.alignment > 4096 ||
+            (description.alignment & (description.alignment-1)) || description.stride % description.alignment)
+            invalid("Unsupported Swift value storage.");
+        auto type = std::make_unique<ManagedType>();
+        type->metadata = metadata; type->layout = description;
+        layout[0] = description.size; layout[1] = description.stride; layout[2] = description.alignment;
+        return type.release();
+    } catch (const std::exception &error) { failure(message, capacity, error.what()); }
+    catch (...) { failure(message, capacity, "Swift metadata preparation failed."); }
+    return nullptr;
+}
+extern "C" void dylib_abibridge_value_type_release(void *handle) noexcept {
+    delete static_cast<ManagedType *>(handle);
+}
+extern "C" void *dylib_abibridge_value_new(void *handle, const void *source,
+    char *message, uint32_t capacity) noexcept {
+    try {
+        auto *type = static_cast<ManagedType *>(handle);
+        if (!type || (source && uintptr_t(source) % type->layout.alignment)) invalid("Invalid Swift value source.");
+        auto value = std::make_unique<ManagedValue>();
+        value->type = type;
+        void *bytes = nullptr;
+        if (posix_memalign(&bytes, std::max(type->layout.alignment, sizeof(void *)), type->layout.stride)) throw std::bad_alloc();
+        value->bytes.reset(bytes);
+        std::memset(bytes, 0, type->layout.stride);
+        if (source) {
+            ABISwiftCopyValue(type->metadata, bytes, source);
+            value->initialized = true;
+        }
+        return value.release();
+    } catch (const std::exception &error) { failure(message, capacity, error.what()); }
+    catch (...) { failure(message, capacity, "Swift value allocation failed."); }
+    return nullptr;
+}
+extern "C" uintptr_t dylib_abibridge_value_pointer(void *handle) noexcept {
+    return uintptr_t(static_cast<ManagedValue *>(handle)->bytes.get());
+}
+extern "C" void dylib_abibridge_value_commit(void *handle) noexcept {
+    static_cast<ManagedValue *>(handle)->initialized = true;
+}
+extern "C" void dylib_abibridge_value_release(void *handle) noexcept {
+    delete static_cast<ManagedValue *>(handle);
+}

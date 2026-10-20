@@ -12,8 +12,9 @@ function symbols from OS-loaded dylibs. This is a separate Swift ABI backend;
 | Trivial Swift values | Explicit compiler-confirmed sizes, alignment and scalar component offsets; supported natural component layouts |
 | Large values / results | Backend-selected indirect storage based on the declared Swift components |
 | Formally indirect values | Explicit `Indirect` storage; tested with a small resilient Swift struct |
+| Owned Swift values | Complete metadata from an explicit C provider, aligned native storage, copy/destroy witnesses, scoped access and retained leases; tested with String, reference-counted members and empty values |
 | Concurrency | Reusable interfaces, independent per-call storage, function-image leases, close waits for active invocations |
-| Unsupported | Reference-bearing values, String/Array ownership, managed closures, tuples/packs, inout/consumed parameters, generics, async/throws, self contexts, Objective-C dispatch, UI threading, arm64e and devices |
+| Unsupported | Managed values passed directly through `Invoke`, non-Copyable values, managed closures, tuples/packs, inout/consumed parameters, generic calls, async/throws, self contexts, Objective-C dispatch, UI threading, arm64e and devices |
 
 ## Build and load
 
@@ -26,11 +27,16 @@ uses the selected Xcode tools. It does not fetch sources or select another SDK.
 Keep tool and SDK selection consistent when supplying custom environment flags.
 
 The builder creates a private tools-5.9 SwiftPM manifest for the C++20 native
-invocation sources and libffi only. It does not compile SDK-specific pointer
+invocation/value-witness sources and libffi only. It does not compile SDK-specific pointer
 hooks or build ABIBridge's Swift runtime/UI products, and leaves upstream
-manifests unchanged. Individual objects are archived before linking. Four private C exports implement
-version checking, interface creation, invocation and release. Upstream APIs and
+manifests unchanged. Individual objects are archived before linking. Ten private C
+exports implement version checking, call interfaces and owned values. Upstream APIs and
 libffi symbols are hidden from this facade's exports.
+
+The version 2 facade includes `SwiftValueWitness.cpp` alongside the four invocation
+sources. Version 1 facades remain usable for trivial calls; `PrepareValueType`
+returns `ErrValueUnsupported` for those facades. Missing version 2 entries and
+unknown facade versions are rejected when opening the runtime.
 
 Open the resulting `Library.Path` with `abibridge.Open`. Close every runtime
 before closing its build artifact. The upstream projects retain their own MIT
@@ -64,8 +70,8 @@ per value, 4096-byte alignment and 16 MiB total call storage. Both Go and the
 native decoder check bounds. Input byte counts must match exactly.
 
 Bytes must represent trivial values with guaranteed parameter ownership.
-Reference-bearing Swift values require metadata and copy/destroy witnesses;
-their representation bytes are not an ownership transfer. Native pointer values
+Reference-bearing values use the owned storage API below; their representation
+bytes are not an ownership transfer. Native pointer values
 need separate data/code leases for as long as the pointees can be used.
 
 Swift runtime metadata can outlive a call or session. Load providers with
@@ -73,6 +79,45 @@ Swift runtime metadata can outlive a call or session. Load providers with
 additionally leases the selected symbol for the active call; runtime/interface
 close waits for those calls before releasing its native plan. Closing a runtime
 or interface from its own invocation is not supported.
+
+## Owned Swift values
+
+`Runtime.PrepareValueType` accepts a symbol implementing the C contract
+`const void *metadata(void)`. A compiler-matched Swift adapter can export this
+using `@_cdecl` and return its complete type metadata. The caller must establish
+that the metadata is valid, complete and describes a Copyable type. Checking
+layout bounds cannot make arbitrary metadata pointers safe. There is no type
+name lookup or implicit generic binding.
+
+The resulting `ValueType` retains its metadata provider's symbol lease until
+runtime close. `Layout` reports Swift size, stride and alignment, including empty
+values with zero size and positive stride. Storage is limited to 1 MiB stride
+and 4096-byte alignment. `ValueType.New` allocates uninitialized native storage
+and calls a supplied initializer with its address. The adapter must initialize
+exactly one value on success and leave it uninitialized on error; it must not
+panic after initialization. Swift pointer adapters should bind newly allocated
+memory to the exact type before initialization.
+
+`Value.Clone` uses the type's copy witness to initialize independent storage.
+`Value.Close` uses its destroy witness exactly once, including when the last
+strong reference releases a Swift object. `WithAddress` lends initialized native
+storage to a matching pointer adapter. `Acquire` retains storage, metadata and
+native code; the lease's `Address` or `Pointer` can be used for stored native
+registrations until users have unregistered and joined. These pointers do not
+transfer ownership. Native code must not destroy or consume borrowed storage.
+The [executed example](../examples/swiftvalue/clone.go) closes the original before
+reading a copy containing a long Swift String.
+
+Runtime retirement rejects new operations, waits for existing operations and
+leases, then destroys values before releasing metadata and native code. Existing
+leases remain usable during retirement. Release leases before waiting for value
+or runtime close, and close runtimes before their metadata provider sessions.
+Value witnesses run without Go mutexes held, allowing a destructor callback to
+close other values or call interfaces in the same retiring runtime. Closing the
+owner from its own active adapter/destructor is unsupported. Synchronize native
+access yourself, including thread affinity and non-Sendable values; leases only
+protect lifetime. Copy/destroy does not infer managed argument or result passing
+conventions, so `Call.Invoke` continues to accept trivial representations only.
 
 ## Validation
 
@@ -82,7 +127,11 @@ configured dependencies fail. Go also executes race/lifetime checks. Native
 tests run unoptimized/optimized Swift code, narrow and wide scalar boundaries,
 floating values, record layouts, pointer allocation/mutation/free, reusable and
 concurrent interfaces, malformed native descriptions and close during a blocked
-Swift invocation. No-libffi local runs use the same C transport.
+Swift invocation. Managed tests verify copy ownership, final strong-reference
+destruction, empty values, failed initialization, concurrent copies, value/runtime/
+provider retirement, and metadata preparation/initialization racing retirement. Libffi builds also
+execute Go callbacks from Swift destruction and cleanup reentry. No-libffi runs
+execute the same value ownership tests through the fixed C transport.
 
 Pure Go tests validate metadata and unsupported-host behavior on the full project
 matrix. Cross compiling the core or parsing an Apple image does not establish

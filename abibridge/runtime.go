@@ -22,6 +22,9 @@ type Runtime struct {
 	invoke     uintptr
 	release    uintptr
 	interfaces map[*Call]bool
+	valueOps   valueEntries
+	valueTypes map[*ValueType]bool
+	values     map[*Value]bool
 }
 
 // Open loads a compatible facade. Neither ABIBridge nor libffi is a default Go
@@ -52,9 +55,27 @@ func Open(library string) (*Runtime, error) {
 			return nil, err
 		}
 	}
-	if nativeVersion(version) != 1 {
+	facadeVersion := nativeVersion(version)
+	if facadeVersion != 1 && facadeVersion != 2 {
 		r.session.Close()
 		return nil, fmt.Errorf("abibridge: incompatible native facade")
+	}
+
+	if facadeVersion == 2 {
+		for name, output := range map[string]*uintptr{
+			"value_type": &r.valueOps.prepare, "value_type_release": &r.valueOps.releaseType,
+			"value_new": &r.valueOps.newValue, "value_pointer": &r.valueOps.pointer,
+			"value_commit": &r.valueOps.commit, "value_release": &r.valueOps.release,
+		} {
+			symbol, err := r.session.Resolve("dylib_abibridge_" + name)
+			if err == nil {
+				err = symbol.WithAddress(func(address uintptr) error { *output = address; return nil })
+			}
+			if err != nil {
+				r.session.Close()
+				return nil, err
+			}
+		}
 	}
 	return r, nil
 }
@@ -159,13 +180,8 @@ func (c *Call) Close() error {
 		return nil
 	}
 	r := c.owner
-	if err := r.begin(); err != nil {
-		if r.done != nil {
-			<-r.done
-		}
-		return nil
-	}
-	defer r.end()
+	// Keep membership until native release finishes. A concurrent runtime
+	// snapshot waits on c.mu before it can release the facade.
 	c.close()
 	r.mu.Lock()
 	delete(r.interfaces, c)
@@ -202,12 +218,25 @@ func (r *Runtime) Close() error {
 	for r.users != 0 {
 		r.cond.Wait()
 	}
-	for c := range r.interfaces {
-		c.close()
+	calls, values, types := r.interfaces, r.values, r.valueTypes
+	r.interfaces, r.values, r.valueTypes = nil, nil, nil
+	r.mu.Unlock()
+	// Value witnesses can execute Swift deinitializers and foreign callbacks.
+	// Retire first, but never hold a Go mutex across those native operations.
+	for value := range values {
+		value.close()
 	}
-	r.interfaces = nil
-	r.closeErr = r.session.Close()
+	for call := range calls {
+		call.close()
+	}
+	for valueType := range types {
+		nativeRelease(r.valueOps.releaseType, valueType.plan)
+		valueType.provider.Close()
+	}
+	err := r.session.Close()
+	r.mu.Lock()
+	r.closeErr = err
 	close(r.done)
 	r.mu.Unlock()
-	return r.closeErr
+	return err
 }

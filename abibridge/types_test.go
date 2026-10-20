@@ -79,6 +79,39 @@ func TestSwiftClosedAndUnavailable(t *testing.T) {
 	if err := r.Close(); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := r.PrepareValueType(nil); !errors.Is(err, ErrClosed) {
+		t.Fatal(err)
+	}
+	var kind *ValueType
+	var value *Value
+	var lease *ValueLease
+	if _, err := kind.New(nil); !errors.Is(err, ErrClosed) {
+		t.Fatal(err)
+	}
+	if _, err := value.Clone(); !errors.Is(err, ErrClosed) {
+		t.Fatal(err)
+	}
+	if err := value.WithAddress(nil); !errors.Is(err, ErrClosed) {
+		t.Fatal(err)
+	}
+	if _, err := value.Acquire(); !errors.Is(err, ErrClosed) {
+		t.Fatal(err)
+	}
+	if _, err := lease.Pointer(); !errors.Is(err, ErrClosed) {
+		t.Fatal(err)
+	}
+	if _, err := lease.Address(); !errors.Is(err, ErrClosed) {
+		t.Fatal(err)
+	}
+	if err := lease.WithAddress(nil); !errors.Is(err, ErrClosed) {
+		t.Fatal(err)
+	}
+	if err := lease.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := value.Close(); err != nil {
+		t.Fatal(err)
+	}
 	if nativeAvailable() {
 		if _, err := Open(t.TempDir() + "/missing.dylib"); err == nil {
 			t.Fatal("missing native facade accepted")

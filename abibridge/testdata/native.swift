@@ -117,3 +117,41 @@ public func layout(_ which: Int32, _ index: Int32) -> Int32 {
     default: return -1
     }
 }
+
+private final class ManagedToken { deinit { fixture_value_record() } }
+private struct ManagedRecord {
+    let token: ManagedToken
+    let text: String
+    let number: Int64
+}
+private struct EmptyValue {}
+@_cdecl("fixture_managed_metadata")
+public func managedMetadata() -> UnsafeRawPointer { unsafeBitCast(ManagedRecord.self, to: UnsafeRawPointer.self) }
+@_cdecl("fixture_gated_metadata")
+public func gatedMetadata() -> UnsafeRawPointer {
+    _ = fixture_wait()
+    return managedMetadata()
+}
+@_cdecl("fixture_empty_metadata")
+public func emptyMetadata() -> UnsafeRawPointer { unsafeBitCast(EmptyValue.self, to: UnsafeRawPointer.self) }
+@_silgen_name("fixture_managed_initialize")
+public func managedInitialize(_ destination: UnsafeMutableRawPointer, _ number: Int64) {
+    destination.bindMemory(to: ManagedRecord.self, capacity: 1).initialize(to:
+        ManagedRecord(token: ManagedToken(), text: String(repeating: "native", count: 100), number: number))
+}
+@_silgen_name("fixture_managed_read")
+public func managedRead(_ source: UnsafeRawPointer) -> Int64 {
+    let value = source.assumingMemoryBound(to: ManagedRecord.self).pointee
+    return value.number + Int64(value.text.count)
+}
+@_silgen_name("fixture_empty_initialize")
+public func emptyInitialize(_ destination: UnsafeMutableRawPointer) {
+    destination.bindMemory(to: EmptyValue.self, capacity: 1).initialize(to: EmptyValue())
+}
+@_cdecl("fixture_value_layout")
+public func valueLayout(_ which: Int32, _ index: Int32) -> Int32 {
+    let layout = which == 0
+        ? (MemoryLayout<ManagedRecord>.size, MemoryLayout<ManagedRecord>.stride, MemoryLayout<ManagedRecord>.alignment)
+        : (MemoryLayout<EmptyValue>.size, MemoryLayout<EmptyValue>.stride, MemoryLayout<EmptyValue>.alignment)
+    switch index { case 0: return Int32(layout.0); case 1: return Int32(layout.1); case 2: return Int32(layout.2); default: return -1 }
+}

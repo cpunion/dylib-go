@@ -41,17 +41,19 @@ func fixture(t *testing.T, optimization string) string {
 	triple := arch + "-apple-macosx15.4"
 	gate := filepath.Join(dir, "gate.o")
 	run(t, "xcrun", "clang", "-isysroot", sdk, "-target", triple, "-c", "testdata/gate.c", "-o", gate)
+	managed := filepath.Join(dir, "managed.o")
+	run(t, "xcrun", "clang", "-isysroot", sdk, "-target", triple, "-c", "testdata/managed.c", "-o", managed)
 	library := filepath.Join(dir, "native.dylib")
 	identity := sha256.Sum256([]byte(dir))
 	args := []string{"swiftc", "-sdk", sdk, "-target", triple, optimization, "-enable-library-evolution", "-module-name", fmt.Sprintf("DylibSwiftFixture_%x", identity[:8]), "-import-objc-header", "testdata/gate.h"}
-	run(t, "xcrun", append(append([]string(nil), args...), "-emit-library", "testdata/native.swift", gate, "-o", library)...)
+	run(t, "xcrun", append(append([]string(nil), args...), "-emit-library", "testdata/native.swift", gate, managed, "-o", library)...)
 	ir := filepath.Join(dir, "native.ll")
 	run(t, "xcrun", append(args, "-S", "-emit-ir", "testdata/native.swift", "-o", ir)...)
 	data, err := os.ReadFile(ir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"fixture_i32", "fixture_mixed", "fixture_indirect", "fixture_large", "fixture_spill"} {
+	for _, name := range []string{"fixture_i32", "fixture_mixed", "fixture_indirect", "fixture_large", "fixture_spill", "fixture_managed_initialize", "fixture_managed_read", "fixture_empty_initialize"} {
 		found := false
 		for _, line := range strings.Split(string(data), "\n") {
 			if strings.HasPrefix(line, "define ") && strings.Contains(line, "swiftcc ") && strings.Contains(line, "@"+name+"(") {
@@ -173,6 +175,7 @@ func TestNativeSwift(t *testing.T) {
 			native := fixture(t, optimization.flag)
 			t.Run("calls", func(t *testing.T) { testCalls(t, facade, native) })
 			t.Run("pointers", func(t *testing.T) { testPointers(t, facade, native) })
+			t.Run("managed", func(t *testing.T) { testManagedValues(t, facade, native) })
 			t.Run("retirement", func(t *testing.T) { testRetirement(t, facade, native) })
 		})
 	}
