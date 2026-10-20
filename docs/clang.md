@@ -63,6 +63,7 @@ Run
 | Variadic prototypes | Fixed prefix; `Declaration.WithTail` adds a concrete scalar/pointer tail; `abi.Prepare` applies promotions |
 | C cdecl | All eight qualified native targets |
 | stdcall / fastcall | Windows 386; retain compiler symbol decoration |
+| thiscall | Fixed Windows 386; explicit pointer receiver, native function-pointer metadata and C bridges, including struct results; dynamic calls/callbacks require scalar/pointer/void results |
 | vectorcall | Fixed Windows amd64/386 `CgoSource` bridges with a supporting C compiler; ordinary record values require amd64 or GNU 386; retain `@@N` decoration and identifier-leading underscores |
 | Higher-order and multiply indirect function pointers | Nested argument/result prototypes and 1–8 pointer layers; caller owns code and pointee lifetimes |
 | Function-pointer record fields and fixed arrays | Opaque native address storage with separate field-indexed prototypes; supports typedef/direct pointers, multidimensional arrays, nested record arrays and self-referencing callback signatures |
@@ -995,3 +996,5 @@ function-pointer forms remain separate
 work. Clang's
 syntax and type information
 come from its [AST interface](https://clang.llvm.org/docs/IntroductionToTheClangAST.html).
+
+The [generated thiscall example](../examples/thiscall/add_windows_386.go) uses a native receiver pointer. Native Go 386 tests execute Clang MSVC/GNU objects and archives at `-O0`/`-O2`, plus GNU DLLs, with mixed widths/floats, receiver changes, function-pointer factories, hidden struct results and retirement. Dynamic tests separately cover temporary receivers and nested thiscall callbacks. `abi.ThisCall` requires an explicit pointer as `Args[0]` and rejects variadic calls. Dynamic calls and callbacks reject all struct results: libffi places the hidden result address in ECX, displacing the native receiver. Use `CgoSource` for these results; it compensates for GCC callers that would otherwise place the hidden result pointer in ECX. This does not interpret C++ class layout, vtables or member pointers.

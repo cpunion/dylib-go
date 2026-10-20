@@ -51,8 +51,8 @@ type Record struct {
 	// IndirectArgument is compiler-observed MSVC i386 argument lowering for an
 	// aligned record. Generated bridges reconcile this with a MinGW host.
 	IndirectArgument bool
-	// IndirectResult records an MSVC i386 hidden result pointer requiring a
-	// compiled C adapter for GCC fastcall interoperability.
+	// IndirectResult records a Windows i386 hidden result pointer requiring a
+	// compiled C adapter for GCC fastcall/thiscall interoperability.
 	IndirectResult bool
 	// ArgumentAlignment preserves compiler-observed natural argument alignment
 	// on Linux AArch64, where an explicitly aligned record alone does not require
@@ -215,8 +215,11 @@ func (h *Header) validateDescriptions() error {
 		if err := validatePackedFields(record); err != nil {
 			return err
 		}
-		if (record.IndirectArgument || record.IndirectResult) && (h.Target.OS != "windows" || h.Target.Arch != "386" || !strings.Contains(h.Target.Triple, "msvc")) {
+		if record.IndirectArgument && (h.Target.OS != "windows" || h.Target.Arch != "386" || !h.Target.msLayout()) {
 			return fmt.Errorf("clang: compiler-observed indirect records require an MSVC i386 target")
+		}
+		if record.IndirectResult && (h.Target.OS != "windows" || h.Target.Arch != "386") {
+			return fmt.Errorf("clang: compiler-observed indirect results require a Windows i386 target")
 		}
 		if record.ArgumentAlignment != 0 && (record.ArgumentAlignment != 16 || h.Target.OS != "linux" || h.Target.Arch != "arm64") {
 			return fmt.Errorf("clang: argument alignment requires Linux AArch64 in %s", record.Name)

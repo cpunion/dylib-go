@@ -30,7 +30,7 @@ func TestLayoutOwnershipConventionsAndLimits(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	for _, convention := range []Convention{StdCall, FastCall} {
+	for _, convention := range []Convention{StdCall, FastCall, ThisCall} {
 		got, err := LayoutOf(desc, convention)
 		if runtime.GOOS == "windows" && runtime.GOARCH == "386" {
 			if err != nil || !reflect.DeepEqual(got, want) {

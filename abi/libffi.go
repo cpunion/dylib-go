@@ -20,6 +20,7 @@ static int dylib_abi(uint8_t convention) {
 #if defined(_WIN32) && (defined(__i386__) || defined(_M_IX86))
     if (convention == 2) return FFI_STDCALL;
     if (convention == 3) return FFI_FASTCALL;
+    if (convention == 5) return FFI_THISCALL;
 #endif
     return -1;
 }
@@ -500,6 +501,11 @@ func prepare(s Signature) (callBackend, error) {
 	convention := C.dylib_abi(C.uint8_t(s.Convention))
 	if convention < 0 {
 		return nil, fmt.Errorf("calling convention %d is unavailable on this host", s.Convention)
+	}
+	// libffi places a thiscall hidden record-result pointer in ECX, which
+	// displaces the explicit receiver. Let a matching C compiler lower it.
+	if s.Convention == ThisCall && s.Result == Struct {
+		return nil, fmt.Errorf("thiscall struct results require a compiled C bridge")
 	}
 	b := &ffiBackend{pool: nativePool{abi: convention}, plan: C.dylib_plan_new(C.uint(len(s.Args)))}
 	if b.plan == nil {

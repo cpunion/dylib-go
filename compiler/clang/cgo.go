@@ -15,7 +15,7 @@ import (
 // addresses are supported. Attributed values cross the Go boundary as
 // ordinary transport records; C constructs and calls the native type. WithTail
 // specifies a concrete variadic call shape; C performs default promotions.
-// Windows 386 also supports fixed stdcall/fastcall prototypes. Fixed vectorcall
+// Windows 386 also supports fixed stdcall/fastcall/thiscall prototypes. Fixed vectorcall
 // prototypes on Windows amd64/386 require a supporting C compiler. Struct pointees
 // use opaque native addresses; no Go struct pointer conversion is inferred.
 // The caller owns the Session, native storage and function-pointer lifetimes.
@@ -164,9 +164,11 @@ func (h *Header) cgoAttribute(s abi.Signature) (string, error) {
 			return "__attribute__((stdcall)) ", nil
 		case abi.FastCall:
 			return "__attribute__((fastcall)) ", nil
+		case abi.ThisCall:
+			return "__attribute__((thiscall)) ", nil
 		}
 	}
-	return "", fmt.Errorf("cgo bridges require cdecl, fixed Windows 386 stdcall/fastcall or Windows amd64/386 vectorcall prototypes")
+	return "", fmt.Errorf("cgo bridges require cdecl, fixed Windows 386 stdcall/fastcall/thiscall or Windows amd64/386 vectorcall prototypes")
 }
 
 func (h *Header) cgoPrototype(s abi.Signature, mapper *cgoTypes) (string, string, error) {
@@ -290,17 +292,17 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 	mapper.writeNativePrototype(c, s, helper+"_function", prototypeResult, attribute, prototype)
 	fmt.Fprintf(c, "static %s %s(%s) {\n", mapper.transport(s.ReturnType()), helper, strings.Join(bridge, ","))
 	fmt.Fprint(c, strings.Join(nativeLocals, ""))
-	if i, ok := mapper.fastResult(s); ok {
+	if i, ok := mapper.registerResult(s); ok {
 		name := mapper.cRecordName(i)
 		var arguments []string
-		for _, position := range mapper.fastResultOrder(s) {
+		for _, position := range mapper.registerResultOrder(s) {
 			argument := fmt.Sprintf("(%s_result_pointer){&nativeResult}", name)
 			if position >= 0 {
 				argument = callArgs[position]
 			}
 			arguments = append(arguments, argument)
 		}
-		fmt.Fprintf(c, "#if %s\n%s nativeResult={0};\n((%s_function)address)(%s);\nreturn %s(nativeResult);\n#else\n", gccFastResult, name, helper, strings.Join(arguments, ","), mapper.cConversion(i, false))
+		fmt.Fprintf(c, "#if %s\n%s nativeResult={0};\n((%s_function)address)(%s);\nreturn %s(nativeResult);\n#else\n", gccRegisterResult, name, helper, strings.Join(arguments, ","), mapper.cConversion(i, false))
 	}
 	if s.Result != abi.Void {
 		fmt.Fprint(c, "return ")
@@ -316,7 +318,7 @@ func (h *Header) writeCgoBridge(c, goCode *bytes.Buffer, function Declaration, b
 		}
 	}
 	fmt.Fprintf(c, "%s;\n", nativeCall)
-	if _, ok := mapper.fastResult(s); ok {
+	if _, ok := mapper.registerResult(s); ok {
 		fmt.Fprint(c, "#endif\n")
 	}
 	fmt.Fprint(c, "}\n")

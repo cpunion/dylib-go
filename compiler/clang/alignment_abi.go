@@ -17,16 +17,16 @@ func (h *Header) probeRecordABI(ctx context.Context, compiler, path string, flag
 	if h.Target.OS == "linux" && h.Target.Arch == "arm64" {
 		return h.probeBitfieldArgumentAlignment(ctx, compiler, path, flags)
 	}
-	if h.Target.OS != "windows" || h.Target.Arch != "386" || !strings.Contains(h.Target.Triple, "msvc") {
+	if h.Target.OS != "windows" || h.Target.Arch != "386" {
 		return nil
 	}
 	var source strings.Builder
 	var indexes []int
-	var fastResults []abi.TypeDesc
+	var registerResults []abi.TypeDesc
 	var collect func(abi.Signature, []FunctionPointer)
 	collect = func(signature abi.Signature, pointers []FunctionPointer) {
-		if signature.Convention == abi.FastCall && signature.Result == abi.Struct {
-			fastResults = append(fastResults, signature.ReturnType())
+		if signature.Result == abi.Struct && (signature.Convention == abi.ThisCall || signature.Convention == abi.FastCall && h.Target.msLayout()) {
+			registerResults = append(registerResults, signature.ReturnType())
 		}
 		for _, pointer := range pointers {
 			collect(pointer.Signature, pointer.FunctionPointers)
@@ -41,7 +41,7 @@ func (h *Header) probeRecordABI(ctx context.Context, compiler, path string, flag
 		}
 	}
 	for i, record := range h.Records {
-		if record.Layout.Alignment <= 4 && !hasFastResult(record.Description, fastResults) {
+		if (!h.Target.msLayout() || record.Layout.Alignment <= 4) && !hasRegisterResult(record.Description, registerResults) {
 			continue
 		}
 		indexes = append(indexes, i)
@@ -62,7 +62,7 @@ func (h *Header) probeRecordABI(ctx context.Context, compiler, path string, flag
 			return err
 		}
 		h.Records[i].IndirectArgument = indirect
-		if indirect || hasFastResult(h.Records[i].Description, fastResults) {
+		if indirect || hasRegisterResult(h.Records[i].Description, registerResults) {
 			parameters, err := recordProbeParameters(string(data), fmt.Sprintf("dylib_record_%d_result", i))
 			if err != nil {
 				return err
@@ -73,7 +73,7 @@ func (h *Header) probeRecordABI(ctx context.Context, compiler, path string, flag
 	return nil
 }
 
-func hasFastResult(description abi.TypeDesc, results []abi.TypeDesc) bool {
+func hasRegisterResult(description abi.TypeDesc, results []abi.TypeDesc) bool {
 	for _, result := range results {
 		if reflect.DeepEqual(description, result) {
 			return true
@@ -149,21 +149,29 @@ func (t *cgoTypes) writeArgumentTypes(output *bytes.Buffer) {
 	}
 }
 
-const gccFastResult = "defined(_WIN32) && defined(__i386__) && defined(__GNUC__) && !defined(__clang__)"
+const gccRegisterResult = "defined(_WIN32) && defined(__i386__) && defined(__GNUC__) && !defined(__clang__)"
 
-func (t *cgoTypes) fastResult(s abi.Signature) (int, bool) {
-	if s.Convention != abi.FastCall || s.Result != abi.Struct {
+func (t *cgoTypes) registerResult(s abi.Signature) (int, bool) {
+	if (s.Convention != abi.FastCall && s.Convention != abi.ThisCall) || s.Result != abi.Struct {
 		return 0, false
 	}
 	i, err := t.recordIndex(s.ReturnType())
 	return i, err == nil && t.records[i].IndirectResult
 }
 
-// GCC puts a fastcall sret pointer in ECX; MSVC/Clang leave it on the stack.
+// GCC puts a fastcall/thiscall sret pointer in ECX; Clang leaves it on the
+// stack. For thiscall the receiver is the only register argument.
 // Put register arguments first, then a one-pointer aggregate for the hidden
 // stack result, then the original stack arguments. GCC aggregates consume
 // register slots even though they are passed on the stack.
-func (t *cgoTypes) fastResultOrder(s abi.Signature) []int {
+func (t *cgoTypes) registerResultOrder(s abi.Signature) []int {
+	if s.Convention == abi.ThisCall {
+		order := []int{0, -1}
+		for i := 1; i < len(s.Args); i++ {
+			order = append(order, i)
+		}
+		return order
+	}
 	var registers, stack []int
 	for i := range s.Args {
 		kind := s.Args[i]
@@ -179,19 +187,19 @@ func (t *cgoTypes) fastResultOrder(s abi.Signature) []int {
 }
 
 func (t *cgoTypes) writeNativePrototype(output *bytes.Buffer, s abi.Signature, name, result, attribute string, parameters []string) {
-	if i, ok := t.fastResult(s); ok {
+	if i, ok := t.registerResult(s); ok {
 		var physical []string
-		for _, position := range t.fastResultOrder(s) {
+		for _, position := range t.registerResultOrder(s) {
 			kind := t.cRecordName(i) + "_result_pointer"
 			if position >= 0 {
 				kind = parameters[position]
 			}
 			physical = append(physical, kind)
 		}
-		fmt.Fprintf(output, "#if %s\ntypedef void (%s*%s)(%s);\n#else\n", gccFastResult, attribute, name, strings.Join(physical, ","))
+		fmt.Fprintf(output, "#if %s\ntypedef void (%s*%s)(%s);\n#else\n", gccRegisterResult, attribute, name, strings.Join(physical, ","))
 	}
 	fmt.Fprintf(output, "typedef %s (%s*%s)(%s);\n", result, attribute, name, strings.Join(parameters, ","))
-	if _, ok := t.fastResult(s); ok {
+	if _, ok := t.registerResult(s); ok {
 		fmt.Fprint(output, "#endif\n")
 	}
 }
