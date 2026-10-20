@@ -25,10 +25,10 @@ to `compiler/abibridge.Build`. It checks both revisions and local changes, then
 uses the selected Xcode tools. It does not fetch sources or select another SDK.
 Keep tool and SDK selection consistent when supplying custom environment flags.
 
-The builder creates a private tools-5.9 SwiftPM manifest for the C++20 native core
-and libffi only. It does not build ABIBridge's Swift runtime/UI products or edit
-upstream manifests. Individual objects are archived before linking so unrelated
-runtime-hook objects do not become facade roots. Four private C exports implement
+The builder creates a private tools-5.9 SwiftPM manifest for the C++20 native
+invocation sources and libffi only. It does not compile SDK-specific pointer
+hooks or build ABIBridge's Swift runtime/UI products, and leaves upstream
+manifests unchanged. Individual objects are archived before linking. Four private C exports implement
 version checking, interface creation, invocation and release. Upstream APIs and
 libffi symbols are hidden from this facade's exports.
 

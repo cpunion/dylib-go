@@ -103,7 +103,7 @@ func objects(root string) ([]string, error) {
 	return paths, err
 }
 
-// Build compiles only the upstream native core and its libffi dependency. The
+// Build compiles upstream native invocation code and its libffi dependency. The
 // private SwiftPM manifest uses tools 5.9 because no upstream Swift runtime or
 // UI code is needed. Upstream source and dependency manifests remain unchanged.
 // The facade supports macOS 15.4+; deployment flags do not prove older runtimes.
@@ -163,12 +163,15 @@ func Build(ctx context.Context, options Options) (_ *Library, err error) {
 	if err = os.Symlink(filepath.Join(source, "Sources", "ABIBridgeCore"), filepath.Join(dir, "Sources")); err != nil {
 		return nil, err
 	}
+	// Hooking and image-management sources use newer SDK fields and are outside
+	// this facade's API. Compile only its native invocation dependencies.
 	manifest := `// swift-tools-version: 5.9
 import PackageDescription
 let package = Package(name: "DylibBridgeCore", platforms: [.macOS("15.4")], dependencies: [
     .package(name: "ZDLibffi", path: ` + strconv.Quote(ffi) + `)
 ], targets: [.target(name: "ABIBridgeCore", dependencies: [.product(name: "ZDLibffi", package: "ZDLibffi")],
-    path: "Sources", exclude: ["SwiftDemangling"], publicHeadersPath: "include",
+    path: "Sources", exclude: ["SwiftDemangling"],
+    sources: ["Invocation.cpp", "NativeFailure.cpp", "SwiftInvocation.cpp", "SwiftCall.S"], publicHeadersPath: "include",
     cxxSettings: [.headerSearchPath("include"), .headerSearchPath("SwiftDemangling/Support"), .headerSearchPath("SwiftDemangling/Upstream/include")])], cxxLanguageStandard: .cxx20)
 `
 	if err = os.WriteFile(filepath.Join(dir, "Package.swift"), []byte(manifest), 0600); err != nil {
