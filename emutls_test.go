@@ -56,11 +56,7 @@ func TestEmulatedTLSAcrossTargets(t *testing.T) {
 				t.Fatal(err)
 			}
 			_, err = checkEmulatedTLS([]*object{f.obj}, true)
-			if strings.HasSuffix(target, "-msvc") {
-				if err == nil || !strings.Contains(err.Error(), "thread destructors") {
-					t.Fatal("MSVC dynamic TLS runtime accepted", err)
-				}
-			} else if err != nil {
+			if err != nil {
 				t.Fatal("image-owned thread destructor registration rejected", err)
 			}
 		})

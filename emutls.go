@@ -16,7 +16,7 @@ const emulatedTLSTLVExit = "_tlv_atexit"
 var emulatedTLSThreadHelpers = [...]string{"__cxa_thread_atexit", "__cxa_thread_atexit_impl", emulatedTLSTLVExit}
 
 func emulatedTLSReserved(name string) bool {
-	return name == emulatedTLSHelper || strings.HasPrefix(name, emulatedTLSPrefix) || emulatedTLSThreadHelper(name) || emulatedTLSUnsupportedRuntime(name)
+	return name == emulatedTLSHelper || strings.HasPrefix(name, emulatedTLSPrefix) || emulatedTLSThreadHelper(name) || emulatedTLSMSVCHelper(name) || emulatedTLSUnsupportedRuntime(name)
 }
 
 func emulatedTLSThreadHelper(name string) bool {
@@ -30,7 +30,7 @@ func emulatedTLSThreadHelper(name string) bool {
 
 func emulatedTLSUnsupportedRuntime(name string) bool {
 	switch name {
-	case "__tlv_atexit", "_tlregdtor", "__tlregdtor", "__dyn_tls_on_demand_init":
+	case "__tlv_atexit", "_tlregdtor":
 		return true
 	}
 	return false
@@ -39,6 +39,14 @@ func emulatedTLSUnsupportedRuntime(name string) bool {
 func checkEmulatedTLS(objects []*object, enabled bool) (bool, error) {
 	needed := false
 	for _, o := range objects {
+		for _, sec := range o.sections {
+			if sec != nil && sec.lifecycle == lifecycleThreadInit {
+				needed = true
+				if !enabled {
+					return false, fmt.Errorf("%s: emulated TLS requires Options.EmulatedTLS", o.info.Name)
+				}
+			}
+		}
 		for _, s := range o.symbols {
 			name := strings.TrimPrefix(s.name, "__imp_")
 			if s.section == -3 || !emulatedTLSReserved(name) {
@@ -48,22 +56,23 @@ func checkEmulatedTLS(objects []*object, enabled bool) (bool, error) {
 			if !enabled {
 				return false, fmt.Errorf("%s: emulated TLS requires Options.EmulatedTLS", o.info.Name)
 			}
-			if s.imported != nil || name == emulatedTLSHelper && s.section != 0 {
+			if s.imported != nil || s.name != name && strings.HasPrefix(name, emulatedTLSPrefix) || name == emulatedTLSHelper && (s.section != 0 || s.alias != nil) {
 				return false, fmt.Errorf("%s: emulated TLS requires image-owned descriptors and the host helper", o.info.Name)
 			}
 		}
 	}
 	if needed {
+		msvc := usesMSVCEmulatedTLS(objects)
 		for _, o := range objects {
 			for _, s := range o.symbols {
 				name := strings.TrimPrefix(s.name, "__imp_")
 				if s.section == -3 {
 					continue
 				}
-				if emulatedTLSUnsupportedRuntime(name) || name == emulatedTLSTLVExit && o.info.OS != "darwin" {
+				if emulatedTLSUnsupportedRuntime(name) || name == emulatedTLSTLVExit && o.info.OS != "darwin" || emulatedTLSMSVCHelper(name) && o.info.OS != "windows" {
 					return false, fmt.Errorf("%s: emulated TLS thread destructors/dynamic runtime initialization are unsupported", o.info.Name)
 				}
-				if emulatedTLSThreadHelper(name) && (s.section != 0 || s.imported != nil) {
+				if (emulatedTLSThreadHelper(name) || emulatedTLSMSVCHelper(name) || msvc && name == emulatedTLSMSVCGuard && s.global) && (s.section != 0 || s.imported != nil || s.alias != nil) {
 					return false, fmt.Errorf("%s: emulated TLS thread destructors require the image-owned host helper", o.info.Name)
 				}
 			}
@@ -107,6 +116,9 @@ func (im *image) emulatedTLSDescriptors() ([]uintptr, error) {
 			if s.section == -3 || !strings.HasPrefix(s.name, emulatedTLSPrefix) {
 				continue
 			}
+			if _, private := im.common[emulatedTLSMSVCGuard]; private && s.name == emulatedTLSMSVCGuard && s.section == 0 {
+				continue // Validated private image storage, not an input definition.
+			}
 			d, err := im.resolveDefinition(o, i)
 			if err != nil {
 				return nil, err
@@ -140,6 +152,16 @@ func (im *image) emulatedTLSDescriptors() ([]uintptr, error) {
 			seen[address] = true
 			descriptors = append(descriptors, address)
 		}
+	}
+	if guard, ok := im.common[emulatedTLSMSVCGuard]; ok {
+		if guard.offset > uint64(len(im.mem)) || guard.size != 4*word || guard.size > uint64(len(im.mem))-guard.offset || (uint64(im.base)+guard.offset)%word != 0 ||
+			read(guard.offset) != 1 || read(guard.offset+word) != 1 || read(guard.offset+2*word) != 0 || read(guard.offset+3*word) != 0 {
+			return nil, fmt.Errorf("invalid image-owned MSVC emulated TLS guard")
+		}
+		if len(descriptors) >= 4096 || budget >= maxImage {
+			return nil, fmt.Errorf("emulated TLS per-thread allocation budget exceeded")
+		}
+		descriptors = append(descriptors, im.base+uintptr(guard.offset))
 	}
 	sort.Slice(descriptors, func(i, j int) bool { return descriptors[i] < descriptors[j] })
 	for i := 1; i < len(descriptors); i++ {
@@ -186,7 +208,7 @@ func (im *image) prepareEmulatedTLSHelpers() error {
 	for _, o := range im.objects {
 		for _, s := range o.symbols {
 			name := strings.TrimPrefix(s.name, "__imp_")
-			if s.section == 0 && emulatedTLSThreadHelper(name) {
+			if s.section == 0 && (emulatedTLSThreadHelper(name) || emulatedTLSMSVCHelper(name)) {
 				needed[name] = true
 			}
 		}
@@ -198,7 +220,7 @@ func (im *image) prepareEmulatedTLSHelpers() error {
 			}
 		}
 	}
-	return nil
+	return im.prepareMSVCEmulatedTLSHelpers(needed)
 }
 
 func (im *image) drainThreadDestructors() (bool, error) {

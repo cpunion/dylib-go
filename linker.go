@@ -24,7 +24,7 @@ var ErrLinked = errors.New("dylib: session is already linked; create a new sessi
 var ErrInitialization = errors.New("dylib: C initialization failed; close the session and create a new one")
 
 // ErrPendingThreadDestructors means retired code is retained until other native
-// threads finish their TLS destructors. Join those threads and retry Close.
+// threads finish TLS initialization or destructors. Join them and retry Close.
 var ErrPendingThreadDestructors = errors.New("dylib: native thread destructors remain pending")
 
 // Options controls resolution. ProcessSymbols exposes exported host symbols
@@ -33,8 +33,8 @@ type Options struct {
 	ProcessSymbols bool
 	// EmulatedTLS enables Clang -femulated-tls for raw objects and archives.
 	// Values belong to native OS threads, not Go goroutines. Supports constant
-	// values and the documented C++ thread-exit registrations. Native TLS models
-	// and MSVC dynamic TLS initialization remain unsupported.
+	// values, documented C++ thread-exit registrations and Clang MSVC emulated
+	// TLS initialization. Native TLS sections and relocation models are unsupported.
 	EmulatedTLS bool
 	// RegisterUnwind registers supported raw-image runtime function tables.
 	// Supports Windows/macOS amd64/arm64 and Linux amd64/arm64/386 C frames.
@@ -433,7 +433,7 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 				}
 			}
 			for _, n := range wanted {
-				if s.opts.EmulatedTLS && (n == emulatedTLSHelper || emulatedTLSThreadHelper(n)) {
+				if s.opts.EmulatedTLS && (n == emulatedTLSHelper || emulatedTLSThreadHelper(n) || emulatedTLSMSVCHelper(n) || n == emulatedTLSMSVCGuard) {
 					continue
 				}
 				if _, ok := defs[n]; ok {
@@ -693,6 +693,7 @@ type image struct {
 	emulatedTLS                            *native.EmulatedTLS
 	hooks                                  map[string]uintptr
 	initializers, finalizers               []uintptr
+	threadInitializers                     []uintptr
 	cInitializers                          []cInitializer
 	unwind                                 *runtimeFunctions
 	unwindProxyStart, unwindProxySize      uint64
@@ -769,6 +770,9 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	// Merge tentative/common definitions by maximum size and alignment.
 	type commonSize struct{ size, align uint64 }
 	commons := map[string]commonSize{}
+	if tlsNeeded && usesMSVCEmulatedTLS(objs) {
+		commons[emulatedTLSMSVCGuard] = commonSize{4 * im.pointerSize, im.pointerSize}
+	}
 	for _, o := range objs {
 		for _, s := range o.symbols {
 			if s.section != -2 {
@@ -880,6 +884,9 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	if e := im.prepareLifecycle(); e != nil {
 		return nil, e
 	}
+	if err := im.prepareMSVCThreadInitializers(); err != nil {
+		return nil, err
+	}
 	native.ClearCache(b)
 	// Each section owns whole pages; never grant WRITE and EXEC together.
 	for _, o := range objs {
@@ -952,6 +959,7 @@ func (im *image) close() error {
 	}
 	im.mem = nil
 	im.initializers, im.finalizers = nil, nil
+	im.threadInitializers = nil
 	im.cInitializers = nil
 	return nil
 }
