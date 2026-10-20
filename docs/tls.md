@@ -6,7 +6,8 @@ native TLS accesses with ordinary descriptor references and calls to
 `__emutls_get_address`; it does not require new TLS relocation instructions.
 The parser, archive selection, descriptor validation and relocation remain in
 Go. A small native helper supplies allocation and thread-exit cleanup for both
-Go and llgo hosts, without Go callbacks or private runtime imports.
+Go and llgo hosts without private runtime imports. Cleanup itself needs no Go
+callback; native destructor bodies can use retained `abi.NewCallback` entries.
 
 | Input / runtime feature | Support |
 | --- | --- |
@@ -14,10 +15,24 @@ Go and llgo hosts, without Go callbacks or private runtime imports.
 | Initialized / zero-filled variables | Independent template copy / zeroed storage for each native thread |
 | Local / shared external variables | Retained image descriptors; ordinary symbol resolution and lazy archive dependencies |
 | Alignment | Positive power of two; allocation budget includes alignment padding |
-| C++ constant-initialized trivial TLS | Same descriptor ABI; language initialization/destruction runtimes are not supplied |
+| Clang C++ TLS | Constant values, nonthrowing constructors and the thread-exit registrations below |
 | Native TLS sections, relocation models and OS TLS registration | Unsupported for raw objects; complete shared libraries use the OS loader |
-| C++ thread destructors / external emutls runtimes | Unsupported; recognized registration references and runtime overrides are rejected |
+| External emutls or thread-registration runtime overrides | Rejected; callbacks and descriptors must use the helper retained by this image |
 | Windows fiber switching | Not qualified; storage and cleanup use Windows FLS |
+
+| Object ABI / platform | Architectures | Thread-exit interface |
+| --- | --- | --- |
+| ELF / Linux | amd64, arm64, 386 | `__cxa_thread_atexit`, `__cxa_thread_atexit_impl` |
+| Mach-O / macOS | amd64, arm64 | Clang `_tlv_atexit`; explicit C++ ABI registration also uses the same image owner |
+| COFF / Windows GNU ABI | amd64, arm64, 386 | Clang `__cxa_thread_atexit` |
+| COFF / Windows MSVC ABI | amd64, arm64, 386 | Dynamic TLS initialization and `__tlregdtor` remain unsupported; trivial constant emulated TLS remains supported |
+
+macOS C++ destructor execution is qualified with LLVM 22. Older producers can
+mix native TLS accesses into `-O0 -femulated-tls` output: Apple Clang 17 and
+upstream LLVM 18 can leave an undefined `__tls_guard` and native TLV relocations
+alongside emulated descriptors. Such objects cannot use this runtime; compile
+them with a qualified producer. The native tests use `DYLIB_LLVM_CLANG` on macOS
+when provided, leaving the other C fixtures on their original compiler.
 
 Descriptors contain four native words: size, alignment, a mutable runtime word,
 and a template pointer. Before publishing code or running constructors, the
@@ -41,30 +56,52 @@ Initializers and finalizers execute on their invoking threads; callers requiring
 one thread across initialization, use and close must pin that whole sequence.
 This API does not turn native TLS into goroutine-local storage.
 
-The helper uses one host-lifetime pthread key or FLS slot. Each thread holds
-native bookkeeping; thread exit releases its values and removes them from their
-image owners. Session close waits for code calls/leases, executes native exit
-callbacks and finalizers while TLS remains available, then releases all values
-for that image, including values belonging to still-live threads. Thread state
-then retains no image descriptor, template or code pointer. Its small empty
-bookkeeping record survives until thread exit and is reused by later images;
-repeated load/close does not accumulate retired value records. Native thread
-exit and owner retirement share a native lock. No pthread/FLS destructor invokes
-unmapped object code. Native allocation failure during access aborts, as in the
-compiler runtime; registration failures return a link error before publication.
+The helper uses one host-lifetime pthread key or FLS slot. Thread exit drains
+native callbacks in LIFO order before releasing values. A callback is detached
+before invocation and runs outside the registry lock, so callbacks can read TLS
+and register more callbacks. The key continues to identify the same storage
+during this dispatch. Each native thread permits up to 4096 queued callbacks
+across images. Native registration returns `-1` for null functions, allocation
+failure or that limit. Registration hooks always require `EmulatedTLS`, including
+manual calls with no compiler descriptors; they never select a process-global
+thread runtime. The address helper still requires validated image descriptors.
+
+Session close retires calls and waits for code leases, then drains this image's
+callbacks on the invoking native thread before global finalizers. Cleanup remains
+on one native thread across its native calls. Global exit hooks and thread
+callbacks can register each other; cleanup drains new registrations before
+releasing either registry. If another thread still has queued or executing
+callbacks, `Close` returns `ErrPendingThreadDestructors`, retains the image,
+unwind tables, TLS values and providers, and rejects new session calls. Join
+those threads and retry `Close`; completed global finalizers do not repeat.
+Keep callback/value/code leases needed by destructor bodies until their cleanup
+has finished. Native exceptions must not escape these callbacks.
+
+After callbacks finish, close releases all values for the image, including
+trivial values on still-live threads. Thread state retains no retired descriptor,
+template or code pointer. Its small empty record survives until thread exit and
+is reused by later images. Native thread exit and owner retirement share a lock;
+pending and executing callbacks prevent their owner from being freed. Native
+allocation failure during TLS access aborts, as in the compiler runtime; owner
+creation failures return a link error before publication.
 
 A TLS pointer borrowed by native code requires a code lease for as long as it or
 the object can be used. Stop/unregister/join native users before releasing that
 lease. `Close` can reclaim values after native code has stopped even if an OS
 thread remains alive; it cannot make a stale borrowed TLS pointer valid.
 
-`TestEmulatedTLSAcrossTargets` compiles all eight targets and checks actual C++
-thread-destructor registration refusal. Native tests cover O0/O2 object/archive
+`TestEmulatedTLSAcrossTargets` compiles all eight targets and Windows GNU variants,
+and checks actual MSVC dynamic-runtime refusal. Native tests cover O0/O2 object/archive
 calls, shared external descriptors, constant/zero values, 64-byte alignment,
 dependency retry, repeated load/close, C-created threads, thread-exit reclamation,
 constructor/exit-hook/finalizer access, retained code leases and owner retirement
-before or concurrently with native thread exit. Pure Go tests validate 32/64-bit
-descriptor boundaries and budgets without executing foreign code.
+before or concurrently with native thread exit. C++ cases include nonthrowing
+construction, reverse destruction order, recursive registration, reentrant TLS
+reads, per-image isolation, cleanup retry during queued/executing callbacks,
+manual registrations and the callback budget. The optional ABI suite calls
+captured Go handlers during ordinary foreign-thread work and again during
+thread exit, exercising runtime reentry after native thread cleanup has begun.
+Pure Go tests validate 32/64-bit descriptors and metadata without executing code.
 
 ABI references: [Clang emulated TLS option](https://clang.llvm.org/docs/UsersManual.html#cmdoption-femulated-tls)
 and [LLVM 22 descriptor/runtime ABI](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/compiler-rt/lib/builtins/emutls.c).

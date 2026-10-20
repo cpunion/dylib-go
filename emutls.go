@@ -11,9 +11,29 @@ import (
 
 const emulatedTLSHelper = "__emutls_get_address"
 const emulatedTLSPrefix = "__emutls_v."
+const emulatedTLSTLVExit = "_tlv_atexit"
+
+var emulatedTLSThreadHelpers = [...]string{"__cxa_thread_atexit", "__cxa_thread_atexit_impl", emulatedTLSTLVExit}
 
 func emulatedTLSReserved(name string) bool {
-	return name == emulatedTLSHelper || strings.HasPrefix(name, emulatedTLSPrefix)
+	return name == emulatedTLSHelper || strings.HasPrefix(name, emulatedTLSPrefix) || emulatedTLSThreadHelper(name) || emulatedTLSUnsupportedRuntime(name)
+}
+
+func emulatedTLSThreadHelper(name string) bool {
+	for _, helper := range emulatedTLSThreadHelpers {
+		if name == helper {
+			return true
+		}
+	}
+	return false
+}
+
+func emulatedTLSUnsupportedRuntime(name string) bool {
+	switch name {
+	case "__tlv_atexit", "_tlregdtor", "__tlregdtor", "__dyn_tls_on_demand_init":
+		return true
+	}
+	return false
 }
 
 func checkEmulatedTLS(objects []*object, enabled bool) (bool, error) {
@@ -36,9 +56,15 @@ func checkEmulatedTLS(objects []*object, enabled bool) (bool, error) {
 	if needed {
 		for _, o := range objects {
 			for _, s := range o.symbols {
-				switch strings.TrimPrefix(s.name, "__imp_") {
-				case "__cxa_thread_atexit", "__cxa_thread_atexit_impl", "_tlv_atexit", "__tlv_atexit", "_tlregdtor", "__tlregdtor", "__dyn_tls_on_demand_init":
+				name := strings.TrimPrefix(s.name, "__imp_")
+				if s.section == -3 {
+					continue
+				}
+				if emulatedTLSUnsupportedRuntime(name) || name == emulatedTLSTLVExit && o.info.OS != "darwin" {
 					return false, fmt.Errorf("%s: emulated TLS thread destructors/dynamic runtime initialization are unsupported", o.info.Name)
+				}
+				if emulatedTLSThreadHelper(name) && (s.section != 0 || s.imported != nil) {
+					return false, fmt.Errorf("%s: emulated TLS thread destructors require the image-owned host helper", o.info.Name)
 				}
 			}
 		}
@@ -122,7 +148,13 @@ func (im *image) emulatedTLSDescriptors() ([]uintptr, error) {
 		}
 	}
 	if len(descriptors) == 0 {
-		return nil, fmt.Errorf("emulated TLS helper requires an image-owned descriptor")
+		for _, o := range im.objects {
+			for _, s := range o.symbols {
+				if s.section != -3 && strings.TrimPrefix(s.name, "__imp_") == emulatedTLSHelper {
+					return nil, fmt.Errorf("emulated TLS address helper requires an image-owned descriptor")
+				}
+			}
+		}
 	}
 	return descriptors, nil
 }
@@ -132,14 +164,47 @@ func (im *image) prepareEmulatedTLS() error {
 	if err != nil {
 		return err
 	}
-	im.emulatedTLS, err = native.NewEmulatedTLS()
-	if err != nil {
-		return err
-	}
 	for _, address := range descriptors {
 		if err := im.emulatedTLS.Add(address); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (im *image) prepareEmulatedTLSHelpers() error {
+	var err error
+	im.emulatedTLS, err = native.NewEmulatedTLS()
+	if err != nil {
+		return err
+	}
+	if im.hooks == nil {
+		im.hooks = make(map[string]uintptr)
+	}
+	im.hooks[emulatedTLSHelper] = native.EmulatedTLSHelper()
+	needed := make(map[string]bool)
+	for _, o := range im.objects {
+		for _, s := range o.symbols {
+			name := strings.TrimPrefix(s.name, "__imp_")
+			if s.section == 0 && emulatedTLSThreadHelper(name) {
+				needed[name] = true
+			}
+		}
+	}
+	for _, name := range emulatedTLSThreadHelpers {
+		if needed[name] {
+			if err := im.bindNativeHelper(name, im.emulatedTLS.Context(), native.EmulatedTLSThreadExitHelper(), 3); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (im *image) drainThreadDestructors() (bool, error) {
+	pending, drained := im.emulatedTLS.DrainThreadDestructors()
+	if pending != 0 {
+		return drained, fmt.Errorf("%w: %d pending or active callbacks", ErrPendingThreadDestructors, pending)
+	}
+	return drained, nil
 }

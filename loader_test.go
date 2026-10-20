@@ -52,6 +52,10 @@ func compiler() string {
 }
 func compile(t testing.TB, src, out string, flags ...string) string {
 	t.Helper()
+	return compileWith(t, compiler(), src, out, flags...)
+}
+func compileWith(t testing.TB, cc, src, out string, flags ...string) string {
+	t.Helper()
 	args := []string{"-O0", "-fno-stack-protector", "-c", src, "-o", out}
 	if runtime.GOOS == "darwin" && runtime.GOARCH == "amd64" {
 		args = append(args, "--target=x86_64-apple-macosx11")
@@ -78,7 +82,7 @@ func compile(t testing.TB, src, out string, flags ...string) string {
 		args = append(args, "-fPIC")
 	}
 	args = append(args, flags...)
-	command(t, compiler(), args...)
+	command(t, cc, args...)
 	return out
 }
 func needNative(t testing.TB) {
