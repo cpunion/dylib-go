@@ -232,35 +232,38 @@ func TestNativeUniversalMachOObjectsAndArchives(t *testing.T) {
 	slices := universalObjects(t)
 	for _, large := range []bool{false, true} {
 		for _, archive := range []bool{false, true} {
-			input := append([]universalTestSlice(nil), slices...)
-			if archive {
-				for i := range input {
-					input[i].data = append([]byte("!<arch>\n"), archiveMemberBytes("add.o/", input[i].data)...)
+			t.Run(fmt.Sprintf("fat64=%t/archive=%t", large, archive), func(t *testing.T) {
+				dir := t.TempDir()
+				path := filepath.Join(dir, "universal")
+				var paths []string
+				for i, slice := range slices {
+					p := filepath.Join(dir, fmt.Sprintf("slice-%d.o", i))
+					if err := os.WriteFile(p, slice.data, 0600); err != nil {
+						t.Fatal(err)
+					}
+					if archive {
+						// Use tool-generated indexed Darwin archives with native lipo.
+						// Parser tests above retain synthetic GNU member coverage.
+						library := filepath.Join(dir, fmt.Sprintf("slice-%d.a", i))
+						command(t, "xcrun", "ar", "rcs", library, p)
+						p = library
+					}
+					paths = append(paths, p)
 				}
-			}
-			dir := t.TempDir()
-			path := filepath.Join(dir, "universal")
-			var paths []string
-			for i, slice := range input {
-				p := filepath.Join(dir, fmt.Sprintf("slice-%d", i))
-				if err := os.WriteFile(p, slice.data, 0600); err != nil {
-					t.Fatal(err)
+				args := []string{"-create", paths[0], paths[1], "-output", path}
+				if large {
+					args = append(args, "-fat64")
 				}
-				paths = append(paths, p)
-			}
-			args := []string{"-create", paths[0], paths[1], "-output", path}
-			if large {
-				args = append(args, "-fat64")
-			}
-			command(t, "lipo", args...)
-			s := New(Options{})
-			load(t, s, path)
-			want := int32(43)
-			if runtime.GOARCH == "arm64" {
-				want = 44
-			}
-			call(t, s, "add", 20, 22, want)
-			s.Close()
+				command(t, "lipo", args...)
+				s := New(Options{})
+				load(t, s, path)
+				want := int32(43)
+				if runtime.GOARCH == "arm64" {
+					want = 44
+				}
+				call(t, s, "add", 20, 22, want)
+				s.Close()
+			})
 		}
 	}
 }
