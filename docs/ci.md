@@ -176,11 +176,9 @@ and [ARM64 HFA stack layout](https://github.com/xgo-dev/llgo/pull/2825), as well
 [indirect C variadic arguments](https://github.com/xgo-dev/llgo/pull/2766), the
 [C ABI fix](https://github.com/xgo-dev/llgo/pull/2776), and the
 [native function-pointer debug fix](https://github.com/xgo-dev/llgo/pull/2783).
-The macOS ARM64 llgo job refreshes Homebrew metadata and installs both `lld@22`
-and `lld@23` with `--skip-link`. The compiler backend remains LLVM 22, as selected
-by `setup-llgo`; the existing native ARM64 linker discovery uses
-`opt/lld@23/bin/ld64.lld` (23.x >= 23.1.3) for SDK 27 linking. No `LDFLAGS`
-override or unmerged llgo linker change is required.
+The macOS ARM64 llgo job installs Homebrew's `lld` (23.x >= 23.1.3) and sets
+`LDFLAGS=--ld-path=<lld prefix>/bin/ld64.lld` for SDK 27 native linking.
+The compiler backend remains LLVM 22, as selected by `setup-llgo`.
 `TestNativeDirectAggregateRegisters` executes caller-defined `//llgo:cdecl`
 adapters through `Symbol.WithAddress` on all six native llgo hosts, without
 libffi. `TestNativeDynamicAggregateRegisters` independently exercises libffi
