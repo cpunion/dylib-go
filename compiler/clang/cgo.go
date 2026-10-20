@@ -15,7 +15,8 @@ import (
 // addresses are supported. Attributed values cross the Go boundary as
 // ordinary transport records; C constructs and calls the native type. WithTail
 // specifies a concrete variadic call shape; C performs default promotions.
-// Windows 386 also supports fixed stdcall/fastcall/thiscall prototypes. Fixed vectorcall
+// AMD64 supports fixed ms_abi/sysv_abi prototypes. Windows 386 also supports
+// fixed stdcall/fastcall/thiscall prototypes. Fixed vectorcall
 // prototypes on Windows amd64/386 require a supporting C compiler. Struct pointees
 // use opaque native addresses; no Go struct pointer conversion is inferred.
 // The caller owns the Session, native storage and function-pointer lifetimes.
@@ -145,6 +146,15 @@ func (h *Header) cgoAttribute(s abi.Signature) (string, error) {
 		}
 		return "", nil
 	}
+	if h.Target.Arch == "amd64" && !s.Variadic {
+		if s.Convention == abi.Win64 {
+			return "__attribute__((ms_abi)) ", nil
+		}
+		if s.Convention == abi.SysV64 {
+			return "__attribute__((sysv_abi)) ", nil
+		}
+	}
+
 	if s.Convention == abi.VectorCall && h.Target.OS == "windows" && (h.Target.Arch == "amd64" || h.Target.Arch == "386") && !s.Variadic {
 		if h.Target.Arch == "386" && h.Target.msLayout() {
 			if s.Result == abi.Struct {
@@ -168,7 +178,7 @@ func (h *Header) cgoAttribute(s abi.Signature) (string, error) {
 			return "__attribute__((thiscall)) ", nil
 		}
 	}
-	return "", fmt.Errorf("cgo bridges require cdecl, fixed Windows 386 stdcall/fastcall/thiscall or Windows amd64/386 vectorcall prototypes")
+	return "", fmt.Errorf("cgo bridges require cdecl, fixed amd64 ms_abi/sysv_abi, Windows 386 stdcall/fastcall/thiscall or Windows amd64/386 vectorcall prototypes")
 }
 
 func (h *Header) cgoPrototype(s abi.Signature, mapper *cgoTypes) (string, string, error) {

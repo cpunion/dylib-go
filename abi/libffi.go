@@ -22,6 +22,12 @@ static int dylib_abi(uint8_t convention) {
     if (convention == 3) return FFI_FASTCALL;
     if (convention == 5) return FFI_THISCALL;
 #endif
+#if defined(__x86_64__) || defined(_M_X64)
+    if (convention == 6) return FFI_WIN64;
+#if !defined(_WIN32)
+    if (convention == 7) return FFI_UNIX64;
+#endif
+#endif
     return -1;
 }
 static dylib_call_plan *dylib_plan_new(unsigned n) {

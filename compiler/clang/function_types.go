@@ -135,6 +135,14 @@ func callingConvention(cc string, target Target) (abi.Convention, error) {
 	switch cc {
 	case "cdecl":
 		convention = abi.CDecl
+	case "ms_abi", "sysv_abi":
+		if target.Arch != "amd64" {
+			return 0, fmt.Errorf("%s requires amd64", cc)
+		}
+		if cc == "ms_abi" {
+			return abi.Win64, nil
+		}
+		return abi.SysV64, nil
 	case "stdcall":
 		convention = abi.StdCall
 	case "fastcall":

@@ -40,6 +40,8 @@ const (
 	FastCall   // Windows 386 only.
 	VectorCall // Fixed Windows amd64/386 calls through compiled C bridges only.
 	ThisCall   // Fixed Windows 386 calls; Args[0] is the explicit receiver pointer.
+	Win64      // Fixed Microsoft x64 calls on amd64.
+	SysV64     // Fixed System V AMD64 calls; Windows requires compiled C bridges.
 )
 
 // Signature describes one concrete call shape, including a variadic tail when
@@ -58,7 +60,7 @@ type Signature struct {
 }
 
 func (s Signature) Validate() error {
-	if s.Convention > ThisCall {
+	if s.Convention > SysV64 {
 		return fmt.Errorf("invalid calling convention %d", s.Convention)
 	}
 	if s.Convention == ThisCall && (len(s.Args) == 0 || s.Args[0] != Pointer) {

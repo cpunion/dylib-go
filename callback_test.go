@@ -21,23 +21,23 @@ func callbackLibrary(t *testing.T, input string) *Session {
 }
 
 // All dynamic ABI fixtures run as standalone objects, archives, and OS libraries.
-func nativeABILibrary(t testing.TB, source, input string) *Session {
+func nativeABILibrary(t testing.TB, source, input string, flags ...string) *Session {
 	t.Helper()
 	if !abi.Available() {
 		t.Skip("requires libffi")
 	}
-	return nativeInputSession(t, source, input)
+	return nativeInputSession(t, source, input, flags...)
 }
 
 // Native ownership tests can use static adapters without the optional ABI backend.
-func nativeInputSession(t testing.TB, source, input string) *Session {
+func nativeInputSession(t testing.TB, source, input string, flags ...string) *Session {
 	t.Helper()
 	needNative(t)
 	dir := t.TempDir()
 	var path string
 	switch input {
 	case "object", "archive":
-		path = compile(t, source, filepath.Join(dir, "native.o"))
+		path = compile(t, source, filepath.Join(dir, "native.o"), flags...)
 		if input == "archive" {
 			archive := filepath.Join(dir, "native.a")
 			command(t, "ar", "rcs", archive, path)
@@ -59,7 +59,7 @@ func nativeInputSession(t testing.TB, source, input string) *Session {
 		if runtime.GOOS == "darwin" && runtime.GOARCH == "amd64" {
 			args = append(args, "--target=x86_64-apple-macosx11")
 		}
-		command(t, compiler(), args...)
+		command(t, compiler(), append(args, flags...)...)
 	}
 	// Aggregate copies/initializers may call the host's memcpy or memset.
 	s := New(Options{ProcessSymbols: runtime.GOOS != "windows"})
