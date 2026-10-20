@@ -62,6 +62,7 @@ This example serializes all native object operations and uses synchronous C
 callbacks. It has no UI/main-thread requirement. An adapter for a UI API must
 separately enforce its thread contract. Native async tasks, Swift closures,
 generics, thrown exceptions, SwiftUI values, arm64e authentication and non-macOS
-Apple devices are outside this qualification. An ABIBridge-backed implementation
-could expose a similar C boundary, but still needs its own version, runtime,
-ownership and device tests; these fixtures do not execute ABIBridge.
+Apple devices are outside this qualification. The separate optional
+[ABIBridge adapter](abibridge.md) executes explicit trivial thin Swift calls;
+these opaque-object fixtures do not execute ABIBridge. Broader managed values,
+runtime ownership and devices still need their own adapters and tests.

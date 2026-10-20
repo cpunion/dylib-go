@@ -768,6 +768,52 @@ selects declarations and generates a callable C facade. ABI signatures, ownershi
 and export names remain explicit; discovery does not make unsupported C++ types
 directly callable.
 
+## Native Swift calls with ABIBridge
+
+The optional [ABIBridge adapter](docs/abibridge.md) calls synchronous thin Swift functions on macOS amd64/arm64 through a separately built native facade. Go and llgo support fixed-width scalars, native pointers, explicitly described trivial Swift storage and formally indirect values without the Go `libffi` tag. Reference-bearing values, generics, async/throws and device ABIs remain outside this adapter.
+
+This [executed example](examples/swiftcall/call.go) receives a prepared runtime and the provider's symbol. Load Swift providers with `Options{KeepLibraries: true}`; native signatures require the actual Swift layout and ownership contract.
+
+<!-- embedme examples/swiftcall/call.go -->
+
+```go
+// Package swiftcall demonstrates an explicit native Swift signature.
+package swiftcall
+
+import (
+	"encoding/binary"
+	"fmt"
+
+	dylib "github.com/cpunion/dylib-go"
+	"github.com/cpunion/dylib-go/abibridge"
+)
+
+// Add calls a thin Swift `func add(_ a: Int32, _ b: Int32) -> Int32`.
+// The caller supplies a loaded ABIBridge facade and the leased Swift symbol.
+func Add(runtime *abibridge.Runtime, symbol *dylib.Symbol, a, b int32) (int32, error) {
+	call, err := runtime.Prepare(abibridge.Signature{
+		Result: abibridge.Type{Kind: abibridge.Int32},
+		Args:   []abibridge.Type{{Kind: abibridge.Int32}, {Kind: abibridge.Int32}},
+	})
+	if err != nil {
+		return 0, err
+	}
+	defer call.Close()
+	left, right := make([]byte, 4), make([]byte, 4)
+	binary.LittleEndian.PutUint32(left, uint32(a))
+	binary.LittleEndian.PutUint32(right, uint32(b))
+	result, err := call.Invoke(symbol, left, right)
+	if err != nil {
+		return 0, err
+	}
+	if len(result) != 4 {
+		return 0, fmt.Errorf("unexpected Swift result size: %d", len(result))
+	}
+	return int32(binary.LittleEndian.Uint32(result)), nil
+}
+
+```
+
 ## Language interfaces and calling conventions
 
 Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cdecl and Windows 386 stdcall/fastcall selection. Language C exports and native language ABIs have different support levels:
@@ -792,7 +838,7 @@ Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cde
 | Go gc native functions | ABIInternal / ABI0 | Not implemented | Ordinary Go functions, strings, slices, and GC-managed values are not supported plugin interfaces |
 | llgo C interfaces | C exports / `c-shared`; typed C-pointer adapters | Verified subset | Six amd64/arm64 targets; 386 is unqualified; runtime initialization and ownership still apply |
 | Swift C exports | `@_cdecl`, C-compatible types | Verified subset | macOS amd64/arm64 dylibs; opaque object retain/release, leased Go observers and destruction cleanup; raw runtime-registration objects are rejected |
-| Swift native functions | Swift calling convention and runtime ABI | Not implemented | No native generics, async, throws, or Swift value lifetime adaptation |
+| Swift native functions | Swift calling convention through optional ABIBridge | Explicit trivial-value subset | macOS amd64/arm64 dylibs: scalars, pointers, mixed/padded/large records, formally indirect values, register spills and retained calls; no native generics, async/throws, managed values or device ABI claim |
 | Objective-C / ObjC++ C exports | `extern "C"` facade, host C ABI | Verified subset | macOS amd64/arm64 ObjC++ dylibs; ARC-managed opaque objects, retain/release and leased Go observers |
 | Objective-C / ObjC++ methods | Objective-C runtime dispatch | Not implemented | No built-in message-dispatch or ARC adapter; use an explicit C facade |
 | Other native languages | Explicit C-compatible exports | Unverified | No compiler-producer execution tests or current support claim |
@@ -823,6 +869,7 @@ The former experimental `BindInt32`, `CallInt32`, and `Int32Func` APIs have been
 | `comdat.go` | COMDAT selection before dependency discovery |
 | `abi/` | Go signatures, reusable libffi calls, and leased native C callbacks |
 | `abi/signature/` | Pure Go declaration, typed-invocation, and typed literal parsing |
+| `abibridge/`, `compiler/abibridge/` | Optional native Swift interfaces and a pinned native-core facade builder |
 | `compiler/clang/` | Optional validated C prototypes, dynamic descriptors and direct llgo adapter generation |
 | `compiler/cxx/` | Go-rendered C++17 class facades with fixed C entry points and exception status codes |
 | `module/` | Go-only provider catalog discovery, versioned dependency graphs, explicit migration and managed replacement |
