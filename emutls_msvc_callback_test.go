@@ -39,7 +39,9 @@ func TestNativeMSVCEmulatedTLSConstructorReentry(t *testing.T) {
 							if err != nil {
 								return abi.Value{}, err
 							}
-							if marker != 3 {
+							// marker has constant initialization. tls_step increments it before
+							// its first dynamically initialized object triggers .CRT$XDU.
+							if marker != 4 {
 								return abi.Value{}, fmt.Errorf("reentrant initializer marker = %d", marker)
 							}
 							probes.Add(1)
