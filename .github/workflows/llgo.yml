@@ -52,13 +52,13 @@ jobs:
           cache-dependency-path: go.mod
       - if: runner.os != 'Windows'
         run: bash scripts/ci-unix-deps.sh
-      - name: Install macOS SDK 27 linker
+      - name: Install macOS ARM64 linkers
         if: matrix.target == 'darwin-arm64'
         run: |
-          brew list --versions lld >/dev/null || brew install --skip-link lld
-          linker="$(brew --prefix lld)/bin/ld64.lld"
-          "$linker" --version
-          echo "LDFLAGS=${LDFLAGS:+$LDFLAGS }--ld-path=$linker" >> "$GITHUB_ENV"
+          brew update
+          brew install --skip-link lld@22 lld@23
+          "$(brew --prefix lld@22)/bin/ld64.lld" --version
+          "$(brew --prefix lld@23)/bin/ld64.lld" --version
       - if: runner.os != 'Windows'
         uses: dtolnay/rust-toolchain@stable
       - if: runner.os != 'Windows'
