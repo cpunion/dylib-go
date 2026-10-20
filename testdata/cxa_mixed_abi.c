@@ -7,7 +7,7 @@ static int first = 11, second = 22;
 #else
 #define THIS
 #endif
-static void THIS object_exit(void *value) { record_event(value == &first ? *(int *)value : -11); }
+__attribute__((noinline)) static void THIS object_exit(void *value) { record_event(value == &first ? *(int *)value : -11); }
 static void argument_exit(void *value) { record_event(value == &second ? *(int *)value : -22); }
 static void plain_exit(void) { record_event(33); }
 __attribute__((constructor)) static void initialize(void) {
@@ -16,3 +16,5 @@ __attribute__((constructor)) static void initialize(void) {
     atexit(plain_exit);
 }
 int mixed_ready(int a, int b) { return a + b; }
+
+int mixed_probe(int valid, int unused) { (void)unused; object_exit(valid ? &first : 0); return 0; }

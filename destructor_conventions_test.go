@@ -34,10 +34,14 @@ func TestNativeMixedDestructorConventions(t *testing.T) {
 					load(t, s, input)
 					call(t, s, "mixed_ready", 20, 22, 42)
 					call(t, host, "recorded_event", -1, 0, 0)
+					// O2 Windows AMD64 uses a conditional external tail branch for
+					// the invalid context. Exercise both taken and untaken paths.
+					call(t, s, "mixed_probe", 0, 0, 0)
+					call(t, s, "mixed_probe", 1, 0, 0)
 					if err := s.Close(); err != nil {
 						t.Fatal(err)
 					}
-					expectEvents(t, func(a, b int32) (int32, error) { return callInt32(host, "recorded_event", a, b) }, 33, 22, 11)
+					expectEvents(t, func(a, b int32) (int32, error) { return callInt32(host, "recorded_event", a, b) }, -11, 11, 33, 22, 11)
 				})
 			}
 		})
