@@ -22,7 +22,13 @@ func threadDestructorInputs(t *testing.T, optimization string, extra ...string) 
 		triple := map[string]string{"amd64": "x86_64", "arm64": "aarch64", "386": "i686"}[runtime.GOARCH]
 		flags = append(flags, "--target="+triple+"-w64-windows-gnu")
 	}
-	object := compile(t, "testdata/emutls_dtor_objects.cpp", filepath.Join(dir, "objects.o"), flags...)
+	cc := compiler()
+	if runtime.GOOS == "darwin" && os.Getenv("DYLIB_LLVM_CLANG") != "" {
+		// Apple Clang 17 mixes native and emulated TLS in C++ -O0 output.
+		// Use the qualified producer without changing other native fixtures.
+		cc = os.Getenv("DYLIB_LLVM_CLANG")
+	}
+	object := compileWith(t, cc, "testdata/emutls_dtor_objects.cpp", filepath.Join(dir, "objects.o"), flags...)
 	archive := filepath.Join(dir, "objects.a")
 	command(t, "ar", "rcs", archive, object)
 	finalizer := compile(t, "testdata/emutls_dtor_finalizer.c", filepath.Join(dir, "finalizer.o"), optimization)

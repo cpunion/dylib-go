@@ -27,6 +27,13 @@ callback; native destructor bodies can use retained `abi.NewCallback` entries.
 | COFF / Windows GNU ABI | amd64, arm64, 386 | Clang `__cxa_thread_atexit` |
 | COFF / Windows MSVC ABI | amd64, arm64, 386 | Dynamic TLS initialization and `__tlregdtor` remain unsupported; trivial constant emulated TLS remains supported |
 
+macOS C++ destructor execution is qualified with LLVM 22. Older producers can
+mix native TLS accesses into `-O0 -femulated-tls` output: Apple Clang 17 and
+upstream LLVM 18 can leave an undefined `__tls_guard` and native TLV relocations
+alongside emulated descriptors. Such objects cannot use this runtime; compile
+them with a qualified producer. The native tests use `DYLIB_LLVM_CLANG` on macOS
+when provided, leaving the other C fixtures on their original compiler.
+
 Descriptors contain four native words: size, alignment, a mutable runtime word,
 and a template pointer. Before publishing code or running constructors, the
 linker requires correctly aligned writable non-executable descriptor storage,
