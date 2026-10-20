@@ -15,3 +15,6 @@ double this_apply(ThisEntry entry, ThisState *s, int8_t a, uint16_t b, float c, 
 double THIS this_forward(ThisState *s, ThisEntry entry, int8_t a, uint16_t b, float c, double d, uint64_t e, int32_t f) { return entry(s,a,b,c,d,e,f); }
 
 int32_t this_payload_apply(ThisPayloadEntry entry, ThisState *s, ThisPayload p, int32_t n) { return entry(s,p,n); }
+
+void this_notify_apply(ThisNotify entry, ThisState *s) { entry(s); }
+int32_t this_int_apply(ThisIntEntry entry, ThisState *s, int32_t n) { return entry(s,n); }

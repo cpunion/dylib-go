@@ -894,17 +894,34 @@ func (b *ffiBackend) invokeRecords(address uintptr, s Signature, args []Value) (
 }
 
 type ffiCallbackBackend struct {
-	plan   *ffiBackend
-	native *C.dylib_callback
-	handle uintptr
+	plan            *ffiBackend
+	native          *C.dylib_callback
+	handle          uintptr
+	receiverPadding bool
 }
 
 func prepareCallback(state *callbackState) (callbackBackend, error) {
-	backend, err := prepare(state.signature)
+	signature := state.signature
+	// Old libffi thiscall closures over-discount register words after a 64-bit
+	// or struct argument. A fastcall closure with an ignored EDX argument has
+	// exactly the same ECX receiver, stack arguments and callee cleanup, and
+	// works with both old and corrected libffi. The handler sees no padding.
+	padding := signature.Convention == ThisCall && signature.Result != Struct && C.dylib_abi(C.uint8_t(ThisCall)) >= 0
+	if padding {
+		if uint64(len(signature.Args))+1 > 1<<32-1 || len(signature.Args) == int(^uint(0)>>1) {
+			return nil, fmt.Errorf("thiscall callback padding exceeds the native argument limit")
+		}
+		signature.Convention = FastCall
+		signature.Args = append([]Type{Pointer, U32}, signature.Args[1:]...)
+		if len(signature.ArgTypes) != 0 {
+			signature.ArgTypes = append([]TypeDesc{signature.ArgTypes[0], {Type: U32}}, signature.ArgTypes[1:]...)
+		}
+	}
+	backend, err := prepare(signature)
 	if err != nil {
 		return nil, err
 	}
-	b := &ffiCallbackBackend{plan: backend.(*ffiBackend), handle: uintptr(cgo.NewHandle(state))}
+	b := &ffiCallbackBackend{plan: backend.(*ffiBackend), handle: uintptr(cgo.NewHandle(state)), receiverPadding: padding}
 	var status C.int
 	b.native = C.dylib_callback_new(b.plan.plan, C.uintptr_t(b.handle), &status)
 	if b.native == nil {
@@ -923,12 +940,16 @@ func (b *ffiCallbackBackend) close() {
 }
 func (b *ffiCallbackBackend) dispatch(state *callbackState, result, arguments unsafe.Pointer) {
 	args := make([]Value, len(state.signature.Args))
-	pointers := unsafe.Slice((*unsafe.Pointer)(arguments), len(args))
+	pointers := unsafe.Slice((*unsafe.Pointer)(arguments), len(b.plan.args))
 	// Native argument storage and pointee addresses are borrowed for this call.
 	// The type graph is immutable; each invocation owns its logical Go values.
 	pool := nativePool{abi: b.plan.pool.abi}
 	for i := range args {
-		args[i] = pool.read(state.signature.ArgumentType(i), b.plan.args[i], pointers[i], false)
+		nativeIndex := i
+		if b.receiverPadding && i > 0 {
+			nativeIndex++
+		}
+		args[i] = pool.read(state.signature.ArgumentType(i), b.plan.args[nativeIndex], pointers[nativeIndex], false)
 	}
 	value, err := state.handler(args)
 	if err == nil {

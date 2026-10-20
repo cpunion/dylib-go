@@ -174,6 +174,56 @@ func exerciseThiscall(t *testing.T, s *Session) {
 			t.Fatal(err)
 		}
 	})
+	t.Run("zero_stack_callback", func(t *testing.T) {
+		calls := 0
+		cb, err := abi.NewCallback(abi.Signature{Convention: abi.ThisCall, Args: []abi.Type{abi.Pointer}}, func(args []abi.Value) (abi.Value, error) {
+			calls++
+			if len(args) != 1 || args[0] != receiver {
+				return abi.Value{}, errors.New("wrong logical receiver arguments")
+			}
+			return abi.Value{}, nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer cb.Close()
+		apply := bind("this_notify_apply", "func f(unsafe.Pointer,unsafe.Pointer)", abi.CDecl)
+		if err := cb.WithAddress(func(address uintptr) error {
+			for i := 0; i < 100; i++ {
+				invoke(apply, abi.Ptr(address), receiver)
+			}
+			return nil
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if calls != 100 || cb.Err() != nil {
+			t.Fatal(calls, cb.Err())
+		}
+	})
+	t.Run("scalar_callback", func(t *testing.T) {
+		sig := callbackSignature(t, "func f(unsafe.Pointer,int32)int32")
+		sig.Convention = abi.ThisCall
+		cb, err := abi.NewCallback(sig, func(args []abi.Value) (abi.Value, error) { return add.Call(args...) })
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer cb.Close()
+		apply := bind("this_int_apply", "func f(unsafe.Pointer,unsafe.Pointer,int32)int32", abi.CDecl)
+		if err := cb.WithAddress(func(address uintptr) error {
+			for i := 0; i < 100; i++ {
+				if got := invoke(apply, abi.Ptr(address), receiver, abi.Int32(22)); got != abi.Int32(42) {
+					t.Fatal(got)
+				}
+			}
+			return nil
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if cb.Err() != nil {
+			t.Fatal(cb.Err())
+		}
+	})
+
 	t.Run("record_callback", func(t *testing.T) {
 		cb, err := abi.NewCallback(payloadSig, func(args []abi.Value) (abi.Value, error) { return payload.Call(args...) })
 		if err != nil {
