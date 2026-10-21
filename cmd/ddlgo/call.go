@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/abi/signature"
-	examplecall "github.com/cpunion/dylib-go/examples/call"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi/signature"
+	examplecall "github.com/ramblelabs/dylib-go/examples/call"
 )
 
 type callInput struct {

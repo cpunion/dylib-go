@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 // FunctionPointer describes a native entry prototype. Position is a zero-based

@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/abi/signature"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi/signature"
 )
 
 func TestVariadicABIAndPreparedLifetime(t *testing.T) {

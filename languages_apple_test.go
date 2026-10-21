@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 func TestAppleCFacadeProducers(t *testing.T) {

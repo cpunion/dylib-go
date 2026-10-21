@@ -1,6 +1,6 @@
 package dylib
 
-import "github.com/cpunion/dylib-go/abi"
+import "github.com/ramblelabs/dylib-go/abi"
 
 // FunctionLease retains bound code and its session-owned ABI plan. It can call
 // during session retirement, for example to unregister a retained callback.

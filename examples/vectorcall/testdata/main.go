@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 	"os"
 	"unsafe"
 )

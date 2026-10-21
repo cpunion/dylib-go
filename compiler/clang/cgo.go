@@ -6,7 +6,7 @@ import (
 	"go/format"
 	"strings"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 // CgoSource emits typed C bindings using fixed cgo bridges, without libffi.
@@ -90,7 +90,7 @@ func (h *Header) CgoSource(packageName, bindingType string) ([]byte, error) {
 	}
 	fmt.Fprint(&preamble, "*/\nimport \"C\"\n\n")
 	// A separate C import keeps the preamble adjacent to cgo's special import.
-	fmt.Fprint(&preamble, "import (\ndylib \"github.com/cpunion/dylib-go\"\n")
+	fmt.Fprint(&preamble, "import (\ndylib \"github.com/ramblelabs/dylib-go\"\n")
 	if needsUnsafe {
 		fmt.Fprint(&preamble, "\"unsafe\"\n")
 	}

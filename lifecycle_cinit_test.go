@@ -10,7 +10,7 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 // On Windows, Load uses the production COFF parser. POSIX fixtures isolate the

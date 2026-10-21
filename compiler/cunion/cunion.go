@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 // Value selects a scalar, native-address, named struct, fixed array or byte transport.

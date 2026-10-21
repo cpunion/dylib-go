@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 const functionPointerHeader = `typedef struct {int a,b;} Pair;

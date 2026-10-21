@@ -3,7 +3,7 @@ package cxx
 import (
 	"fmt"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 // FunctionArg replaces a zero-based abi.Pointer argument with an exact native

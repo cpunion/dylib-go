@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 )
 
 const maxInputSize = 256 << 20

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/cunion"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/cunion"
 )
 
 func TestUnionByteManifestValidation(t *testing.T) {

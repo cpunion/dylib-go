@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	example "github.com/cpunion/dylib-go/examples/modules"
-	"github.com/cpunion/dylib-go/module"
+	example "github.com/ramblelabs/dylib-go/examples/modules"
+	"github.com/ramblelabs/dylib-go/module"
 )
 
 func writeCatalog(t *testing.T, directory, name string, modules ...module.Module) string {

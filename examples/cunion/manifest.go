@@ -2,8 +2,8 @@
 package cunion
 
 import (
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/cunion"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/cunion"
 )
 
 // Functions selects member/byte views; the C compiler handles the actual union ABI.

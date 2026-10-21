@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cpunion/dylib-go/internal/native"
+	"github.com/ramblelabs/dylib-go/internal/native"
 )
 
 // ErrInitializing rejects ordinary lookup, linking and mutation while native

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cpunion/dylib-go/compiler/abibridge"
+	"github.com/ramblelabs/dylib-go/compiler/abibridge"
 )
 
 func main() {

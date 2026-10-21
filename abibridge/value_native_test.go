@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	dylib "github.com/cpunion/dylib-go"
-	examplecall "github.com/cpunion/dylib-go/examples/call"
+	dylib "github.com/ramblelabs/dylib-go"
+	examplecall "github.com/ramblelabs/dylib-go/examples/call"
 )
 
 func waitValueState(t *testing.T, ready func() bool) {

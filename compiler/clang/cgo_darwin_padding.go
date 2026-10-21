@@ -3,7 +3,7 @@ package clang
 import (
 	"fmt"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 // GCC counts plain unnamed units toward Darwin ARM64 record alignment; Clang

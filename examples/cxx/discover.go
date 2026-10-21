@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/cxx"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/cxx"
 )
 
 // Discover uses compiler-confirmed inheritance among selected class names.

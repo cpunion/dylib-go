@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 )
 
 // Call passes a record containing a native C entry by value.

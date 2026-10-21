@@ -169,11 +169,11 @@ static void dylib_go_42696e64696e6773_call33(uintptr_t address,void * p0,void * 
 import "C"
 
 import (
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 	"unsafe"
 
-	"github.com/cpunion/dylib-go/abi"
-	clang "github.com/cpunion/dylib-go/compiler/clang"
+	"github.com/ramblelabs/dylib-go/abi"
+	clang "github.com/ramblelabs/dylib-go/compiler/clang"
 )
 
 var _BindingsDeclarations = clang.Header{

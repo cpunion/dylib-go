@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 // FieldDecl only carries a type spelling in Clang's JSON AST. Ask for compiler

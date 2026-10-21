@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cpunion/dylib-go/internal/ar"
+	"github.com/ramblelabs/dylib-go/internal/ar"
 )
 
 func ordinaryArchive(t *testing.T, path string, names []string, members [][]byte) []byte {

@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 	"io"
 	"os"
 
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 )
 
 func run(args []string, output io.Writer) error {

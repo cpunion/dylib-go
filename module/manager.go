@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 )
 
 type generation struct {

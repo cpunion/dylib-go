@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 	"math"
 	"os"
 	"strings"

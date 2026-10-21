@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 // LLGoSource emits typed C cdecl bindings for qualified 64-bit llgo hosts.
@@ -74,7 +74,7 @@ func (h *Header) LLGoSource(packageName, bindingType string) ([]byte, error) {
 	}
 	for _, declaration := range file.Decls {
 		if imports, ok := declaration.(*ast.GenDecl); ok && imports.Tok == token.IMPORT {
-			for _, path := range []string{"unsafe", "github.com/cpunion/dylib-go"} {
+			for _, path := range []string{"unsafe", "github.com/ramblelabs/dylib-go"} {
 				spec := &ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(path)}}
 				if path != "unsafe" {
 					spec.Name = ast.NewIdent("dylib")

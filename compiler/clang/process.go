@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cpunion/dylib-go/compiler/internal/clangcmd"
+	"github.com/ramblelabs/dylib-go/compiler/internal/clangcmd"
 )
 
 func runCompiler(ctx context.Context, compiler string, args []string, input string, limit int) ([]byte, error) {

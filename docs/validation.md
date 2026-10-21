@@ -4,7 +4,7 @@ Date: 2026-10-07. These results describe actual runs with specific toolchains. R
 
 ## Native GitHub runners
 
-[PR #1](https://github.com/cpunion/dylib-go/pull/1), final commit `96de660`, passed all 19 checks: [13 Go jobs](https://github.com/cpunion/dylib-go/actions/runs/37567616074) and [6 llgo jobs](https://github.com/cpunion/dylib-go/actions/runs/37567616142). The matrix includes both architectures of Linux/macOS, Windows AMD64 object/archive/DLL calls, and Windows ARM64 DLL/scalar calls with independent Go and llgo hosts. Raw ARM64 COFF execution remains rejected.
+[PR #1](https://github.com/ramblelabs/dylib-go/pull/1), final commit `96de660`, passed all 19 checks: [13 Go jobs](https://github.com/ramblelabs/dylib-go/actions/runs/37567616074) and [6 llgo jobs](https://github.com/ramblelabs/dylib-go/actions/runs/37567616142). The matrix includes both architectures of Linux/macOS, Windows AMD64 object/archive/DLL calls, and Windows ARM64 DLL/scalar calls with independent Go and llgo hosts. Raw ARM64 COFF execution remains rejected.
 
 Go's five raw-object jobs run functional, language, race, and vet checks. Eight no-cgo jobs run inspection/refusal tests, including real 32-bit Go processes on Linux/Windows. See the [CI matrix](ci.md) and current PR checks for changes made after this baseline. The generic symbol API and mixed-signature examples have their own lifetime and execution checks in the current suite.
 

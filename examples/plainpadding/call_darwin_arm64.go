@@ -2,7 +2,7 @@
 
 package plainpadding
 
-import dylib "github.com/cpunion/dylib-go"
+import dylib "github.com/ramblelabs/dylib-go"
 
 func Call(path string) (float32, error) {
 	session := dylib.New(dylib.Options{ProcessSymbols: true})

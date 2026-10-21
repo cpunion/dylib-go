@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/cpunion/dylib-go/internal/native"
+	"github.com/ramblelabs/dylib-go/internal/native"
 )
 
 // Keep registration and deregistration paired with one retained provider.

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/internal/native"
+	"github.com/ramblelabs/dylib-go/internal/native"
 )
 
 func shortImport(machine uint16, kind, policy uint16, public, dll, exported string, ordinal uint16) []byte {

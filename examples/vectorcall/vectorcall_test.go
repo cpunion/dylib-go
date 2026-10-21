@@ -13,8 +13,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/clang"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/clang"
 )
 
 func tool(t *testing.T, name string) string {
@@ -76,7 +76,7 @@ func TestNativeGeneratedVectorcall(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	write("go.mod", []byte(fmt.Sprintf("module vectorcall-test\n\ngo 1.23\n\nrequire github.com/cpunion/dylib-go v0.0.0\nreplace github.com/cpunion/dylib-go => %s\n", strconv.Quote(filepath.ToSlash(root)))))
+	write("go.mod", []byte(fmt.Sprintf("module vectorcall-test\n\ngo 1.23\n\nrequire github.com/ramblelabs/dylib-go v0.0.0\nreplace github.com/ramblelabs/dylib-go => %s\n", strconv.Quote(filepath.ToSlash(root)))))
 	host := "go"
 	if llgoHost {
 		host = os.Getenv("DYLIB_LLGO")

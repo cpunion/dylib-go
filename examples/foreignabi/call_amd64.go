@@ -3,7 +3,7 @@
 // Package foreignabi demonstrates generated Microsoft x64 and System V calls.
 package foreignabi
 
-import dylib "github.com/cpunion/dylib-go"
+import dylib "github.com/ramblelabs/dylib-go"
 
 // AddBoth calls the same logical C signature with two native conventions.
 func AddBoth(session *dylib.Session) (microsoft, systemV int32, err error) {

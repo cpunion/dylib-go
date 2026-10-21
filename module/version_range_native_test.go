@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	dylib "github.com/cpunion/dylib-go"
-	example "github.com/cpunion/dylib-go/examples/modules"
-	"github.com/cpunion/dylib-go/module"
+	dylib "github.com/ramblelabs/dylib-go"
+	example "github.com/ramblelabs/dylib-go/examples/modules"
+	"github.com/ramblelabs/dylib-go/module"
 )
 
 func TestNativeVersionRangeModuleCalls(t *testing.T) {

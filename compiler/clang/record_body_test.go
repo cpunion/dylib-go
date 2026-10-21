@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 var anonymousRecordFunctions = []string{"echo_high", "echo_inherited", "echo_low", "echo_low_only", "echo_float", "echo_wide", "echo_wide_low", "echo_doubles", "echo_maximum", "echo_packed", "echo_pragma", "echo_member", "echo_bits", "echo_nested", "echo_array", "echo_explicit", "shifted", "overflow", "wide_overflow", "variadic", "factory", "forward", "pointer", "read_high", "alignment"}

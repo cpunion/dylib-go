@@ -14,7 +14,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cpunion/dylib-go/compiler/internal/clangcmd"
+	"github.com/ramblelabs/dylib-go/compiler/internal/clangcmd"
 )
 
 const SourceCommit = "4dfbda22afb9a1492e1c5c99933a9defbc5437a4"

@@ -2,7 +2,7 @@
 
 package recordcallbacks
 
-import dylib "github.com/cpunion/dylib-go"
+import dylib "github.com/ramblelabs/dylib-go"
 
 type Bindings = CBindings
 type BindingsRecord0 = CBindingsRecord0

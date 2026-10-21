@@ -11,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	examplecall "github.com/cpunion/dylib-go/examples/call"
-	"github.com/cpunion/dylib-go/internal/native"
+	examplecall "github.com/ramblelabs/dylib-go/examples/call"
+	"github.com/ramblelabs/dylib-go/internal/native"
 )
 
 func command(t testing.TB, name string, args ...string) {

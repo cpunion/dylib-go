@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 var errEnumTypes = errors.New("clang: enums require compiler integer probes")

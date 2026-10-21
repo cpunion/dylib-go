@@ -1,8 +1,8 @@
 package cxxexample
 
 import (
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/cxx"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/cxx"
 )
 
 // FunctionClasses selects exact native function-pointer arguments and results.

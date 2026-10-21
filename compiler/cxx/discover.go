@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cpunion/dylib-go/compiler/internal/clangcmd"
+	"github.com/ramblelabs/dylib-go/compiler/internal/clangcmd"
 )
 
 // DiscoveryOptions selects an optional Clang-compatible C++ compiler. Target

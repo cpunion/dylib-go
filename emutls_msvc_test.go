@@ -9,7 +9,7 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/cpunion/dylib-go/internal/native"
+	"github.com/ramblelabs/dylib-go/internal/native"
 )
 
 // Exercise the native runtime with each host's C ABI as well as the real MSVC

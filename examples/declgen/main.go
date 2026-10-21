@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cpunion/dylib-go/abi/signature"
-	"github.com/cpunion/dylib-go/compiler/clang"
+	"github.com/ramblelabs/dylib-go/abi/signature"
+	"github.com/ramblelabs/dylib-go/compiler/clang"
 )
 
 func main() {

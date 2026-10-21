@@ -1,8 +1,8 @@
 package cxxexample
 
 import (
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/cxx"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/cxx"
 )
 
 // CallableClasses selects named aliases for std::function and captured lambdas.

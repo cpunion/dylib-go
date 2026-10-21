@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"testing"
 
-	dylib "github.com/cpunion/dylib-go"
-	examplecall "github.com/cpunion/dylib-go/examples/call"
+	dylib "github.com/ramblelabs/dylib-go"
+	examplecall "github.com/ramblelabs/dylib-go/examples/call"
 )
 
 func TestNativeMergedModuleCallsAndInitializers(t *testing.T) {

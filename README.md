@@ -1,8 +1,8 @@
 # dylib-go
 
-[![Go](https://github.com/cpunion/dylib-go/actions/workflows/go.yml/badge.svg)](https://github.com/cpunion/dylib-go/actions/workflows/go.yml)
-[![llgo](https://github.com/cpunion/dylib-go/actions/workflows/llgo.yml/badge.svg)](https://github.com/cpunion/dylib-go/actions/workflows/llgo.yml)
-[![README](https://github.com/cpunion/dylib-go/actions/workflows/readme.yml/badge.svg)](https://github.com/cpunion/dylib-go/actions/workflows/readme.yml)
+[![Go](https://github.com/ramblelabs/dylib-go/actions/workflows/go.yml/badge.svg)](https://github.com/ramblelabs/dylib-go/actions/workflows/go.yml)
+[![llgo](https://github.com/ramblelabs/dylib-go/actions/workflows/llgo.yml/badge.svg)](https://github.com/ramblelabs/dylib-go/actions/workflows/llgo.yml)
+[![README](https://github.com/ramblelabs/dylib-go/actions/workflows/readme.yml/badge.svg)](https://github.com/ramblelabs/dylib-go/actions/workflows/readme.yml)
 
 A Go runtime object loader: load `.o/.obj` files, link required members of `.a/.lib` archives, resolve symbols and relocations, and execute native code in the current process. Shared libraries (`.so/.dylib/.dll`) use the host operating system's loader.
 
@@ -31,7 +31,7 @@ Metadata inspection uses pure Go and can read ELF, Mach-O (including universal c
 
 ## Installation
 
-Add the module with `go get github.com/cpunion/dylib-go`. The package name is `dylib`. Use Go 1.23+ and a C compiler for native execution, or build the host with llgo. Pure Go metadata inspection works with `CGO_ENABLED=0`.
+Add the module with `go get github.com/ramblelabs/dylib-go`. The package name is `dylib`. Use Go 1.23+ and a C compiler for native execution, or build the host with llgo. Pure Go metadata inspection works with `CGO_ENABLED=0`.
 
 Known native signatures can use caller-defined cgo or llgo adapters. For dynamic signatures, install libffi development files and pkg-config and build with `-tags libffi`. The library API does not depend on the test CLI. Clang produces the CI fixtures, but is not needed to load already compiled inputs at runtime.
 
@@ -80,7 +80,7 @@ import (
 	"fmt"
 	"os"
 
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 )
 
 func run(path string) error {
@@ -133,7 +133,7 @@ import (
 	"os"
 	"unsafe"
 
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 )
 
 // llgo emits the indirect call using the native C calling convention.
@@ -218,8 +218,8 @@ import (
 	"math"
 	"os"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/abi"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 func run(path string) error {
@@ -323,9 +323,9 @@ import (
 	"fmt"
 	"os"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/llvm"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/llvm"
 )
 
 func call(input string) (abi.Value, error) {
@@ -383,9 +383,9 @@ import (
 	"context"
 	"os"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/llvm"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/llvm"
 )
 
 func call(input string) (abi.Value, error) {
@@ -594,8 +594,8 @@ This complements [llcppg](https://github.com/goplus/llcppg)'s static bindings.
 package cunion
 
 import (
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/cunion"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/cunion"
 )
 
 // Functions selects member/byte views; the C compiler handles the actual union ABI.
@@ -639,8 +639,8 @@ import (
 	"fmt"
 	"os"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/abi"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 func run(path string) error {
@@ -719,8 +719,8 @@ class interface:
 package cxxexample
 
 import (
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/cxx"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/cxx"
 )
 
 // Generate selects constructor, member, base-view and destruction exports. Compile the
@@ -788,8 +788,8 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/abibridge"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/abibridge"
 )
 
 // Add calls a thin Swift `func add(_ a: Int32, _ b: Int32) -> Int32`.
@@ -830,7 +830,7 @@ compiler-matched Swift type. Close the runtime before the metadata provider.
 // Package swiftvalue demonstrates owned Swift storage with copy/destroy witnesses.
 package swiftvalue
 
-import "github.com/cpunion/dylib-go/abibridge"
+import "github.com/ramblelabs/dylib-go/abibridge"
 
 // CloneAndUse initializes a value, copies it, and uses the copy after closing
 // the original. Adapters receive borrowed native storage, never ownership bytes.

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 )
 
 func Call(path string) (float64, error) {

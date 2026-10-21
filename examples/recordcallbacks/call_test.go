@@ -12,8 +12,8 @@ import (
 	"runtime"
 	"testing"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/compiler/clang"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/compiler/clang"
 )
 
 var names = []string{"callbacks_factory", "callbacks_subtract", "callbacks_echo", "callbacks_apply", "callbacks_pointer", "callbacks_slot", "callbacks_nested", "callbacks_nested_apply", "callbacks_store", "callbacks_run", "callbacks_clear", "callback_array_factory", "callback_array_echo", "callback_array_apply", "callback_array_store", "callback_array_run", "callback_array_clear"}

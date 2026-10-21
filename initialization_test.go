@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cpunion/dylib-go/abi"
-	examplecall "github.com/cpunion/dylib-go/examples/call"
+	"github.com/ramblelabs/dylib-go/abi"
+	examplecall "github.com/ramblelabs/dylib-go/examples/call"
 )
 
 func initializationCallback(t *testing.T, handler abi.CallbackFunc) (*abi.Callback, uintptr) {

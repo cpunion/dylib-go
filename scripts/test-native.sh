@@ -17,7 +17,7 @@ trap 'rm -rf "$directory"' EXIT
 go list "$@" -tags "$tags" ./... > "$directory/packages"
 packages=()
 while IFS= read -r package; do
-  if [[ "$package" != github.com/cpunion/dylib-go/compiler/clang ]]; then
+  if [[ "$package" != github.com/ramblelabs/dylib-go/compiler/clang ]]; then
     packages+=("$package")
   fi
 done < "$directory/packages"

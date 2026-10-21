@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/internal/ar"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/internal/ar"
 )
 
 const maxArchiveMembers = 4096

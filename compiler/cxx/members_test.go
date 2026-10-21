@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/compiler/cxx"
+	"github.com/ramblelabs/dylib-go/compiler/cxx"
 )
 
 func TestNativeDiscoverMembersAcrossTargets(t *testing.T) {

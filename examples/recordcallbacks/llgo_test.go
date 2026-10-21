@@ -3,7 +3,7 @@
 package recordcallbacks
 
 import (
-	"github.com/cpunion/dylib-go/compiler/clang"
+	"github.com/ramblelabs/dylib-go/compiler/clang"
 	"testing"
 	"unsafe"
 )

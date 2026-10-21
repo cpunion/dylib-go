@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/cxx"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/cxx"
 )
 
 func TestNativeDynamicCallableFacade(t *testing.T) {

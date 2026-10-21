@@ -19,9 +19,9 @@ import (
 	"testing"
 	"time"
 
-	dylib "github.com/cpunion/dylib-go"
-	builder "github.com/cpunion/dylib-go/compiler/abibridge"
-	examplecall "github.com/cpunion/dylib-go/examples/call"
+	dylib "github.com/ramblelabs/dylib-go"
+	builder "github.com/ramblelabs/dylib-go/compiler/abibridge"
+	examplecall "github.com/ramblelabs/dylib-go/examples/call"
 )
 
 func run(t *testing.T, program string, args ...string) string {

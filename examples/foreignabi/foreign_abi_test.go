@@ -15,8 +15,8 @@ import (
 	"testing"
 	"unsafe"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/compiler/clang"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/compiler/clang"
 )
 
 func nativeCompiler(t *testing.T) string {

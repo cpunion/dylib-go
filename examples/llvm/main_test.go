@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 func TestREADMECompilerExample(t *testing.T) {

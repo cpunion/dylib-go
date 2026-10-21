@@ -1,6 +1,6 @@
 package dylib
 
-import "github.com/cpunion/dylib-go/abi"
+import "github.com/ramblelabs/dylib-go/abi"
 
 // Function couples an explicit ABI signature with the lifetime of its code.
 type Function struct {
