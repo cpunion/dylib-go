@@ -29,11 +29,11 @@ func TestEmulatedTLSAcrossTargets(t *testing.T) {
 			if len(f.info.Unsupported) != 0 {
 				t.Fatal(f.info.Unsupported)
 			}
-			needed, err := checkEmulatedTLS([]*object{f.obj}, true)
+			needed, err := checkTLSRuntime([]*object{f.obj}, Options{EmulatedTLS: true})
 			if err != nil || !needed {
 				t.Fatal(needed, err)
 			}
-			if _, err := checkEmulatedTLS([]*object{f.obj}, false); err == nil {
+			if _, err := checkTLSRuntime([]*object{f.obj}, Options{EmulatedTLS: false}); err == nil {
 				t.Fatal("missing opt-in accepted")
 			}
 			count, helper := 0, false
@@ -55,7 +55,7 @@ func TestEmulatedTLSAcrossTargets(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = checkEmulatedTLS([]*object{f.obj}, true)
+			_, err = checkTLSRuntime([]*object{f.obj}, Options{EmulatedTLS: true})
 			if err != nil {
 				t.Fatal("image-owned thread destructor registration rejected", err)
 			}
@@ -131,18 +131,18 @@ func TestEmulatedTLSReservedRuntime(t *testing.T) {
 			t.Fatal("runtime override accepted", name)
 		}
 		o := &object{info: Info{OS: "darwin"}, symbols: []symbol{{name: "__emutls_v.x", section: 1}, {name: name}}}
-		_, err := checkEmulatedTLS([]*object{o}, true)
+		_, err := checkTLSRuntime([]*object{o}, Options{EmulatedTLS: true})
 		if emulatedTLSThreadHelper(name) {
 			if err != nil {
 				t.Fatal(name, err)
 			}
 			o.symbols[1].section = 1
-			if _, err := checkEmulatedTLS([]*object{o}, true); err == nil {
+			if _, err := checkTLSRuntime([]*object{o}, Options{EmulatedTLS: true}); err == nil {
 				t.Fatal("defined thread helper accepted", name)
 			}
 			o.symbols[1].section = 0
 			o.symbols[1].imported = &coffImportSymbol{}
-			if _, err := checkEmulatedTLS([]*object{o}, true); err == nil {
+			if _, err := checkTLSRuntime([]*object{o}, Options{EmulatedTLS: true}); err == nil {
 				t.Fatal("imported thread runtime accepted", name)
 			}
 		} else if err == nil || !strings.Contains(err.Error(), "thread destructors") {
@@ -155,10 +155,10 @@ func TestEmulatedTLSRuntimeWithoutDescriptors(t *testing.T) {
 	for _, word := range []uint64{4, 8} {
 		o := &object{symbols: []symbol{{name: "__cxa_thread_atexit"}}}
 		im := &image{pointerSize: word, objects: []*object{o}}
-		if _, err := checkEmulatedTLS(im.objects, false); err == nil {
+		if _, err := checkTLSRuntime(im.objects, Options{EmulatedTLS: false}); err == nil {
 			t.Fatal("unowned runtime fallback accepted")
 		}
-		if needed, err := checkEmulatedTLS(im.objects, true); err != nil || !needed {
+		if needed, err := checkTLSRuntime(im.objects, Options{EmulatedTLS: true}); err != nil || !needed {
 			t.Fatal(needed, err)
 		}
 		if descriptors, err := im.emulatedTLSDescriptors(); err != nil || len(descriptors) != 0 {

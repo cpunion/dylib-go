@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -74,6 +75,11 @@ func parseCallInput(args []string) (callInput, error) {
 func executeCall(input callInput, options dylib.Options, output io.Writer) error {
 	if !input.legacy && !abi.Available() {
 		return fmt.Errorf("dynamic signatures require a CLI built with -tags libffi: %w", abi.ErrUnavailable)
+	}
+	if options.EmulatedTLS || options.NativeTLS {
+		// Keep TLS initialization, the call and thread-exit cleanup together.
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
 	}
 	s := dylib.New(options)
 	defer s.Close()

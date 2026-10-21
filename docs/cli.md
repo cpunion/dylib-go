@@ -6,6 +6,19 @@ Use `examples/run.sh <go|llgo> inspect FILE` or `examples/run.sh <go|llgo> call 
 
 ## Input forms
 
+For raw TLS objects, pass `-emulated-tls` for Clang `-femulated-tls` output or
+`-native-tls` for the [supported Unix native TLS models](tls.md). These options
+map directly to `dylib.Options.EmulatedTLS` and `dylib.Options.NativeTLS`; an image
+containing both models requires both flags. They do not enable unsupported TLS
+models or change OS-loaded libraries.
+
+TLS-enabled calls keep loading, invocation and cleanup on one OS thread so
+current-thread C++ TLS destructors run before image finalizers. For example:
+
+```sh
+examples/run.sh go call -native-tls "func tls_read()int32" <object>
+```
+
 | Form | Example | Arguments and files |
 | --- | --- | --- |
 | Go-style declaration | `"func add(int32,int32)int32"` | Follow with `20 22 FILE...` |
@@ -68,3 +81,11 @@ Results print decimal integers, `true`/`false`, round-trip precision floats, hex
 `scripts/verify-cli.sh go|llgo` builds a real C library and a separate CLI executable. Both hosts run on the six Linux/macOS/Windows amd64/arm64 targets. Native Go also runs in Linux/Windows 386 processes, with 32-bit C libraries and Go c-shared producers. Tests cover both dynamic forms, the original form, mixed integer/floating-point registers, integer boundaries, small scalars, booleans, null/temporary pointers, zero arguments, and void results. Struct and array tests cover arguments/results, integer/floating-point arrays, nested arrays and array pointers, nested padding, large returns, floating-point records, pointer fields, in/out mutation, alias identity, signature metadata copying, and temporary pointer lifetime errors. Raw scalar, struct, and array-member object/archive calls run on all eight supported raw targets, including Windows ARM64 and Linux/Windows 386.
 
 Parser and literal tests run in all Go CI jobs, including no-cgo Linux/Windows 386 processes, and in llgo jobs. Separate cgo-enabled 386 jobs execute native objects and libraries; parsing alone is not execution evidence. The struct example script runs on six amd64/arm64 targets with both compilers and on both 386 targets with Go; the raw-object dynamic script runs on Linux/macOS. CI executes the compiler-first fixture commands and direct `call` runner forms shown in the README, including relative library paths with spaces; embedme verifies the library Go snippets.
+
+The same CLI script compiles Clang emulated TLS at `-O0`/`-O2` on every native
+target, plus the supported Unix native TLS models. Each mode executes object
+and archive calls through both signature forms, struct values and the original
+demonstration form. Missing opt-in flags must fail. Mixed Unix native/emulated
+objects require both flags and execute both entries.
+C++ fixtures also require exactly one thread-local destruction before global
+finalization; an incorrect lifetime or order traps instead of passing silently.

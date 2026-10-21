@@ -36,10 +36,11 @@ type Options struct {
 	// values, documented C++ thread-exit registrations and Clang MSVC emulated
 	// TLS initialization. Native TLS uses the separate NativeTLS option.
 	EmulatedTLS bool
-	// NativeTLS enables plain C native TLS in raw objects: macOS amd64/arm64
+	// NativeTLS enables native TLS in raw objects: macOS amd64/arm64
 	// TLV, Linux amd64/386 GD/LD, and Linux arm64 TLSDESC. It reuses image-owned
-	// per-thread storage and lifetime guards. Native initial-exec/local-exec,
-	// dynamic TLS initializers and foreign TLS providers remain unsupported.
+	// per-thread storage and lifetime guards, including compiler-generated
+	// nonthrowing C++ wrappers and thread-exit hooks. Native initial/local-exec,
+	// loader-managed TLS initializer sections and foreign providers remain unsupported.
 	NativeTLS bool
 	// RegisterUnwind registers supported raw-image runtime function tables.
 	// Supports Windows/macOS amd64/arm64 and Linux amd64/arm64/386 C frames.
@@ -213,7 +214,7 @@ func (s *Session) define(name string, address uintptr) error {
 		return fmt.Errorf("invalid native symbol")
 	}
 	if emulatedTLSReserved(strings.TrimPrefix(name, "__imp_")) {
-		return fmt.Errorf("%s is reserved for image-owned emulated TLS", name)
+		return fmt.Errorf("%s is reserved for image-owned TLS", name)
 	}
 	if runtime.GOOS == "linux" && elfTLSRuntime(name) || runtime.GOOS == "darwin" && strings.TrimPrefix(name, "__imp_") == machoTLSBootstrap {
 		return fmt.Errorf("%s is reserved for image-owned native TLS", name)
@@ -442,6 +443,9 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 			}
 			for _, n := range wanted {
 				if s.opts.NativeTLS && (runtime.GOOS == "linux" && elfTLSRuntime(n) || runtime.GOOS == "darwin" && n == machoTLSBootstrap) {
+					continue
+				}
+				if s.opts.NativeTLS && (runtime.GOOS == "linux" || runtime.GOOS == "darwin") && emulatedTLSThreadHelper(n) {
 					continue
 				}
 				if s.opts.EmulatedTLS && (n == emulatedTLSHelper || emulatedTLSThreadHelper(n) || emulatedTLSMSVCHelper(n) || n == emulatedTLSMSVCGuard) {
@@ -726,7 +730,7 @@ func alignUp(n, a uint64) uint64 {
 	return (n + a - 1) &^ (a - 1)
 }
 func newImage(objs []*object, defs map[string]definition, external func(string) uintptr, imports map[*coffImport]uintptr, emulatedTLS, nativeTLS bool) (*image, error) {
-	tlsNeeded, err := checkEmulatedTLS(objs, emulatedTLS)
+	tlsNeeded, err := checkTLSRuntime(objs, Options{EmulatedTLS: emulatedTLS, NativeTLS: nativeTLS})
 	if err != nil {
 		return nil, err
 	}

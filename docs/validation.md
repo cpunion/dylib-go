@@ -41,7 +41,7 @@ Tests compile real inputs in temporary directories and check actual results:
 - Missing dependencies can be added and linking retried; duplicate strong symbols, unknown names, and roots fail.
 - Out-of-section and unsupported relocations fail without publishing an image; corrected inputs can be retried.
 - Idempotent `Close`, closed symbol/binding refusal, callback error propagation, and serialization of symbol access with `Close`.
-- Real TLS, constructor, and Swift registration objects are rejected.
+- Real constructor/exit tables and the documented native/emulated TLS models execute with owned cleanup. Unsupported TLS models and raw Swift registration objects are rejected.
 - Six foreign ELF/Mach-O/COFF targets are generated and inspected. Incompatible targets cannot execute; iOS objects cannot masquerade as macOS plugins.
 - Absolute pointer relocation is checked for five format/architecture combinations without executing foreign machine code.
 - Real byte/word/dword store instructions exercise Mach-O x86-64 SIGNED_1/2/4 addends.

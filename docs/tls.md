@@ -6,9 +6,9 @@ Go. Complete shared libraries continue to use their OS loader's TLS support.
 
 | Raw input model | Option | Qualified scope |
 | --- | --- | --- |
-| Native Mach-O TLV | `Options.NativeTLS` | Plain C, macOS amd64/arm64; initialized, zero-filled and aligned values |
+| Native Mach-O TLV | `Options.NativeTLS` | C values and documented C++ wrappers, macOS amd64/arm64; initialized, zero-filled and aligned values |
 | Clang emulated TLS | `Options.EmulatedTLS` | Linux/macOS/Windows targets below, including documented C++ initialization/destruction |
-| Native ELF dynamic TLS | `Options.NativeTLS` | Plain C, Linux amd64/386 GD/LD and arm64 TLSDESC; Clang and GCC |
+| Native ELF dynamic TLS | `Options.NativeTLS` | C values and documented C++ wrappers, Linux amd64/386 GD/LD and arm64 TLSDESC |
 | Native ELF static TLS, COFF TLS, other Darwin models | None | Unsupported; use emulated TLS or a complete OS library |
 
 ## Native Mach-O TLV
@@ -47,9 +47,10 @@ Supported instruction relocations are zero-addend RIP-relative 64-bit MOV loads
 image-owned TLV descriptors. Ordinary references to template/descriptor bytes,
 foreign or OS-library TLV descriptors, nonzero keys, bootstrap overrides,
 unsupported opcodes/addends and partial/overlapping descriptors fail before
-publication. Thread-local pointer and initializer sections, dynamic TLS
-constructors/destructors, authenticated arm64e and native COFF models are
-not qualified by this option. Linux ELF models have the separate scope below.
+publication. Thread-local pointer and loader-managed initializer sections,
+authenticated arm64e and native COFF models remain unsupported. Compiler-emitted
+C++ initialization wrappers and destructor registrations use the scope below.
+Linux ELF models have the separate scope below.
 
 `Lookup`, `Resolve` and `Bind` reject raw TLS variable names: their linker address
 is a descriptor, not a process-global variable address. Export a native C getter
@@ -106,7 +107,7 @@ are image-wide, and DTP-relative values use the packed template offsets.
 
 Initial-exec/local-exec offsets, x86 TLSDESC, other AArch64 dynamic sequences,
 loader-owned dynamic TLS relocations, external/OS-library TLS definitions,
-native C++ initialization/destruction and SVE/SME calling variants
+loader-managed TLS initialization and SVE/SME calling variants
 remain unsupported. They need separate ABI/runtime qualification. Complete OS
 libraries continue to use their loader. Native ELF tests cover the same values,
 thread isolation, cleanup, lifetime and lifecycle cases as Mach-O, plus GCC
@@ -118,6 +119,50 @@ ABI references: [AArch64 ELF TLS relocations](https://github.com/ARM-software/ab
 [LLVM AArch64 ELF TLS register contract](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/lib/Target/AArch64/AArch64CallingConvention.td),
 [GNU i386 address-entry convention](https://github.com/bminor/glibc/blob/master/sysdeps/i386/dl-tls.h)
 and [AArch64 descriptor resolver](https://github.com/bminor/glibc/blob/master/sysdeps/aarch64/dl-tlsdesc.S).
+
+## Native C++ initialization and thread exit
+
+On the documented native Unix TLS models, `NativeTLS` also enables the common
+C++ ABI thread-exit registrations. It does not enable emulated descriptors or
+the emulated address helper; mixed native/emulated inputs still require both
+options. The native test fixtures use Clang C++17 `-fno-emulated-tls`,
+`-fno-exceptions` and `-fno-rtti`; initialized values, compiler-generated
+nonthrowing per-translation-unit wrappers and nonthrowing destructors are
+qualified separately from ordinary C values.
+
+| Native object ABI | Architecture | Image-owned thread-exit hooks |
+| --- | --- | --- |
+| ELF / Linux | amd64, arm64, 386 | `__cxa_thread_atexit`, `__cxa_thread_atexit_impl` |
+| Mach-O / macOS | amd64, arm64 | `_tlv_atexit`; explicit C++ ABI registration uses the same owner |
+
+Compiler-generated wrappers retain their original native guard variables and
+initialization order; Go does not reproduce C++ initialization logic. Register
+calls bind to the existing image-owned native thread registry. Unused archive
+members defining those hooks are not extracted, and selected definitions or
+external overrides cannot replace them. Manual registrations also work without
+any compiler TLS descriptors, using the explicitly selected image owner.
+
+Construction can call a leased Go callback and reenter native TLS on the same
+thread. The compiler's guard controls reentry; recursive access to an object
+whose construction has not finished is not made safe by the loader. Plain
+constant values and independent images keep their normal thread identities.
+Keep a code lease while native workers can execute constructors or other image
+code. Closing a session waits for that lease; after calls stop, queued/executing
+thread destructors retain the image and produce `ErrPendingThreadDestructors`
+until those threads exit and cleanup is retried. Native wrappers themselves do
+not add a separate loader-owned active-constructor counter.
+
+The shared native/emulated test suite covers O0/O2 object/archive calls, dynamic
+constructor order, reverse/reentrant destructors, per-image isolation, manual
+registration and the 4096-entry callback limit, late thread/global registrations,
+failed global initialization cleanup and pending/active thread-exit retirement.
+Optional libffi tests call captured Go handlers during ordinary C-thread work,
+constructors and thread exit; constructor callbacks reenter native TLS. Native
+constructor retirement tests retain code leases until the workers have joined.
+
+Native exceptions must not escape constructors, destructors or callback entries.
+Additional Darwin pointer/initializer sections, native Windows TLS, OS TLS-module
+registration and cross-image TLS-variable providers remain outside this scope.
 
 ## Emulated TLS
 
@@ -167,8 +212,8 @@ is guessed from symbol names.
 macOS C++ destructor execution is qualified with LLVM 22. Older producers can
 mix native TLS accesses into `-O0 -femulated-tls` output: Apple Clang 17 and
 upstream LLVM 18 can leave an undefined `__tls_guard` and native TLV relocations
-alongside emulated descriptors. These mixed C++ outputs remain unqualified by `NativeTLS`; compile
-them with a qualified producer. The native tests use `DYLIB_LLVM_CLANG` on macOS
+alongside emulated descriptors. These older mixed outputs still require both TLS options and separate producer
+qualification; the native C++ tests use a qualified native producer. The native tests use `DYLIB_LLVM_CLANG` on macOS
 when provided, leaving the other C fixtures on their original compiler.
 
 Descriptors contain four native words: size, alignment, a mutable runtime word,
@@ -200,9 +245,9 @@ before invocation and runs outside the registry lock, so callbacks can read TLS
 and register more callbacks. The key continues to identify the same storage
 during this dispatch. Each native thread permits up to 4096 queued callbacks
 across images. Native registration returns `-1` for null functions, allocation
-failure or that limit. Registration hooks always require `EmulatedTLS`, including
-manual calls with no compiler descriptors; they never select a process-global
-thread runtime. The address helper still requires validated image descriptors.
+failure or that limit. Registration hooks require `EmulatedTLS` or the documented Unix `NativeTLS`
+mode, including manual calls with no compiler descriptors; they never select a
+process-global thread runtime. The address helper still requires validated image descriptors.
 
 Session close retires calls and waits for code leases, then drains this image's
 callbacks on the invoking native thread before global finalizers. Cleanup remains

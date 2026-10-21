@@ -10,6 +10,9 @@ extern "C" int __cxa_thread_atexit(void (*)(void *), void *, void *);
 #endif
 
 thread_local int marker = 3;
+#if defined(DYLIB_TLS_DYNAMIC_INIT)
+extern "C" int tls_guard_probe(int, int) { return marker; }
+#endif
 static void nested(void *value) {
     if (value != &marker) record_event(-1);
     else record_event(700 + marker);
