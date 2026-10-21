@@ -111,6 +111,63 @@ expect 42 'sum_pair({20,22}:struct{a,b int32})int32' "$cli_dir/pair.o"
 expect '{a:20,b:22}' 'echo_pair({20,22}:struct{a,b int32})struct{a,b int32}' "$cli_dir/pair.a"
 expect '&{a:22,b:20}' 'mutate_pair(&{20,22}:*struct{a,b int32})*struct{a,b int32}' "$cli_dir/pair.o"
 
+# TLS is an explicit session option for raw objects, including typed calls.
+tls_cflags=(-fPIC)
+if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ]]; then
+  tls_cflags=(--target="$triple" -ffreestanding)
+fi
+for mode in emulated native; do
+  if [[ "$mode" == native && ( "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ) ]]; then
+    continue # Native COFF TLS is not implemented by the library.
+  fi
+  if [[ "$mode" == emulated ]]; then
+    tls_codegen=-femulated-tls
+    tls_option=EmulatedTLS
+  else
+    tls_codegen=-fno-emulated-tls
+    tls_option=NativeTLS
+  fi
+  for opt in -O0 -O2; do
+    tls_object="$cli_dir/$mode$opt.o"
+    tls_archive="$cli_dir/$mode$opt.a"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} "${tls_cflags[@]}" "$tls_codegen" "$opt" -c testdata/cli_tls.c -o "$tls_object"
+    "${AR:-ar}" rcs "$tls_archive" "$tls_object"
+    if "$binary" call 'func cli_tls_add(int32,int32)int32' 20 20 "$tls_object" >"$cli_dir/error" 2>&1; then
+      echo "accepted $mode TLS without an option" >&2
+      exit 1
+    fi
+    if ! grep -Fq "Options.$tls_option" "$cli_dir/error"; then
+      cat "$cli_dir/error" >&2
+      exit 1
+    fi
+    for tls_input in "$tls_object" "$tls_archive"; do
+      expect 42 "-$mode-tls" 'func cli_tls_add(int32,int32)int32' 20 20 "$tls_input"
+      expect 42 "-$mode-tls" 'cli_tls_add(20:int32 20:int32)int32' "$tls_input"
+      expect 42 "-$mode-tls" cli_tls_add 20 20 "$tls_input"
+      expect '{a:22,b:20}' "-$mode-tls" 'cli_tls_pair({20,22}:struct{a,b int32})struct{a,b int32}' "$tls_input"
+      echo "$compiler CLI TLS $mode $opt ${tls_input##*.}: PASS"
+    done
+    if [[ "$mode" == native ]]; then
+      mixed_object="$cli_dir/mixed$opt.o"
+      "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} "${tls_cflags[@]}" -femulated-tls "$opt" -Dcli_tls_add=cli_emutls_add -Dcli_tls_pair=cli_emutls_pair -c testdata/cli_tls.c -o "$mixed_object"
+      for entry in cli_tls_add cli_emutls_add; do
+        expect 42 -native-tls -emulated-tls "func $entry(int32,int32)int32" 20 20 "$tls_object" "$mixed_object"
+      done
+      for option in native emulated; do
+        if "$binary" call "-$option-tls" 'func cli_tls_add(int32,int32)int32' 20 20 "$tls_object" "$mixed_object" >"$cli_dir/error" 2>&1; then
+          echo "accepted mixed TLS with only -$option-tls" >&2
+          exit 1
+        fi
+        if ! grep -q 'Options.*TLS' "$cli_dir/error"; then
+          cat "$cli_dir/error" >&2
+          exit 1
+        fi
+      done
+      echo "$compiler CLI TLS mixed $opt: PASS"
+    fi
+  done
+done
+
 # The README runner builds the CLI and forwards arbitrary caller arguments.
 # Relative inputs must stay relative to the caller, including paths with spaces.
 runner="$(pwd)/examples/run.sh"

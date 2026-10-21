@@ -953,4 +953,4 @@ Replace `go` with `llgo` to use that compiler. Quote each declaration or invocat
 
 To build and verify the included fixtures, run `examples/run.sh go quickstart`, `examples/run.sh go dynamic`, or `examples/run.sh go structs`. The first two run on Linux/macOS; `structs` runs on all supported native targets and produces `build/structs.so`, `build/structs.dylib`, or `build/structs.dll` for further calls. `examples/run.sh go library` checks the typed and dynamic library API examples.
 
-See the [CLI reference](docs/cli.md) for complete syntax, supported types, and lifetime rules. Options such as `-keep-libraries`, `-process`, `-abi`, `-symbol`, and `-variadic-from` follow `call` and precede the signature, just as with `ddlgo`.
+See the [CLI reference](docs/cli.md) for complete syntax, supported types, and lifetime rules. Options such as `-keep-libraries`, `-process`, `-emulated-tls`, `-native-tls`, `-abi`, `-symbol`, and `-variadic-from` follow `call` and precede the signature, just as with `ddlgo`. The TLS flags select the library's supported raw TLS modes; OS-loaded libraries manage their own TLS.
