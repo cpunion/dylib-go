@@ -113,6 +113,12 @@ expect '&{a:22,b:20}' 'mutate_pair(&{20,22}:*struct{a,b int32})*struct{a,b int32
 
 # TLS is an explicit session option for raw objects, including typed calls.
 tls_cflags=(-fPIC)
+tls_cxx=${CLANG:-clang}
+if [[ "$(uname -s)" == Darwin && -n "${DYLIB_LLVM_CLANG:-}" ]]; then
+  # Match the library tests: Apple Clang 17 mixes native/emulated C++ TLS at O0.
+  tls_cxx=$DYLIB_LLVM_CLANG
+fi
+"$tls_cxx" --version
 if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ]]; then
   tls_cflags=(--target="$triple" -ffreestanding)
 fi
@@ -149,7 +155,7 @@ for mode in emulated native; do
     done
     cxx_tls_object="$cli_dir/cxx-$mode$opt.o"
     cxx_tls_archive="$cli_dir/cxx-$mode$opt.a"
-    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} "${tls_cflags[@]}" "$tls_codegen" "$opt" -std=c++17 -fno-exceptions -fno-rtti -fno-stack-protector -c testdata/cli_tls.cpp -o "$cxx_tls_object"
+    "$tls_cxx" ${native_cflags[@]+"${native_cflags[@]}"} "${tls_cflags[@]}" "$tls_codegen" "$opt" -std=c++17 -fno-exceptions -fno-rtti -fno-stack-protector -c testdata/cli_tls.cpp -o "$cxx_tls_object"
     "${AR:-ar}" rcs "$cxx_tls_archive" "$cxx_tls_object"
     for tls_input in "$cxx_tls_object" "$cxx_tls_archive"; do
       # Its global finalizer traps unless the current thread's C++ TLS object
