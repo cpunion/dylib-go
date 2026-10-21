@@ -41,49 +41,45 @@ func TestELFTLSDescEntryEncoding(t *testing.T) {
 
 func TestELFTLSDescAcrossTargets(t *testing.T) {
 	for _, target := range []string{"x86_64-unknown-linux-gnu", "i686-unknown-linux-gnu"} {
-		for _, opt := range []string{"-O0", "-O2"} {
-			t.Run(target+"/"+opt, func(t *testing.T) {
-				var objects []*object
-				dir := t.TempDir()
-				for _, part := range []string{"consumer", "provider"} {
-					path := compile(t, "testdata/emutls_"+part+".c", filepath.Join(dir, part+".o"), "--target="+target, "-ffreestanding", "-fno-emulated-tls", "-mtls-dialect=gnu2", opt)
-					data, err := os.ReadFile(path)
-					if err != nil {
-						t.Fatal(err)
-					}
-					f, err := parse(path, data)
-					if err != nil || len(f.info.Unsupported) != 0 {
-						t.Fatal(f, err)
-					}
-					objects = append(objects, f.obj)
-					calls, addresses := 0, 0
-					for _, r := range f.obj.relocs {
-						if elfTLSDescCall(f.info.Arch, r.typ) {
-							calls++
-						} else if elfTLSDesc(f.info.Arch, r.typ) {
-							addresses++
-						}
-					}
-					if calls == 0 || calls != addresses {
-						t.Fatal("fixture did not exercise descriptor pairs:", calls, addresses)
-					}
+		t.Run(target, func(t *testing.T) {
+			// Pure inspection CI may have Clang 17, which predates -mtls-dialect.
+			// Its assembler can still produce the GNU2 records this parser consumes.
+			path := compile(t, "testdata/elf_tlsdesc_relocations.S", filepath.Join(t.TempDir(), "relocs.o"), "--target="+target)
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			f, err := parse(path, data)
+			if err != nil || len(f.info.Unsupported) != 0 {
+				t.Fatal(f, err)
+			}
+			objects := []*object{f.obj}
+			calls, addresses := 0, 0
+			for _, r := range f.obj.relocs {
+				if elfTLSDescCall(f.info.Arch, r.typ) {
+					calls++
+				} else if elfTLSDesc(f.info.Arch, r.typ) {
+					addresses++
 				}
-				if needed, err := checkELFTLS(objects, true); err != nil || !needed {
-					t.Fatal(needed, err)
-				}
-				if _, err := checkELFTLS(objects, false); err == nil {
-					t.Fatal("missing opt-in accepted")
-				}
-				defs, err := definitions(objects)
-				if err != nil {
-					t.Fatal(err)
-				}
-				im := &image{objects: objects, defs: defs, pointerSize: uint64(objects[0].info.Bits / 8), page: 4096}
-				if _, err := im.layoutELFTLS(0); err != nil || !im.elfTLS.descriptors || len(im.elfTLS.records) < 2 {
-					t.Fatal(im.elfTLS, err)
-				}
-			})
-		}
+			}
+			if calls != 3 || addresses != 3 {
+				t.Fatal("fixture lost global, local or module-base descriptor pairs:", calls, addresses)
+			}
+			if needed, err := checkELFTLS(objects, true); err != nil || !needed {
+				t.Fatal(needed, err)
+			}
+			if _, err := checkELFTLS(objects, false); err == nil {
+				t.Fatal("missing opt-in accepted")
+			}
+			defs, err := definitions(objects)
+			if err != nil {
+				t.Fatal(err)
+			}
+			im := &image{objects: objects, defs: defs, pointerSize: uint64(f.info.Bits / 8), page: 4096}
+			if _, err := im.layoutELFTLS(0); err != nil || !im.elfTLS.descriptors || im.elfTLS.align != 64 || im.elfTLS.size < 68 || len(im.elfTLS.records) != 3 {
+				t.Fatal(im.elfTLS, err)
+			}
+		})
 	}
 }
 
