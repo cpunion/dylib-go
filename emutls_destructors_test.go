@@ -13,10 +13,14 @@ import (
 	"github.com/ramblelabs/dylib-go/internal/native"
 )
 
-func threadDestructorInputs(t *testing.T, optimization string, extra ...string) (string, string, string) {
+func threadDestructorInputs(t *testing.T, optimization string, nativeMode bool, extra ...string) (string, string, string) {
 	t.Helper()
 	dir := t.TempDir()
-	flags := []string{"-std=c++17", "-femulated-tls", "-fno-exceptions", "-fno-rtti", optimization}
+	tlsFlag := "-femulated-tls"
+	if nativeMode {
+		tlsFlag = "-fno-emulated-tls"
+	}
+	flags := []string{"-std=c++17", tlsFlag, "-fno-exceptions", "-fno-rtti", optimization}
 	flags = append(flags, extra...)
 	source := "testdata/emutls_dtor_objects.cpp"
 	if runtime.GOOS == "windows" {
@@ -35,14 +39,19 @@ func threadDestructorInputs(t *testing.T, optimization string, extra ...string) 
 	}
 	object := compileWith(t, cc, source, filepath.Join(dir, "objects.o"), flags...)
 	archive := filepath.Join(dir, "objects.a")
-	command(t, "ar", "rcs", archive, object)
+	if nativeMode {
+		poison := compile(t, "testdata/tls_unowned_thread_exit.c", filepath.Join(dir, "poison.o"))
+		command(t, "ar", "rcs", archive, poison, object)
+	} else {
+		command(t, "ar", "rcs", archive, object)
+	}
 	finalizer := compile(t, "testdata/emutls_dtor_finalizer.c", filepath.Join(dir, "finalizer.o"), optimization)
 	return object, archive, finalizer
 }
 
-func threadDestructorSession(t *testing.T, host *Session, input, finalizer string) *Session {
+func threadDestructorSession(t *testing.T, host *Session, input, finalizer string, nativeMode bool) *Session {
 	t.Helper()
-	s := New(Options{EmulatedTLS: true})
+	s := New(tlsDestructorOptions(nativeMode))
 	t.Cleanup(func() {
 		if err := s.Close(); err != nil {
 			t.Error(err)
@@ -61,9 +70,13 @@ func threadDestructorSession(t *testing.T, host *Session, input, finalizer strin
 
 func TestNativeEmulatedTLSThreadDestructors(t *testing.T) {
 	needNative(t)
+	testTLSThreadDestructors(t, false)
+}
+
+func testTLSThreadDestructors(t *testing.T, nativeMode bool) {
 	for _, optimization := range []string{"-O0", "-O2"} {
 		t.Run(optimization, func(t *testing.T) {
-			object, archive, finalizer := threadDestructorInputs(t, optimization)
+			object, archive, finalizer := threadDestructorInputs(t, optimization, nativeMode)
 			for _, kind := range []string{"object", "archive"} {
 				t.Run(kind, func(t *testing.T) {
 					runtime.LockOSThread()
@@ -73,7 +86,7 @@ func TestNativeEmulatedTLSThreadDestructors(t *testing.T) {
 					if kind == "archive" {
 						input = archive
 					}
-					s := threadDestructorSession(t, host, input, finalizer)
+					s := threadDestructorSession(t, host, input, finalizer, nativeMode)
 					call(t, s, "tls_step", 20, 22, 49)
 					call(t, host, "recorded_event", -1, 0, 0)
 					if err := s.Close(); err != nil {
@@ -93,9 +106,13 @@ func TestNativeEmulatedTLSThreadDestructors(t *testing.T) {
 
 func TestNativeEmulatedTLSThreadDestructorRetirement(t *testing.T) {
 	needNative(t)
+	testTLSThreadDestructorRetirement(t, false)
+}
+
+func testTLSThreadDestructorRetirement(t *testing.T, nativeMode bool) {
 	for _, optimization := range []string{"-O0", "-O2"} {
 		t.Run(optimization, func(t *testing.T) {
-			object, archive, finalizer := threadDestructorInputs(t, optimization)
+			object, archive, finalizer := threadDestructorInputs(t, optimization, nativeMode)
 			for _, kind := range []string{"object", "archive"} {
 				for _, mode := range []string{"pending", "active"} {
 					t.Run(kind+"/"+mode, func(t *testing.T) {
@@ -104,7 +121,7 @@ func TestNativeEmulatedTLSThreadDestructorRetirement(t *testing.T) {
 						if kind == "archive" {
 							input = archive
 						}
-						s := threadDestructorSession(t, host, input, finalizer)
+						s := threadDestructorSession(t, host, input, finalizer, nativeMode)
 						step, err := s.Resolve("tls_step")
 						if err != nil {
 							t.Fatal(err)
@@ -196,14 +213,18 @@ func waitThreadDestructorCount(t *testing.T, host *Session, name string, want in
 
 func TestNativeEmulatedTLSThreadDestructorIsolation(t *testing.T) {
 	needNative(t)
+	testTLSThreadDestructorIsolation(t, false)
+}
+
+func testTLSThreadDestructorIsolation(t *testing.T, nativeMode bool) {
 	for _, optimization := range []string{"-O0", "-O2"} {
 		t.Run(optimization, func(t *testing.T) {
 			runtime.LockOSThread()
 			defer runtime.UnlockOSThread()
-			object, _, finalizer := threadDestructorInputs(t, optimization)
+			object, _, finalizer := threadDestructorInputs(t, optimization, nativeMode)
 			host := nativeThreadLibrary(t, "testdata/emutls_dtor_host.c")
-			first := threadDestructorSession(t, host, object, finalizer)
-			second := threadDestructorSession(t, host, object, finalizer)
+			first := threadDestructorSession(t, host, object, finalizer, nativeMode)
+			second := threadDestructorSession(t, host, object, finalizer, nativeMode)
 			call(t, first, "tls_step", 20, 22, 49)
 			call(t, second, "tls_step", 20, 22, 49)
 			if err := first.Close(); err != nil {
@@ -221,12 +242,16 @@ func TestNativeEmulatedTLSThreadDestructorIsolation(t *testing.T) {
 
 func TestNativeEmulatedTLSThreadDestructorLateRegistration(t *testing.T) {
 	needNative(t)
+	testTLSThreadDestructorLateRegistration(t, false)
+}
+
+func testTLSThreadDestructorLateRegistration(t *testing.T, nativeMode bool) {
 	for _, optimization := range []string{"-O0", "-O2"} {
 		t.Run(optimization, func(t *testing.T) {
-			object, _, _ := threadDestructorInputs(t, optimization)
+			object, _, _ := threadDestructorInputs(t, optimization, nativeMode)
 			finalizer := compile(t, "testdata/emutls_dtor_finalizer.c", filepath.Join(t.TempDir(), "late.o"), optimization, "-DDYLIB_TLS_LATE")
 			host := nativeThreadLibrary(t, "testdata/emutls_dtor_host.c")
-			s := threadDestructorSession(t, host, object, finalizer)
+			s := threadDestructorSession(t, host, object, finalizer, nativeMode)
 			if err := s.Link("tls_step"); err != nil {
 				t.Fatal(err)
 			}
@@ -254,7 +279,7 @@ func TestEmulatedTLSThreadDestructorFormats(t *testing.T) {
 			if len(file.info.Unsupported) != 0 {
 				t.Fatal(file.info.Unsupported)
 			}
-			if needed, err := checkEmulatedTLS([]*object{file.obj}, true); err != nil || !needed {
+			if needed, err := checkTLSRuntime([]*object{file.obj}, Options{EmulatedTLS: true}); err != nil || !needed {
 				t.Fatal(needed, err)
 			}
 		})
@@ -263,6 +288,10 @@ func TestEmulatedTLSThreadDestructorFormats(t *testing.T) {
 
 func TestNativeEmulatedTLSThreadDestructorManual(t *testing.T) {
 	needNative(t)
+	testTLSThreadDestructorManual(t, false)
+}
+
+func testTLSThreadDestructorManual(t *testing.T, nativeMode bool) {
 	for _, mode := range []string{"registration", "budget"} {
 		t.Run(mode, func(t *testing.T) {
 			runtime.LockOSThread()
@@ -288,7 +317,7 @@ func TestNativeEmulatedTLSThreadDestructorManual(t *testing.T) {
 			if err := withoutOpt.Link("tls_register"); err == nil || !strings.Contains(err.Error(), "Options.EmulatedTLS") {
 				t.Fatal("process-global thread runtime accepted without opt-in", err)
 			}
-			s := threadDestructorSession(t, host, input, finalizer)
+			s := threadDestructorSession(t, host, input, finalizer, nativeMode)
 			call(t, s, "tls_invalid", 0, 0, -1)
 			count, sum := int32(2), int32(942)
 			if mode == "registration" {
@@ -308,9 +337,13 @@ func TestNativeEmulatedTLSThreadDestructorManual(t *testing.T) {
 
 func TestNativeEmulatedTLSThreadDestructorInitialization(t *testing.T) {
 	needNative(t)
+	testTLSThreadDestructorInitialization(t, false)
+}
+
+func testTLSThreadDestructorInitialization(t *testing.T, nativeMode bool) {
 	for _, optimization := range []string{"-O0", "-O2"} {
 		t.Run(optimization, func(t *testing.T) {
-			object, archive, finalizer := threadDestructorInputs(t, optimization, "-DDYLIB_TLS_DYNAMIC_INIT")
+			object, archive, finalizer := threadDestructorInputs(t, optimization, nativeMode, "-DDYLIB_TLS_DYNAMIC_INIT")
 			for _, kind := range []string{"object", "archive"} {
 				t.Run(kind, func(t *testing.T) {
 					runtime.LockOSThread()
@@ -320,7 +353,7 @@ func TestNativeEmulatedTLSThreadDestructorInitialization(t *testing.T) {
 					if kind == "archive" {
 						input = archive
 					}
-					s := threadDestructorSession(t, host, input, finalizer)
+					s := threadDestructorSession(t, host, input, finalizer, nativeMode)
 					call(t, s, "tls_step", 20, 22, 49)
 					call(t, s, "tls_step", 20, 22, 50)
 					if err := s.Close(); err != nil {
@@ -336,9 +369,13 @@ func TestNativeEmulatedTLSThreadDestructorInitialization(t *testing.T) {
 
 func TestNativeEmulatedTLSThreadDestructorInitializerFailure(t *testing.T) {
 	needNative(t)
+	testTLSThreadDestructorInitializerFailure(t, false)
+}
+
+func testTLSThreadDestructorInitializerFailure(t *testing.T, nativeMode bool) {
 	for _, optimization := range []string{"-O0", "-O2"} {
 		t.Run(optimization, func(t *testing.T) {
-			object, archive, finalizer := threadDestructorInputs(t, optimization)
+			object, archive, finalizer := threadDestructorInputs(t, optimization, nativeMode)
 			failed := compile(t, "testdata/emutls_dtor_cinit.c", filepath.Join(t.TempDir(), "failed.o"), optimization)
 			for _, kind := range []string{"object", "archive"} {
 				t.Run(kind, func(t *testing.T) {
@@ -349,7 +386,7 @@ func TestNativeEmulatedTLSThreadDestructorInitializerFailure(t *testing.T) {
 					if kind == "archive" {
 						input = archive
 					}
-					s := threadDestructorSession(t, host, input, finalizer)
+					s := threadDestructorSession(t, host, input, finalizer, nativeMode)
 					loadCInitializerFixture(t, s, failed)
 					if err := s.Link("tls_step"); !errors.Is(err, ErrInitialization) {
 						t.Fatal("C initializer failure", err)

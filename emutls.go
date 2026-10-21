@@ -36,7 +36,8 @@ func emulatedTLSUnsupportedRuntime(name string) bool {
 	return false
 }
 
-func checkEmulatedTLS(objects []*object, enabled bool) (bool, error) {
+func checkTLSRuntime(objects []*object, opts Options) (bool, error) {
+	enabled := opts.EmulatedTLS
 	needed := false
 	for _, o := range objects {
 		for _, sec := range o.sections {
@@ -53,8 +54,9 @@ func checkEmulatedTLS(objects []*object, enabled bool) (bool, error) {
 				continue
 			}
 			needed = true
-			if !enabled {
-				return false, fmt.Errorf("%s: emulated TLS requires Options.EmulatedTLS", o.info.Name)
+			nativeThreadHook := opts.NativeTLS && (o.info.Format == "ELF" || o.info.Format == "Mach-O") && emulatedTLSThreadHelper(name)
+			if !enabled && !nativeThreadHook {
+				return false, fmt.Errorf("%s: TLS runtime requires Options.EmulatedTLS, or Options.NativeTLS for Unix thread-exit hooks", o.info.Name)
 			}
 			if s.imported != nil || s.name != name && strings.HasPrefix(name, emulatedTLSPrefix) || name == emulatedTLSHelper && (s.section != 0 || s.alias != nil) {
 				return false, fmt.Errorf("%s: emulated TLS requires image-owned descriptors and the host helper", o.info.Name)
@@ -73,7 +75,7 @@ func checkEmulatedTLS(objects []*object, enabled bool) (bool, error) {
 					return false, fmt.Errorf("%s: emulated TLS thread destructors/dynamic runtime initialization are unsupported", o.info.Name)
 				}
 				if (emulatedTLSThreadHelper(name) || emulatedTLSMSVCHelper(name) || msvc && name == emulatedTLSMSVCGuard && s.global) && (s.section != 0 || s.imported != nil || s.alias != nil) {
-					return false, fmt.Errorf("%s: emulated TLS thread destructors require the image-owned host helper", o.info.Name)
+					return false, fmt.Errorf("%s: TLS thread destructors require the image-owned host helper", o.info.Name)
 				}
 			}
 		}

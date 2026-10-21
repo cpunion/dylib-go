@@ -178,7 +178,7 @@ func TestMSVCEmulatedTLSRuntimeValidation(t *testing.T) {
 	for _, name := range []string{emulatedTLSMSVCInit, emulatedTLSMSVCExit} {
 		for _, system := range []string{"windows", "linux", "darwin"} {
 			o := &object{info: Info{OS: system}, symbols: []symbol{{name: name, global: true}}}
-			needed, err := checkEmulatedTLS([]*object{o}, true)
+			needed, err := checkTLSRuntime([]*object{o}, Options{EmulatedTLS: true})
 			if system != "windows" {
 				if err == nil {
 					t.Fatal("MSVC helper accepted on", system)
@@ -191,27 +191,27 @@ func TestMSVCEmulatedTLSRuntimeValidation(t *testing.T) {
 			o.sections = []*section{nil, {name: ".text", size: 16, exec: true}}
 			o.symbols = append(o.symbols, symbol{name: "replacement", section: 1, global: true})
 			o.symbols[0].alias = &weakAlias{target: 1}
-			if _, err := checkEmulatedTLS([]*object{o}, true); err == nil {
+			if _, err := checkTLSRuntime([]*object{o}, Options{EmulatedTLS: true}); err == nil {
 				t.Fatal("weak runtime override accepted")
 			}
 			o.symbols[0].alias = nil
 			o.symbols[0].section = 1
-			if _, err := checkEmulatedTLS([]*object{o}, true); err == nil {
+			if _, err := checkTLSRuntime([]*object{o}, Options{EmulatedTLS: true}); err == nil {
 				t.Fatal("input runtime override accepted")
 			}
 			o.symbols[0].section = 0
 			o.symbols = append(o.symbols, symbol{name: emulatedTLSMSVCGuard, section: 1, global: true})
-			if _, err := checkEmulatedTLS([]*object{o}, true); err == nil {
+			if _, err := checkTLSRuntime([]*object{o}, Options{EmulatedTLS: true}); err == nil {
 				t.Fatal("input guard override accepted")
 			}
 		}
 	}
 	o := &object{info: Info{OS: "windows"}, sections: []*section{nil, {lifecycle: lifecycleThreadInit}}}
-	if _, err := checkEmulatedTLS([]*object{o}, false); err == nil {
+	if _, err := checkTLSRuntime([]*object{o}, Options{EmulatedTLS: false}); err == nil {
 		t.Fatal("thread table accepted without opt-in")
 	}
 	o.symbols = []symbol{{name: "__imp_" + emulatedTLSMSVCGuard, global: true}}
-	if _, err := checkEmulatedTLS([]*object{o}, true); err == nil {
+	if _, err := checkTLSRuntime([]*object{o}, Options{EmulatedTLS: true}); err == nil {
 		t.Fatal("imported runtime descriptor accepted")
 	}
 }
@@ -270,10 +270,10 @@ func TestMSVCEmulatedTLSFormats(t *testing.T) {
 					if len(file.info.Unsupported) != 0 {
 						t.Fatal(file.info.Unsupported)
 					}
-					if needed, err := checkEmulatedTLS([]*object{file.obj}, true); err != nil || !needed {
+					if needed, err := checkTLSRuntime([]*object{file.obj}, Options{EmulatedTLS: true}); err != nil || !needed {
 						t.Fatal(needed, err)
 					}
-					if _, err := checkEmulatedTLS([]*object{file.obj}, false); err == nil {
+					if _, err := checkTLSRuntime([]*object{file.obj}, Options{EmulatedTLS: false}); err == nil {
 						t.Fatal("thread runtime accepted without opt-in")
 					}
 					found := false
@@ -319,7 +319,7 @@ func TestNativeMSVCEmulatedTLSMultipleObjects(t *testing.T) {
 						} else if kind == "reversed_objects" {
 							input = second
 						}
-						s := threadDestructorSession(t, host, input, finalizer)
+						s := threadDestructorSession(t, host, input, finalizer, false)
 						if kind == "reversed_objects" {
 							load(t, s, first)
 						} else if kind == "objects" {
@@ -412,7 +412,7 @@ func TestNativeMSVCEmulatedTLSActiveInitialization(t *testing.T) {
 	needMSVCTLS(t)
 	for _, optimization := range []string{"-O0", "-O2"} {
 		t.Run(optimization, func(t *testing.T) {
-			object, archive, finalizer := threadDestructorInputs(t, optimization, "-DDYLIB_TLS_DYNAMIC_INIT")
+			object, archive, finalizer := threadDestructorInputs(t, optimization, false, "-DDYLIB_TLS_DYNAMIC_INIT")
 			for _, kind := range []string{"object", "archive"} {
 				t.Run(kind, func(t *testing.T) {
 					host := nativeThreadLibrary(t, "testdata/emutls_dtor_host.c")
@@ -420,7 +420,7 @@ func TestNativeMSVCEmulatedTLSActiveInitialization(t *testing.T) {
 					if kind == "archive" {
 						input = archive
 					}
-					s := threadDestructorSession(t, host, input, finalizer)
+					s := threadDestructorSession(t, host, input, finalizer, false)
 					step, err := s.Resolve("tls_step")
 					if err != nil {
 						t.Fatal(err)
