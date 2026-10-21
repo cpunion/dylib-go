@@ -99,12 +99,20 @@ func needMachONativeTLS(t *testing.T) {
 
 func TestNativeMachOTLS(t *testing.T) {
 	needMachONativeTLS(t)
+	testNativeTLSModules(t)
+}
+
+func testNativeTLSModules(t *testing.T) {
 	for _, opt := range []string{"-O0", "-O2"} {
 		t.Run(opt, func(t *testing.T) {
 			dir := t.TempDir()
 			consumer := compile(t, "testdata/emutls_consumer.c", filepath.Join(dir, "consumer.o"), "-fno-emulated-tls", opt)
 			provider := compile(t, "testdata/emutls_provider.c", filepath.Join(dir, "provider.o"), "-fno-emulated-tls", opt)
-			unowned := compile(t, "testdata/macho_tls_unowned.c", filepath.Join(dir, "unowned.o"), opt)
+			poison := "testdata/macho_tls_unowned.c"
+			if runtime.GOOS == "linux" {
+				poison = "testdata/elf_tls_unowned.c"
+			}
+			unowned := compile(t, poison, filepath.Join(dir, "unowned.o"), opt)
 			archive := filepath.Join(dir, "provider.a")
 			command(t, "ar", "rcs", archive, unowned, provider)
 			for _, kind := range []string{"object", "archive"} {
@@ -158,6 +166,10 @@ func TestNativeMachOTLSOptIn(t *testing.T) {
 
 func TestNativeMachOTLSRetainedProvider(t *testing.T) {
 	needMachONativeTLS(t)
+	testNativeTLSRetainedProvider(t)
+}
+
+func testNativeTLSRetainedProvider(t *testing.T) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 	dir := t.TempDir()
@@ -201,6 +213,10 @@ func TestNativeMachOTLSRetainedProvider(t *testing.T) {
 
 func TestNativeMachOTLSForeignThreads(t *testing.T) {
 	needMachONativeTLS(t)
+	testNativeTLSForeignThreads(t)
+}
+
+func testNativeTLSForeignThreads(t *testing.T) {
 	host := nativeThreadLibrary(t, "testdata/emutls_threads.c")
 	runner, err := host.Resolve("tls_threads")
 	if err != nil {
@@ -235,6 +251,10 @@ func TestNativeMachOTLSForeignThreads(t *testing.T) {
 
 func TestNativeMachOTLSValuesAndIsolation(t *testing.T) {
 	needMachONativeTLS(t)
+	testNativeTLSValuesAndIsolation(t)
+}
+
+func testNativeTLSValuesAndIsolation(t *testing.T) {
 	for _, opt := range []string{"-O0", "-O2"} {
 		t.Run(opt, func(t *testing.T) {
 			dir := t.TempDir()
@@ -245,7 +265,8 @@ func TestNativeMachOTLSValuesAndIsolation(t *testing.T) {
 					defer runtime.UnlockOSThread()
 					var owners [2]*Session
 					for n := range owners {
-						s := New(Options{NativeTLS: true, EmulatedTLS: mixed})
+						// i386 O0 aggregate copies can use the retained host memcpy.
+						s := New(Options{NativeTLS: true, EmulatedTLS: mixed, ProcessSymbols: true})
 						owners[n] = s
 						defer s.Close()
 						load(t, s, values)
@@ -281,6 +302,10 @@ func TestNativeMachOTLSValuesAndIsolation(t *testing.T) {
 
 func TestNativeMachOTLSPinnedGoThreads(t *testing.T) {
 	needMachONativeTLS(t)
+	testNativeTLSPinnedGoThreads(t)
+}
+
+func testNativeTLSPinnedGoThreads(t *testing.T) {
 	s := New(Options{NativeTLS: true})
 	defer s.Close()
 	dir := t.TempDir()
@@ -334,6 +359,10 @@ func TestNativeMachOTLSPinnedGoThreads(t *testing.T) {
 
 func TestNativeMachOTLSLifecycle(t *testing.T) {
 	needMachONativeTLS(t)
+	testNativeTLSLifecycle(t)
+}
+
+func testNativeTLSLifecycle(t *testing.T) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 	dir := t.TempDir()
@@ -356,6 +385,10 @@ func TestNativeMachOTLSLifecycle(t *testing.T) {
 
 func TestNativeMachOTLSRetirement(t *testing.T) {
 	needMachONativeTLS(t)
+	testNativeTLSRetirement(t)
+}
+
+func testNativeTLSRetirement(t *testing.T) {
 	host := nativeThreadLibrary(t, "testdata/emutls_threads.c")
 	start, err := host.Resolve("tls_threads_pause")
 	if err != nil {

@@ -45,7 +45,7 @@ func (im *image) relocate(o *object, r relocation) error {
 			return fmt.Errorf("unsupported Mach-O relocation width %d", w)
 		}
 	case "ELF":
-		if o.info.Arch == "amd64" && (r.typ == 1 || r.typ == 24 || r.typ == 25 || r.typ >= 27 && r.typ <= 31 || r.typ == elfSize64) || o.info.Arch == "arm64" && (r.typ == 257 || r.typ == 260 || r.typ == 307) {
+		if o.info.Arch == "amd64" && (r.typ == 1 || r.typ == 17 || r.typ == 24 || r.typ == 25 || r.typ >= 27 && r.typ <= 31 || r.typ == elfSize64) || o.info.Arch == "arm64" && (r.typ == 257 || r.typ == 260 || r.typ == 307) {
 			w = 8
 		}
 		if o.info.Arch == "arm64" && (r.typ == 259 || r.typ == 262) {
@@ -75,6 +75,11 @@ func (im *image) relocate(o *object, r relocation) error {
 	}
 	if elfGOTBaseRelocation(o, r.typ) {
 		return im.relocELF(o, r, b, 0, p)
+	}
+	if o.info.Format == "ELF" {
+		if done, err := im.relocateELFTLS(o, r, b, p); done || err != nil {
+			return err
+		}
 	}
 	if o.info.Format == "Mach-O" {
 		var err error

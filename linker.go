@@ -36,10 +36,10 @@ type Options struct {
 	// values, documented C++ thread-exit registrations and Clang MSVC emulated
 	// TLS initialization. Native TLS uses the separate NativeTLS option.
 	EmulatedTLS bool
-	// NativeTLS enables plain C Mach-O TLV on macOS amd64/arm64 raw objects.
-	// Values belong to native OS threads. Supports constant/zero initialization;
-	// native TLS initializers, pointer sections and foreign descriptor providers
-	// remain unsupported. Other platforms can use EmulatedTLS or OS libraries.
+	// NativeTLS enables plain C native TLS in raw objects: macOS amd64/arm64
+	// TLV, Linux amd64/386 GD/LD, and Linux arm64 TLSDESC. It reuses image-owned
+	// per-thread storage and lifetime guards. Native initial-exec/local-exec,
+	// dynamic TLS initializers and foreign TLS providers remain unsupported.
 	NativeTLS bool
 	// RegisterUnwind registers supported raw-image runtime function tables.
 	// Supports Windows/macOS amd64/arm64 and Linux amd64/arm64/386 C frames.
@@ -215,7 +215,7 @@ func (s *Session) define(name string, address uintptr) error {
 	if emulatedTLSReserved(strings.TrimPrefix(name, "__imp_")) {
 		return fmt.Errorf("%s is reserved for image-owned emulated TLS", name)
 	}
-	if runtime.GOOS == "darwin" && strings.TrimPrefix(name, "__imp_") == machoTLSBootstrap {
+	if runtime.GOOS == "linux" && elfTLSRuntime(name) || runtime.GOOS == "darwin" && strings.TrimPrefix(name, "__imp_") == machoTLSBootstrap {
 		return fmt.Errorf("%s is reserved for image-owned native TLS", name)
 	}
 	if runtimeHelper(strings.TrimPrefix(name, "__imp_")) {
@@ -441,7 +441,7 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 				}
 			}
 			for _, n := range wanted {
-				if runtime.GOOS == "darwin" && s.opts.NativeTLS && n == machoTLSBootstrap {
+				if s.opts.NativeTLS && (runtime.GOOS == "linux" && elfTLSRuntime(n) || runtime.GOOS == "darwin" && n == machoTLSBootstrap) {
 					continue
 				}
 				if s.opts.EmulatedTLS && (n == emulatedTLSHelper || emulatedTLSThreadHelper(n) || emulatedTLSMSVCHelper(n) || n == emulatedTLSMSVCGuard) {
@@ -703,6 +703,7 @@ type image struct {
 	lifecycle                              *native.Lifecycle
 	emulatedTLS                            *native.EmulatedTLS
 	machoTLS                               *machoTLSLayout
+	elfTLS                                 *elfTLSLayout
 	hooks                                  map[string]uintptr
 	initializers, finalizers               []uintptr
 	threadInitializers                     []uintptr
@@ -730,6 +731,10 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 		return nil, err
 	}
 	nativeTLSNeeded, err := checkMachOTLS(objs, nativeTLS)
+	if err != nil {
+		return nil, err
+	}
+	elfTLSNeeded, err := checkELFTLS(objs, nativeTLS)
 	if err != nil {
 		return nil, err
 	}
@@ -785,6 +790,12 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	}
 	if nativeTLSNeeded {
 		size, err = im.layoutMachOTLS(size)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if elfTLSNeeded {
+		size, err = im.layoutELFTLS(size)
 		if err != nil {
 			return nil, err
 		}
@@ -859,13 +870,18 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	if e := im.prepareRuntimeHelpers(); e != nil {
 		return nil, e
 	}
-	if tlsNeeded || nativeTLSNeeded {
+	if tlsNeeded || nativeTLSNeeded || elfTLSNeeded {
 		if err := im.prepareEmulatedTLSHelpers(); err != nil {
 			return nil, err
 		}
 	}
 	if nativeTLSNeeded {
 		if err := im.prepareMachOTLSHelper(); err != nil {
+			return nil, err
+		}
+	}
+	if elfTLSNeeded {
+		if err := im.prepareELFTLSHelper(); err != nil {
 			return nil, err
 		}
 	}
@@ -903,13 +919,18 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	if e := im.rebaseMachOInitializerOffsets(); e != nil {
 		return nil, e
 	}
-	if tlsNeeded || nativeTLSNeeded {
+	if tlsNeeded || nativeTLSNeeded || elfTLSNeeded {
 		if err := im.prepareEmulatedTLS(); err != nil {
 			return nil, err
 		}
 	}
 	if nativeTLSNeeded {
 		if err := im.prepareMachOTLS(); err != nil {
+			return nil, err
+		}
+	}
+	if elfTLSNeeded {
+		if err := im.prepareELFTLS(); err != nil {
 			return nil, err
 		}
 	}

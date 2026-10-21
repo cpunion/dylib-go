@@ -78,7 +78,7 @@ func parseELF(name string, b []byte) (*file, error) {
 			v.value = 0
 		}
 		if elf.ST_TYPE(s.Info) == elf.STT_TLS {
-			o.unsupported("TLS symbol " + s.Name)
+			v.tls = true
 		}
 		if elf.ST_TYPE(s.Info) == elf.STT_GNU_IFUNC {
 			o.unsupported("GNU IFUNC symbol " + s.Name)
@@ -90,13 +90,19 @@ func parseELF(name string, b []byte) (*file, error) {
 	}
 	o.sections = make([]*section, len(f.Sections))
 	for i, s := range f.Sections {
-		if s.Flags&elf.SHF_TLS != 0 {
-			o.unsupported("TLS section " + s.Name)
+		if s.Flags&elf.SHF_TLS != 0 && (s.Flags&elf.SHF_ALLOC == 0 || s.Flags&elf.SHF_WRITE == 0 || s.Flags&elf.SHF_EXECINSTR != 0 || s.Type != elf.SHT_PROGBITS && s.Type != elf.SHT_NOBITS) {
+			return nil, fmt.Errorf("%s: native TLS requires writable allocated PROGBITS/NOBITS", s.Name)
 		}
 		if s.Flags&elf.SHF_ALLOC == 0 || strings.HasPrefix(s.Name, ".eh_frame") && !elfUnwindSection(s.Name) {
 			continue
 		}
 		v := &section{name: s.Name, size: s.Size, align: s.Addralign, write: s.Flags&elf.SHF_WRITE != 0, exec: s.Flags&elf.SHF_EXECINSTR != 0}
+		if s.Flags&elf.SHF_TLS != 0 {
+			v.nativeTLS = elfTLSData
+			if s.Type == elf.SHT_NOBITS {
+				v.nativeTLS = elfTLSZero
+			}
+		}
 		if s.Name == ".init" || s.Name == ".fini" {
 			v.startup = true
 			if s.Type != elf.SHT_PROGBITS || !v.exec || v.write {

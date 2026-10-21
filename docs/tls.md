@@ -8,7 +8,8 @@ Go. Complete shared libraries continue to use their OS loader's TLS support.
 | --- | --- | --- |
 | Native Mach-O TLV | `Options.NativeTLS` | Plain C, macOS amd64/arm64; initialized, zero-filled and aligned values |
 | Clang emulated TLS | `Options.EmulatedTLS` | Linux/macOS/Windows targets below, including documented C++ initialization/destruction |
-| Native ELF/COFF TLS, other Darwin models | None | Unsupported; use emulated TLS or a complete OS library |
+| Native ELF dynamic TLS | `Options.NativeTLS` | Plain C, Linux amd64/386 GD/LD and arm64 TLSDESC; Clang and GCC |
+| Native ELF static TLS, COFF TLS, other Darwin models | None | Unsupported; use emulated TLS or a complete OS library |
 
 ## Native Mach-O TLV
 
@@ -47,8 +48,8 @@ image-owned TLV descriptors. Ordinary references to template/descriptor bytes,
 foreign or OS-library TLV descriptors, nonzero keys, bootstrap overrides,
 unsupported opcodes/addends and partial/overlapping descriptors fail before
 publication. Thread-local pointer and initializer sections, dynamic TLS
-constructors/destructors, authenticated arm64e and native ELF/COFF models are
-not qualified by this option.
+constructors/destructors, authenticated arm64e and native COFF models are
+not qualified by this option. Linux ELF models have the separate scope below.
 
 `Lookup`, `Resolve` and `Bind` reject raw TLS variable names: their linker address
 is a descriptor, not a process-global variable address. Export a native C getter
@@ -66,6 +67,57 @@ retained function providers and owner retirement before/concurrent with thread
 exit. Both architectures compare generated entry bytes with an independent LLVM
 assembly reference. Native register probes check the full additional GPR/vector
 contract, including both 64-bit lanes of every ARM64 vector register.
+
+## Native ELF dynamic TLS
+
+Enable `Options{NativeTLS: true}` for ordinary plain C Linux PIC objects and
+archives. Clang and GCC global-dynamic/local-dynamic output is supported on
+amd64/386; AArch64 uses the descriptor model emitted by both compilers. All
+TLS definitions must be selected into the same image. Ordinary object/archive
+dependency resolution, missing-provider retry and retained function providers
+work as for Mach-O. Raw TLS symbol names cannot be bound as ordinary variables;
+use a native getter, pin multi-call Go sequences to an OS thread and retain code
+leases while borrowing returned TLS pointers.
+
+| Architecture | Implemented static relocations | Address-entry convention |
+| --- | --- | --- |
+| amd64 | `TLSGD`, `TLSLD`, `DTPOFF32`, `DTPOFF64` | `__tls_get_addr`, ordinary System V C ABI |
+| 386 | `TLS_GD`, `TLS_LDM`, `TLS_LDO_32` | GNU `___tls_get_addr`, index in EAX, result in EAX |
+| arm64 | `TLSDESC_ADR_PAGE21`, `TLSDESC_LD64_LO12_NC`, `TLSDESC_ADD_LO12_NC`, `TLSDESC_CALL` | Descriptor in X0, result relative to `TPIDR_EL0`; preserves X1-X29 and every bit of Q0-Q31 |
+
+The loader retains TLS symbol types, packs writable allocated `SHF_TLS` data and
+zero-fill sections into one bounded aligned template, and applies ordinary
+relocations before copying that template. Each native thread receives its own
+module allocation through the existing image owner. Private GD/LD indices and
+AArch64 descriptors refer to that owner; they never contain host dynamic-loader
+module IDs. The linker generates all entry instructions in Go, including the
+386 register-to-cdecl adapter and AArch64's additional register saves and
+thread-pointer subtraction. No glibc DTV mutation, static TLS reservation,
+private llgo runtime access or new C runtime interface is required.
+
+Address relocations require the corresponding zero-addend instruction forms
+(RIP-relative LEA uses the ABI's `-4` field addend). AArch64 register operands
+remain those selected by the compiler, including GCC's alternate call register.
+TLS definitions, offsets, template extents, instructions, alignment, reserved
+helpers and allocation limits are validated before publication. Up to 4096
+private address records are permitted; the 64 MiB per-thread allocation budget
+is shared with emulated TLS. Compiler-produced local-dynamic module-base indices
+are image-wide, and DTP-relative values use the packed template offsets.
+
+Initial-exec/local-exec offsets, x86 TLSDESC, other AArch64 dynamic sequences,
+loader-owned dynamic TLS relocations, external/OS-library TLS definitions,
+native C++ initialization/destruction and SVE/SME calling variants
+remain unsupported. They need separate ABI/runtime qualification. Complete OS
+libraries continue to use their loader. Native ELF tests cover the same values,
+thread isolation, cleanup, lifetime and lifecycle cases as Mach-O, plus GCC
+O0/O2 calls and explicit rejection of static TLS models. Independent assembly
+references cover all three entries; an AArch64 probe checks X1-X18 and all 128
+bits of Q0-Q31.
+
+ABI references: [AArch64 ELF TLS relocations](https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst),
+[LLVM AArch64 ELF TLS register contract](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/lib/Target/AArch64/AArch64CallingConvention.td),
+[GNU i386 address-entry convention](https://github.com/bminor/glibc/blob/master/sysdeps/i386/dl-tls.h)
+and [AArch64 descriptor resolver](https://github.com/bminor/glibc/blob/master/sysdeps/aarch64/dl-tlsdesc.S).
 
 ## Emulated TLS
 
@@ -85,7 +137,7 @@ callback; native destructor bodies can use retained `abi.NewCallback` entries.
 | Local / shared external variables | Retained image descriptors; ordinary symbol resolution and lazy archive dependencies |
 | Alignment | Positive power of two; allocation budget includes alignment padding |
 | Clang C++ TLS | Constant values, nonthrowing constructors and the thread-exit registrations below |
-| Other native TLS models / OS TLS registration | Outside this emulated mode; plain C Mach-O TLV uses `NativeTLS` above, and complete shared libraries use the OS loader |
+| Other native TLS models / OS TLS registration | Outside this emulated mode; plain C Mach-O TLV and the documented ELF dynamic models use `NativeTLS` above, and complete shared libraries use the OS loader |
 | External emutls or thread-registration runtime overrides | Rejected; callbacks and descriptors must use the helper retained by this image |
 | Windows fiber switching | Not qualified; storage and cleanup use Windows FLS |
 
@@ -125,7 +177,7 @@ linker requires correctly aligned writable non-executable descriptor storage,
 an unused runtime word, bounded size/alignment and a template contained in
 retained image data. Descriptors cannot overlap. There are at most 4096 distinct
 descriptors and at most 64 MiB of allocation including padding per native thread,
-shared with the native Mach-O module when both modes are enabled.
+shared with the native TLS module when both modes are enabled.
 Validated size/alignment/template pointers are copied into private native controls.
 Templates may contain ordinary relocated native pointers; their pointees still
 need the appropriate lifetime and synchronization.

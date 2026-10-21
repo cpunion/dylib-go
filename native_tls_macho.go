@@ -22,6 +22,9 @@ func machoTLVDescriptorRelocation(r relocation) bool {
 func checkMachOTLS(objects []*object, enabled bool) (bool, error) {
 	needed := false
 	for _, o := range objects {
+		if o.info.Format != "Mach-O" {
+			continue
+		}
 		for _, sec := range o.sections {
 			if sec == nil || sec.nativeTLS == 0 {
 				continue
@@ -92,16 +95,6 @@ func (im *image) layoutMachOTLS(start uint64) (uint64, error) {
 	return end, nil
 }
 
-func machoTLSSection(o *object, s symbol) *section {
-	if s.section > 0 && s.section < len(o.sections) {
-		sec := o.sections[s.section]
-		if sec != nil && sec.nativeTLS != 0 {
-			return sec
-		}
-	}
-	return nil
-}
-
 // Normalize only proven image-owned TLV references. A template address is not
 // a per-thread variable address, and a foreign pointer is not a TLV descriptor.
 func (im *image) machOTLSRelocation(o *object, r relocation, b []byte) (relocation, error) {
@@ -125,7 +118,7 @@ func (im *image) machOTLSRelocation(o *object, r relocation, b []byte) (relocati
 		if err != nil {
 			return r, err
 		}
-		target, value = machoTLSSection(d.o, d.sym()), d.sym().value
+		target, value = nativeTLSSection(d.o, d.sym()), d.sym().value
 	}
 	if tlv {
 		if im.machoTLS == nil || r.local || r.width != 4 || r.addend != 0 || r.pair >= 0 || target == nil || target.nativeTLS != 0x13 || value%24 != 0 || value >= target.size || target.size-value < 24 {
@@ -231,17 +224,6 @@ func (im *image) prepareMachOTLS() error {
 		le.PutUint64(im.mem[p.descriptor+16:], p.offset)
 	}
 	return nil
-}
-
-func (im *image) publicSymbol(d definition) (uintptr, error) {
-	target, err := im.resolveDefinition(d.o, d.index)
-	if err != nil {
-		return 0, err
-	}
-	if machoTLSSection(target.o, target.sym()) != nil {
-		return 0, fmt.Errorf("%s is native TLS; use a native getter on its owning OS thread", d.sym().name)
-	}
-	return im.symbol(d.o, d.index, false)
 }
 
 func (im *image) prepareMachOTLSHelper() error {

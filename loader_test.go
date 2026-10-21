@@ -355,9 +355,9 @@ func TestRejectTLS(t *testing.T) {
 			t.Fatalf("metadata: %+v %v", i, e)
 		}
 		s := New(Options{})
-		if runtime.GOOS == "darwin" {
+		if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 			if len(i.Unsupported) != 0 {
-				t.Fatal("native Mach-O TLS cannot be staged:", i.Unsupported)
+				t.Fatal("native TLS cannot be staged:", i.Unsupported)
 			}
 			load(t, s, obj)
 			if e = s.Link("f"); e == nil || !strings.Contains(e.Error(), "Options.NativeTLS") {
