@@ -111,6 +111,9 @@ func (im *image) emulatedTLSDescriptors() ([]uintptr, error) {
 	seen := make(map[uintptr]bool)
 	var descriptors []uintptr
 	var budget uint64
+	if im.machoTLS != nil {
+		budget = im.machoTLS.size + im.machoTLS.align - 1
+	}
 	for _, o := range im.objects {
 		for i, s := range o.symbols {
 			if s.section == -3 || !strings.HasPrefix(s.name, emulatedTLSPrefix) {

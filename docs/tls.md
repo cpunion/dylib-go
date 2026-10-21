@@ -1,4 +1,73 @@
-# Raw-object emulated TLS
+# Raw-object TLS
+
+Both modes use image-owned native OS-thread values and the same native cleanup
+registry. Parsing, layout, validation, archive selection and relocation stay in
+Go. Complete shared libraries continue to use their OS loader's TLS support.
+
+| Raw input model | Option | Qualified scope |
+| --- | --- | --- |
+| Native Mach-O TLV | `Options.NativeTLS` | Plain C, macOS amd64/arm64; initialized, zero-filled and aligned values |
+| Clang emulated TLS | `Options.EmulatedTLS` | Linux/macOS/Windows targets below, including documented C++ initialization/destruction |
+| Native ELF/COFF TLS, other Darwin models | None | Unsupported; use emulated TLS or a complete OS library |
+
+## Native Mach-O TLV
+
+Compile ordinary C macOS objects with native TLS (Clang's default for the
+supported targets, or explicit `-fno-emulated-tls`) and enable
+`Options{NativeTLS: true}`. All participating TLS definitions must be loaded into
+the same image, including lazily selected archive members. Failed links before
+native initialization permit adding a missing provider and retrying.
+
+The loader accepts `S_THREAD_LOCAL_REGULAR`, `S_THREAD_LOCAL_ZEROFILL` and
+`S_THREAD_LOCAL_VARIABLES`. It validates each three-word TLV descriptor and its
+bootstrap/template relocations before native initialization. Templates are
+packed into one bounded, aligned module template after ordinary relocations,
+including initialized structs, arrays and native pointers. Every native thread
+receives an independent copy. The allocation budget is shared with emulated
+TLS when both options are enabled; the existing image and alignment limits
+also apply. At most 4096 native TLV descriptors are accepted per image.
+
+Clang's `__thread_vars` can declare byte alignment. Private image pages and
+24-byte descriptor strides still guarantee pointer-aligned runtime storage;
+that normal compiler output is accepted. Zero-fill sections never read object
+header bytes from their on-disk zero offset.
+
+The linker binds `_tlv_bootstrap` to an image-owned entry generated in Go. The
+entry calls the existing native per-thread allocator, then adds the validated
+variable offset. It preserves Darwin's additional TLS registers: all GPRs
+except RDI/RAX on amd64, and X1-X15 plus all 128 bits of Q0-Q31 on arm64, along
+with ordinary callee-saved registers. No Go callback, private llgo runtime hook,
+new C runtime interface or dyld TLS-module registration is needed. The original
+compiler-emitted TLV callers remain intact.
+
+Supported instruction relocations are zero-addend RIP-relative 64-bit MOV loads
+(`X86_64_RELOC_TLV`) and zero-addend ADRP/LDR references
+(`ARM64_RELOC_TLVP_LOAD_PAGE21/PAGEOFF12`). Targets must be complete selected
+image-owned TLV descriptors. Ordinary references to template/descriptor bytes,
+foreign or OS-library TLV descriptors, nonzero keys, bootstrap overrides,
+unsupported opcodes/addends and partial/overlapping descriptors fail before
+publication. Thread-local pointer and initializer sections, dynamic TLS
+constructors/destructors, authenticated arm64e and native ELF/COFF models are
+not qualified by this option.
+
+`Lookup`, `Resolve` and `Bind` reject raw TLS variable names: their linker address
+is a descriptor, not a process-global variable address. Export a native C getter
+or function that performs the TLS access instead. `DefineSymbol` can retain such
+a function provider and its TLS owner across sessions; it does not transfer TLS
+descriptors between images. Pin Go callers with `runtime.LockOSThread` for any
+sequence that requires stable TLS identity, including initialization/finalization
+when relevant. Stop native users and retain the corresponding code leases for
+as long as borrowed TLS pointers remain in use.
+
+Native tests cover O0/O2 objects/archives, retry, register and indirect-result
+preservation, independent images, struct/pointer/array templates, mixed emulated
+TLS, C-created threads, pinned Go threads, constructor/exit-hook/finalizer access,
+retained function providers and owner retirement before/concurrent with thread
+exit. Both architectures compare generated entry bytes with an independent LLVM
+assembly reference. Native register probes check the full additional GPR/vector
+contract, including both 64-bit lanes of every ARM64 vector register.
+
+## Emulated TLS
 
 Compile every participating raw C translation unit with Clang `-femulated-tls`
 and create the session with `Options{EmulatedTLS: true}`. This flag replaces
@@ -16,7 +85,7 @@ callback; native destructor bodies can use retained `abi.NewCallback` entries.
 | Local / shared external variables | Retained image descriptors; ordinary symbol resolution and lazy archive dependencies |
 | Alignment | Positive power of two; allocation budget includes alignment padding |
 | Clang C++ TLS | Constant values, nonthrowing constructors and the thread-exit registrations below |
-| Native TLS sections, relocation models and OS TLS registration | Unsupported for raw objects; complete shared libraries use the OS loader |
+| Other native TLS models / OS TLS registration | Outside this emulated mode; plain C Mach-O TLV uses `NativeTLS` above, and complete shared libraries use the OS loader |
 | External emutls or thread-registration runtime overrides | Rejected; callbacks and descriptors must use the helper retained by this image |
 | Windows fiber switching | Not qualified; storage and cleanup use Windows FLS |
 
@@ -46,7 +115,7 @@ is guessed from symbol names.
 macOS C++ destructor execution is qualified with LLVM 22. Older producers can
 mix native TLS accesses into `-O0 -femulated-tls` output: Apple Clang 17 and
 upstream LLVM 18 can leave an undefined `__tls_guard` and native TLV relocations
-alongside emulated descriptors. Such objects cannot use this runtime; compile
+alongside emulated descriptors. These mixed C++ outputs remain unqualified by `NativeTLS`; compile
 them with a qualified producer. The native tests use `DYLIB_LLVM_CLANG` on macOS
 when provided, leaving the other C fixtures on their original compiler.
 
@@ -55,7 +124,8 @@ and a template pointer. Before publishing code or running constructors, the
 linker requires correctly aligned writable non-executable descriptor storage,
 an unused runtime word, bounded size/alignment and a template contained in
 retained image data. Descriptors cannot overlap. There are at most 4096 distinct
-descriptors and at most 64 MiB of allocation including padding per native thread.
+descriptors and at most 64 MiB of allocation including padding per native thread,
+shared with the native Mach-O module when both modes are enabled.
 Validated size/alignment/template pointers are copied into private native controls.
 Templates may contain ordinary relocated native pointers; their pointees still
 need the appropriate lifetime and synchronization.
@@ -128,3 +198,5 @@ zero-argument initializer helper, recursive guard use and mixed destructor types
 ABI references: [Clang emulated TLS option](https://clang.llvm.org/docs/UsersManual.html#cmdoption-femulated-tls)
 and [LLVM 22 descriptor/runtime ABI](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/compiler-rt/lib/builtins/emutls.c).
 The image-owned runtime here is separate from compiler-rt's process-global owner.
+
+Native TLV ABI references: LLVM 22 [Darwin AArch64 register mask](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/lib/Target/AArch64/AArch64CallingConvention.td) and [Darwin x86-64 register mask](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/lib/Target/X86/X86CallingConv.td).

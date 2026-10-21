@@ -351,12 +351,22 @@ func TestRejectTLS(t *testing.T) {
 		os.WriteFile(p, []byte(src), 0600)
 		obj := compile(t, p, filepath.Join(dir, "unsupported.o"))
 		i, e := Inspect(obj)
-		if e != nil || len(i.Unsupported) == 0 {
+		if e != nil {
 			t.Fatalf("metadata: %+v %v", i, e)
 		}
 		s := New(Options{})
-		if e = s.Load(obj); e == nil {
-			t.Fatal("runtime requirement silently accepted")
+		if runtime.GOOS == "darwin" {
+			if len(i.Unsupported) != 0 {
+				t.Fatal("native Mach-O TLS cannot be staged:", i.Unsupported)
+			}
+			load(t, s, obj)
+			if e = s.Link("f"); e == nil || !strings.Contains(e.Error(), "Options.NativeTLS") {
+				t.Fatal("native TLS executed without opt-in:", e)
+			}
+		} else if len(i.Unsupported) == 0 {
+			t.Fatal("unsupported native TLS model lost its diagnostic")
+		} else if e = s.Load(obj); e == nil {
+			t.Fatal("unsupported runtime requirement silently accepted")
 		}
 		s.Close()
 	}
@@ -382,7 +392,7 @@ func TestForeignPointerRelocations(t *testing.T) {
 			if e != nil {
 				t.Fatal(e)
 			}
-			im, e := newImage([]*object{f.obj}, defs, func(string) uintptr { return 0 }, nil, false)
+			im, e := newImage([]*object{f.obj}, defs, func(string) uintptr { return 0 }, nil, false, false)
 			if e != nil {
 				t.Fatal(e)
 			}

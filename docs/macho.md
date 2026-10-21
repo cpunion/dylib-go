@@ -32,7 +32,7 @@ Tests compile both target formats on every CI host. Native macOS Go and llgo tes
 
 Short/padded-stub tests compile two adjacent entries at four widths per architecture. Native macOS Go/llgo tests execute objects, lazy archives and retained symbol providers at O0/O2, including 24-byte indirect results and enough integer/floating arguments to exhaust registers. Portable tests check distant-target islands, full addresses, padding, entry boundaries and malformed instruction alignment.
 
-General coalesced sections, stubs smaller than one branch instruction, authenticated arm64e symbols, raw TLS, and language runtime registration still require additional support. Complete `.dylib` images continue to use the OS loader.
+General coalesced sections, stubs smaller than one branch instruction, authenticated arm64e symbols, TLS forms beyond [plain C native TLV](tls.md#native-mach-o-tlv), and language runtime registration still require additional support. Complete `.dylib` images continue to use the OS loader.
 
 ## Format references
 

@@ -34,8 +34,13 @@ type Options struct {
 	// EmulatedTLS enables Clang -femulated-tls for raw objects and archives.
 	// Values belong to native OS threads, not Go goroutines. Supports constant
 	// values, documented C++ thread-exit registrations and Clang MSVC emulated
-	// TLS initialization. Native TLS sections and relocation models are unsupported.
+	// TLS initialization. Native TLS uses the separate NativeTLS option.
 	EmulatedTLS bool
+	// NativeTLS enables plain C Mach-O TLV on macOS amd64/arm64 raw objects.
+	// Values belong to native OS threads. Supports constant/zero initialization;
+	// native TLS initializers, pointer sections and foreign descriptor providers
+	// remain unsupported. Other platforms can use EmulatedTLS or OS libraries.
+	NativeTLS bool
 	// RegisterUnwind registers supported raw-image runtime function tables.
 	// Supports Windows/macOS amd64/arm64 and Linux amd64/arm64/386 C frames.
 	// Linux/macOS also support the documented native C++ DWARF subset.
@@ -209,6 +214,9 @@ func (s *Session) define(name string, address uintptr) error {
 	}
 	if emulatedTLSReserved(strings.TrimPrefix(name, "__imp_")) {
 		return fmt.Errorf("%s is reserved for image-owned emulated TLS", name)
+	}
+	if runtime.GOOS == "darwin" && strings.TrimPrefix(name, "__imp_") == machoTLSBootstrap {
+		return fmt.Errorf("%s is reserved for image-owned native TLS", name)
 	}
 	if runtimeHelper(strings.TrimPrefix(name, "__imp_")) {
 		return fmt.Errorf("%s is reserved for session-owned object lifecycle", name)
@@ -433,6 +441,9 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 				}
 			}
 			for _, n := range wanted {
+				if runtime.GOOS == "darwin" && s.opts.NativeTLS && n == machoTLSBootstrap {
+					continue
+				}
 				if s.opts.EmulatedTLS && (n == emulatedTLSHelper || emulatedTLSThreadHelper(n) || emulatedTLSMSVCHelper(n) || n == emulatedTLSMSVCGuard) {
 					continue
 				}
@@ -538,7 +549,7 @@ func (s *Session) link(roots []string) error {
 	if err != nil {
 		return err
 	}
-	im, err := newImage(objs, defs, s.external, imports, s.opts.EmulatedTLS)
+	im, err := newImage(objs, defs, s.external, imports, s.opts.EmulatedTLS, s.opts.NativeTLS)
 	if err != nil {
 		return err
 	}
@@ -691,6 +702,7 @@ type image struct {
 	pointerSize                            uint64
 	lifecycle                              *native.Lifecycle
 	emulatedTLS                            *native.EmulatedTLS
+	machoTLS                               *machoTLSLayout
 	hooks                                  map[string]uintptr
 	initializers, finalizers               []uintptr
 	threadInitializers                     []uintptr
@@ -712,8 +724,12 @@ func alignUp(n, a uint64) uint64 {
 	}
 	return (n + a - 1) &^ (a - 1)
 }
-func newImage(objs []*object, defs map[string]definition, external func(string) uintptr, imports map[*coffImport]uintptr, emulatedTLS bool) (*image, error) {
+func newImage(objs []*object, defs map[string]definition, external func(string) uintptr, imports map[*coffImport]uintptr, emulatedTLS, nativeTLS bool) (*image, error) {
 	tlsNeeded, err := checkEmulatedTLS(objs, emulatedTLS)
+	if err != nil {
+		return nil, err
+	}
+	nativeTLSNeeded, err := checkMachOTLS(objs, nativeTLS)
 	if err != nil {
 		return nil, err
 	}
@@ -767,6 +783,12 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 		im.compactSize = alignUp(compactCount*80, im.page)
 		size += im.compactSize
 	}
+	if nativeTLSNeeded {
+		size, err = im.layoutMachOTLS(size)
+		if err != nil {
+			return nil, err
+		}
+	}
 	// Merge tentative/common definitions by maximum size and alignment.
 	type commonSize struct{ size, align uint64 }
 	commons := map[string]commonSize{}
@@ -816,8 +838,8 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	im.stubStart = size
 	im.stubNext = size
 	size += alignUp((count+1)*16, im.page)
-	// Lifecycle and thread-exit helpers need at most 64 bytes each.
-	// This also leaves capacity for branch stubs from every relocation.
+	// One page covers lifecycle/thread-exit thunks and the <=512-byte Darwin
+	// TLV register-preserving entry, in addition to every relocation's island.
 	size += im.page
 	if size > maxImage {
 		return nil, fmt.Errorf("image exceeds 64 MiB")
@@ -837,8 +859,13 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	if e := im.prepareRuntimeHelpers(); e != nil {
 		return nil, e
 	}
-	if tlsNeeded {
+	if tlsNeeded || nativeTLSNeeded {
 		if err := im.prepareEmulatedTLSHelpers(); err != nil {
+			return nil, err
+		}
+	}
+	if nativeTLSNeeded {
+		if err := im.prepareMachOTLSHelper(); err != nil {
 			return nil, err
 		}
 	}
@@ -876,8 +903,13 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	if e := im.rebaseMachOInitializerOffsets(); e != nil {
 		return nil, e
 	}
-	if tlsNeeded {
+	if tlsNeeded || nativeTLSNeeded {
 		if err := im.prepareEmulatedTLS(); err != nil {
+			return nil, err
+		}
+	}
+	if nativeTLSNeeded {
+		if err := im.prepareMachOTLS(); err != nil {
 			return nil, err
 		}
 	}
@@ -968,7 +1000,7 @@ func (im *image) lookup(n string) (uintptr, error) {
 		return im.gotBase(), nil
 	}
 	if d, ok := im.defs[n]; ok {
-		return im.symbol(d.o, d.index, false)
+		return im.publicSymbol(d)
 	}
 	if p := im.hooks[n]; p != 0 {
 		return p, nil
@@ -977,7 +1009,7 @@ func (im *image) lookup(n string) (uintptr, error) {
 		return p, nil
 	}
 	if d, ok := im.aliases[n]; ok {
-		return im.symbol(d.o, d.index, false)
+		return im.publicSymbol(d)
 	}
 	return 0, fmt.Errorf("unresolved symbol %s", n)
 }

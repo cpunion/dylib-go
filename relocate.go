@@ -76,6 +76,13 @@ func (im *image) relocate(o *object, r relocation) error {
 	if elfGOTBaseRelocation(o, r.typ) {
 		return im.relocELF(o, r, b, 0, p)
 	}
+	if o.info.Format == "Mach-O" {
+		var err error
+		r, err = im.machOTLSRelocation(o, r, b)
+		if err != nil {
+			return err
+		}
+	}
 	if o.info.Format == "COFF" {
 		sectionRelocation := r.typ == 10 || r.typ == 11
 		if o.info.Arch == "arm64" {
