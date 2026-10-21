@@ -30,7 +30,8 @@ func amd64CompilerContracts(t *testing.T) {
 	for _, target := range []string{"x86_64-unknown-linux-gnu", "x86_64-apple-macosx11", "x86_64-pc-windows-msvc", "x86_64-w64-windows-gnu"} {
 		t.Run("amd64/"+target, func(t *testing.T) {
 			names := []string{"ms_add", "ms_mixed", "ms_pair", "ms_large", "ms_factory", "ms_apply", "ms_forward", "sysv_add", "sysv_mixed", "sysv_pair", "sysv_large", "sysv_factory", "sysv_apply", "sysv_forward"}
-			h, err := Parse(context.Background(), "../../testdata/foreign_abi.h", Options{Compiler: compilerTool(t), Target: target, Functions: names})
+			// Metadata probes use Clang's stdint definitions without a foreign libc sysroot.
+			h, err := Parse(context.Background(), "../../testdata/foreign_abi.h", Options{Compiler: compilerTool(t), Target: target, Flags: []string{"-ffreestanding"}, Functions: names})
 			if err != nil {
 				t.Fatal(err)
 			}
