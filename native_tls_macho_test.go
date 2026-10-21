@@ -169,14 +169,14 @@ func TestNativeMachOTLSRetainedProvider(t *testing.T) {
 	testNativeTLSRetainedProvider(t)
 }
 
-func testNativeTLSRetainedProvider(t *testing.T) {
+func testNativeTLSRetainedProvider(t *testing.T, flags ...string) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 	dir := t.TempDir()
 	provider := New(Options{NativeTLS: true})
 	defer provider.Close()
 	for _, part := range []string{"consumer", "provider"} {
-		load(t, provider, compile(t, "testdata/emutls_"+part+".c", filepath.Join(dir, part+".o"), "-O2"))
+		load(t, provider, compile(t, "testdata/emutls_"+part+".c", filepath.Join(dir, part+".o"), append([]string{"-O2"}, flags...)...))
 	}
 	step, err := provider.Resolve("tls_step")
 	if err != nil {
@@ -305,12 +305,12 @@ func TestNativeMachOTLSPinnedGoThreads(t *testing.T) {
 	testNativeTLSPinnedGoThreads(t)
 }
 
-func testNativeTLSPinnedGoThreads(t *testing.T) {
+func testNativeTLSPinnedGoThreads(t *testing.T, flags ...string) {
 	s := New(Options{NativeTLS: true})
 	defer s.Close()
 	dir := t.TempDir()
 	for _, part := range []string{"consumer", "provider"} {
-		load(t, s, compile(t, "testdata/emutls_"+part+".c", filepath.Join(dir, part+".o"), "-O2"))
+		load(t, s, compile(t, "testdata/emutls_"+part+".c", filepath.Join(dir, part+".o"), append([]string{"-O2"}, flags...)...))
 	}
 	step, err := s.Resolve("tls_step")
 	if err != nil {
@@ -362,12 +362,12 @@ func TestNativeMachOTLSLifecycle(t *testing.T) {
 	testNativeTLSLifecycle(t)
 }
 
-func testNativeTLSLifecycle(t *testing.T) {
+func testNativeTLSLifecycle(t *testing.T, flags ...string) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 	dir := t.TempDir()
 	host, _, read := lifecycleObserver(t, dir)
-	obj := compile(t, "testdata/emutls_lifecycle.c", filepath.Join(dir, "lifecycle.o"), "-fno-emulated-tls")
+	obj := compile(t, "testdata/emutls_lifecycle.c", filepath.Join(dir, "lifecycle.o"), append([]string{"-fno-emulated-tls"}, flags...)...)
 	s := New(Options{NativeTLS: true, RegisterUnwind: true})
 	defer s.Close()
 	load(t, s, host, obj)
@@ -388,7 +388,7 @@ func TestNativeMachOTLSRetirement(t *testing.T) {
 	testNativeTLSRetirement(t)
 }
 
-func testNativeTLSRetirement(t *testing.T) {
+func testNativeTLSRetirement(t *testing.T, flags ...string) {
 	host := nativeThreadLibrary(t, "testdata/emutls_threads.c")
 	start, err := host.Resolve("tls_threads_pause")
 	if err != nil {
@@ -397,7 +397,7 @@ func testNativeTLSRetirement(t *testing.T) {
 	dir := t.TempDir()
 	var inputs []string
 	for _, part := range []string{"consumer", "provider"} {
-		inputs = append(inputs, compile(t, "testdata/emutls_"+part+".c", filepath.Join(dir, part+".o"), "-O2"))
+		inputs = append(inputs, compile(t, "testdata/emutls_"+part+".c", filepath.Join(dir, part+".o"), append([]string{"-O2"}, flags...)...))
 	}
 	for _, mode := range []string{"owner_before_join", "concurrent_exit"} {
 		t.Run(mode, func(t *testing.T) {

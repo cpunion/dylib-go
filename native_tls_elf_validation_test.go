@@ -77,7 +77,7 @@ func TestELFNativeTLSRuntimeAndLayoutValidation(t *testing.T) {
 	}
 	s := New(Options{NativeTLS: true})
 	defer s.Close()
-	for _, name := range []string{"__tls_get_addr", "___tls_get_addr"} {
+	for _, name := range []string{"__tls_get_addr", "___tls_get_addr", elfTLSModuleBase} {
 		err := s.Define(name, 1)
 		if runtime.GOOS == "linux" && err == nil || runtime.GOOS != "linux" && err != nil {
 			t.Fatal("ELF runtime reservation:", err)

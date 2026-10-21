@@ -45,6 +45,9 @@ func (im *image) relocate(o *object, r relocation) error {
 			return fmt.Errorf("unsupported Mach-O relocation width %d", w)
 		}
 	case "ELF":
+		if elfTLSDescCall(o.info.Arch, r.typ) {
+			w = 2
+		}
 		if o.info.Arch == "amd64" && (r.typ == 1 || r.typ == 17 || r.typ == 24 || r.typ == 25 || r.typ >= 27 && r.typ <= 31 || r.typ == elfSize64) || o.info.Arch == "arm64" && (r.typ == 257 || r.typ == 260 || r.typ == 307) {
 			w = 8
 		}
