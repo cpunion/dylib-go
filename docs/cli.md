@@ -2,7 +2,7 @@
 
 Use `examples/run.sh <go|llgo> inspect FILE` or `examples/run.sh <go|llgo> call ARGS...` to build and run the CLI automatically. Calls build with `-tags libffi`; inspection uses the default build and can run with `CGO_ENABLED=0`. The runner preserves the caller's working directory, argument boundaries, output, and exit status.
 
-`ddlgo inspect FILE` reads metadata without loading native code. `ddlgo call` loads the supplied files into a session, resolves a named entry, and invokes it with an explicit C ABI signature. Options precede the declaration or invocation: `-process`, `-keep-libraries`, `-abi=default|cdecl|stdcall|fastcall`, `-variadic-from=N`, and `-symbol=EXACT_LINKAGE_NAME`. stdcall/fastcall are fixed-call conventions available only on Windows 386. `-symbol` lets a Go-style declaration describe a decorated/mangled native entry with a different name. Inputs must match the host's architecture and operating-system ABI.
+`ddlgo inspect FILE` reads metadata without loading native code. `ddlgo call` loads the supplied files into a session, resolves a named entry, and invokes it with an explicit C ABI signature. Options precede the declaration or invocation: `-process`, `-keep-libraries`, `-abi=default|cdecl|stdcall|fastcall|thiscall`, `-variadic-from=N`, and `-symbol=EXACT_LINKAGE_NAME`. stdcall/fastcall/thiscall are fixed-call conventions available only on Windows 386. Thiscall requires an explicit first pointer argument and a scalar/pointer/void result. `-symbol` lets a Go-style declaration describe a decorated/mangled native entry with a different name. Inputs must match the host's architecture and operating-system ABI.
 
 ## Input forms
 

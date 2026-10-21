@@ -279,7 +279,9 @@ users while all leases remain alive; failed cleanup retains them for a later
 
 `abi.LayoutOf(description, abi.CDecl)` returns the current native backend's storage size, alignment and direct member offsets as independent Go data. It uses the same type construction as calls and callbacks; pointer queries describe the address itself. Compare these values with the producer's compiler layout before using generated records. See [native layout queries](docs/layout.md).
 
-For a variadic call shape, set `Signature.Variadic = true` and `FixedArgs` to the fixed-prefix count. `Args` includes every concrete tail argument. The backend promotes tail `float32` to `float64` and small integers / C bool to `int32`; fixed arguments retain their declared types. Prepare another binding for a different tail shape. `Convention` accepts `abi.Default` / `abi.CDecl` on supported hosts and `abi.StdCall` / `abi.FastCall` for fixed calls on Windows 386; unsupported host/convention combinations fail during preparation.
+For a variadic call shape, set `Signature.Variadic = true` and `FixedArgs` to the fixed-prefix count. `Args` includes every concrete tail argument. The backend promotes tail `float32` to `float64` and small integers / C bool to `int32`; fixed arguments retain their declared types. Prepare another binding for a different tail shape. `Convention` accepts `abi.Default` / `abi.CDecl` on supported hosts and `abi.StdCall` / `abi.FastCall` / `abi.ThisCall` for fixed calls on Windows 386; unsupported host/convention combinations fail during preparation.
+
+`ThisCall` takes an explicit receiver pointer as `Args[0]`; dynamic calls and callbacks support scalar/pointer/void results and ordinary struct arguments. Struct results require `compiler/clang.Header.CgoSource` with the exact producer target so the receiver and hidden result pointer use the correct native positions. See the [tested generated thiscall example](examples/thiscall/add_windows_386.go).
 
 `Bind` indexes session-owned call plans by validated logical signatures. Equal signatures share a plan across symbols. Distinct logical signatures can share a native CIF, layouts and bounded buffer pools while preserving their validation and result metadata. This includes renamed record fields, different pointee descriptions, default/cdecl conventions and equally promoted variadic tails. Each active call has separate storage. Temporary pointers are valid only for their call; cleared backing memory may be reused later. Declared temporary pointee layouts are prepared lazily. `Session.Close` releases all plans. For independently managed native addresses, use `abi.Prepare(signature)`, optional `CallPlan.Share(signature)`, `CallPlan.Call(address, values...)`, and explicit `CallPlan.Close`; plans do not own target code. See [shared call resources](docs/shared-plans.md) for the comparison rules and lifetime contract.
 
@@ -430,7 +432,7 @@ callback to C. Run
 
 Generation covers supported scalars, typedefs, ordinary structs, fixed array
 members, typed struct pointers, function-pointer parameter/result and record-field prototypes,
-variadic prefixes, C cdecl, and Windows 386 stdcall/fastcall. `ForHost` checks compiler record sizes, alignments and offsets
+variadic prefixes, C cdecl, and Windows 386 stdcall/fastcall/thiscall. `ForHost` checks compiler record sizes, alignments and offsets
 against the actual backend before calls, including callback records.
 `LookupFunctionPointer` supplies signatures for `abi.NewCallback` or returned native
 addresses, including nested prototypes and multiple pointer layers. Explicitly
@@ -454,7 +456,7 @@ to keep entries alive until native code clears them.
 | Generator | Host compiler | Native calls | libffi required |
 | --- | --- | --- | --- |
 | `Header.GoSource` | Go / llgo | Dynamic `Session.Bind`, including supported records and variadic shapes | Yes |
-| `Header.CgoSource` | Go / llgo | Typed scalars, ordinary/pragma-packed/explicitly packed or aligned records and bitfields, native addresses and concrete cdecl variadic shapes; fixed Windows 386 stdcall/fastcall | No |
+| `Header.CgoSource` | Go / llgo | Typed scalars, ordinary/pragma-packed/explicitly packed or aligned records and bitfields, native addresses and concrete cdecl variadic shapes; fixed Windows 386 stdcall/fastcall/thiscall | No |
 | `Header.LLGoSource` | llgo | Typed cdecl scalars, ordinary records, concrete variadic shapes and fixed/variadic native function pointers | No |
 
 `Header.CgoSource(packageName, bindingType)` generates typed methods usable with
@@ -464,7 +466,7 @@ default argument promotions. Native function-pointer parameters/results remain
 caller-owned addresses, with their C prototypes preserved inside the bridge.
 Higher-order prototypes retain nested argument/result conventions; pointer slots
 are borrowed native addresses, with explicit caller-managed storage lifetimes.
-Fixed stdcall/fastcall exports and native function-pointer prototypes are also
+Fixed stdcall/fastcall/thiscall exports and native function-pointer prototypes are also
 supported with Go on Windows 386. Ordinary record values support nested records,
 fixed arrays and native address fields. Fields are copied into independent C
 values; public Go structs need not share C padding or alignment. Constructors
@@ -852,14 +854,14 @@ func CloneAndUse(kind *abibridge.ValueType, initialize, use func(uintptr) error)
 
 ## Language interfaces and calling conventions
 
-Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cdecl and Windows 386 stdcall/fastcall selection. Language C exports and native language ABIs have different support levels:
+Dynamic `Bind` defaults to the host C ABI (`FFI_DEFAULT_ABI`), with explicit cdecl and Windows 386 stdcall/fastcall/thiscall selection. Language C exports and native language ABIs have different support levels:
 
 | Language / interface | Calling convention / ABI | Current support | Verified coverage / limits |
 | --- | --- | --- | --- |
 | C | Host default C ABI | Supported subset | Eight Go targets; six llgo targets. Scalars, pointers, ordinary structs, struct pointers and concrete variadic shapes; explicit packed/aligned records and bitfields through compiled C bridges |
 | C union values | Explicit member and whole-union byte facades | Supported subset | `compiler/cunion` + matching C17 compiler; scalar/struct/array members, exact-size byte wrappers, nested paths, objects, archives and libraries; generated cgo/direct llgo or dynamic binding |
-| C with x86 conventions | Windows 386 stdcall / fastcall | Supported subset | Explicit `Convention` or generated `CgoSource`; fixed calls and native function pointers, exact decorated symbols; tested with C fixtures |
-| C callbacks into Go / llgo | Fixed host C ABI; Windows 386 stdcall / fastcall | Supported subset | Scalars, pointers, ordinary struct values, captures, explicit leases, and C-created threads; no variadic callbacks |
+| C with x86 conventions | Windows 386 stdcall / fastcall / thiscall | Supported subset | Explicit `Convention` or generated `CgoSource`; fixed calls and native function pointers, exact symbols; thiscall has an explicit pointer receiver and uses compiled C bridges for struct results; tested with C fixtures |
+| C callbacks into Go / llgo | Fixed host C ABI; Windows 386 stdcall / fastcall / thiscall | Supported subset | Scalars, pointers, ordinary struct values, captures, explicit leases, and C-created threads; no variadic callbacks |
 | C vectorcall | Windows amd64 / 386 | Compiled bridge subset | `Header.CgoSource` with a vectorcall-capable C compiler; fixed scalar/pointer calls and native function pointers, plus ordinary records on amd64 and GNU 386; Go amd64/386 and llgo amd64 runtime tests |
 | C with other conventions | Other non-default ABIs | Not implemented | Use a compiled adapter matching the convention |
 | C++ C exports | `extern "C"`, host C ABI | Verified subset | C exports and global construction/destruction on native targets; ordinary raw fixtures disable exceptions and RTTI; Linux amd64/arm64/386 and macOS amd64/arm64 execute native throw/catch/rethrow and RAII with explicit compatible runtimes and `RegisterUnwind`; macOS accepts the implemented DWARF/compact tables |

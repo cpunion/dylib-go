@@ -89,6 +89,7 @@ func TestFunctionPointersAcrossTargets(t *testing.T) {
 }
 
 func TestFunctionPointerConventionsAndValidation(t *testing.T) {
+	thiscallCompilerContracts(t)
 	compiler := compilerTool(t)
 	path := headerFile(t, "typedef int (__attribute__((stdcall)) *Std)(int,int); typedef int (__attribute__((fastcall)) *Fast)(int,int); int f(Std,Fast);")
 	h, err := Parse(context.Background(), path, Options{Compiler: compiler, Target: "i686-pc-windows-msvc", Functions: []string{"f"}})

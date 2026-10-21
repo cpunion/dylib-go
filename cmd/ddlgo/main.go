@@ -33,7 +33,7 @@ func run(args []string, output io.Writer) error {
 		fs.SetOutput(output)
 		process := fs.Bool("process", false, "resolve exported host symbols")
 		keep := fs.Bool("keep-libraries", false, "retain runtime-bearing OS libraries until process exit")
-		convention := fs.String("abi", "default", "C calling convention: default, cdecl, stdcall, fastcall")
+		convention := fs.String("abi", "default", "C calling convention: default, cdecl, stdcall, fastcall, thiscall")
 		variadicFrom := fs.Int("variadic-from", -1, "number of fixed parameters for a concrete variadic call shape")
 		linkageName := fs.String("symbol", "", "exact linkage name, overriding the Go declaration name")
 		if e := fs.Parse(args[1:]); e != nil {
@@ -43,7 +43,7 @@ func run(args []string, output io.Writer) error {
 		if err != nil {
 			return err
 		}
-		conventions := map[string]abi.Convention{"default": abi.Default, "cdecl": abi.CDecl, "stdcall": abi.StdCall, "fastcall": abi.FastCall}
+		conventions := map[string]abi.Convention{"default": abi.Default, "cdecl": abi.CDecl, "stdcall": abi.StdCall, "fastcall": abi.FastCall, "thiscall": abi.ThisCall}
 		selected, ok := conventions[*convention]
 		if !ok {
 			return fmt.Errorf("unknown calling convention %q", *convention)

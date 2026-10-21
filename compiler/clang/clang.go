@@ -95,6 +95,9 @@ func (h *Header) ForHost(name string) (Declaration, error) {
 	if declaration.Signature.Convention == abi.VectorCall {
 		return Declaration{}, fmt.Errorf("clang: vectorcall requires CgoSource for Go or llgo")
 	}
+	if declaration.Signature.Convention == abi.ThisCall && declaration.Signature.Result == abi.Struct {
+		return Declaration{}, fmt.Errorf("clang: thiscall struct results require CgoSource")
+	}
 	if err := h.validateHostRecords(declaration.Signature); err != nil {
 		return Declaration{}, err
 	}

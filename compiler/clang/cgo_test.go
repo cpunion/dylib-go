@@ -127,9 +127,9 @@ func TestCgoRecordsAcrossTargets(t *testing.T) {
 }
 
 func TestCgoCallingConventionTargets(t *testing.T) {
-	path := headerFile(t, "int f(int (*)(int),int);")
+	path := headerFile(t, "int f(int (*)(void *,int),int);")
 	for _, target := range targets {
-		for _, convention := range []abi.Convention{abi.StdCall, abi.FastCall} {
+		for _, convention := range []abi.Convention{abi.StdCall, abi.FastCall, abi.ThisCall} {
 			h, err := Parse(context.Background(), path, Options{Compiler: compilerTool(t), Target: target.triple, Functions: []string{"f"}})
 			if err != nil {
 				t.Fatal(err)
@@ -146,6 +146,9 @@ func TestCgoCallingConventionTargets(t *testing.T) {
 				}
 				if qualified {
 					attribute := "stdcall"
+					if convention == abi.ThisCall {
+						attribute = "thiscall"
+					}
 					if convention == abi.FastCall {
 						attribute = "fastcall"
 					}

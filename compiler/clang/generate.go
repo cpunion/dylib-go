@@ -235,7 +235,7 @@ func typeName(id abi.Type) string {
 }
 
 func conventionName(id abi.Convention) string {
-	return map[abi.Convention]string{abi.Default: "Default", abi.CDecl: "CDecl", abi.StdCall: "StdCall", abi.FastCall: "FastCall", abi.VectorCall: "VectorCall"}[id]
+	return map[abi.Convention]string{abi.Default: "Default", abi.CDecl: "CDecl", abi.StdCall: "StdCall", abi.FastCall: "FastCall", abi.VectorCall: "VectorCall", abi.ThisCall: "ThisCall"}[id]
 }
 
 func validGoName(name string) bool {
