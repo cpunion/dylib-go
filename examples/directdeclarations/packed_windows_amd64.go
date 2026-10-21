@@ -6,9 +6,9 @@ package main
 
 import (
 	"fmt"
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/abi"
-	clang "github.com/cpunion/dylib-go/compiler/clang"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/abi"
+	clang "github.com/ramblelabs/dylib-go/compiler/clang"
 	"unsafe"
 )
 

@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 func (t *directTypes) addCallbacks(declarations []Declaration) error {

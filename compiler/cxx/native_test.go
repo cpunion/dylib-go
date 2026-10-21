@@ -13,9 +13,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/compiler/clang"
-	"github.com/cpunion/dylib-go/compiler/cxx"
-	cxxexample "github.com/cpunion/dylib-go/examples/cxx"
+	"github.com/ramblelabs/dylib-go/compiler/clang"
+	"github.com/ramblelabs/dylib-go/compiler/cxx"
+	cxxexample "github.com/ramblelabs/dylib-go/examples/cxx"
 )
 
 func prepare(t *testing.T, facade *cxx.Facade) (string, *clang.Header) {
@@ -217,7 +217,7 @@ func testGeneratedFacadeHeader(t *testing.T, direct bool, header, fixture string
 	if err != nil {
 		t.Fatal(err)
 	}
-	write(t, filepath.Join(dir, "go.mod"), []byte(fmt.Sprintf("module cxx-facade-test\n\ngo 1.23\n\nrequire github.com/cpunion/dylib-go v0.0.0\nreplace github.com/cpunion/dylib-go => %s\n", strconv.Quote(filepath.ToSlash(root)))))
+	write(t, filepath.Join(dir, "go.mod"), []byte(fmt.Sprintf("module cxx-facade-test\n\ngo 1.23\n\nrequire github.com/ramblelabs/dylib-go v0.0.0\nreplace github.com/ramblelabs/dylib-go => %s\n", strconv.Quote(filepath.ToSlash(root)))))
 	compiler := "go"
 	if llgoHost {
 		compiler = os.Getenv("DYLIB_LLGO")

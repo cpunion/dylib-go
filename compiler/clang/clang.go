@@ -12,8 +12,8 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/internal/clangcmd"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/internal/clangcmd"
 )
 
 // Options selects a C compiler, target, preprocessing flags and explicit names.

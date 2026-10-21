@@ -3,7 +3,7 @@ package clang
 import (
 	"fmt"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 // Clang permits an over-aligned array alias inside another array even when its

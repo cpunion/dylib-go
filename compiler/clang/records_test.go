@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 const recordHeader = `typedef struct { signed char tag; double value; short tail; } Pair;

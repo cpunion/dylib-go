@@ -14,10 +14,10 @@ import (
 	"testing"
 	"time"
 
-	dylib "github.com/cpunion/dylib-go"
-	call "github.com/cpunion/dylib-go/examples/call"
-	example "github.com/cpunion/dylib-go/examples/modules"
-	"github.com/cpunion/dylib-go/module"
+	dylib "github.com/ramblelabs/dylib-go"
+	call "github.com/ramblelabs/dylib-go/examples/call"
+	example "github.com/ramblelabs/dylib-go/examples/modules"
+	"github.com/ramblelabs/dylib-go/module"
 )
 
 func TestNativeDiscoveredModuleGraphCalls(t *testing.T) {

@@ -56,11 +56,11 @@ return ((dylib_go_436f6e76656e74696f6e73_call9_function)address)((dylib_go_436f6
 import "C"
 
 import (
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 	"unsafe"
 
-	"github.com/cpunion/dylib-go/abi"
-	clang "github.com/cpunion/dylib-go/compiler/clang"
+	"github.com/ramblelabs/dylib-go/abi"
+	clang "github.com/ramblelabs/dylib-go/compiler/clang"
 )
 
 var _ConventionsDeclarations = clang.Header{

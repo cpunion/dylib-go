@@ -11,9 +11,9 @@ import (
 	"runtime"
 	"testing"
 
-	dylib "github.com/cpunion/dylib-go"
-	examplecall "github.com/cpunion/dylib-go/examples/call"
-	"github.com/cpunion/dylib-go/internal/ar"
+	dylib "github.com/ramblelabs/dylib-go"
+	examplecall "github.com/ramblelabs/dylib-go/examples/call"
+	"github.com/ramblelabs/dylib-go/internal/ar"
 )
 
 func TestNativeCompiledThinDLLDependencies(t *testing.T) {

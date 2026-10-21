@@ -6,7 +6,7 @@ import (
 	"sync"
 	"unsafe"
 
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 )
 
 // ErrValueUnsupported indicates a version 1 facade without value witnesses.

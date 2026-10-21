@@ -5,8 +5,8 @@
 package main
 
 import (
-	"github.com/cpunion/dylib-go/abi"
-	clang "github.com/cpunion/dylib-go/compiler/clang"
+	"github.com/ramblelabs/dylib-go/abi"
+	clang "github.com/ramblelabs/dylib-go/compiler/clang"
 )
 
 var Declarations = clang.Header{

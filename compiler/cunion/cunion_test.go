@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/clang"
-	"github.com/cpunion/dylib-go/compiler/cunion"
-	example "github.com/cpunion/dylib-go/examples/cunion"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/clang"
+	"github.com/ramblelabs/dylib-go/compiler/cunion"
+	example "github.com/ramblelabs/dylib-go/examples/cunion"
 )
 
 func functions() []cunion.Function {

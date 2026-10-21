@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 func manyScalarArguments() (abi.Signature, []abi.Value, abi.Value) {

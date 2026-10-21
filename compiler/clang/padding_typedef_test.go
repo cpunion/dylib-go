@@ -3,7 +3,7 @@ package clang
 import (
 	"context"
 	"errors"
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 	"os"
 	"strings"
 	"testing"

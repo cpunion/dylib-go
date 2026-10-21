@@ -5,8 +5,8 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/abibridge"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/abibridge"
 )
 
 // Add calls a thin Swift `func add(_ a: Int32, _ b: Int32) -> Int32`.

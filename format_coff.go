@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cpunion/dylib-go/internal/coffname"
+	"github.com/ramblelabs/dylib-go/internal/coffname"
 )
 
 func parseCOFF(name string, b []byte) (*file, error) {

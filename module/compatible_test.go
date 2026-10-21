@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/module"
+	"github.com/ramblelabs/dylib-go/module"
 )
 
 func compatibleModule(name, version string, imports ...module.Import) module.Module {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 var bitfieldTypedefFunctions = []string{"echo_low", "echo_high", "echo_low_wide", "echo_high_wide", "echo_down", "echo_shared", "echo_float", "echo_packed", "echo_pragma", "echo_maximum", "echo_choice", "echo_envelope", "echo_member", "echo_member_packed", "echo_boundary", "echo_padding", "echo_packed_parent"}

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/module"
+	"github.com/ramblelabs/dylib-go/module"
 )
 
 func TestDiscoverVersionRangesSelection(t *testing.T) {

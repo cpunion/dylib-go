@@ -4,8 +4,8 @@ package cunion_test
 
 import (
 	"errors"
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/abi"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/abi"
 	"math"
 	"reflect"
 	"strings"

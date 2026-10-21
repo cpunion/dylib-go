@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"os"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/llvm"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/llvm"
 )
 
 func call(input string) (abi.Value, error) {

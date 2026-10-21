@@ -5,8 +5,8 @@ package moduleexample
 import (
 	"fmt"
 
-	call "github.com/cpunion/dylib-go/examples/call"
-	"github.com/cpunion/dylib-go/module"
+	call "github.com/ramblelabs/dylib-go/examples/call"
+	"github.com/ramblelabs/dylib-go/module"
 )
 
 // ReplaceState demonstrates explicit state migration for the native test API.

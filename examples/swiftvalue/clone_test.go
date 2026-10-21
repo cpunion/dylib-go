@@ -14,9 +14,9 @@ import (
 	"strings"
 	"testing"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/abibridge"
-	builder "github.com/cpunion/dylib-go/compiler/abibridge"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/abibridge"
+	builder "github.com/ramblelabs/dylib-go/compiler/abibridge"
 )
 
 func TestNativeSwiftValueExample(t *testing.T) {

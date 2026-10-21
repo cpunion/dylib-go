@@ -6,7 +6,7 @@ import (
 	"testing"
 	"unsafe"
 
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 )
 
 func checkHigherOrderCalls(t *testing.T, session *dylib.Session, b *Bindings) {

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	builder "github.com/cpunion/dylib-go/compiler/abibridge"
+	builder "github.com/ramblelabs/dylib-go/compiler/abibridge"
 )
 
 func TestSwiftStorageDescriptions(t *testing.T) {

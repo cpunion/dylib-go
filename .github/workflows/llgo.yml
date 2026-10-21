@@ -86,7 +86,7 @@ jobs:
           go list -tags llgo ./... > "$RUNNER_TEMP/dylib-llgo-packages"
           packages=()
           while IFS= read -r package; do
-            if [[ "$package" != github.com/cpunion/dylib-go/compiler/clang ]]; then
+            if [[ "$package" != github.com/ramblelabs/dylib-go/compiler/clang ]]; then
               packages+=("$package")
             fi
           done < "$RUNNER_TEMP/dylib-llgo-packages"

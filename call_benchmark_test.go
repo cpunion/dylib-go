@@ -3,7 +3,7 @@ package dylib
 import (
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 // Fixture compilation, loading, and binding are outside the measured loops.

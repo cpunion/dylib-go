@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/module"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/module"
 )
 
 func TestManagerRejectsInvalidOwners(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cpunion/dylib-go/internal/coffname"
-	"github.com/cpunion/dylib-go/internal/native"
+	"github.com/ramblelabs/dylib-go/internal/coffname"
+	"github.com/ramblelabs/dylib-go/internal/native"
 )
 
 type coffImport struct {

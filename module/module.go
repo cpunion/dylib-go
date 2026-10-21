@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 )
 
 // Graph owns its sessions and retained provider dependencies. Session exposes

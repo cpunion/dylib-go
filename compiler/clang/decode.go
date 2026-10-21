@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/internal/coffname"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/internal/coffname"
 )
 
 const sizeProbe = `enum {

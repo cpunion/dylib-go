@@ -14,9 +14,9 @@ import (
 	"runtime"
 	"testing"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/clang"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/clang"
 )
 
 func tool(t *testing.T, name string) string {

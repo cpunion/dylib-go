@@ -3,7 +3,7 @@
 // Package thiscall demonstrates generated Windows x86 C-convention bindings.
 package thiscall
 
-import dylib "github.com/cpunion/dylib-go"
+import dylib "github.com/ramblelabs/dylib-go"
 
 // Add uses an explicit native receiver from the MSVC-targeted fixture.
 // The generated C bridge supplies ECX.

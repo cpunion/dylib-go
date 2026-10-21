@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/clang"
-	"github.com/cpunion/dylib-go/compiler/cxx"
-	cxxexample "github.com/cpunion/dylib-go/examples/cxx"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/clang"
+	"github.com/ramblelabs/dylib-go/compiler/cxx"
+	cxxexample "github.com/ramblelabs/dylib-go/examples/cxx"
 )
 
 func classes() []cxx.Class {

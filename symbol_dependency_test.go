@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	examplecall "github.com/cpunion/dylib-go/examples/call"
+	examplecall "github.com/ramblelabs/dylib-go/examples/call"
 )
 
 func TestSymbolDependencyValidationAndRollback(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cpunion/dylib-go/internal/native"
+	"github.com/ramblelabs/dylib-go/internal/native"
 )
 
 const emulatedTLSHelper = "__emutls_get_address"

@@ -110,7 +110,7 @@ All eight Go execution targets and six llgo targets set `DYLIB_TEST_REQUIRE_NATI
 | Go c-shared | Eight library targets, including both 386 hosts | Six library targets |
 | llgo c-shared | Local macOS and CI Windows ARM64; other targets use llgo hosts | Six library targets |
 
-These are workflow requirements; inspect [Go](https://github.com/cpunion/dylib-go/actions/workflows/go.yml) / [llgo](https://github.com/cpunion/dylib-go/actions/workflows/llgo.yml) checks for the relevant commit's results. Each producer validates a sample C ABI subset. Windows Rust/Zig/Fortran, Linux Swift, and native ObjC ABI are outside this matrix.
+These are workflow requirements; inspect [Go](https://github.com/ramblelabs/dylib-go/actions/workflows/go.yml) / [llgo](https://github.com/ramblelabs/dylib-go/actions/workflows/llgo.yml) checks for the relevant commit's results. Each producer validates a sample C ABI subset. Windows Rust/Zig/Fortran, Linux Swift, and native ObjC ABI are outside this matrix.
 
 `DYLIB_TEST_LANGUAGES=rust,zig,fortran,swift,objc,go,llgo` selects producers explicitly. A selected compiler that is missing or inappropriate for the host fails. Override executable paths with `DYLIB_RUSTC`, `DYLIB_ZIG`, `DYLIB_FC`, `DYLIB_SWIFTC`, `DYLIB_OBJCXX`, `DYLIB_GO`, and `DYLIB_LLGO`. Go/llgo library calls run in child processes that retain their runtime library references until exit, allowing Windows to remove DLL files afterward. Apple object-facade tests keep runtime images pinned while explicitly destroying object references and retiring their Go owners.
 

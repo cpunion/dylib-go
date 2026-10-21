@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	examplecall "github.com/cpunion/dylib-go/examples/call"
+	examplecall "github.com/ramblelabs/dylib-go/examples/call"
 )
 
 func TestSymbolLeaseValidationAndIndependentRetention(t *testing.T) {

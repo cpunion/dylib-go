@@ -1,7 +1,7 @@
 // Package swiftvalue demonstrates owned Swift storage with copy/destroy witnesses.
 package swiftvalue
 
-import "github.com/cpunion/dylib-go/abibridge"
+import "github.com/ramblelabs/dylib-go/abibridge"
 
 // CloneAndUse initializes a value, copies it, and uses the copy after closing
 // the original. Adapters receive borrowed native storage, never ownership bytes.

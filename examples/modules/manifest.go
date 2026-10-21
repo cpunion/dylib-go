@@ -3,7 +3,7 @@ package moduleexample
 import (
 	"context"
 
-	"github.com/cpunion/dylib-go/module"
+	"github.com/ramblelabs/dylib-go/module"
 )
 
 // Manifest imports both a function and data under consumer-specific names.

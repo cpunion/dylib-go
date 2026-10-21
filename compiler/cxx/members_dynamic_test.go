@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	dylib "github.com/cpunion/dylib-go"
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/cxx"
-	cxxexample "github.com/cpunion/dylib-go/examples/cxx"
+	dylib "github.com/ramblelabs/dylib-go"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/cxx"
+	cxxexample "github.com/ramblelabs/dylib-go/examples/cxx"
 )
 
 func TestNativeDynamicDiscoveredMemberFacade(t *testing.T) {

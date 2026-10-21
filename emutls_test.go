@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cpunion/dylib-go/internal/native"
+	"github.com/ramblelabs/dylib-go/internal/native"
 )
 
 func TestEmulatedTLSAcrossTargets(t *testing.T) {

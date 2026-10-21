@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	examplecall "github.com/cpunion/dylib-go/examples/call"
+	examplecall "github.com/ramblelabs/dylib-go/examples/call"
 )
 
 func testNativeCXXExceptions(t *testing.T) {

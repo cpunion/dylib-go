@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 // MSVC i386 can pass explicitly aligned aggregates through a hidden pointer;

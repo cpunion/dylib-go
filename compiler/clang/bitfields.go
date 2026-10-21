@@ -3,7 +3,7 @@ package clang
 import (
 	"fmt"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 // Bitfield describes a named integral/Boolean C field, not a Go memory view.

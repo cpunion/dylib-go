@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 func TestCompilerPackedMembers(t *testing.T) {

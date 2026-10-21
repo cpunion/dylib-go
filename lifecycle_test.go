@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"testing"
 
-	examplecall "github.com/cpunion/dylib-go/examples/call"
+	examplecall "github.com/ramblelabs/dylib-go/examples/call"
 )
 
 func lifecycleObserver(t *testing.T, dir string) (string, *Session, func(int32, int32) (int32, error)) {

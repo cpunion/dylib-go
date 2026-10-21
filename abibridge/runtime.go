@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 )
 
 // Runtime owns an optional native facade built by compiler/abibridge.Build.

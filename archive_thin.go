@@ -4,7 +4,7 @@ import (
 	"context"
 	"path/filepath"
 
-	"github.com/cpunion/dylib-go/internal/ar"
+	"github.com/ramblelabs/dylib-go/internal/ar"
 )
 
 func parseThinArchive(name string, b []byte) (*file, error) {

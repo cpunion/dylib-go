@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/cpunion/dylib-go/internal/ar"
+	"github.com/ramblelabs/dylib-go/internal/ar"
 )
 
 type archiveEntry = ar.Entry

@@ -2,8 +2,8 @@
 package cxxexample
 
 import (
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/compiler/cxx"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/compiler/cxx"
 )
 
 // Generate selects constructor, member, base-view and destruction exports. Compile the

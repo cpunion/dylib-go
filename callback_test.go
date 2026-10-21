@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/abi/signature"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi/signature"
 )
 
 func callbackLibrary(t *testing.T, input string) *Session {

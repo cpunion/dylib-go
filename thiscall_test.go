@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 func thiscallSession(t *testing.T, target, opt, input string) *Session {

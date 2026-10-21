@@ -12,8 +12,8 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/cpunion/dylib-go/abi"
-	"github.com/cpunion/dylib-go/internal/native"
+	"github.com/ramblelabs/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/internal/native"
 )
 
 var ErrClosed = errors.New("dylib: session is closed")

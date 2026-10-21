@@ -5,7 +5,7 @@ package main
 import (
 	"testing"
 
-	dylib "github.com/cpunion/dylib-go"
+	dylib "github.com/ramblelabs/dylib-go"
 )
 
 func checkDirectNarrowCalls(t *testing.T, session *dylib.Session, b *Bindings) {

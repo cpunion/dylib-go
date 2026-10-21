@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 var arrayTypedefFunctions = []string{"echo_whole_low", "echo_whole_high", "echo_whole_down", "echo_layered", "echo_record_array", "echo_address_array", "echo_whole_float", "echo_whole_maximum", "echo_whole_packed", "echo_whole_pragma"}

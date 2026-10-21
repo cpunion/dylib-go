@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cpunion/dylib-go/abi"
+	"github.com/ramblelabs/dylib-go/abi"
 )
 
 var recordTypedefFunctions = []string{"echo_plain", "echo_high", "echo_low", "echo_inherited", "echo_wide", "echo_wide_low", "echo_float", "echo_float_low", "echo_low_parent", "echo_high_parent", "echo_down_parent", "echo_wide_parent", "echo_float_parent", "echo_array_parent", "echo_packed_parent", "echo_pragma_parent", "echo_member_parent", "shifted", "overflow", "high_factory", "forward_high", "high_pointer", "read_high", "high_alignment", "wide_overflow", "alias_variadic", "echo_small_parent", "shifted_small"}
