@@ -41,6 +41,7 @@ Keep the parser and linker in Go and extend llgo or small native adapters when l
 
 Each implementation PR must pass its native Go and llgo CI jobs before the next item starts. A checked item describes implemented behavior with tests, not universal toolchain compatibility.
 
+- [x] Explicit fixed amd64 Microsoft x64/System V selection: dynamic Win64 on three amd64 hosts, dynamic SysV on Linux/macOS amd64, generated C bridges on all three, ordinary struct/indirect results, native pointers and callback reentry.
 - [x] Explicit fixed Windows 386 thiscall: receiver pointers, mixed scalar/struct arguments, dynamic scalar/pointer/void calls and callbacks, native function-pointer metadata, generated C bridges with hidden struct results, and MSVC/GNU native execution fixtures.
 - [x] Fixed-length array members and pointees, including nested arrays/records and callbacks.
 - [x] COFF weak fallback chains, archive search policies, and COMDAT EXACT_MATCH/NEWEST.

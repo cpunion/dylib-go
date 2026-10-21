@@ -95,8 +95,8 @@ jobs:
             -run '^(TestRecordsAcrossTargets|TestCallbackRecordFieldsAcrossTargets|TestRecordMetadataValidationAndBudgets)$' ./compiler/clang
       - name: Execute optional scalar, struct and callback libffi ABI
         env:
-          # C facade ownership needs libffi; other producers run in direct mode.
-          DYLIB_TEST_LANGUAGES: ${{ runner.os == 'macOS' && 'swift,objc' || '' }}
+          # Rust alternate-ABI calls and Swift/ObjC facade ownership need libffi.
+          DYLIB_TEST_LANGUAGES: ${{ runner.os == 'macOS' && 'rust,swift,objc' || runner.os == 'Linux' && 'rust' || '' }}
         run: |
           if [[ '${{ runner.os }}' == macOS ]]; then
             bash scripts/test-native.sh llgo

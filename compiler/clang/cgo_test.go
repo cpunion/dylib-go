@@ -127,6 +127,7 @@ func TestCgoRecordsAcrossTargets(t *testing.T) {
 }
 
 func TestCgoCallingConventionTargets(t *testing.T) {
+	amd64CompilerContracts(t)
 	path := headerFile(t, "int f(int (*)(void *,int),int);")
 	for _, target := range targets {
 		for _, convention := range []abi.Convention{abi.StdCall, abi.FastCall, abi.ThisCall} {

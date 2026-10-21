@@ -25,7 +25,7 @@ func LayoutOf(description TypeDesc, convention Convention) (Layout, error) {
 	if description.Type == Void {
 		return Layout{}, fmt.Errorf("void has no native storage layout")
 	}
-	if convention > ThisCall {
+	if convention > SysV64 {
 		return Layout{}, fmt.Errorf("invalid calling convention %d", convention)
 	}
 	return layoutOf(description, convention)
