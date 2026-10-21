@@ -10,7 +10,10 @@ For raw TLS objects, pass `-emulated-tls` for Clang `-femulated-tls` output or
 `-native-tls` for the [supported Unix native TLS models](tls.md). These options
 map directly to `dylib.Options.EmulatedTLS` and `dylib.Options.NativeTLS`; an image
 containing both models requires both flags. They do not enable unsupported TLS
-models or change OS-loaded libraries. For example:
+models or change OS-loaded libraries.
+
+TLS-enabled calls keep loading, invocation and cleanup on one OS thread so
+current-thread C++ TLS destructors run before image finalizers. For example:
 
 ```sh
 examples/run.sh go call -native-tls "func tls_read()int32" <object>
@@ -84,3 +87,5 @@ target, plus the supported Unix native TLS models. Each mode executes object
 and archive calls through both signature forms, struct values and the original
 demonstration form. Missing opt-in flags must fail. Mixed Unix native/emulated
 objects require both flags and execute both entries.
+C++ fixtures also require exactly one thread-local destruction before global
+finalization; an incorrect lifetime or order traps instead of passing silently.

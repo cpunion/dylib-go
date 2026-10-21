@@ -147,6 +147,16 @@ for mode in emulated native; do
       expect '{a:22,b:20}' "-$mode-tls" 'cli_tls_pair({20,22}:struct{a,b int32})struct{a,b int32}' "$tls_input"
       echo "$compiler CLI TLS $mode $opt ${tls_input##*.}: PASS"
     done
+    cxx_tls_object="$cli_dir/cxx-$mode$opt.o"
+    cxx_tls_archive="$cli_dir/cxx-$mode$opt.a"
+    "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} "${tls_cflags[@]}" "$tls_codegen" "$opt" -std=c++17 -fno-exceptions -fno-rtti -fno-stack-protector -c testdata/cli_tls.cpp -o "$cxx_tls_object"
+    "${AR:-ar}" rcs "$cxx_tls_archive" "$cxx_tls_object"
+    for tls_input in "$cxx_tls_object" "$cxx_tls_archive"; do
+      # Its global finalizer traps unless the current thread's C++ TLS object
+      # has already been destroyed exactly once during session cleanup.
+      expect 42 "-$mode-tls" 'func cli_cxx_tls_add(int32,int32)int32' 20 20 "$tls_input"
+      echo "$compiler CLI C++ TLS $mode $opt ${tls_input##*.}: PASS"
+    done
     if [[ "$mode" == native ]]; then
       mixed_object="$cli_dir/mixed$opt.o"
       "${CLANG:-clang}" ${native_cflags[@]+"${native_cflags[@]}"} "${tls_cflags[@]}" -femulated-tls "$opt" -Dcli_tls_add=cli_emutls_add -Dcli_tls_pair=cli_emutls_pair -c testdata/cli_tls.c -o "$mixed_object"
