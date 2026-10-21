@@ -85,6 +85,9 @@ func TestMachONativeTLSReservedAndLayout(t *testing.T) {
 			tc.change(im, o)
 			_, err := checkMachOTLS(im.objects, true)
 			if err == nil {
+				_, err = checkELFTLS(im.objects, true)
+			}
+			if err == nil {
 				_, err = im.layoutMachOTLS(0)
 			}
 			if err == nil {
