@@ -40,7 +40,7 @@ func (im *image) relocate(o *object, r relocation) error {
 	switch o.info.Format {
 	case "Mach-O":
 		w = r.width
-		stub := r.typ == machoStubFixup && (o.info.Arch == "amd64" && w == 6 || o.info.Arch == "arm64" && w == 12)
+		stub := r.typ == machoStubFixup && machoStubWidthSupported(o.info.Arch, uint64(w))
 		if r.typ == machoStubFixup && !stub || w != 4 && w != 8 && !stub {
 			return fmt.Errorf("unsupported Mach-O relocation width %d", w)
 		}

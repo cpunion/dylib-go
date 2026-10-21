@@ -51,7 +51,7 @@ Known native signatures can use caller-defined cgo or llgo adapters. For dynamic
 - `NewRegistration(resources, stop)`: group code, native-value and callback leases; run unregister/join before releasing them, retaining resources on cleanup failure.
 - `Close()`: free the object image and release system library references; subsequent symbol access and bound calls return `ErrClosed`.
 
-Mach-O and i386 COFF C names omit one leading linker underscore. Mach-O supports external `N_INDR` aliases, eager indirect pointer binding, and standard amd64/arm64 symbol stubs; see [Mach-O symbol rules](docs/macho.md). Windows vectorcall and i386 stdcall/fastcall decorations remain; vectorcall retains identifier-leading underscores. Use the matching ABI adapter; vectorcall requires a generated C bridge. C++ names still require their exact mangled linkage name.
+Mach-O and i386 COFF C names omit one leading linker underscore. Mach-O supports external `N_INDR` aliases, eager indirect pointer binding, and regenerated amd64/arm64 symbol stubs, including short and padded entries; see [Mach-O symbol rules](docs/macho.md). Windows vectorcall and i386 stdcall/fastcall decorations remain; vectorcall retains identifier-leading underscores. Use the matching ABI adapter; vectorcall requires a generated C bridge. C++ names still require their exact mangled linkage name.
 
 ELF amd64/i386 size relocations use the selected object definition's size, including merged common storage. Address-only host symbols cannot supply size metadata; see [ELF size rules](docs/elf.md).
 
