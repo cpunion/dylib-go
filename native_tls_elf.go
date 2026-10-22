@@ -12,16 +12,35 @@ const (
 )
 
 // A dynamic TLS index contains a private module descriptor and byte offset.
-// AArch64 TLSDESC adds an entry and argument pointer before that same index.
+// Each record also holds a TLSDESC [entry, index pointer] after that index.
+// GD/LD and TLSDESC may therefore reference the same definition in one image.
 // These records are image-owned; they are not glibc module IDs or DTV entries.
 type elfTLSLayout struct {
 	descriptor, template, size, align uint64
 	sections                          map[*section]uint64
 	records                           map[definition]uint64
 	end                               uint64
+	descEntry                         uintptr
+	descriptors                       bool
 }
 
-func elfTLSRuntime(name string) bool { return name == "__tls_get_addr" || name == "___tls_get_addr" }
+const elfTLSModuleBase = "_TLS_MODULE_BASE_"
+
+func elfTLSRuntime(name string) bool {
+	return name == "__tls_get_addr" || name == "___tls_get_addr" || name == elfTLSModuleBase
+}
+
+func elfTLSDesc(arch string, typ uint32) bool {
+	return arch == "amd64" && (typ == 34 || typ == 35) || arch == "386" && (typ == 39 || typ == 40) || arch == "arm64" && (typ >= 562 && typ <= 564 || typ == 569)
+}
+
+func elfTLSDescCall(arch string, typ uint32) bool {
+	return arch == "amd64" && typ == 35 || arch == "386" && typ == 40
+}
+
+func elfTLSModuleBaseReference(o *object, r relocation) bool {
+	return elfTLSDesc(o.info.Arch, r.typ) && r.symbol >= 0 && r.symbol < len(o.symbols) && o.symbols[r.symbol].name == elfTLSModuleBase && o.symbols[r.symbol].section == 0
+}
 
 func elfTLSHelper(arch string) string {
 	if arch == "386" {
@@ -57,7 +76,11 @@ func checkELFTLS(objects []*object, enabled bool) (bool, error) {
 			}
 			if elfTLSRuntime(s.name) {
 				needed = true
-				if s.name != elfTLSHelper(o.info.Arch) || s.section != 0 || !s.global || s.weak || s.tls || s.alias != nil || s.forward != nil || s.imported != nil {
+				valid := s.name == elfTLSHelper(o.info.Arch) && !s.tls
+				if s.name == elfTLSModuleBase {
+					valid = (o.info.Arch == "amd64" || o.info.Arch == "386") && s.tls && s.value == 0 && s.size == 0
+				}
+				if !valid || s.section != 0 || !s.global || s.weak || s.alias != nil || s.forward != nil || s.imported != nil {
 					return false, fmt.Errorf("%s: native ELF TLS requires the image-owned address helper", o.info.Name)
 				}
 			}
@@ -74,9 +97,9 @@ func checkELFTLS(objects []*object, enabled bool) (bool, error) {
 func elfTLSKind(arch string, typ uint32) (record, local, offset bool) {
 	switch arch {
 	case "amd64":
-		return typ == 19 || typ == 20, typ == 20, typ == 17 || typ == 21
+		return typ == 19 || typ == 20 || elfTLSDesc(arch, typ), typ == 20, typ == 17 || typ == 21
 	case "386":
-		return typ == 18 || typ == 19, typ == 19, typ == 32
+		return typ == 18 || typ == 19 || elfTLSDesc(arch, typ), typ == 19, typ == 32
 	case "arm64":
 		return typ >= 562 && typ <= 564 || typ == 569, false, false
 	}
@@ -131,8 +154,10 @@ func (im *image) layoutELFTLS(start uint64) (uint64, error) {
 			if !record {
 				continue
 			}
+			tls.descriptors = tls.descriptors || elfTLSDesc(o.info.Arch, r.typ)
 			var d definition // One shared local-dynamic module-base index.
-			if !local || r.symbol != 0 {
+			moduleBase := elfTLSModuleBaseReference(o, r)
+			if !moduleBase && (!local || r.symbol != 0) {
 				var err error
 				d, _, err = im.elfTLSDefinition(o, r.symbol)
 				if err != nil {
@@ -171,6 +196,19 @@ func (im *image) prepareELFTLSHelper() error {
 	im.hooks[elfTLSHelper(im.objects[0].info.Arch)] = im.base + uintptr(im.stubNext)
 	copy(im.mem[im.stubNext:], code)
 	im.stubNext = alignUp(im.stubNext+uint64(len(code)), 16)
+	im.elfTLS.descEntry = im.hooks[elfTLSHelper(im.objects[0].info.Arch)]
+	if im.elfTLS.descriptors && im.objects[0].info.Arch != "arm64" {
+		code, err = elfTLSDescEntry(im.objects[0].info.Arch, native.EmulatedTLSHelper())
+		if err != nil {
+			return err
+		}
+		if len(code) > 512 || im.stubNext+uint64(len(code)) > uint64(len(im.mem)) {
+			return fmt.Errorf("native ELF TLSDESC entry exceeds stub capacity")
+		}
+		im.elfTLS.descEntry = im.base + uintptr(im.stubNext)
+		copy(im.mem[im.stubNext:], code)
+		im.stubNext = alignUp(im.stubNext+uint64(len(code)), 16)
+	}
 	return nil
 }
 
@@ -193,11 +231,8 @@ func (im *image) prepareELFTLS() error {
 		return err
 	}
 	for d, off := range tls.records {
-		if im.objects[0].info.Arch == "arm64" {
-			put(off, uint64(im.hooks[elfTLSHelper("arm64")]))
-			put(off+word, uint64(im.base)+off+2*word)
-			off += 2 * word
-		}
+		put(off+2*word, uint64(tls.descEntry))
+		put(off+3*word, uint64(im.base)+off)
 		put(off, uint64(im.base)+tls.descriptor)
 		if d.o != nil {
 			s := d.sym()
@@ -230,14 +265,15 @@ func (im *image) relocateELFTLS(o *object, r relocation, b []byte, p uintptr) (b
 	var d definition
 	var sec *section
 	var err error
-	if !local || r.symbol != 0 {
+	moduleBase := elfTLSModuleBaseReference(o, r)
+	if !moduleBase && (!local || r.symbol != 0) {
 		d, sec, err = im.elfTLSDefinition(o, r.symbol)
 		if err != nil {
 			return true, err
 		}
 	}
 	a := r.addend
-	if r.implicit {
+	if r.implicit && !elfTLSDescCall(o.info.Arch, r.typ) {
 		a += int64(int32(le.Uint32(b)))
 	}
 	if offset {
@@ -252,7 +288,7 @@ func (im *image) relocateELFTLS(o *object, r relocation, b []byte, p uintptr) (b
 		}
 		return true, signed32(b, v)
 	}
-	if local {
+	if local || moduleBase {
 		d = definition{}
 	}
 	off, ok := tls.records[d]
@@ -260,9 +296,18 @@ func (im *image) relocateELFTLS(o *object, r relocation, b []byte, p uintptr) (b
 		return true, fmt.Errorf("missing native ELF TLS descriptor")
 	}
 	address := im.base + uintptr(off)
+	if elfTLSDesc(o.info.Arch, r.typ) {
+		address += uintptr(2 * im.pointerSize)
+	}
 	source := o.sections[r.section]
 	if !source.exec {
 		return true, fmt.Errorf("native ELF TLS address relocation requires an instruction section")
+	}
+	if elfTLSDescCall(o.info.Arch, r.typ) {
+		if a != 0 || len(b) != 2 || b[0] != 0xff || b[1] != 0x10 {
+			return true, fmt.Errorf("native ELF TLSDESC call requires zero-addend CALL through (E)RAX")
+		}
+		return true, nil // Relaxation annotation; preserve the indirect call.
 	}
 	switch o.info.Arch {
 	case "amd64":

@@ -8,7 +8,7 @@ Go. Complete shared libraries continue to use their OS loader's TLS support.
 | --- | --- | --- |
 | Native Mach-O TLV | `Options.NativeTLS` | C values and documented C++ wrappers, macOS amd64/arm64; initialized, zero-filled and aligned values |
 | Clang emulated TLS | `Options.EmulatedTLS` | Linux/macOS/Windows targets below, including documented C++ initialization/destruction |
-| Native ELF dynamic TLS | `Options.NativeTLS` | C values and documented C++ wrappers, Linux amd64/386 GD/LD and arm64 TLSDESC |
+| Native ELF dynamic TLS | `Options.NativeTLS` | C values and documented C++ wrappers, Linux amd64/386 GD/LD/TLSDESC and arm64 TLSDESC |
 | Native ELF static TLS, COFF TLS, other Darwin models | None | Unsupported; use emulated TLS or a complete OS library |
 
 ## Native Mach-O TLV
@@ -72,7 +72,7 @@ contract, including both 64-bit lanes of every ARM64 vector register.
 ## Native ELF dynamic TLS
 
 Enable `Options{NativeTLS: true}` for ordinary plain C Linux PIC objects and
-archives. Clang and GCC global-dynamic/local-dynamic output is supported on
+archives. Clang and GCC global-dynamic/local-dynamic and GNU2 TLSDESC output is supported on
 amd64/386; AArch64 uses the descriptor model emitted by both compilers. All
 TLS definitions must be selected into the same image. Ordinary object/archive
 dependency resolution, missing-provider retry and retained function providers
@@ -84,13 +84,15 @@ leases while borrowing returned TLS pointers.
 | --- | --- | --- |
 | amd64 | `TLSGD`, `TLSLD`, `DTPOFF32`, `DTPOFF64` | `__tls_get_addr`, ordinary System V C ABI |
 | 386 | `TLS_GD`, `TLS_LDM`, `TLS_LDO_32` | GNU `___tls_get_addr`, index in EAX, result in EAX |
+| amd64 | `GOTPC32_TLSDESC`, `TLSDESC_CALL` | Descriptor in RAX, result relative to `FS:0`; preserves every other GPR and OS-enabled user register state |
+| 386 | `TLS_GOTDESC`, `TLS_DESC_CALL` | Descriptor in EAX, result relative to `GS:0`; preserves every other GPR and OS-enabled user register state |
 | arm64 | `TLSDESC_ADR_PAGE21`, `TLSDESC_LD64_LO12_NC`, `TLSDESC_ADD_LO12_NC`, `TLSDESC_CALL` | Descriptor in X0, result relative to `TPIDR_EL0`; preserves X1-X29 and every bit of Q0-Q31 |
 
 The loader retains TLS symbol types, packs writable allocated `SHF_TLS` data and
 zero-fill sections into one bounded aligned template, and applies ordinary
 relocations before copying that template. Each native thread receives its own
 module allocation through the existing image owner. Private GD/LD indices and
-AArch64 descriptors refer to that owner; they never contain host dynamic-loader
+TLSDESC descriptors refer to that owner; they never contain host dynamic-loader
 module IDs. The linker generates all entry instructions in Go, including the
 386 register-to-cdecl adapter and AArch64's additional register saves and
 thread-pointer subtraction. No glibc DTV mutation, static TLS reservation,
@@ -105,7 +107,26 @@ private address records are permitted; the 64 MiB per-thread allocation budget
 is shared with emulated TLS. Compiler-produced local-dynamic module-base indices
 are image-wide, and DTP-relative values use the packed template offsets.
 
-Initial-exec/local-exec offsets, x86 TLSDESC, other AArch64 dynamic sequences,
+x86 TLSDESC accepts the canonical zero-addend indirect call through `(E)RAX`.
+Its address instruction uses a RIP-relative LEA with addend -4 on amd64 or a
+zero-addend EBX GOT-relative LEA on i386. `_TLS_MODULE_BASE_` is a reserved,
+undefined TLS symbol for the image's packed module base; callers may combine it
+with DTP-relative offsets. GD/LD and TLSDESC references share one allocation per
+image and OS thread, including when producers or models are mixed.
+
+The Go-generated x86 descriptor entry saves caller-clobbered GPRs, uses
+CPUID/XGETBV to size and save all enabled user state with XSAVE, and restores it
+before returning. Without OSXSAVE it uses FXSAVE (the native i386 baseline is
+SSE2). A separate aligned area holds i386 cdecl arguments. The adapter preserves
+the full x87 stack; its internal ordinary C call starts with an empty x87 stack.
+Native probes use a hostile C helper to check all GPRs, XMM registers and eight
+x87 values, exercise the FXSAVE fallback, and check YMM/ZMM/opmask state when the
+runner's CPU and OS enable it. AMX/APX hardware is not independently qualified.
+The [glibc x86 register contract](https://github.com/bminor/glibc/blob/glibc-2.42/sysdeps/x86/sysdep.h)
+and [x86-64 descriptor entry](https://github.com/bminor/glibc/blob/glibc-2.42/sysdeps/x86_64/dl-tlsdesc-dynamic.h)
+document why an ordinary C call alone cannot implement this entry.
+
+Initial-exec/local-exec offsets, other AArch64 dynamic sequences,
 loader-owned dynamic TLS relocations, external/OS-library TLS definitions,
 loader-managed TLS initialization and SVE/SME calling variants
 remain unsupported. They need separate ABI/runtime qualification. Complete OS

@@ -37,7 +37,7 @@ type Options struct {
 	// TLS initialization. Native TLS uses the separate NativeTLS option.
 	EmulatedTLS bool
 	// NativeTLS enables native TLS in raw objects: macOS amd64/arm64
-	// TLV, Linux amd64/386 GD/LD, and Linux arm64 TLSDESC. It reuses image-owned
+	// TLV, Linux amd64/386 GD/LD/TLSDESC, and Linux arm64 TLSDESC. It reuses image-owned
 	// per-thread storage and lifetime guards, including compiler-generated
 	// nonthrowing C++ wrappers and thread-exit hooks. Native initial/local-exec,
 	// loader-managed TLS initializer sections and foreign providers remain unsupported.
@@ -854,7 +854,7 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 	im.stubNext = size
 	size += alignUp((count+1)*16, im.page)
 	// One page covers lifecycle/thread-exit thunks and the <=512-byte Darwin
-	// TLV register-preserving entry, in addition to every relocation's island.
+	// TLV and ELF TLS register-preserving entries, plus every relocation island.
 	size += im.page
 	if size > maxImage {
 		return nil, fmt.Errorf("image exceeds 64 MiB")

@@ -8,6 +8,8 @@ case "$(uname -s)" in
     # Clang 18 has incompatible SysV lowering for aligned scalar typedefs.
     # Keep the baseline compiler; qualify this fixture with the fixed release.
     echo 'DYLIB_TYPEDEF_CLANG=clang-19' >> "$GITHUB_ENV"
+    # x86 GNU2 TLSDESC code generation was added in Clang 19.
+    echo 'DYLIB_TLSDESC_CLANG=clang-19' >> "$GITHUB_ENV"
     ;;
   Darwin)
     for formula in libffi pkgconf; do
