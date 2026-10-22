@@ -89,6 +89,12 @@ func needX86TLSDesc(t *testing.T) {
 	if runtime.GOARCH != "amd64" && runtime.GOARCH != "386" {
 		t.Skip("x86 TLSDESC requires Linux amd64 or 386")
 	}
+	// Clang 18 accepts only the traditional x86 dialect. CI already installs
+	// Clang 19 for other producer contracts; select it for GNU2 fixtures too.
+	if cc := os.Getenv("DYLIB_TLSDESC_CLANG"); cc != "" {
+		t.Setenv("CLANG", cc)
+	}
+	t.Logf("TLSDESC Clang producer: %s", compiler())
 }
 
 // Both producers, optimization levels, archive extraction and mixed TLS models

@@ -204,7 +204,10 @@ that revision and the full matrix tests it without local compiler patches.
 
 The macOS jobs also execute default compact unwind, omitted-frame-pointer and large-stack C++ variants. Each checks actual compact-table use, exceptions, RAII, concurrent images, registration failure/retry and retirement. All host jobs relocate genuine Clang compact records for both macOS architectures; malformed storage, range, LSDA, encoding and indirect stack-size instruction cases are rejected.
 
-Linux amd64/386 TLSDESC fixtures use Clang GNU2 and GCC GNU2 at O0/O2. Each
+Linux amd64/386 TLSDESC fixtures use Clang GNU2 and GCC GNU2 at O0/O2.
+`DYLIB_TLSDESC_CLANG` selects the qualified producer (the already installed
+Clang 19 in CI); Clang 18 cannot generate x86 GNU2 output. Other fixture
+producers keep their existing selection. Each
 producer executes object/archive, pure descriptor and mixed GD/descriptor
 images, on the caller thread and four joined C threads. The shared TLS lifetime
 probes also cover pinned Go threads, retained providers, initialization/finalization
