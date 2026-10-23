@@ -33,23 +33,12 @@ func elfTLSEntry(arch string, helper uintptr) ([]byte, error) {
 		word(uint32(helper))
 		code = append(code, 0xff, 0xd0, 0x8b, 0x54, 0x24, 4, 0x03, 0x42, 4, 0x89, 0xec, 0x5d, 0xc3)
 	case "arm64":
-		// The ELF descriptor returns an offset from TPIDR_EL0, preserving
-		// X1-X29 and every bit of Q0-Q31. Ordinary C preserves X19-X29.
-		// Unlike Darwin TLV, X16-X18 must also survive the descriptor call.
-		word(0xa9bf7bfd) // stp x29, x30, [sp, #-16]!
+		// __tls_get_addr is an ordinary AAPCS64 C call returning an address.
+		// X19 retains the index across the allocator; SP stays 16-byte aligned.
+		word(0xa9be7bfd) // stp x29, x30, [sp, #-32]!
 		word(0x910003fd) // mov x29, sp
-		word(0xd10a83ff) // sub sp, sp, #672
-		pair := func(op uint32, reg, off, scale int) {
-			word(op | uint32(off/scale)<<15 | uint32(reg+1)<<10 | 31<<5 | uint32(reg))
-		}
-		for reg := 1; reg < 19; reg += 2 {
-			pair(0xa9000000, reg, (reg-1)*8, 8)
-		}
-		word(0xf9004be0) // str x0, [sp, #144] (original descriptor)
-		for reg := 0; reg < 32; reg += 2 {
-			pair(0xad000000, reg, 160+reg*16, 16)
-		}
-		word(0xf9400400) // ldr x0, [x0, #8] (descriptor argument)
+		word(0xf9000bf3) // str x19, [sp, #16]
+		word(0xaa0003f3) // mov x19, x0
 		word(0xf9400000) // ldr x0, [x0] (private module descriptor)
 		for half := uint32(0); half < 4; half++ {
 			op := uint32(0xd2800000)
@@ -59,20 +48,10 @@ func elfTLSEntry(arch string, helper uintptr) ([]byte, error) {
 			word(op | half<<21 | uint32(uint64(helper)>>(half*16)&0xffff)<<5 | 16)
 		}
 		word(0xd63f0200) // blr x16
-		word(0xf9404bf0) // ldr x16, [sp, #144]
-		word(0xf9400610) // ldr x16, [x16, #8] (descriptor argument)
-		word(0xf9400610) // ldr x16, [x16, #8] (module byte offset)
+		word(0xf9400670) // ldr x16, [x19, #8] (module byte offset)
 		word(0x8b100000) // add x0, x0, x16
-		word(0xd53bd050) // mrs x16, TPIDR_EL0
-		word(0xcb100000) // sub x0, x0, x16
-		for reg := 0; reg < 32; reg += 2 {
-			pair(0xad400000, reg, 160+reg*16, 16)
-		}
-		for reg := 1; reg < 19; reg += 2 {
-			pair(0xa9400000, reg, (reg-1)*8, 8)
-		}
-		word(0x910a83ff) // add sp, sp, #672
-		word(0xa8c17bfd) // ldp x29, x30, [sp], #16
+		word(0xf9400bf3) // ldr x19, [sp, #16]
+		word(0xa8c27bfd) // ldp x29, x30, [sp], #32
 		word(0xd65f03c0) // ret
 	default:
 		return nil, fmt.Errorf("native ELF TLS is unsupported on %s", arch)

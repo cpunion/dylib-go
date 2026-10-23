@@ -2,10 +2,10 @@ package dylib
 
 import "fmt"
 
-// elfTLSDescEntry adapts the register-preserving x86 TLSDESC ABI to the native
-// allocator. It returns the address minus FS:0 (amd64) or GS:0 (i386).
-// XSAVE preserves all OS-enabled user state (including x87 and wide vectors);
-// CPUs without OSXSAVE use FXSAVE. CPUID supplies the enabled-state area size.
+// elfTLSDescEntry adapts the register-preserving TLSDESC ABI to the native
+// allocator, returning the address minus the thread pointer. On x86, XSAVE
+// preserves all OS-enabled user state; CPUs without OSXSAVE use FXSAVE.
+// AArch64 preserves X1-X29 and every bit of Q0-Q31.
 // The independent assembler reference is testdata/elf_tlsdesc_entry.S.
 func elfTLSDescEntry(arch string, helper uintptr) ([]byte, error) {
 	if helper == 0 {
@@ -16,6 +16,8 @@ func elfTLSDescEntry(arch string, helper uintptr) ([]byte, error) {
 	}
 	var code []byte
 	switch arch {
+	case "arm64":
+		return elfTLSDescARM64Entry(helper), nil
 	case "amd64":
 		code = append(code, 0xf3, 0x0f, 0x1e, 0xfa)                                     // endbr64
 		code = append(code, 0x55)                                                       // pushq	%rbp

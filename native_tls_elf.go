@@ -101,7 +101,7 @@ func elfTLSKind(arch string, typ uint32) (record, local, offset bool) {
 	case "386":
 		return typ == 18 || typ == 19 || elfTLSDesc(arch, typ), typ == 19, typ == 32
 	case "arm64":
-		return typ >= 562 && typ <= 564 || typ == 569, false, false
+		return typ == 513 || typ == 514 || elfTLSDesc(arch, typ), false, false
 	}
 	return false, false, false
 }
@@ -197,7 +197,7 @@ func (im *image) prepareELFTLSHelper() error {
 	copy(im.mem[im.stubNext:], code)
 	im.stubNext = alignUp(im.stubNext+uint64(len(code)), 16)
 	im.elfTLS.descEntry = im.hooks[elfTLSHelper(im.objects[0].info.Arch)]
-	if im.elfTLS.descriptors && im.objects[0].info.Arch != "arm64" {
+	if im.elfTLS.descriptors {
 		code, err = elfTLSDescEntry(im.objects[0].info.Arch, native.EmulatedTLSHelper())
 		if err != nil {
 			return err
@@ -331,13 +331,13 @@ func (im *image) relocateELFTLS(o *object, r relocation, b []byte, p uintptr) (b
 		return true, signed32(b, int64(address)-int64(im.gotBase()))
 	case "arm64":
 		if a != 0 || r.offset%4 != 0 {
-			return true, fmt.Errorf("native ELF TLSDESC requires aligned zero-addend instructions")
+			return true, fmt.Errorf("native ELF TLS requires aligned zero-addend instructions")
 		}
 		ins := le.Uint32(b)
 		switch r.typ {
-		case 562:
+		case 513, 562:
 			if ins&0x9f000000 != 0x90000000 || ins&0x60ffffe0 != 0 {
-				return true, fmt.Errorf("TLSDESC page requires zero-addend ADRP")
+				return true, fmt.Errorf("native ELF TLS page requires zero-addend ADRP")
 			}
 			return true, armPage(b, address, p)
 		case 563:
@@ -345,9 +345,9 @@ func (im *image) relocateELFTLS(o *object, r relocation, b []byte, p uintptr) (b
 				return true, fmt.Errorf("TLSDESC load requires a zero-offset 64-bit LDR")
 			}
 			return true, armPageOff(b, address, 3)
-		case 564:
+		case 514, 564:
 			if ins&0xfffffc00 != 0x91000000 {
-				return true, fmt.Errorf("TLSDESC add requires a zero-offset 64-bit ADD")
+				return true, fmt.Errorf("native ELF TLS add requires a zero-offset 64-bit ADD")
 			}
 			return true, armPageOff(b, address, 0)
 		case 569:

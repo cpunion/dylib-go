@@ -1,6 +1,6 @@
 # ELF relocations
 
-Native TLS is opt-in on Linux: amd64/386 GD/LD/TLSDESC and arm64 TLSDESC use image-owned
+Native TLS is opt-in on Linux: amd64/386 GD/LD/TLSDESC and arm64 GD/TLSDESC use image-owned
 thread storage. See the [TLS model and C++ runtime scope](tls.md#native-elf-dynamic-tls).
 
 ## x86 short data fields

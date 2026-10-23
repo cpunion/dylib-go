@@ -363,11 +363,17 @@ func TestNativeMachOTLSLifecycle(t *testing.T) {
 }
 
 func testNativeTLSLifecycle(t *testing.T, flags ...string) {
+	testNativeTLSLifecycleInput(t, func(dir string) string {
+		return compile(t, "testdata/emutls_lifecycle.c", filepath.Join(dir, "lifecycle.o"), append([]string{"-fno-emulated-tls"}, flags...)...)
+	})
+}
+
+func testNativeTLSLifecycleInput(t *testing.T, input func(string) string) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 	dir := t.TempDir()
 	host, _, read := lifecycleObserver(t, dir)
-	obj := compile(t, "testdata/emutls_lifecycle.c", filepath.Join(dir, "lifecycle.o"), append([]string{"-fno-emulated-tls"}, flags...)...)
+	obj := input(dir)
 	s := New(Options{NativeTLS: true, RegisterUnwind: true})
 	defer s.Close()
 	load(t, s, host, obj)

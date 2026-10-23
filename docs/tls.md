@@ -8,7 +8,7 @@ Go. Complete shared libraries continue to use their OS loader's TLS support.
 | --- | --- | --- |
 | Native Mach-O TLV | `Options.NativeTLS` | C values and documented C++ wrappers, macOS amd64/arm64; initialized, zero-filled and aligned values |
 | Clang emulated TLS | `Options.EmulatedTLS` | Linux/macOS/Windows targets below, including documented C++ initialization/destruction |
-| Native ELF dynamic TLS | `Options.NativeTLS` | C values and documented C++ wrappers, Linux amd64/386 GD/LD/TLSDESC and arm64 TLSDESC |
+| Native ELF dynamic TLS | `Options.NativeTLS` | C values and documented C++ wrappers, Linux amd64/386 GD/LD/TLSDESC and arm64 GD/TLSDESC |
 | Native ELF static TLS, COFF TLS, other Darwin models | None | Unsupported; use emulated TLS or a complete OS library |
 
 ## Native Mach-O TLV
@@ -73,7 +73,8 @@ contract, including both 64-bit lanes of every ARM64 vector register.
 
 Enable `Options{NativeTLS: true}` for ordinary plain C Linux PIC objects and
 archives. Clang and GCC global-dynamic/local-dynamic and GNU2 TLSDESC output is supported on
-amd64/386; AArch64 uses the descriptor model emitted by both compilers. All
+amd64/386. AArch64 supports the descriptor model emitted by both compilers
+and GCC traditional TLSGD page/add sequences (`-mtls-dialect=trad`). All
 TLS definitions must be selected into the same image. Ordinary object/archive
 dependency resolution, missing-provider retry and retained function providers
 work as for Mach-O. Raw TLS symbol names cannot be bound as ordinary variables;
@@ -86,6 +87,7 @@ leases while borrowing returned TLS pointers.
 | 386 | `TLS_GD`, `TLS_LDM`, `TLS_LDO_32` | GNU `___tls_get_addr`, index in EAX, result in EAX |
 | amd64 | `GOTPC32_TLSDESC`, `TLSDESC_CALL` | Descriptor in RAX, result relative to `FS:0`; preserves every other GPR and OS-enabled user register state |
 | 386 | `TLS_GOTDESC`, `TLS_DESC_CALL` | Descriptor in EAX, result relative to `GS:0`; preserves every other GPR and OS-enabled user register state |
+| arm64 | `TLSGD_ADR_PAGE21`, `TLSGD_ADD_LO12_NC` | `__tls_get_addr`, ordinary AAPCS64 C ABI, index in X0 and absolute address in X0 |
 | arm64 | `TLSDESC_ADR_PAGE21`, `TLSDESC_LD64_LO12_NC`, `TLSDESC_ADD_LO12_NC`, `TLSDESC_CALL` | Descriptor in X0, result relative to `TPIDR_EL0`; preserves X1-X29 and every bit of Q0-Q31 |
 
 The loader retains TLS symbol types, packs writable allocated `SHF_TLS` data and
@@ -126,14 +128,22 @@ The [glibc x86 register contract](https://github.com/bminor/glibc/blob/glibc-2.4
 and [x86-64 descriptor entry](https://github.com/bminor/glibc/blob/glibc-2.42/sysdeps/x86_64/dl-tlsdesc-dynamic.h)
 document why an ordinary C call alone cannot implement this entry.
 
-Initial-exec/local-exec offsets, other AArch64 dynamic sequences,
+GCC AArch64 O0/O2 global-dynamic and local-dynamic fixtures both emit TLSGD
+page/add pairs. Their calls use an ordinary C entry, independently of the
+register-preserving descriptor entry; both models share each definition's
+private address record and one thread allocation. Mixed GCC traditional/Clang
+descriptor objects and archives, native thread exit, C++ initialization and
+destructor retirement, pointer/aggregate values and retained providers are tested.
+Distinct AArch64 TLSLD/DTP-relative sequences, ADR/MOVW TLSGD forms,
+initial-exec/local-exec offsets,
 loader-owned dynamic TLS relocations, external/OS-library TLS definitions,
 loader-managed TLS initialization and SVE/SME calling variants
 remain unsupported. They need separate ABI/runtime qualification. Complete OS
 libraries continue to use their loader. Native ELF tests cover the same values,
 thread isolation, cleanup, lifetime and lifecycle cases as Mach-O, plus GCC
 O0/O2 calls and explicit rejection of static TLS models. Independent assembly
-references cover all three entries; an AArch64 probe checks X1-X18 and all 128
+references cover ordinary entries on all three architectures and their
+separate descriptor entries; an AArch64 probe checks X1-X18 and all 128
 bits of Q0-Q31.
 
 ABI references: [AArch64 ELF TLS relocations](https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst),
