@@ -101,7 +101,7 @@ func elfTLSKind(arch string, typ uint32) (record, local, offset bool) {
 	case "386":
 		return typ == 18 || typ == 19 || elfTLSDesc(arch, typ), typ == 19, typ == 32
 	case "arm64":
-		return typ >= 512 && typ <= 516 || elfTLSDesc(arch, typ), false, false
+		return typ >= 512 && typ <= 522 || elfTLSDesc(arch, typ), typ >= 517 && typ <= 522, typ >= 523 && typ <= 538 || typ == 572 || typ == 573
 	}
 	return false, false, false
 }
@@ -281,7 +281,14 @@ func (im *image) relocateELFTLS(o *object, r relocation, b []byte, p uintptr) (b
 		if v < 0 || uint64(v) > sec.size {
 			return true, fmt.Errorf("native ELF TLS offset exceeds its template section")
 		}
+		remaining := sec.size - uint64(v)
 		v += int64(tls.sections[sec])
+		if o.info.Arch == "arm64" {
+			if !o.sections[r.section].exec || r.offset%4 != 0 {
+				return true, fmt.Errorf("native ELF TLS offset requires an aligned instruction section")
+			}
+			return true, armELFTLSOffset(b, r.typ, uint64(v), remaining, p)
+		}
 		if len(b) == 8 {
 			le.PutUint64(b, uint64(v))
 			return true, nil
@@ -335,25 +342,23 @@ func (im *image) relocateELFTLS(o *object, r relocation, b []byte, p uintptr) (b
 		}
 		ins := le.Uint32(b)
 		switch r.typ {
-		case 512:
+		case 512, 517:
 			if ins&0xffffffe0 != 0x10000000 {
 				return true, fmt.Errorf("native ELF TLS address requires zero-addend ADR")
 			}
 			return true, armADR(b, address, p)
-		case 515, 516:
-			// AAELF64 TLSGD wide moves encode index-GOT, not a TLS offset.
-			// Restrict the entry to a 64-bit G1 MOVN/MOVZ then G0 MOVK.
-			if r.typ == 515 {
-				if ins&^uint32(1<<30|31) != 0x92a00000 {
-					return true, fmt.Errorf("TLSGD G1 requires zero-immediate 64-bit MOVN/MOVZ with shift 16")
-				}
-				return true, armELFMOVW(b, 302, uint64(address)-uint64(im.gotBase()), p)
+		case 515, 520:
+			return true, armELFTLSMOVW(b, 1, true, uint64(address)-uint64(im.gotBase()), p)
+		case 516, 521:
+			return true, armELFTLSMOVW(b, 0, false, uint64(address)-uint64(im.gotBase()), p)
+		case 522:
+			// The qualified literal form copies the full 16-byte module index
+			// through a Q register before passing its address to the C entry.
+			if ins&0xffffffe0 != 0x9c000000 {
+				return true, fmt.Errorf("TLSLD literal requires zero-offset 128-bit LDR")
 			}
-			if ins&^uint32(31) != 0xf2800000 {
-				return true, fmt.Errorf("TLSGD G0 requires zero-immediate 64-bit MOVK with shift 0")
-			}
-			return true, armELFMOVW(b, 301, uint64(address)-uint64(im.gotBase()), p)
-		case 513, 562:
+			return true, armLiteralLoad(b, address, p)
+		case 513, 518, 562:
 			if ins&0x9f000000 != 0x90000000 || ins&0x60ffffe0 != 0 {
 				return true, fmt.Errorf("native ELF TLS page requires zero-addend ADRP")
 			}
@@ -363,7 +368,7 @@ func (im *image) relocateELFTLS(o *object, r relocation, b []byte, p uintptr) (b
 				return true, fmt.Errorf("TLSDESC load requires a zero-offset 64-bit LDR")
 			}
 			return true, armPageOff(b, address, 3)
-		case 514, 564:
+		case 514, 519, 564:
 			if ins&0xfffffc00 != 0x91000000 {
 				return true, fmt.Errorf("native ELF TLS add requires a zero-offset 64-bit ADD")
 			}

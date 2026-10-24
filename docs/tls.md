@@ -8,7 +8,7 @@ Go. Complete shared libraries continue to use their OS loader's TLS support.
 | --- | --- | --- |
 | Native Mach-O TLV | `Options.NativeTLS` | C values and documented C++ wrappers, macOS amd64/arm64; initialized, zero-filled and aligned values |
 | Clang emulated TLS | `Options.EmulatedTLS` | Linux/macOS/Windows targets below, including documented C++ initialization/destruction |
-| Native ELF dynamic TLS | `Options.NativeTLS` | C values and documented C++ wrappers, Linux amd64/386 GD/LD/TLSDESC and arm64 GD/TLSDESC |
+| Native ELF dynamic TLS | `Options.NativeTLS` | C values and documented C++ wrappers, Linux amd64/386 GD/LD/TLSDESC and arm64 GD/LD/TLSDESC |
 | Native ELF static TLS, COFF TLS, other Darwin models | None | Unsupported; use emulated TLS or a complete OS library |
 
 ## Native Mach-O TLV
@@ -90,6 +90,8 @@ leases while borrowing returned TLS pointers.
 | amd64 | `GOTPC32_TLSDESC`, `TLSDESC_CALL` | Descriptor in RAX, result relative to `FS:0`; preserves every other GPR and OS-enabled user register state |
 | 386 | `TLS_GOTDESC`, `TLS_DESC_CALL` | Descriptor in EAX, result relative to `GS:0`; preserves every other GPR and OS-enabled user register state |
 | arm64 | `TLSGD_ADR_PREL21`, `TLSGD_ADR_PAGE21`, `TLSGD_ADD_LO12_NC`, `TLSGD_MOVW_G1`, `TLSGD_MOVW_G0_NC` | `__tls_get_addr`, ordinary AAPCS64 C ABI, index in X0 and absolute address in X0 |
+| arm64 | `TLSLD_ADR_PREL21`, `TLSLD_ADR_PAGE21`, `TLSLD_ADD_LO12_NC`, `TLSLD_MOVW_G1`, `TLSLD_MOVW_G0_NC`, `TLSLD_LD_PREL19` | Shared module-base index; ordinary `__tls_get_addr`; literal form copies the 16-byte index with a Q-register LDR |
+| arm64 | `TLSLD_MOVW_DTPREL_G2/G1/G0` and lower `_NC` groups; `TLSLD_ADD_DTPREL_HI12/LO12/LO12_NC`; checked/unchecked `TLSLD_LDST8/16/32/64/128_DTPREL_LO12` | Packed module offsets applied to canonical MOVW, ADD, unsigned integer/SIMD LDR/STR instructions |
 | arm64 | `TLSDESC_ADR_PAGE21`, `TLSDESC_LD64_LO12_NC`, `TLSDESC_ADD_LO12_NC`, `TLSDESC_CALL` | Descriptor in X0, result relative to `TPIDR_EL0`; preserves X1-X29 and every bit of Q0-Q31 |
 
 The loader retains TLS symbol types, packs writable allocated `SHF_TLS` data and
@@ -143,7 +145,25 @@ is relative to the image-owned GOT, independently of the target variable offset.
 Nonzero encoded immediates, addends, wrong widths/shifts and out-of-range values
 are rejected before publication. Alternative operand forms remain unqualified.
 
-Distinct AArch64 TLSLD/DTP-relative sequences,
+AArch64 TLSLD references share one module index with byte offset zero, including
+references to different symbols. DTP-relative operands use each selected symbol's
+packed section offset plus its explicit addend. Address construction allows a
+one-past section offset; loads/stores require the entire datum to fit. Checked
+MOVW/ADD/load-store ranges, encoded zero immediates, instruction widths/shifts,
+scaled alignment and zero-addend module-index references are validated. Negative
+addends within the same template section and fields inside a record are tested.
+GD, LD and TLSDESC still allocate one module value per image and OS thread.
+
+Independent assembly executes all 24 implemented TLSLD relocation kinds with
+Clang TLSDESC/GCC traditional C providers and nonthrowing C++ providers. C getters
+cross-check 8–128-bit data, FP fields and zero fill beyond 64 KiB. GNU ld system
+controls exercise page/add module indices and DTP-relative operations; GNU ld
+2.40 does not recognize module-index MOVW/literal and 128-bit DTPREL load/store
+records, so its control uses ordinary Q accesses through relocated ADD pointers.
+Those additional records are qualified by raw native execution, ABI field/range
+checks and compiler-produced getters, not claimed as GNU ld execution coverage.
+
+Other AArch64 instruction forms, sign-extending loads and prefetch,
 initial-exec/local-exec offsets,
 loader-owned dynamic TLS relocations, external/OS-library TLS definitions,
 loader-managed TLS initialization and SVE/SME calling variants
