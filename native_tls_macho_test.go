@@ -395,15 +395,19 @@ func TestNativeMachOTLSRetirement(t *testing.T) {
 }
 
 func testNativeTLSRetirement(t *testing.T, flags ...string) {
-	host := nativeThreadLibrary(t, "testdata/emutls_threads.c")
-	start, err := host.Resolve("tls_threads_pause")
-	if err != nil {
-		t.Fatal(err)
-	}
 	dir := t.TempDir()
 	var inputs []string
 	for _, part := range []string{"consumer", "provider"} {
 		inputs = append(inputs, compile(t, "testdata/emutls_"+part+".c", filepath.Join(dir, part+".o"), append([]string{"-O2"}, flags...)...))
+	}
+	testNativeTLSRetirementInputs(t, inputs)
+}
+
+func testNativeTLSRetirementInputs(t *testing.T, inputs []string) {
+	host := nativeThreadLibrary(t, "testdata/emutls_threads.c")
+	start, err := host.Resolve("tls_threads_pause")
+	if err != nil {
+		t.Fatal(err)
 	}
 	for _, mode := range []string{"owner_before_join", "concurrent_exit"} {
 		t.Run(mode, func(t *testing.T) {

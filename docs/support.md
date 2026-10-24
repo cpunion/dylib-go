@@ -31,7 +31,7 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 | COFF short import objects, directly or inside `.lib` archives | Selected imports bind functions/data/ordinal exports from session-owned DLLs; all five name policies supported |
 | GNU long import libraries (`.a` / `.lib`) | Standard per-symbol and contiguous multi-entry IAT/thunk templates for one DLL, decoded across descriptor/DLL-name members; functions/data/const/names/ordinals supported. Verified templates can coexist with retained ordinary sections and groups; cross-DLL and disjoint IAT layouts remain unsupported. See [mixed-member limits](coff.md#gnu-long-import-libraries) |
 | Clang `-femulated-tls` raw objects / archives | Explicit `Options.EmulatedTLS`; image-owned descriptors and per-native-thread values; constant initialization, aligned storage and thread-exit/owner cleanup. Documented C++ thread constructors/destructors are supported. Native Mach-O TLV uses the separate option below. See [TLS scope](tls.md) |
-| Native ELF TLS, Linux amd64/arm64/386 | Explicit `Options.NativeTLS`; C values, nonthrowing C++ wrapper initialization and thread-exit registrations, image-owned templates; amd64/386 GD/LD/TLSDESC and arm64 GD/TLSDESC. Clang/GCC object/archive calls use Go-generated entries; static TP offsets and external TLS definitions remain unsupported. See [TLS models](tls.md#native-elf-dynamic-tls) |
+| Native ELF TLS, Linux amd64/arm64/386 | Explicit `Options.NativeTLS`; C values, nonthrowing C++ wrapper initialization and thread-exit registrations, image-owned templates; amd64/386 GD/LD/TLSDESC and arm64 GD/LD/TLSDESC. Clang/GCC object/archive calls use Go-generated entries; static TP offsets and external TLS definitions remain unsupported. See [TLS models](tls.md#native-elf-dynamic-tls) |
 | Native Mach-O TLV, macOS amd64/arm64 | Explicit `Options.NativeTLS`; C values, nonthrowing C++ wrapper initialization and thread-exit registrations, image-owned descriptors and per-thread storage. Go generates a register-preserving TLV entry; descriptors, initializers and raw variables have the [documented limits](tls.md#native-mach-o-tlv) |
 | `.so`, `.dylib`, PE DLL | Host OS loads complete images, dependencies, TLS, and initialization |
 | PE EXE, ELF EXEC/PIE, Mach-O EXEC | Identified and rejected as library inputs |
@@ -46,7 +46,7 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 Implemented relocation families:
 
 Opt-in ELF dynamic TLS additionally supports amd64 GD/LD and DTP-relative offsets,
-i386 GD/LDM/LDO, x86 TLSDESC address/call pairs, AArch64 TLSGD ADR/page/add/MOVW forms and TLSDESC page/load/add/call relocations. See the
+i386 GD/LDM/LDO, x86 TLSDESC address/call pairs, AArch64 TLSGD ADR/page/add/MOVW forms, local-dynamic module indices and checked/unchecked DTP-relative MOVW/ADD/8–128-bit load/store, plus TLSDESC page/load/add/call relocations. See the
 [native TLS model table](tls.md#native-elf-dynamic-tls) for exact instructions and limits.
 
 - ELF i386: NONE, 32, PC32, PLT32, GOT32/GOT32X, GOTOFF, GOTPC, SIZE32; implicit REL and explicit RELA addends. GOT slots are 4 bytes; register-relative and baseless memory accesses use the [documented instruction rules](elf.md#i386-got-instruction-forms). Relative/size arithmetic wraps within the 32-bit address space.

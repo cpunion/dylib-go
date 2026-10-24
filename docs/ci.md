@@ -227,7 +227,7 @@ exercise foreign and pinned Go threads, and check pointer/aggregate/FP values,
 C++ initialization/destructor retention, lifecycle and code retirement. Portable
 assembly fixtures and rejection tests validate relocation records, instructions,
 addends, bounds and selection of the index versus descriptor half of a record.
-No distinct AArch64 TLSLD/DTP-relative or static TLS model is claimed.
+This earlier producer matrix emits TLSGD pairs. The independent TLSLD suite below qualifies distinct local-dynamic relocations; static TLS models remain unsupported.
 
 Additional AArch64 TLSGD assembly fixtures exercise ADR and canonical 64-bit
 G1 MOVN/MOVZ plus G0 MOVK, alongside the page/add control. They execute against
@@ -240,3 +240,20 @@ limits, negative/positive GOT offsets, G1 sign selection/overflow and malformed
 instructions. Full 32-bit GOT delta boundary tests require a 64-bit test process;
 the 386 inspection jobs retain all instruction validation and cross-target
 fixture checks. These forms reuse the same image owner and C address entry.
+
+AArch64 TLSLD fixtures explicitly emit all 24 module-index and DTP-relative
+relocation kinds. ADR, page/add, GOT-relative MOVW and a literal Q-register index
+copy execute with Clang TLSDESC/GCC traditional providers at O0/O2, as objects
+and archives, on the caller and joined C threads. Compiler getters cross-check
+initialized/zero-filled integer, FP and 128-bit values, positive/negative field
+addends and offsets beyond 64 KiB. Nonthrowing C++ providers verify five TLS
+destructors precede global teardown. Retirement tests retain a code lease while
+native threads pause and cover owner-before-join and concurrent thread exit.
+
+GNU ld controls use the page/add index form and ordinary Q accesses through
+DTP-relative ADD pointers: GNU ld 2.40 lacks module-index MOVW/literal and
+128-bit DTPREL load/store relocation support. A local TLS anchor also avoids
+mixing GD and LD GOT uses for one symbol in that linker. The raw-object cases
+retain all 24 relocation kinds and the compiler-generated GD/TLSDESC providers.
+Portable rejection and field/range tests cover option isolation, instructions,
+widths/shifts, explicit/encoded addends, template extents and datum alignment.
