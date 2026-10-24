@@ -257,3 +257,15 @@ mixing GD and LD GOT uses for one symbol in that linker. The raw-object cases
 retain all 24 relocation kinds and the compiler-generated GD/TLSDESC providers.
 Portable rejection and field/range tests cover option isolation, instructions,
 widths/shifts, explicit/encoded addends, template extents and datum alignment.
+
+AArch64 TLSDESC fixtures execute literal/ADR, ADR with LDR/ADD annotations,
+GOT-relative MOVW with register LDR/ADD annotations, and the existing page
+sequence. All four run with Clang TLSDESC/GCC traditional providers at O0/O2,
+as objects, archives and identical GNU ld-linked OS libraries. Nonthrowing C++
+providers check receiver values and five thread destructors before global
+teardown; code-lease retirement covers both thread-exit orders. Each address
+form also drives the X1–X18/full Q0–Q31 preservation probe. Portable tests check
+all ten relocation kinds, preserve annotation bytes, reject invalid operands,
+and cover descriptor-half addresses and both signed PC-relative limits. The
+existing register fixture keeps page addressing as its default. `tiny` compiler
+probes remain page-based; additional forms are qualified by independent assembly.

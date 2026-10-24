@@ -92,7 +92,7 @@ leases while borrowing returned TLS pointers.
 | arm64 | `TLSGD_ADR_PREL21`, `TLSGD_ADR_PAGE21`, `TLSGD_ADD_LO12_NC`, `TLSGD_MOVW_G1`, `TLSGD_MOVW_G0_NC` | `__tls_get_addr`, ordinary AAPCS64 C ABI, index in X0 and absolute address in X0 |
 | arm64 | `TLSLD_ADR_PREL21`, `TLSLD_ADR_PAGE21`, `TLSLD_ADD_LO12_NC`, `TLSLD_MOVW_G1`, `TLSLD_MOVW_G0_NC`, `TLSLD_LD_PREL19` | Shared module-base index; ordinary `__tls_get_addr`; literal form copies the 16-byte index with a Q-register LDR |
 | arm64 | `TLSLD_MOVW_DTPREL_G2/G1/G0` and lower `_NC` groups; `TLSLD_ADD_DTPREL_HI12/LO12/LO12_NC`; checked/unchecked `TLSLD_LDST8/16/32/64/128_DTPREL_LO12` | Packed module offsets applied to canonical MOVW, ADD, unsigned integer/SIMD LDR/STR instructions |
-| arm64 | `TLSDESC_ADR_PAGE21`, `TLSDESC_LD64_LO12_NC`, `TLSDESC_ADD_LO12_NC`, `TLSDESC_CALL` | Descriptor in X0, result relative to `TPIDR_EL0`; preserves X1-X29 and every bit of Q0-Q31 |
+| arm64 | `TLSDESC_LD_PREL19`, `TLSDESC_ADR_PREL21`, `TLSDESC_ADR_PAGE21`, `TLSDESC_LD64_LO12_NC`, `TLSDESC_ADD_LO12_NC`, `TLSDESC_OFF_G1/G0_NC`, `TLSDESC_LDR/ADD/CALL` | Descriptor in X0, result relative to `TPIDR_EL0`; preserves X1-X29 and every bit of Q0-Q31 |
 
 The loader retains TLS symbol types, packs writable allocated `SHF_TLS` data and
 zero-fill sections into one bounded aligned template, and applies ordinary
@@ -162,6 +162,25 @@ controls exercise page/add module indices and DTP-relative operations; GNU ld
 records, so its control uses ordinary Q accesses through relocated ADD pointers.
 Those additional records are qualified by raw native execution, ABI field/range
 checks and compiler-produced getters, not claimed as GNU ld execution coverage.
+
+AArch64 TLSDESC supports all ten relocation kinds with the qualified operand
+forms. A zero-immediate 64-bit LDR literal loads the descriptor entry, and ADR
+constructs its address; both enforce signed 21-bit displacement limits (the
+literal displacement must be divisible by four). Canonical G1 MOVN/MOVZ plus G0
+MOVK construct descriptor-minus-GOT, including negative offsets, with the same
+checked range as TLSGD. These references address the descriptor half of each
+private record, independently of its GD/LD index.
+
+The LDR/ADD/CALL relaxation annotations validate and preserve their instructions;
+the loader does not relax them to static TLS. LDR annotations accept zero-offset
+or unshifted register-offset 64-bit pointer loads. ADD annotations accept
+zero-immediate or unshifted-register 64-bit ADD. Nonzero relocation addends,
+other widths, shifts and addressing forms remain unqualified. Value and full
+register-preservation probes share the independent address sequences; literal,
+ADR, MOVW and page forms execute as raw objects/archives and GNU ld/OS TLS controls.
+Clang/GCC C and nonthrowing C++ providers test shared storage and thread exit.
+Observed Clang 22/GCC 12 `tiny` C output still used page/load/add; no broader
+compiler-emission claim is inferred from the hand-written sequences.
 
 Other AArch64 instruction forms, sign-extending loads and prefetch,
 initial-exec/local-exec offsets,

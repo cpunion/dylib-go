@@ -1,3 +1,6 @@
+#include "elf_arm_tlsdesc_address.inc"
+.globl tls_shared
+.type tls_shared, %tls_object
 .text
 .globl tls_registers
 .p2align 2
@@ -12,9 +15,7 @@ stp q8, q9, [sp, #32]
 stp q10, q11, [sp, #64]
 stp q12, q13, [sp, #96]
 stp q14, q15, [sp, #128]
-adrp x0, :tlsdesc:tls_shared
-ldr x1, [x0, :tlsdesc_lo12:tls_shared]
-add x0, x0, :tlsdesc_lo12:tls_shared
+tls_desc_pointer tls_shared
 str x1, [sp, #16]
 .irp n,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
 mov x\n, #42
