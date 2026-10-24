@@ -93,7 +93,7 @@ func TestELFARMTraditionalTLSRelocationValidation(t *testing.T) {
 }
 
 func TestELFARMUnsupportedTLSModels(t *testing.T) {
-	for _, typ := range []uint32{512, 515, 516, 517, 518, 519, 523, 539, 541, 544, 547, 549, 550, 551} {
+	for _, typ := range []uint32{517, 518, 519, 523, 539, 541, 544, 547, 549, 550, 551} {
 		im, o := elfTLSValidationImage()
 		o.info.Arch = "arm64"
 		r := relocation{section: 1, symbol: 1, typ: typ}

@@ -74,7 +74,9 @@ contract, including both 64-bit lanes of every ARM64 vector register.
 Enable `Options{NativeTLS: true}` for ordinary plain C Linux PIC objects and
 archives. Clang and GCC global-dynamic/local-dynamic and GNU2 TLSDESC output is supported on
 amd64/386. AArch64 supports the descriptor model emitted by both compilers
-and GCC traditional TLSGD page/add sequences (`-mtls-dialect=trad`). All
+and traditional TLSGD ADR, page/add and GOT-relative MOVW sequences. GCC
+`-mtls-dialect=trad` C fixtures emit page/add; the additional forms are qualified
+with independent assembly fixtures. All
 TLS definitions must be selected into the same image. Ordinary object/archive
 dependency resolution, missing-provider retry and retained function providers
 work as for Mach-O. Raw TLS symbol names cannot be bound as ordinary variables;
@@ -87,7 +89,7 @@ leases while borrowing returned TLS pointers.
 | 386 | `TLS_GD`, `TLS_LDM`, `TLS_LDO_32` | GNU `___tls_get_addr`, index in EAX, result in EAX |
 | amd64 | `GOTPC32_TLSDESC`, `TLSDESC_CALL` | Descriptor in RAX, result relative to `FS:0`; preserves every other GPR and OS-enabled user register state |
 | 386 | `TLS_GOTDESC`, `TLS_DESC_CALL` | Descriptor in EAX, result relative to `GS:0`; preserves every other GPR and OS-enabled user register state |
-| arm64 | `TLSGD_ADR_PAGE21`, `TLSGD_ADD_LO12_NC` | `__tls_get_addr`, ordinary AAPCS64 C ABI, index in X0 and absolute address in X0 |
+| arm64 | `TLSGD_ADR_PREL21`, `TLSGD_ADR_PAGE21`, `TLSGD_ADD_LO12_NC`, `TLSGD_MOVW_G1`, `TLSGD_MOVW_G0_NC` | `__tls_get_addr`, ordinary AAPCS64 C ABI, index in X0 and absolute address in X0 |
 | arm64 | `TLSDESC_ADR_PAGE21`, `TLSDESC_LD64_LO12_NC`, `TLSDESC_ADD_LO12_NC`, `TLSDESC_CALL` | Descriptor in X0, result relative to `TPIDR_EL0`; preserves X1-X29 and every bit of Q0-Q31 |
 
 The loader retains TLS symbol types, packs writable allocated `SHF_TLS` data and
@@ -134,7 +136,14 @@ register-preserving descriptor entry; both models share each definition's
 private address record and one thread allocation. Mixed GCC traditional/Clang
 descriptor objects and archives, native thread exit, C++ initialization and
 destructor retirement, pointer/aggregate values and retained providers are tested.
-Distinct AArch64 TLSLD/DTP-relative sequences, ADR/MOVW TLSGD forms,
+TLSGD ADR checks its signed 21-bit PC displacement. The canonical 64-bit MOVW
+pair uses G1 MOVN/MOVZ with shift 16 and G0 MOVK with shift 0; G1 selects the sign
+and checks the GOT-relative value lies in [-2^32, 2^32). Its private index address
+is relative to the image-owned GOT, independently of the target variable offset.
+Nonzero encoded immediates, addends, wrong widths/shifts and out-of-range values
+are rejected before publication. Alternative operand forms remain unqualified.
+
+Distinct AArch64 TLSLD/DTP-relative sequences,
 initial-exec/local-exec offsets,
 loader-owned dynamic TLS relocations, external/OS-library TLS definitions,
 loader-managed TLS initialization and SVE/SME calling variants

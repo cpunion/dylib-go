@@ -101,7 +101,7 @@ func elfTLSKind(arch string, typ uint32) (record, local, offset bool) {
 	case "386":
 		return typ == 18 || typ == 19 || elfTLSDesc(arch, typ), typ == 19, typ == 32
 	case "arm64":
-		return typ == 513 || typ == 514 || elfTLSDesc(arch, typ), false, false
+		return typ >= 512 && typ <= 516 || elfTLSDesc(arch, typ), false, false
 	}
 	return false, false, false
 }
@@ -335,6 +335,24 @@ func (im *image) relocateELFTLS(o *object, r relocation, b []byte, p uintptr) (b
 		}
 		ins := le.Uint32(b)
 		switch r.typ {
+		case 512:
+			if ins&0xffffffe0 != 0x10000000 {
+				return true, fmt.Errorf("native ELF TLS address requires zero-addend ADR")
+			}
+			return true, armADR(b, address, p)
+		case 515, 516:
+			// AAELF64 TLSGD wide moves encode index-GOT, not a TLS offset.
+			// Restrict the entry to a 64-bit G1 MOVN/MOVZ then G0 MOVK.
+			if r.typ == 515 {
+				if ins&^uint32(1<<30|31) != 0x92a00000 {
+					return true, fmt.Errorf("TLSGD G1 requires zero-immediate 64-bit MOVN/MOVZ with shift 16")
+				}
+				return true, armELFMOVW(b, 302, uint64(address)-uint64(im.gotBase()), p)
+			}
+			if ins&^uint32(31) != 0xf2800000 {
+				return true, fmt.Errorf("TLSGD G0 requires zero-immediate 64-bit MOVK with shift 0")
+			}
+			return true, armELFMOVW(b, 301, uint64(address)-uint64(im.gotBase()), p)
 		case 513, 562:
 			if ins&0x9f000000 != 0x90000000 || ins&0x60ffffe0 != 0 {
 				return true, fmt.Errorf("native ELF TLS page requires zero-addend ADRP")

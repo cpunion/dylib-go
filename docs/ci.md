@@ -228,3 +228,15 @@ C++ initialization/destructor retention, lifecycle and code retirement. Portable
 assembly fixtures and rejection tests validate relocation records, instructions,
 addends, bounds and selection of the index versus descriptor half of a record.
 No distinct AArch64 TLSLD/DTP-relative or static TLS model is claimed.
+
+Additional AArch64 TLSGD assembly fixtures exercise ADR and canonical 64-bit
+G1 MOVN/MOVZ plus G0 MOVK, alongside the page/add control. They execute against
+Clang TLSDESC and GCC traditional providers at O0/O2, directly and in archives,
+on the calling thread and four joined C threads. The same inputs also link
+with GNU ld into complete shared libraries and execute through OS TLS as an
+independent control; external variables must retain STT_TLS declarations.
+Range tests cover both ADR
+limits, negative/positive GOT offsets, G1 sign selection/overflow and malformed
+instructions. Full 32-bit GOT delta boundary tests require a 64-bit test process;
+the 386 inspection jobs retain all instruction validation and cross-target
+fixture checks. These forms reuse the same image owner and C address entry.
