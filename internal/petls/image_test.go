@@ -30,19 +30,19 @@ func TestImages(t *testing.T) {
 				case *pe.OptionalHeader64:
 					base = o.ImageBase
 					dirs = o.DataDirectory[:]
-					if o.AddressOfEntryPoint != 0 {
-						t.Fatal("executable entry")
+					if o.AddressOfEntryPoint != f.Section(".text").VirtualAddress {
+						t.Fatal("entry point outside the minimal thunk")
 					}
 				case *pe.OptionalHeader32:
 					base = uint64(o.ImageBase)
 					dirs = o.DataDirectory[:]
-					if o.AddressOfEntryPoint != 0 {
-						t.Fatal("executable entry")
+					if o.AddressOfEntryPoint != f.Section(".text").VirtualAddress {
+						t.Fatal("entry point outside the minimal thunk")
 					}
 				default:
 					t.Fatal("missing optional header")
 				}
-				if len(f.Sections) != 3 || dirs[0].Size != 0 || dirs[1].Size != 0 || dirs[9].VirtualAddress != IndexRVA+32 {
+				if len(f.Sections) != 4 || dirs[0].Size != 0 || dirs[1].Size != 0 || dirs[9].VirtualAddress != IndexRVA+32 {
 					t.Fatal("unexpected image directories")
 				}
 				data, err := f.Section(".data").Data()
@@ -59,7 +59,7 @@ func TestImages(t *testing.T) {
 					}
 					return binary.LittleEndian.Uint64(data[off:])
 				}
-				for i, want := range []uint64{base + 0x2000, base + 0x2000 + uint64(size), base + IndexRVA, 0} {
+				for i, want := range []uint64{base + 0x2000, base + 0x2000 + uint64(size), base + IndexRVA, base + IndexRVA + 16} {
 					if read(32+i*word) != want {
 						t.Fatalf("TLS field %d", i)
 					}
@@ -82,14 +82,14 @@ func TestImages(t *testing.T) {
 				if word == 4 {
 					kind = 3
 				}
-				for i := 0; i < 3; i++ {
+				for i := 0; i < 4; i++ {
 					if binary.LittleEndian.Uint16(reloc[8+2*i:]) != kind<<12|uint16(32+i*word) {
 						t.Fatal("TLS VA relocation")
 					}
 				}
 				for _, section := range f.Sections {
-					if section.Characteristics&pe.IMAGE_SCN_MEM_EXECUTE != 0 {
-						t.Fatal("executable carrier section")
+					if section.Characteristics&pe.IMAGE_SCN_MEM_EXECUTE != 0 && (section.Name != ".text" || section.Characteristics&pe.IMAGE_SCN_MEM_WRITE != 0) {
+						t.Fatal("unexpected executable or RWX section")
 					}
 				}
 			})

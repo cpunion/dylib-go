@@ -39,7 +39,7 @@ type Options struct {
 	// NativeTLS enables raw-object macOS amd64/arm64 TLV, Linux amd64/386/arm64
 	// GD/LD/TLSDESC, and plain Windows amd64/arm64/386 COFF TLS. Unix values use
 	// image-owned storage, with the documented C++ wrappers/thread-exit hooks.
-	// Windows uses a Go-generated data-only DLL for OS-owned TLS; no compiler is
+	// Windows uses a Go-generated minimal DLL for OS-owned TLS; no compiler is
 	// needed to build that carrier. Native ELF initial/local-exec,
 	// loader-managed TLS initializer sections and foreign providers remain unsupported.
 	NativeTLS bool

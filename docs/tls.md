@@ -1,7 +1,7 @@
 # Raw-object TLS
 
 Unix native and Clang emulated TLS use image-owned OS-thread values and the same
-cleanup registry. Native COFF TLS uses an OS-loaded data-only DLL. Parsing,
+cleanup registry. Native COFF TLS uses an OS-loaded minimal DLL. Parsing,
 layout, validation, archive selection and relocation stay in Go. Complete shared
 libraries continue to use their OS loader's TLS support.
 
@@ -256,7 +256,7 @@ packed module offsets. Ordinary process-address relocations to TLS variables
 are rejected; call a native getter on the owning OS thread instead.
 
 Go generates a minimal per-image PE TLS carrier in a private temporary directory.
-The DLL has no executable section, entry point, imports or TLS callbacks. Windows
+Its leaf `DllMain` returns TRUE without calling Go or other functions; the DLL has no imports, exports or TLS callbacks. Windows
 assigns its native TLS module index and provides storage for existing/new OS
 threads. The raw object's `_tls_index` references image-owned storage containing
 that index; i386 `_tls_array` uses the ABI's FS-relative `0x2c` constant. No private

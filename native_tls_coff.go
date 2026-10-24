@@ -112,7 +112,7 @@ func (im *image) prepareCOFFTLS() error {
 	if err != nil {
 		return fmt.Errorf("load native COFF TLS carrier: %w", err)
 	}
-	// A normal LoadLibrary handle is the module base. The generated data-only
+	// A normal LoadLibrary handle is the module base. The generated minimal
 	// image has a fixed RVA for the OS-written index, independent of ASLR.
 	address := tls.handle + petls.IndexRVA
 	p := *(*unsafe.Pointer)(unsafe.Pointer(&address))

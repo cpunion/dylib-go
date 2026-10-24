@@ -1,6 +1,8 @@
 package dylib
 
 import (
+	"bytes"
+	"debug/pe"
 	"errors"
 	"fmt"
 	"os"
@@ -12,6 +14,7 @@ import (
 	"time"
 
 	"github.com/ramblelabs/dylib-go/internal/native"
+	"github.com/ramblelabs/dylib-go/internal/petls"
 )
 
 func TestCOFFNativeTLSAcrossTargets(t *testing.T) {
@@ -479,5 +482,37 @@ func TestCOFFNativeTLSMixedBudget(t *testing.T) {
 	le.PutUint64(im.mem[8:], 4)
 	if _, err := im.emulatedTLSDescriptors(); err == nil {
 		t.Fatal("combined native/emulated TLS budget ignored")
+	}
+}
+
+func TestCOFFNativeTLSEntryAcrossTargets(t *testing.T) {
+	for _, target := range []string{"x86_64-pc-windows-msvc", "aarch64-pc-windows-msvc", "i686-pc-windows-msvc"} {
+		t.Run(target, func(t *testing.T) {
+			path := compile(t, "testdata/coff_tls_entry.c", filepath.Join(t.TempDir(), "entry.o"), "--target="+target, "-O2", "-ffreestanding", "-fno-stack-protector")
+			f, err := pe.Open(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
+			want, err := f.Section(".text").Data()
+			if err != nil {
+				t.Fatal(err)
+			}
+			arch := map[string]string{"x86_64-pc-windows-msvc": "amd64", "aarch64-pc-windows-msvc": "arm64", "i686-pc-windows-msvc": "386"}[target]
+			b, err := petls.Image(arch, []byte{7}, 1)
+			if err != nil {
+				t.Fatal(err)
+			}
+			carrier, err := pe.NewFile(bytes.NewReader(b))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer carrier.Close()
+			sec := carrier.Section(".text")
+			data, err := sec.Data()
+			if err != nil || !bytes.Equal(data[:sec.VirtualSize], want) {
+				t.Fatalf("entry differs from independent C compiler: %x vs %x, %v", data[:sec.VirtualSize], want, err)
+			}
+		})
 	}
 }

@@ -277,4 +277,4 @@ before carrier loading; additional C threads cover OS TLS allocation at thread
 creation. Two concurrent images check distinct indices and values. Lifecycle,
 code-lease retirement and carrier file cleanup run through Go amd64/arm64/386
 and llgo amd64/arm64. Pure Go PE tests inspect both optional-header widths, all
-three machine types, TLS VA base relocations and absence of executable content.
+three machine types, TLS VA base relocations and the minimal entry and absence of writable executable sections.
