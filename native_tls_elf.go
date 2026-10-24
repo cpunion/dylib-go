@@ -31,7 +31,7 @@ func elfTLSRuntime(name string) bool {
 }
 
 func elfTLSDesc(arch string, typ uint32) bool {
-	return arch == "amd64" && (typ == 34 || typ == 35) || arch == "386" && (typ == 39 || typ == 40) || arch == "arm64" && (typ >= 562 && typ <= 564 || typ == 569)
+	return arch == "amd64" && (typ == 34 || typ == 35) || arch == "386" && (typ == 39 || typ == 40) || arch == "arm64" && typ >= 560 && typ <= 569
 }
 
 func elfTLSDescCall(arch string, typ uint32) bool {
@@ -342,15 +342,30 @@ func (im *image) relocateELFTLS(o *object, r relocation, b []byte, p uintptr) (b
 		}
 		ins := le.Uint32(b)
 		switch r.typ {
-		case 512, 517:
+		case 512, 517, 561:
 			if ins&0xffffffe0 != 0x10000000 {
 				return true, fmt.Errorf("native ELF TLS address requires zero-addend ADR")
 			}
 			return true, armADR(b, address, p)
-		case 515, 520:
+		case 515, 520, 565:
 			return true, armELFTLSMOVW(b, 1, true, uint64(address)-uint64(im.gotBase()), p)
-		case 516, 521:
+		case 516, 521, 566:
 			return true, armELFTLSMOVW(b, 0, false, uint64(address)-uint64(im.gotBase()), p)
+		case 560:
+			if ins&0xffffffe0 != 0x58000000 {
+				return true, fmt.Errorf("TLSDESC literal requires zero-offset 64-bit LDR")
+			}
+			return true, armLiteralLoad(b, address, p)
+		case 567:
+			if ins&0xfffffc00 != 0xf9400000 && ins&0xffe0fc00 != 0xf8606800 {
+				return true, fmt.Errorf("TLSDESC LDR annotation requires a zero-offset or unshifted register-offset 64-bit LDR")
+			}
+			return true, nil // Relaxation annotation; preserve the load.
+		case 568:
+			if ins&0xfffffc00 != 0x91000000 && ins&0xffe0fc00 != 0x8b000000 {
+				return true, fmt.Errorf("TLSDESC ADD annotation requires zero-immediate or unshifted register 64-bit ADD")
+			}
+			return true, nil // Relaxation annotation; preserve address construction.
 		case 522:
 			// The qualified literal form copies the full 16-byte module index
 			// through a Q register before passing its address to the C entry.
