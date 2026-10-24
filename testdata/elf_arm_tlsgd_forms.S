@@ -1,6 +1,8 @@
 // AAELF64 GD address forms which current GCC/Clang C fixtures do not emit.
 // Explicit relocations also work with Clang assemblers lacking GNU TLS syntax.
 .text
+.globl tls_shared
+.type tls_shared, %tls_object
 .macro tls_index symbol
 #if DYLIB_TLSGD_FORM == 0
     adr x0, .

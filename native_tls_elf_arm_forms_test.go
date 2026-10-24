@@ -22,6 +22,15 @@ func TestELFARMTLSGDAddressForms(t *testing.T) {
 			if err != nil || len(f.info.Unsupported) != 0 {
 				t.Fatal(f, err)
 			}
+			declared := false
+			for _, sym := range f.obj.symbols {
+				if sym.name == "tls_shared" {
+					declared = sym.tls && sym.global && sym.section == 0
+				}
+			}
+			if !declared {
+				t.Fatal("assembly must declare its external TLS symbol as STT_TLS")
+			}
 			want := [][]uint32{{512}, {515, 516}, {513, 514}}[form]
 			for _, typ := range want {
 				count := 0
@@ -59,7 +68,11 @@ func TestNativeELFARMTLSGDAddressForms(t *testing.T) {
 					checkARMNativeTLSModel(t, provider, producer == "gcc_trad")
 					archive := filepath.Join(dir, "provider.a")
 					command(t, "ar", "rcs", archive, provider)
-					for _, kind := range []string{"object", "archive"} {
+					// The same assembly must also work with GNU ld and the OS TLS
+					// loader, independently of our private index implementation.
+					library := filepath.Join(dir, "control.so")
+					command(t, "gcc", "-shared", consumer, provider, "-o", library)
+					for _, kind := range []string{"object", "archive", "library"} {
 						t.Run(kind, func(t *testing.T) {
 							runtime.LockOSThread()
 							defer runtime.UnlockOSThread()
@@ -69,7 +82,11 @@ func TestNativeELFARMTLSGDAddressForms(t *testing.T) {
 							if kind == "archive" {
 								input = archive
 							}
-							load(t, s, consumer, input)
+							if kind == "library" {
+								load(t, s, library)
+							} else {
+								load(t, s, consumer, input)
+							}
 							for i := int32(0); i < 100; i++ {
 								call(t, s, "tls_form_step", 20, 22, 49+i)
 							}
@@ -83,6 +100,12 @@ func TestNativeELFARMTLSGDAddressForms(t *testing.T) {
 								t.Fatal(err)
 							}
 							call(t, host, "tls_thread_result", 0, 0, 0)
+							if kind == "library" {
+								if err := s.Close(); err != nil {
+									t.Fatal(err)
+								}
+								return
+							}
 							owner := s.image.emulatedTLS
 							if owner.LiveValues() != 1 {
 								t.Fatal("address forms split module storage or leaked foreign thread values")
