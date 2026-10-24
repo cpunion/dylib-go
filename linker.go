@@ -37,10 +37,11 @@ type Options struct {
 	// TLS initialization. Native TLS uses the separate NativeTLS option.
 	EmulatedTLS bool
 	// NativeTLS enables raw-object macOS amd64/arm64 TLV, Linux amd64/386/arm64
-	// GD/LD/TLSDESC, and plain Windows amd64/arm64/386 COFF TLS. Unix values use
+	// GD/LD/TLSDESC, and Windows amd64/arm64/386 COFF TLS. Unix values use
 	// image-owned storage, with the documented C++ wrappers/thread-exit hooks.
 	// Windows uses a Go-generated minimal DLL for OS-owned TLS; no compiler is
-	// needed to build that carrier. Native ELF initial/local-exec,
+	// needed to build that carrier. Clang GNU C++ thread-exit hooks also use the
+	// image-owned registry. Native MSVC C++ helpers, ELF initial/local-exec,
 	// loader-managed TLS initializer sections and foreign providers remain unsupported.
 	NativeTLS bool
 	// RegisterUnwind registers supported raw-image runtime function tables.
@@ -446,7 +447,7 @@ func (s *Session) selectObjects(roots []string) ([]*object, error) {
 				if s.opts.NativeTLS && (runtime.GOOS == "linux" && elfTLSRuntime(n) || runtime.GOOS == "darwin" && n == machoTLSBootstrap || runtime.GOOS == "windows" && coffTLSRuntime(n)) {
 					continue
 				}
-				if s.opts.NativeTLS && (runtime.GOOS == "linux" || runtime.GOOS == "darwin") && emulatedTLSThreadHelper(n) {
+				if s.opts.NativeTLS && emulatedTLSThreadHelper(n) {
 					continue
 				}
 				if s.opts.EmulatedTLS && (n == emulatedTLSHelper || emulatedTLSThreadHelper(n) || emulatedTLSMSVCHelper(n) || n == emulatedTLSMSVCGuard) {

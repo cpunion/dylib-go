@@ -19,8 +19,8 @@ func tlsDestructorOptions(nativeMode bool) Options {
 
 func needNativeCXXTLS(t *testing.T) {
 	t.Helper()
-	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
-		t.Skip("native C++ TLS requires a supported Unix model")
+	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "windows" {
+		t.Skip("native C++ TLS requires a supported native model")
 	}
 	needNative(t)
 }
@@ -112,7 +112,7 @@ func TestNativeCXXTLSActiveInitialization(t *testing.T) {
 }
 
 func TestNativeCXXTLSAcrossTargets(t *testing.T) {
-	for _, target := range []string{"x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu", "i686-unknown-linux-gnu", "x86_64-apple-macosx11", "arm64-apple-macosx11"} {
+	for _, target := range []string{"x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu", "i686-unknown-linux-gnu", "x86_64-apple-macosx11", "arm64-apple-macosx11", "x86_64-w64-windows-gnu", "aarch64-w64-windows-gnu", "i686-w64-windows-gnu"} {
 		for _, opt := range []string{"-O0", "-O2"} {
 			t.Run(target+"/"+opt, func(t *testing.T) {
 				path := compile(t, "testdata/emutls_dtor_objects.cpp", filepath.Join(t.TempDir(), "native.o"), "--target="+target, "-std=c++17", "-ffreestanding", "-fno-emulated-tls", "-fno-exceptions", "-fno-rtti", "-DDYLIB_TLS_DYNAMIC_INIT", opt)
@@ -136,9 +136,12 @@ func TestNativeCXXTLSAcrossTargets(t *testing.T) {
 					}
 				}
 				var needed bool
-				if f.obj.info.Format == "Mach-O" {
+				switch f.obj.info.Format {
+				case "Mach-O":
 					needed, err = checkMachOTLS([]*object{f.obj}, true)
-				} else {
+				case "COFF":
+					needed, err = checkCOFFTLS([]*object{f.obj}, true)
+				default:
 					needed, err = checkELFTLS([]*object{f.obj}, true)
 				}
 				if err != nil || !needed {
@@ -154,7 +157,7 @@ func TestTLSRuntimeModeIsolation(t *testing.T) {
 		t.Run(format, func(t *testing.T) {
 			o := &object{info: Info{Format: format}, symbols: []symbol{{name: "__cxa_thread_atexit", global: true}}}
 			_, err := checkTLSRuntime([]*object{o}, Options{NativeTLS: true})
-			if format == "COFF" && err == nil || format != "COFF" && err != nil {
+			if err != nil {
 				t.Fatal("native thread-hook mode:", err)
 			}
 			if _, err := checkTLSRuntime([]*object{o}, Options{}); err == nil {
