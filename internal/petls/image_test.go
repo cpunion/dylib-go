@@ -42,8 +42,12 @@ func TestImages(t *testing.T) {
 				default:
 					t.Fatal("missing optional header")
 				}
-				if len(f.Sections) != 4 || dirs[0].Size != 0 || dirs[1].Size != 0 || dirs[9].VirtualAddress != IndexRVA+32 {
+				if len(f.Sections) != 4 || dirs[0].Size != 0 || dirs[1].Size != 40 || dirs[9].VirtualAddress != IndexRVA+32 {
 					t.Fatal("unexpected image directories")
+				}
+				imports, err := f.ImportedSymbols()
+				if err != nil || len(imports) != 1 || imports[0] != "GetLastError:kernel32.dll" {
+					t.Fatal("system import", imports, err)
 				}
 				data, err := f.Section(".data").Data()
 				if err != nil {

@@ -118,7 +118,9 @@ func (im *image) prepareCOFFTLS() error {
 	p := *(*unsafe.Pointer)(unsafe.Pointer(&address))
 	index := *(*uint32)(p)
 	if index == 0xffffffff {
-		return fmt.Errorf("Windows did not allocate the native TLS module index")
+		directoryAddress := tls.handle + petls.IndexRVA + 32
+		directoryPointer := *(*unsafe.Pointer)(unsafe.Pointer(&directoryAddress))
+		return fmt.Errorf("Windows did not allocate the native TLS module index (module %#x, TLS directory %x)", tls.handle, unsafe.Slice((*byte)(directoryPointer), int(4*im.pointerSize+8)))
 	}
 	le.PutUint32(im.mem[tls.index:], index)
 	return nil

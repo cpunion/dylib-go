@@ -8,7 +8,7 @@ import (
 )
 
 // IndexRVA is the loader-written DWORD TLS module index. The only code is a
-// leaf DllMain returning TRUE. There are no imports, exports or TLS callbacks.
+// leaf DllMain returning TRUE. The sole (uncalled) import is kernel32.GetLastError; there are no exports or TLS callbacks.
 const IndexRVA = 0x1000
 
 // Image creates a native PE32/PE32+ TLS carrier with the supplied template.
@@ -85,6 +85,10 @@ func Image(arch string, template []byte, alignment uint64) ([]byte, error) {
 	put32(o+60, 1024)
 	put16(o+68, 3)
 	put16(o+70, 0x140)
+	put32(directories+1*8, IndexRVA+128)
+	put32(directories+1*8+4, 40)
+	put32(directories+12*8, IndexRVA+224)
+	put32(directories+12*8+4, uint32(2*word))
 	put32(directories+5*8, uint32(relocRVA))
 	put32(directories+5*8+4, 16)
 	put32(directories+9*8, IndexRVA+32)
@@ -103,6 +107,20 @@ func Image(arch string, template []byte, alignment uint64) ([]byte, error) {
 	section(2, ".reloc", relocRVA, 16, relocFile, 512, 0x42000040)
 	section(3, ".text", textRVA, len(entry), textFile, 512, 0x60000020)
 	copy(b[textFile:], entry)
+	// A public system dependency keeps the carrier on the ordinary DLL
+	// initialization path; its imported function is never called.
+	put32(1024+128, IndexRVA+192)
+	put32(1024+128+12, IndexRVA+256)
+	put32(1024+128+16, IndexRVA+224)
+	for _, off := range []int{192, 224} {
+		if word == 4 {
+			put32(1024+off, IndexRVA+288)
+		} else {
+			put64(1024+off, IndexRVA+288)
+		}
+	}
+	copy(b[1024+256:], "kernel32.dll\x00")
+	copy(b[1024+290:], "GetLastError\x00")
 	put32(1024, 0xffffffff)
 	for i, address := range []uint64{base + 0x2000, base + 0x2000 + uint64(len(template)), base + IndexRVA, base + IndexRVA + 16} {
 		off := 1024 + 32 + i*word
