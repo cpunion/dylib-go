@@ -119,6 +119,9 @@ func (im *image) emulatedTLSDescriptors() ([]uintptr, error) {
 	if im.elfTLS != nil {
 		budget += im.elfTLS.size + im.elfTLS.align - 1
 	}
+	if im.coffTLS != nil {
+		budget += im.coffTLS.size + im.coffTLS.align - 1
+	}
 	for _, o := range im.objects {
 		for i, s := range o.symbols {
 			if s.section == -3 || !strings.HasPrefix(s.name, emulatedTLSPrefix) {

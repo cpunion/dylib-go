@@ -374,7 +374,9 @@ func testNativeTLSLifecycleInput(t *testing.T, input func(string) string) {
 	dir := t.TempDir()
 	host, _, read := lifecycleObserver(t, dir)
 	obj := input(dir)
-	s := New(Options{NativeTLS: true, RegisterUnwind: true})
+	// Native COFF TLS also runs on Windows 386, whose unwind backend is not qualified.
+	unwind := runtime.GOOS != "windows" || runtime.GOARCH != "386"
+	s := New(Options{NativeTLS: true, RegisterUnwind: unwind})
 	defer s.Close()
 	load(t, s, host, obj)
 	if err := s.Link("missing_root"); err == nil {
