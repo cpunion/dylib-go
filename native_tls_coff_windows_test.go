@@ -30,13 +30,18 @@ func TestNativeCOFFTLSCleanupRetry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer syscall.CloseHandle(h)
+	defer func() {
+		if h != syscall.InvalidHandle {
+			syscall.CloseHandle(h)
+		}
+	}()
 	if err := s.Close(); err == nil || s.failedImage != im || owner.handle != 0 || owner.directory != directory || im.mem == nil {
 		t.Fatal("failed deletion lost its owner", err)
 	}
 	if err := syscall.CloseHandle(h); err != nil {
 		t.Fatal(err)
 	}
+	h = syscall.InvalidHandle
 	if err := s.Close(); err != nil || s.failedImage != nil || im.mem != nil || owner.directory != "" {
 		t.Fatal("carrier cleanup retry", err)
 	}
