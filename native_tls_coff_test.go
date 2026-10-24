@@ -162,7 +162,7 @@ func coffTLSFlags(dialect, opt string) []string {
 	} else {
 		target += "-w64-windows-gnu"
 	}
-	return []string{"--target=" + target, opt, "-fno-emulated-tls"}
+	return []string{"--target=" + target, opt, "-ffreestanding", "-fno-emulated-tls"}
 }
 
 func TestNativeCOFFTLS(t *testing.T) {
