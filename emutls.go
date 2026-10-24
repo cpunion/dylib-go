@@ -54,9 +54,9 @@ func checkTLSRuntime(objects []*object, opts Options) (bool, error) {
 				continue
 			}
 			needed = true
-			nativeThreadHook := opts.NativeTLS && (o.info.Format == "ELF" || o.info.Format == "Mach-O") && emulatedTLSThreadHelper(name)
+			nativeThreadHook := opts.NativeTLS && (o.info.Format == "ELF" || o.info.Format == "Mach-O" || o.info.Format == "COFF") && emulatedTLSThreadHelper(name)
 			if !enabled && !nativeThreadHook {
-				return false, fmt.Errorf("%s: TLS runtime requires Options.EmulatedTLS, or Options.NativeTLS for Unix thread-exit hooks", o.info.Name)
+				return false, fmt.Errorf("%s: TLS runtime requires Options.EmulatedTLS, or Options.NativeTLS for native thread-exit hooks", o.info.Name)
 			}
 			if s.imported != nil || s.name != name && strings.HasPrefix(name, emulatedTLSPrefix) || name == emulatedTLSHelper && (s.section != 0 || s.alias != nil) {
 				return false, fmt.Errorf("%s: emulated TLS requires image-owned descriptors and the host helper", o.info.Name)

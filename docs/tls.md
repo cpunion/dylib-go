@@ -10,7 +10,7 @@ libraries continue to use their OS loader's TLS support.
 | Native Mach-O TLV | `Options.NativeTLS` | C values and documented C++ wrappers, macOS amd64/arm64; initialized, zero-filled and aligned values |
 | Clang emulated TLS | `Options.EmulatedTLS` | Linux/macOS/Windows targets below, including documented C++ initialization/destruction |
 | Native ELF dynamic TLS | `Options.NativeTLS` | C values and documented C++ wrappers, Linux amd64/386 GD/LD/TLSDESC and arm64 GD/LD/TLSDESC |
-| Native COFF TLS | `Options.NativeTLS` | Plain constant/zero/aligned C TLS, Windows amd64/arm64/386; Clang MSVC/GNU objects and archives |
+| Native COFF TLS | `Options.NativeTLS` | Windows amd64/arm64/386: constant/zero/aligned C TLS from Clang MSVC/GNU, and documented Clang GNU C++ wrappers/thread-exit hooks |
 | Native ELF static TLS, other Darwin models | None | Unsupported; use emulated TLS or a complete OS library |
 
 ## Native Mach-O TLV
@@ -203,7 +203,7 @@ and [AArch64 descriptor resolver](https://github.com/bminor/glibc/blob/master/sy
 
 ## Native C++ initialization and thread exit
 
-On the documented native Unix TLS models, `NativeTLS` also enables the common
+On the documented native TLS models, `NativeTLS` also enables the common
 C++ ABI thread-exit registrations. It does not enable emulated descriptors or
 the emulated address helper; mixed native/emulated inputs still require both
 options. The native test fixtures use Clang C++17 `-fno-emulated-tls`,
@@ -215,6 +215,7 @@ qualified separately from ordinary C values.
 | --- | --- | --- |
 | ELF / Linux | amd64, arm64, 386 | `__cxa_thread_atexit`, `__cxa_thread_atexit_impl` |
 | Mach-O / macOS | amd64, arm64 | `_tlv_atexit`; explicit C++ ABI registration uses the same owner |
+| COFF / Windows GNU ABI | amd64, arm64, 386 | Clang `__cxa_thread_atexit`; values and guards remain in OS-owned native TLS |
 
 Compiler-generated wrappers retain their original native guard variables and
 initialization order; Go does not reproduce C++ initialization logic. Register
@@ -242,9 +243,11 @@ constructors and thread exit; constructor callbacks reenter native TLS. Native
 constructor retirement tests retain code leases until the workers have joined.
 
 Native exceptions must not escape constructors, destructors or callback entries.
-Additional Darwin pointer/initializer sections, native Windows C++ TLS runtime
+Additional Darwin pointer/initializer sections, native Windows MSVC C++ TLS
 initialization/destruction and cross-image TLS-variable providers remain outside
-this Unix C++ scope.
+this C++ scope. Windows GNU tests also create native C threads before loading the
+carrier and verify destructor receivers and nested registrations during FLS exit,
+before Windows releases that thread's native TLS storage.
 
 ## Native COFF TLS
 
@@ -274,8 +277,10 @@ The qualified subset includes scalar/struct values, native-pointer constants,
 64-byte alignment, offsets beyond a page, input/archive extraction, missing
 provider retry, C-created and pinned Go threads that predate DLL loading, new C
 threads, independent modules, global lifecycle and code-lease retirement.
-Native C++ dynamic initialization/destructors, `.CRT$XL*` loader callbacks and
-external TLS definitions remain unqualified. Use the documented emulated mode
+Native GNU C++ nonthrowing wrapper initialization and image-owned thread-exit
+registrations use the shared C++ scope above. MSVC native dynamic TLS helpers,
+`.CRT$XL*` loader callbacks and external TLS definitions remain unqualified. Use
+the documented emulated mode
 or a complete DLL for those runtime contracts. Templates remain bounded by
 64 MiB and 4096-byte alignment; individual instruction offset ranges also apply.
 
