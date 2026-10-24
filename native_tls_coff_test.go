@@ -471,3 +471,13 @@ func TestNativeCOFFTLSOptIn(t *testing.T) {
 		})
 	}
 }
+
+func TestCOFFNativeTLSMixedBudget(t *testing.T) {
+	o := &object{sections: []*section{nil, {size: 32, align: 8, write: true}}, symbols: []symbol{{name: emulatedTLSPrefix + "x", global: true, section: 1}}}
+	im := &image{objects: []*object{o}, defs: map[string]definition{emulatedTLSPrefix + "x": {o, 0}}, base: 0x1000, mem: make([]byte, 32), pointerSize: 8, coffTLS: &coffTLSLayout{size: maxImage, align: 1}}
+	le.PutUint64(im.mem, 4)
+	le.PutUint64(im.mem[8:], 4)
+	if _, err := im.emulatedTLSDescriptors(); err == nil {
+		t.Fatal("combined native/emulated TLS budget ignored")
+	}
+}

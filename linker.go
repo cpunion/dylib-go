@@ -906,6 +906,9 @@ func newImage(objs []*object, defs map[string]definition, external func(string) 
 		}
 	}
 	if coffTLSNeeded {
+		if im.hooks == nil {
+			im.hooks = make(map[string]uintptr)
+		}
 		im.hooks[coffTLSIndex] = im.base + uintptr(im.coffTLS.index)
 		if objs[0].info.Arch == "386" {
 			im.hooks[coffTLSArray] = 0x2c
