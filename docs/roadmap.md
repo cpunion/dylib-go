@@ -86,7 +86,7 @@ Each implementation PR must pass its native Go and llgo CI jobs before merge. De
 - [x] Image-owned C++ emulated TLS thread-exit callbacks, native LIFO/reentry, current-thread teardown, pending/active-thread close retry and retained Go callbacks.
 - [x] Clang MSVC emulated TLS thread initialization, image-owned guards, typed plain destructors, native constructor reentry and close retry.
 - [x] Opt-in plain C native Mach-O TLV on macOS amd64/arm64, Go-generated register-preserving entries, validated initialized/zero/aligned module templates, records/native pointers, mixed emulated TLS, native and pinned Go threads, lifecycle, provider leases and retirement.
-- [x] AArch64 traditional TLSGD page/add objects/archives, mixed GCC GD/Clang TLSDESC, independent C and descriptor entries, C++ thread-exit retention and native Go/llgo calls.
+- [x] AArch64 traditional TLSGD ADR, page/add and canonical GOT-relative MOVW objects/archives, mixed GCC GD/Clang TLSDESC, independent C and descriptor entries, C++ thread-exit retention and native Go/llgo calls.
 - [x] x86 TLSDESC GNU2 objects/archives, mixed GD/LD descriptors, reserved module bases and register-preserving entries; Clang/GCC and C++ thread-exit coverage.
 - [x] Opt-in plain C native ELF dynamic TLS on Linux amd64/386 (GD/LD/TLSDESC) and arm64 (GD/TLSDESC), Clang/GCC objects, shared template storage, Go-generated ABI entries, native threads, lifecycle and retirement.
 - [x] Native Unix C++ wrapper initialization and common thread-exit registration without enabling emulated descriptors; object/archive calls, mode isolation, constructor callbacks/reentry, active code leases and pending/active thread cleanup.

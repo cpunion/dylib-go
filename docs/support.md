@@ -46,7 +46,7 @@ Pure Go inspection does not require a file's CPU to match the host. Execution re
 Implemented relocation families:
 
 Opt-in ELF dynamic TLS additionally supports amd64 GD/LD and DTP-relative offsets,
-i386 GD/LDM/LDO, x86 TLSDESC address/call pairs, AArch64 TLSGD page/add pairs and TLSDESC page/load/add/call relocations. See the
+i386 GD/LDM/LDO, x86 TLSDESC address/call pairs, AArch64 TLSGD ADR/page/add/MOVW forms and TLSDESC page/load/add/call relocations. See the
 [native TLS model table](tls.md#native-elf-dynamic-tls) for exact instructions and limits.
 
 - ELF i386: NONE, 32, PC32, PLT32, GOT32/GOT32X, GOTOFF, GOTPC, SIZE32; implicit REL and explicit RELA addends. GOT slots are 4 bytes; register-relative and baseless memory accesses use the [documented instruction rules](elf.md#i386-got-instruction-forms). Relative/size arithmetic wraps within the 32-bit address space.
