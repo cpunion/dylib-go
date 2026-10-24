@@ -13,7 +13,7 @@ import (
 )
 
 func TestELFTLSDescEntryEncoding(t *testing.T) {
-	for _, tc := range []struct{ arch, target string }{{"amd64", "x86_64-unknown-linux-gnu"}, {"386", "i686-unknown-linux-gnu"}} {
+	for _, tc := range []struct{ arch, target string }{{"amd64", "x86_64-unknown-linux-gnu"}, {"386", "i686-unknown-linux-gnu"}, {"arm64", "aarch64-unknown-linux-gnu"}} {
 		t.Run(tc.arch, func(t *testing.T) {
 			path := compile(t, "testdata/elf_tlsdesc_entry.S", filepath.Join(t.TempDir(), "entry.o"), "--target="+tc.target)
 			f, err := elf.Open(path)
@@ -34,8 +34,8 @@ func TestELFTLSDescEntryEncoding(t *testing.T) {
 	if _, err := elfTLSDescEntry("amd64", 0); err == nil {
 		t.Fatal("missing allocator accepted")
 	}
-	if _, err := elfTLSDescEntry("arm64", 1); err == nil {
-		t.Fatal("unsupported x86 architecture accepted")
+	if _, err := elfTLSDescEntry("riscv64", 1); err == nil {
+		t.Fatal("unsupported architecture accepted")
 	}
 }
 

@@ -144,7 +144,7 @@ Native close-retry tests use a deterministic unregister-validation failure on ev
 
 Native C++ TLS fixtures execute on Linux amd64/arm64/386 and macOS amd64/arm64 with `NativeTLS` alone. They share the emulated TLS destructor suite: O0/O2 object/archive construction/destruction, isolation, recursive/late registrations, budgets, failed initialization cleanup, pending/active retirement, Go callbacks during constructor/thread exit and native TLS reentry. Constructor retirement tests keep code leases until workers join. Cross-target tests verify native code generation and option isolation rejects emulated address helpers/descriptors.
 
-Native ELF TLS fixtures execute Clang O0/O2 object/archive calls on Linux amd64/arm64/386, plus GCC O0/O2 calls. They reuse the native value/thread/lifecycle/retirement suite, compare three generated entries with independent assembly and check AArch64 descriptor register preservation. Portable tests reject malformed runtime/layout/relocation inputs; native tests exercise explicit dynamic models and reject initial/local-exec TLS.
+Native ELF TLS fixtures execute Clang O0/O2 object/archive calls on Linux amd64/arm64/386, plus GCC O0/O2 calls. They reuse the native value/thread/lifecycle/retirement suite, compare ordinary and descriptor entries with independent assembly and check AArch64 descriptor register preservation. Portable tests reject malformed runtime/layout/relocation inputs; native tests exercise explicit dynamic models and reject initial/local-exec TLS.
 
 Native Mach-O TLS fixtures execute on both macOS architectures in Go and llgo. They cover O0/O2 objects and lazy archives, initialized/zero/aligned storage, record/pointer templates, wide C calls, mixed emulated TLS, independent native and pinned Go threads, lifecycle/unwind, retained providers and retirement. Assembly probes verify the Darwin TLV register contract; both architectures also compare the Go-generated entry against an independent LLVM assembly reference on every CI host. Portable negative tests reject malformed descriptors, bootstrap overrides, unsupported section types and invalid TLVP instructions/addends.
 
@@ -218,3 +218,13 @@ finalizer. A hostile allocator independently checks every GPR, XMM and a full
 x87 stack, both automatic XSAVE and forced FXSAVE; CPU-gated AVX/AVX-512 probes
 check upper vector registers and masks. Cross-target encoding, relocation bounds
 and malformed module-base tests run on every host.
+
+AArch64 traditional ELF TLS fixtures execute GCC `-mtls-dialect=trad` at O0/O2,
+with global-dynamic/local-dynamic producer options (both emit TLSGD page/add
+pairs). Go and both llgo call paths load objects and archives, mix GCC GD with
+Clang TLSDESC in either direction, verify one per-thread module allocation,
+exercise foreign and pinned Go threads, and check pointer/aggregate/FP values,
+C++ initialization/destructor retention, lifecycle and code retirement. Portable
+assembly fixtures and rejection tests validate relocation records, instructions,
+addends, bounds and selection of the index versus descriptor half of a record.
+No distinct AArch64 TLSLD/DTP-relative or static TLS model is claimed.
